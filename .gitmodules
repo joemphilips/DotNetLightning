@@ -1,3 +1,0 @@
-[submodule "src/NBitcoin"]
-	path = src/NBitcoin
-	url = https://github.com/MetacoSA/NBitcoin
