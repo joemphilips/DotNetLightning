@@ -130,10 +130,7 @@ type PeerChannelEncryptorStream(theirNodeId: NodeId option, noiseState: NoiseSta
 
     static member HKDF(state: BidirectionalNoiseState, ss: SharedSecret): uint256 =
         let hkdf = NSec.Cryptography.HkdfSha256()
-        let hoge = hkdf.DeriveKey()
-        let (t1, t2) = hkdfExtractExpand(state.CK.ToBytes(), ss)
-        let newState = {state with CK = t1}
-        uint256(t2)
+        failwith "Not impl"
 
     static member OutBoundNoiseAct(state: BidirectionalNoiseState, ourKey: Key, theirKey: PubKey): (byte[] * uint256) =
         let ourPub = ourKey.PubKey
@@ -188,7 +185,7 @@ type PeerChannelEncryptorStream(theirNodeId: NodeId option, noiseState: NoiseSta
 
 
     /// Panics if `msg.Length > 65535` (Out of Noise protocol support)
-    member this.EncryptMessage(msg: byte[]): Span<byte> =
+    member this.EncryptMessage(msg: byte[]) =
         failwith "Not impl"
     
     /// Decrypts a message  length header from the remote peer.
@@ -198,7 +195,7 @@ type PeerChannelEncryptorStream(theirNodeId: NodeId option, noiseState: NoiseSta
 
     /// Decrypts the given message.
     /// panics if `msg.Length > 65535 + 16`
-    member this.DecryptMessage(msg: byte[]): Result<Span<byte>, HandleError> =
+    member this.DecryptMessage(msg: byte[]): Result<byte[], HandleError> =
         failwith "Not impl"
 
     member this.GetNoiseStep(): NextNoiseStep =

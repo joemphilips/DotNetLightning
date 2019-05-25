@@ -19,6 +19,7 @@ module Primitives =
     type NodeId = NodeId of PubKey with
         member x.Value = let (NodeId v) = x in v
 
+    [<StructuralComparison>]
     type TxId = TxId of uint256 with
         member x.Value = let (TxId v) = x in v
 
