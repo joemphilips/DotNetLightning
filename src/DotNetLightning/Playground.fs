@@ -2,6 +2,7 @@ module PlayGround
 open System.IO.Pipelines
 open System.Text
 open System
+open FSharp.Control
 
 /// https://blog.marcgravell.com/2018/07/pipe-dreams-part-1.html
 module PipeTest =
@@ -19,6 +20,3 @@ module PipeTest =
             let! _ = WriteSomeDataAsync(p.Writer)
             return ()
         }
-
-
-module Observable =

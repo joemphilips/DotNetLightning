@@ -7,6 +7,7 @@
     <Compile Include="Utils/NBitcoinExtensions.fs" />
     <Compile Include="Utils/RResult.fs" />
     <Compile Include="Utils/Observable.fs" />
+    <Compile Include="Utils/Lens.fs" />
     <Compile Include="Utils/Config.fs" />
     <Compile Include="Serialize/Msgs.fs" />
     <Compile Include="Serialize/NetworkSerializer.fs" />
@@ -34,5 +35,8 @@
     <PackageReference Include="System.Memory" Version="4.5.2" />
     <PackageReference Include="System.Net.Sockets" Version="4.3.0" />
     <PackageReference Include="System.Reactive" Version="4.1.5" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\nsec\src\Cryptography\NSec.Cryptography.csproj" />
   </ItemGroup>
 </Project>
