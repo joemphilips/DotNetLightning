@@ -207,16 +207,14 @@ module Channel =
         failwith ""
 
     // ----- constructors -------
-    let public newOutBound(
-        feeEstimator: IFeeEstimator,
-        keyProvider: IKeysRepository,
-        theirNodeId: PubKey,
-        channelValue: Money,
-        pushMSat: LightMoney,
-        userId: UserId,
-        logger: ILogger,
-        config: UserConfig
-        ): RResult<Channel>  =
+    let public newOutBound(feeEstimator: IFeeEstimator,
+                           keyProvider: IKeysRepository,
+                           theirNodeId: PubKey,
+                           channelValue: Money,
+                           pushMSat: LightMoney,
+                           userId: UserId,
+                           logger: ILogger,
+                           config: UserConfig): RResult<Channel>  =
         let checkSmallerThenMaxPossible(channelValue) =
             if (channelValue >= MAX_FUNDING_SATOSHIS) then
                 RResult.Bad(RBadTree.Leaf(RBad.Message("Funding value. 2^24")))

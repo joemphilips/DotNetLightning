@@ -52,6 +52,9 @@ let private serializeOnionPacket (w: BinaryWriter) (data: OnionPacket) =
 let Deserialize (input: ReadOnlySpan<byte>) =
     failwith "not impl"
 
+let toBytes (output: #Stream) (s: LightningMsg): byte[] =
+    failwith ""
+
 let Serialze (output: #Stream) (s: LightningMsg) =
     use w = new BinaryWriter(output)
     match s with

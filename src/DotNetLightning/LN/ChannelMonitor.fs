@@ -127,16 +127,14 @@ type ChannelMonitor = {
 }
 
 module ChannelMonitor =
-    let create (
-        revocationBaseKey: Key,
-        htlcBaseKey: Key,
-        delayedPaymentBaseKey: Key,
-        paymentBaseKey: Key,
-        shutDownPubKey: PubKey,
-        ourToSelfDelay: uint16,
-        destinationScript: Script,
-        logger: ILogger
-        ) =
+    let create (revocationBaseKey: Key,
+                htlcBaseKey: Key,
+                delayedPaymentBaseKey: Key,
+                paymentBaseKey: Key,
+                shutDownPubKey: PubKey,
+                ourToSelfDelay: uint16,
+                destinationScript: Script,
+                logger: ILogger) =
         {
             CommitmentTxNumberObscureFactor = 0UL
             KeyStorage = Local {
