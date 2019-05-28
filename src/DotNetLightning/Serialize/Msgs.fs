@@ -8,6 +8,7 @@ open System.Net
 open NBitcoin.Crypto
 open System.Runtime.CompilerServices
 open NBitcoin.Crypto
+open System
 
 [<Struct>]
 type DecodeError =
@@ -168,7 +169,7 @@ type AcceptChannel = {
     ChannelReserveSatoshis: uint64
     HTLCMinimumMSat: uint64
     MinimumDepth: uint32
-    ToSelfDelay: uint16
+    ToSelfDelay: DateTime
     MaxAcceptedHTLCs: uint16
     FundingPubKey: PubKey
     RevocationBasepoint: PubKey

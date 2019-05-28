@@ -80,7 +80,7 @@ type HTLCUpdateAwaitingACK =
 
 [<Flags>]
 type ChannelState =
-    | OutinitSent =        1u
+    | OurInitSent =        1u
     | TheirInitSent =      2u
     | FundingCreated =     4u
     | FundingSent =        16u
@@ -136,11 +136,11 @@ type Channel = {
     Config: ChannelConfig
     UserId: uint64
     ChannelId: uint256
-    ChanelSate: ChannelState
+    ChannelState: ChannelState
     ChannelOutbound: bool
-    ChannelValueSatoshis: uint64
+    ChannelValueSatoshis: Money
     LocalKeys: ChannelKeys
-    ShotdownPubKey: PubKey
+    ShutdownPubKey: PubKey
     CurrentLocalCommitmentTxNumber: uint64
     CurrentRemoteCommitmentTxNumber: uint64
     ValueToSelf: LightMoney
@@ -148,7 +148,7 @@ type Channel = {
     PendingOutboundHTLCs: OutboundHTLCOutput list
     HoldingCellHTLCUpdates: HTLCUpdateAwaitingACK list
     ResendOrder: RAACommitmentOrder
-    MonitorPendingRevokdAndAck: bool
+    MonitorPendingRevokeAndAck: bool
     MonitorPendingCommitmentSigned: bool
     MonitorPendingForwards: (PendingForwardHTLCInfo * uint64) list
     MonitorPendingFailures: (HTLCSource * PaymentHash * HTLCFailReason) list
@@ -158,13 +158,20 @@ type Channel = {
     NextRemoteHTLCId: HTLCId
     ChannelUpdateCount: uint32
     FeeRatePerKw: FeeRate
-    MaxCommitmentTxOutputLocal: (uint64 * uint64)
-    MaxCommitmentTxOutputRemote: (uint64 * uint64)
+    MaxCommitmentTxOutputLocal: (LightMoney * LightMoney)
+    MaxCommitmentTxOutputRemote: (LightMoney * LightMoney)
     LastLocalCommitmentTxn: Transaction list
     LastSentClosingFee: (uint64 * uint64) option
-    FundingTxConfirmedIn: TxId
+    FundingTxConfirmedIn: TxId option
+    ShortChannelId: ShortChannelId option
+
+    LastBlockConnected: BlockId
+    FundingTxConfirmations: uint64
+
     TheirDustLimit: LightMoney
     OurDustLimit: LightMoney
+    TheirMaxHTLCValueInFlight: LightMoney
+
     TheirChannelReserve: LightMoney
     TheirHTLCMinimum: LightMoney
     OurHTLCMinimum: LightMoney
@@ -176,35 +183,108 @@ type Channel = {
     TheirRevocationBasePoint: PubKey option
     TheirPaymentBasePoint: PubKey option
     TheirDelayedPaymentBasePoint: PubKey option
-    ThierHTLCBasePoint: PubKey option
+    TheirHTLCBasePoint: PubKey option
     TheirCurrentCommitmentPoint: PubKey option
     TheirPreviousCommitmentBasePoint: PubKey option
     TheirNodeId: PubKey
-    TheirShutdownScriptPubKey: PubKey
+    TheirShutdownScriptPubKey: PubKey option
     ChannelMonitor: ChannelMonitor
     Logger: ILogger
 }
 
+type ChannelError =
+    | Ignore of string
+    | Close of string
+
+exception ChannelException of ChannelError
+
 module Channel =
-    /// TODO:
     let getOurMaxHTLCValueInFlight (channelValue: Money) =
         channelValue * 1000L / 10L
 
-    /// TODO:
     let getOurChannelReserve (channelValue: Money) =
         let q = channelValue / 100L
         Money.Min(channelValue, Money.Max(q, Money.Satoshis(1L)))
 
     /// TODO:
-    let deriveOurDustLimitSatoshis(atOpenBackGroundFeeRate: FeeRate) =
+    let deriveOurDustLimitSatoshis(atOpenBackGroundFeeRate: FeeRate): LightMoney =
         failwith "Not implemnted"
 
     /// TODO:
-    let deriveOurHTLCMinimum(atOpenBackGroundFeeRate: FeeRate) =
-        1000UL
+    let deriveOurHTLCMinimum(atOpenBackGroundFeeRate: FeeRate): LightMoney =
+        LightMoney.Satoshis(1000UL)
 
-    let private getChannel(fee: FeeRate): RResult<Channel> =
-        failwith ""
+    let private getChannel (UserId userId)
+                           (config: UserConfig)
+                           (channKeys)
+                           (theirNodeId)
+                           (keysProvider: IKeysRepository)
+                           (logger: ILogger)
+                           (channelMonitor)
+                           (backGroundFeeRate)
+                           (channelValue: Money)
+                           (pushMSat)
+                           (fee: FeeRate): Channel =
+        {
+            UserId = userId
+            Config = config.ChannelOptions
+            ChannelId = keysProvider.GetChannelId()
+            ChannelState = ChannelState.OurInitSent
+            ChannelOutbound = true
+            ChannelValueSatoshis = channelValue
+            LocalKeys = channKeys
+            ShutdownPubKey = keysProvider.GetShutdownPubKey()
+            CurrentLocalCommitmentTxNumber = INITIAL_COMMITMENT_NUMBER
+            CurrentRemoteCommitmentTxNumber = INITIAL_COMMITMENT_NUMBER
+            ValueToSelf = LightMoney.MilliSatoshis(channelValue.Satoshi * 1000L) - pushMSat
+            PendingInboundHTLCs = List.empty
+            PendingOutboundHTLCs = List.empty
+            HoldingCellHTLCUpdates = List.empty
+            PendingUpdateFee = None
+            HoldingCellUpdateFee = None
+            NextLocalHTLCId = HTLCId.Zero
+            NextRemoteHTLCId = HTLCId.Zero
+            ChannelUpdateCount = 1u
+            ResendOrder = RAACommitmentOrder.CommitmentFirst
+
+            MonitorPendingRevokeAndAck = false
+            MonitorPendingCommitmentSigned = false
+            MonitorPendingForwards = List.empty
+            MonitorPendingFailures = List.empty
+
+            MaxCommitmentTxOutputLocal = (LightMoney.MilliSatoshis(channelValue.Satoshi * (1000L)) - pushMSat, pushMSat)
+            MaxCommitmentTxOutputRemote = (LightMoney.MilliSatoshis(channelValue.Satoshi * (1000L)) - pushMSat, pushMSat)
+
+            LastLocalCommitmentTxn = List.empty
+
+            LastSentClosingFee = None
+            FundingTxConfirmedIn = None
+            ShortChannelId = None
+            LastBlockConnected = BlockId(uint256.Zero)
+            FundingTxConfirmations = 0UL
+
+            FeeRatePerKw = fee
+            TheirDustLimit = LightMoney.Zero
+            OurDustLimit = deriveOurDustLimitSatoshis(backGroundFeeRate)
+            TheirMaxHTLCValueInFlight = LightMoney.Zero
+            TheirChannelReserve = LightMoney.Zero
+            TheirHTLCMinimum = LightMoney.Zero
+            OurHTLCMinimum = deriveOurHTLCMinimum(fee)
+            TheirToSelfDelay = 0us
+            TheirMaxAcceptedHTLCs = 0us
+            MinimumDepth = 0us
+            TheirFundingPubKey = None
+            TheirRevocationBasePoint = None
+            TheirPaymentBasePoint = None
+            TheirDelayedPaymentBasePoint = None
+            TheirHTLCBasePoint = None
+            TheirCurrentCommitmentPoint = None
+            TheirPreviousCommitmentBasePoint = None
+            TheirNodeId = theirNodeId
+            TheirShutdownScriptPubKey = None
+            ChannelMonitor = channelMonitor
+            Logger = logger
+        }
 
     // ----- constructors -------
     let public newOutBound(feeEstimator: IFeeEstimator,
@@ -215,38 +295,120 @@ module Channel =
                            userId: UserId,
                            logger: ILogger,
                            config: UserConfig): RResult<Channel>  =
+
+        /// ------ Validators -----
         let checkSmallerThenMaxPossible(channelValue) =
             if (channelValue >= MAX_FUNDING_SATOSHIS) then
                 RResult.Bad(RBadTree.Leaf(RBad.Message("Funding value. 2^24")))
             else
-                Good()
+                Good(channelValue)
 
-        let checkPushValueLessThanChannelValue (pushMSat: LightMoney) (channelValue: Money) () =
+        let checkPushValueLessThanChannelValue (pushMSat: LightMoney) (channelValue: Money) =
             if pushMSat.ToUnit(LightMoneyUnit.Satoshi) >= (channelValue.ToDecimal(MoneyUnit.Satoshi)) then
                 RResult.Bad(RBadTree.Leaf(RBad.Message("push value > channel value")))
             else
-                Good()
+                Good(pushMSat)
 
-        let checkFeeRate (estimator: IFeeEstimator) (channelValue) () =
+        let checkBackgroundFeeRate (estimator: IFeeEstimator) (channelValue) =
             let backgroundFeeRate = estimator.GetEstSatPer1000Weight(ConfirmationTarget.Background)
-            if (getOurChannelReserve(channelValue) < deriveOurDustLimitSatoshis(backgroundFeeRate)) then
+            if (getOurChannelReserve(channelValue).Satoshi < deriveOurDustLimitSatoshis(backgroundFeeRate).MilliSatoshi * 1000L) then
                 RResult.Bad(RBadTree.Leaf(RBad.Message(sprintf "Not eonugh reserve above dust limit can be found at current fee rate(%O)" backgroundFeeRate)))
+            else
+                Good(backgroundFeeRate)
+
+        let feeRate =
+            feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Normal)
+
+        let channelKeys = keyProvider.GetChannelKeys()
+        let channelMonitor = ChannelMonitor.create(channelKeys.RevocationBaseKey,
+                                                   channelKeys.DelayedPaymentBaseKey,
+                                                   channelKeys.HTLCBaseKey,
+                                                   channelKeys.PaymentBaseKey,
+                                                   keyProvider.GetShutdownPubKey(),
+                                                   BREAKDOWN_TIMEOUT,
+                                                   keyProvider.GetDestinationScript(),
+                                                   logger)
+
+        let getChannelCurried = getChannel (userId)
+                                           (config)
+                                           (channelKeys)
+                                           (theirNodeId)
+                                           (keyProvider)
+                                           (logger)
+                                           (channelMonitor)
+                                           (feeRate)
+                                           // (channelValue)
+                                           // (pushMSat)
+                                           // (backGroundFeeRate)
+
+        RResult.Good(getChannelCurried)
+            <*> checkSmallerThenMaxPossible(channelValue)
+            <*> checkPushValueLessThanChannelValue pushMSat channelValue
+            <*> checkBackgroundFeeRate feeEstimator channelValue
+
+    let public checkRemoteFee(feeEstimator: IFeeEstimator, feeRatePerKw: FeeRate) =
+        if (feeRatePerKw < feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background) ) then
+            RResult.Bad(!> ChannelException(Close("Peer's Feerate much to low")))
+        else if (feeRatePerKw.FeePerK > feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority).FeePerK * 2) then
+            RResult.Bad(!> ChannelException(Close("Peer's feerate much too high")))
+        else
+            Good()
+
+    /// Creates a new channel from a remote sides' request for one.
+    /// Assumes chain_hash has already been checked and corresponds with what we expect!
+    let public newFromReq(feeEstimator: IFeeEstimator,
+                          keysProvider: IKeysRepository,
+                          theirNodeId: NodeId,
+                          msg: OpenChannel,
+                          userId: UserId,
+                          logger: ILogger,
+                          config: UserConfig) =
+        let chanKeys = keysProvider.GetChannelKeys()
+        let localConfig = config.ChannelOptions
+
+        let checkMsg1 msg =
+            if (msg.FundingSatoshis >= MAX_FUNDING_SATOSHIS) then
+                Bad(!> ChannelException(Close("Funding value > 2^24")))
+            else if (msg.ChannelReserveSatoshis > msg.FundingSatoshis) then
+                Bad(!> ChannelException(Close("Bogus ChannelReserveSatoshis")))
+            else if (msg.PushMSat.MilliSatoshi > (msg.FundingSatoshis - msg.ChannelReserveSatoshis).Satoshi * 1000L) then
+                Bad(!> ChannelException(Close("PushMsat larger than funding value")))
+            else if (msg.DustLimitSatoshis > msg.FundingSatoshis) then
+                Bad(!> ChannelException(Close("Peer neve rwants payout outputs?")))
+            else if (msg.DustLimitSatoshis > msg.ChannelReserveSatoshis) then
+                Bad(!> ChannelException(Close("Bogus; Channel reserve is less than dust limit")))
+            else if (msg.HTLCMinimumMsat.MilliSatoshi >= (msg.FundingSatoshis - msg.ChannelReserveSatoshis).Satoshi * 1000L) then
+                Bad(!> ChannelException(Close("Minimum HTLC value is full channel value")))
             else
                 Good()
 
-        let getFeeRate (feeEstimator: IFeeEstimator) () =
-            Good(feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Normal))
+        let checkMsg2 msg =
+            if (msg.ToSelfDelay > MAX_LOCAL_BREAKDOWN_TIMEOUT) then
+                Bad(!> ChannelException(Close("They wanted our payments to be delayed by a needlessly long period")))
+            else if (msg.MaxAcceptedHTLCs < 1us) then
+                Bad(!> ChannelException(Close("0 max_accepted_htlcs makes for a useless channel")))
+            else if (msg.MaxAcceptedHTLCs > 483us) then
+                Bad(!> ChannelException(Close("max_accepted_htlcs > 483")))
+            else
+                Good()
 
-        // let channelMonitor = {CommitmentTxNumberObscureFactor}
+        let checkMsgAgainstConfig config msg =
+            if (msg.FundingSatoshis < config.PeerChannelConfigLimits.MinFundingSatoshis) then
+                Bad(!> ChannelException(Close("dust limit satoshis is less than the user specified limit")))
+            else if (msg.HTLCMinimumMsat > config.PeerChannelConfigLimits.MaxHTLCMinimumMSat) then
+                Bad(!> ChannelException(Close("HTLC minimum msat is higher than the user specified limit")))
+            else if (msg.MaxHTLCValueInFlightMsat < config.PeerChannelConfigLimits.MinMaxHTLCValueInFlightMSat) then
+                Bad(!> ChannelException(Close("Max htlc value in flight msat is less than the user specified limit")))
+            else if (msg.ChannelReserveSatoshis > config.PeerChannelConfigLimits.MaxChannelReserveSatoshis) then
+                Bad(!> ChannelException(Close("Channel resere satoshis is higher than the user specified limit")))
+            else if (msg.MaxAcceptedHTLCs < config.PeerChannelConfigLimits.MinMaxAcceptedHTLCs) then
+                Bad(!> ChannelException(Close("dust limit satoshis is less than the user specified limit")))
+            else if (msg.DustLimitSatoshis < config.PeerChannelConfigLimits.MinDustLimitSatoshis ) then
+                Bad(!> ChannelException(Close("dust limit satoshis is less than the user specified limit")))
+            else if (msg.DustLimitSatoshis > config.PeerChannelConfigLimits.MaxDustLimitSatoshis) then
+                Bad(!> ChannelException(Close("dust limit satoshis is greater than the user specified limit")))
+            else
+                Good()
 
-        checkSmallerThenMaxPossible(channelValue) >>=
-            checkPushValueLessThanChannelValue pushMSat channelValue >>=
-            checkFeeRate feeEstimator channelValue >>=
-            getFeeRate feeEstimator >>=
-            getChannel
-
-
-type ChannelError =
-    | Ignore of string
-    | Close of string
-
+        checkMsg1 msg
+            >>= fun _ -> checkRemoteFee(feeEstimator, FeeRate(msg.FeeRatePerKw))

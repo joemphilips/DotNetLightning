@@ -42,6 +42,8 @@ type BinaryWriter with
         this.Write(data.Red)
         this.Write(data.Green)
         this.Write(data.Blue)
+    member this.Write(data: DateTime) =
+        failwith "not impl"
 
 let private serializeOnionPacket (w: BinaryWriter) (data: OnionPacket) =
     w.Write(data.Version)

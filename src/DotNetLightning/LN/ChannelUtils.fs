@@ -1,6 +1,7 @@
 namespace DotNetLightning.LN
 open BTCPayServer.Lightning
 open DotNetLightning.Utils.Primitives
+open NBitcoin
 
 
 type HTLCOutputInCommitment = {
