@@ -1,6 +1,8 @@
 module Serialization
-open DotNetLightning.Utils.Msgs
+open DotNetLightning.Utils
 open DotNetLightning.Utils.Primitives
+open DotNetLightning.Serialize
+open DotNetLightning.Serialize.Msgs
 
 open Expecto
 open NBitcoin
@@ -16,15 +18,14 @@ let tests =
       let cr = {
           ChannelId = cid
           NextLocalCommitmentNumber = 3UL
-          NextRemoteCommitmentNumber = 3UL
+          NextRemoteRevocationNumber = 3UL
           DataLossProtect = None
           }
       let p = Pipe()
       use outputStream = new MemoryStream(p.Writer.GetMemory().ToArray())
-      let actual = NetworkSerializer.Serialze outputStream cr
+      let actual = NetworkSerializer.toBytes outputStream (LightningMsg.ChannelReestablish cr)
       let expected =
           [|4; 0; 0; 0; 0; 0; 0; 0; 5; 0; 0; 0; 0; 0; 0; 0; 6; 0; 0; 0; 0; 0; 0; 0; 7; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 3; 0; 0; 0; 0; 0; 0; 0; 4|] 
           |> Array.map(uint8)
-      Expect.equal expected cr
-      ()
+      Expect.equal expected actual ""
   ]

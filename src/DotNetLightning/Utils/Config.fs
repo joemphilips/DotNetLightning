@@ -63,9 +63,10 @@ module ChannelHandshakeLimits =
 type UserConfig = {
     OwnChannelConfig: ChannelHandshakeConfig
     PeerChannelConfigLimits: ChannelHandshakeLimits
+    ChannelOptions: ChannelConfig
 }
 
-type ChannelConfig = {
+and ChannelConfig = {
     // Amount (in millionth of a satoshi) the channel will change per transfered satoshi.
     // This may be allowed to change at runtime in a later update, however doing so must result in
     // update mesages sent to notify all nodes of our updated relay fee.

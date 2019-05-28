@@ -1,6 +1,5 @@
 namespace DotNetLightning.Utils
 open NBitcoin
-open System
 
 [<AutoOpen>]
 module Primitives =
@@ -19,11 +18,15 @@ module Primitives =
     type NodeId = NodeId of PubKey with
         member x.Value = let (NodeId v) = x in v
 
-    [<StructuralComparison>]
+    [<StructuralComparison;StructuralEquality>]
     type TxId = TxId of uint256 with
         member x.Value = let (TxId v) = x in v
 
+    /// Block Hash
+    type BlockId = BlockId of uint256 with
+        member x.Value = let (BlockId v) = x in v
     type HTLCId = HTLCId of uint64 with
+        static member Zero = HTLCId(0UL)
         member x.Value = let (HTLCId v) = x in v
 
     [<Struct>]

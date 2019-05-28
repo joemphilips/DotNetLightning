@@ -3,6 +3,7 @@ open NBitcoin
 open DotNetLightning.Utils.Primitives
 open Microsoft.Extensions.Logging
 open NBitcoin
+open System
 
 /// An error enum representing a failure to persist a channel monitor update.
 type ChannelMonitorUpdateErr =
@@ -92,7 +93,7 @@ type ChannelMonitor = {
     /// First is the index of the first of the two reocation points.
     TheirCurrentRevocationPoints: (uint64 * PubKey * PubKey option) option
 
-    OurToSelfDelay: uint16
+    OurToSelfDelay: DateTime
     TheirToSelfDelay: uint16 option
     RemoteClaimableOutpoints: Map<TxId, (HTLCOutputInCommitment * HTLCSource option) list>
     /// We cannot identify HTLC-Sucess or HTLC-Timeout Transactoins by themselves on the chain.
@@ -127,16 +128,14 @@ type ChannelMonitor = {
 }
 
 module ChannelMonitor =
-    let create (
-        revocationBaseKey: Key,
-        htlcBaseKey: Key,
-        delayedPaymentBaseKey: Key,
-        paymentBaseKey: Key,
-        shutDownPubKey: PubKey,
-        ourToSelfDelay: uint16,
-        destinationScript: Script,
-        logger: ILogger
-        ) =
+    let create (revocationBaseKey: Key,
+                htlcBaseKey: Key,
+                delayedPaymentBaseKey: Key,
+                paymentBaseKey: Key,
+                shutDownPubKey: PubKey,
+                ourToSelfDelay: DateTime,
+                destinationScript: Script,
+                logger: ILogger) =
         {
             CommitmentTxNumberObscureFactor = 0UL
             KeyStorage = Local {
