@@ -150,8 +150,8 @@ type OpenChannel = {
     MaxHTLCValueInFlightMsat: LightMoney
     ChannelReserveSatoshis: Money
     HTLCMinimumMsat: LightMoney
-    FeeRatePerKw: Money
-    ToSelfDelay: uint16
+    FeeRatePerKw: FeeRatePerKw
+    ToSelfDelay: BlockHeightOffset
     MaxAcceptedHTLCs: uint16
     FundingPubKey: PubKey
     RevocationBasepoint: PubKey
@@ -165,11 +165,11 @@ type OpenChannel = {
 type AcceptChannel = {
     TemporaryChannelId: ChannelId
     DustLimitSatoshis: Money
-    MaxHTLCValueInFlightMsat: uint64
-    ChannelReserveSatoshis: uint64
-    HTLCMinimumMSat: uint64
+    MaxHTLCValueInFlightMsat: LightMoney
+    ChannelReserveSatoshis: Money
+    HTLCMinimumMSat: LightMoney
     MinimumDepth: uint32
-    ToSelfDelay: DateTime
+    ToSelfDelay: BlockHeightOffset
     MaxAcceptedHTLCs: uint16
     FundingPubKey: PubKey
     RevocationBasepoint: PubKey
@@ -235,7 +235,7 @@ type UpdateFailMalformedHTLC = {
     ChannelId: ChannelId
     HTLCId: HTLCId
     Sha256OfOnion: uint256
-    FailureCode: uint16
+    FailureCode: ErrorCode
 }
 
 type CommitmentSigned = {

@@ -4,13 +4,21 @@ open NBitcoin
 [<AutoOpen>]
 module Primitives =
 
+    /// Absolute block height
     type Blockheight = BlockHeight of uint32
+
+    /// Relative block height used for `OP_CSV` locks,
+    /// Since OP_CSV allow only blocknumber of 0 ~ 65535, it is safe
+    /// to restrict into the range smaller than BlockHeight
+    type BlockHeightOffset = BlockHeightOffset of uint16 with
+        member x.Value = let (BlockHeightOffset v) = x in v
 
     type PaymentPreimage = PaymentPreimage of uint256 with
         member x.Value = let (PaymentPreimage v) = x in v
 
     type PaymentHash = PaymentHash of uint256 with
         member x.Value = let (PaymentHash v) = x in v
+        member x.ToBytes() = x.Value.ToBytes()
 
     type ChannelId = ChannelId of uint256 with
         member x.Value = let (ChannelId v) = x in v
@@ -22,6 +30,8 @@ module Primitives =
     type TxId = TxId of uint256 with
         member x.Value = let (TxId v) = x in v
 
+    type FeeRatePerKw = FeeRatePerKw of Money with
+        member x.Value = let (FeeRatePerKw v) = x in v
     /// Block Hash
     type BlockId = BlockId of uint256 with
         member x.Value = let (BlockId v) = x in v

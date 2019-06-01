@@ -32,7 +32,7 @@ type ConfirmationTarget =
     | HighPriority
 
 type IFeeEstimator =
-    abstract member GetEstSatPer1000Weight: (ConfirmationTarget) -> FeeRate
+    abstract member GetEstSatPer1000Weight: (ConfirmationTarget) -> FeeRatePerKw
 
 /// Utility for tracking registered txn/outpoints and checking for matches
 type ChainWatchedUtil = {

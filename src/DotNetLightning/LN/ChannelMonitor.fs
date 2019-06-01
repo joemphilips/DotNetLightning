@@ -93,8 +93,8 @@ type ChannelMonitor = {
     /// First is the index of the first of the two reocation points.
     TheirCurrentRevocationPoints: (uint64 * PubKey * PubKey option) option
 
-    OurToSelfDelay: DateTime
-    TheirToSelfDelay: uint16 option
+    OurToSelfDelay: BlockHeightOffset
+    TheirToSelfDelay: BlockHeightOffset option
     RemoteClaimableOutpoints: Map<TxId, (HTLCOutputInCommitment * HTLCSource option) list>
     /// We cannot identify HTLC-Sucess or HTLC-Timeout Transactoins by themselves on the chain.
     /// Nor can we figure out their commitment numbers without the commitment tx they are spending.
@@ -126,6 +126,14 @@ type ChannelMonitor = {
     LastBlockHash: uint256
     Logger: ILogger
 }
+    with
+        member this.GetFundingTxo(): OutPoint option =
+            match this.KeyStorage with
+            | Local { FundingInfo = fi } ->
+                match fi with
+                | Some (outpoint, _) -> Some outpoint
+                | None -> None
+            | WatchTower _ -> None
 
 module ChannelMonitor =
     let create (revocationBaseKey: Key,
@@ -133,7 +141,7 @@ module ChannelMonitor =
                 delayedPaymentBaseKey: Key,
                 paymentBaseKey: Key,
                 shutDownPubKey: PubKey,
-                ourToSelfDelay: DateTime,
+                ourToSelfDelay: BlockHeightOffset,
                 destinationScript: Script,
                 logger: ILogger) =
         {
