@@ -54,13 +54,11 @@ module RResult =
 
         member x.Join o = Fork (x, o)
 
-        (*
         static member op_Implicit(e: exn) =
             RBadTree.Leaf(RBad.Exception(e))
 
         static member op_Implicit(s: string) =
             RBadTree.Leaf(RBad.Message(s))
-        *)
 
     [<Struct>]
     [<StructuredFormatDisplay("StructuredDisplayString")>]

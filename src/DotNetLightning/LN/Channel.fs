@@ -328,7 +328,7 @@ module Channel =
         let checkBackgroundFeeRate (estimator: IFeeEstimator) (channelValue) =
             let backgroundFeeRate = estimator.GetEstSatPer1000Weight(ConfirmationTarget.Background)
             if (getOurChannelReserve(channelValue).Satoshi < deriveOurDustLimitSatoshis(backgroundFeeRate).Satoshi * 1000L) then
-                RResult.Bad(RBadTree.Leaf(RBad.Message(sprintf "Not eonugh reserve above dust limit can be found at current fee rate(%O)" backgroundFeeRate)))
+                RResult.Bad(!> (sprintf "Not eonugh reserve above dust limit can be found at current fee rate(%O)" backgroundFeeRate))
             else
                 Good(backgroundFeeRate)
 
@@ -357,13 +357,11 @@ module Channel =
                                            // (pushMSat)
                                            // (backGroundFeeRate)
 
-        (**
         RResult.Good(getChannelCurried)
             <*> checkSmallerThenMaxPossible(channelValue)
             <*> checkPushValueLessThanChannelValue pushMSat channelValue
             <*> checkBackgroundFeeRate feeEstimator channelValue
-        *)
-        failwith ""
+
     let public checkRemoteFee(feeEstimator: IFeeEstimator, feeRatePerKw: FeeRatePerKw) =
         if (feeRatePerKw < feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background) ) then
             RResult.Bad(RREx(Close("Peer's Feerate much to low")))
@@ -539,7 +537,6 @@ module Channel =
 
         checkMsg1 msg
             >>= fun _ -> checkRemoteFee(feeEstimator, msg.FeeRatePerKw)
-        failwith ""
 
     let buildLocalCommitmentSecret index c : Key =
         let res = ChannelUtils.buildCommitmentSecret(c.LocalKeys.CommitmentSeed, index)
@@ -576,7 +573,6 @@ module Channel =
         | Inbound h ->
             failwith "not impl"
 
-    (*
     /// Transaction nomencclature is somewhat confusing here as there are many different cases - a
     /// transaction is referred to as "a's transaction" implying that a will be able to broadcast the
     /// transaction. Thus, b will generally be spending a signature over such a trasnaction to a,
@@ -609,7 +605,7 @@ module Channel =
         let obscuredCommitmentTxN = getCommitmentTxNumberObscureFactor(c) ^^^ (INITIAL_COMMITMENT_NUMBER - commitmentN)
         let txin = TxIn()
         txin.PrevOut <- c.ChannelMonitor.GetFundingTxo().Value
-        txin.Sequence <- !> ((0x80u <<< 8 * 3) ||| ((uint32 obscuredCommitmentTxN) >>> 3 * 8))
+        txin.Sequence <- Sequence(((0x80u <<< 8 * 3) ||| ((uint32 obscuredCommitmentTxN) >>> 3 * 8)))
         let mutable txOuts: (TxOut * (HTLCOutputInCommitment * HTLCSource option) option) list = List.empty
         let mutable includedDustHTLCs: (HTLCOutputInCommitment * HTLCSource option) list = List.empty
         let dustLimitSatoshis = if local then c.OurDustLimit else c.TheirDustLimit
@@ -666,20 +662,17 @@ module Channel =
         let valueToSelfMSat = c.ValueToSelf - localHTLCTotalMSat + valueToSelfMSatOffset
         assert (valueToSelfMSat >= LightMoney.Zero)
 
-        let valueToRemoteMSat = LightMoney(!> c.ChannelValueSatoshis * 1000L - !> c.ValueToSelf -
-                                           !> remoteHTLCTotalMSat - !> valueToSelfMSatOffset)
+        let valueToRemoteMSat = LightMoney(c.ChannelValueSatoshis.Satoshi * 1000L - c.ValueToSelf.MilliSatoshi -
+                                           remoteHTLCTotalMSat.MilliSatoshi - valueToSelfMSatOffset.MilliSatoshi)
         
-        let totalFee = feeRatePerKW.Value * ((COMMITMENT_TX_BASE_WEIGHT + (!> txOuts.Length) * COMMITMENT_TX_WEIGHT_PER_HTLC) / 1000UL)
+        let totalFee = int64((uint64 feeRatePerKW.Value.Satoshi) * ((COMMITMENT_TX_BASE_WEIGHT + (uint64 txOuts.Length) * COMMITMENT_TX_WEIGHT_PER_HTLC) / 1000UL))
         let (valueToSelfSat, valueToRemoteSat) =
-            if c.ChannelOutBound then
-                (valueToSelfMSat / 1000L - totalFee), (valueToRemote / 1000)
+            if c.ChannelOutbound then
+                (valueToSelfMSat.MilliSatoshi / 1000L - totalFee), (valueToRemoteMSat.MilliSatoshi / 1000L)
             else
-                (valueToSelfMSat / 1000L), (valueToRemoteMSat / 1000 - totalFee)
-        let valutToASat = if local then valueToSelfSat else valueToRemoteSat
-        let valutToBSat = if local then valueToRemoteSat else valueToSelfSat
-        if valueToA >= dustLimitSatoshis.Satoshis then
-            let txOut = TxOut(Money.Satoshi(valueToBSat), keys.BPaymentKey.Hash.ScriptPubKey)
-            txOuts.Add(txOut, None)
+                (valueToSelfMSat.MilliSatoshi / 1000L), (valueToRemoteMSat.MilliSatoshi / 1000L - totalFee)
+        let valueToASat = if local then valueToSelfSat else valueToRemoteSat
+        let valueToBSat = if local then valueToRemoteSat else valueToSelfSat
         failwith "Not implemented"
 
     let getClosingScriptPubKey (c: Channel): Script =
@@ -724,8 +717,6 @@ module Channel =
         tx.Version <- 2u
         (tx, totalFeeSatoshis.Satoshi)
 
-    /// Creates a set of keys for buildCommitmentTx to generate a transaction which our counterparty
-    /// will sign (ie DO NOT send signatures over a transaction created by this to our counterparty!)
     /// The result is a transaction which we can revoke ownership of (ie a "local" transaction)
     let buildLocalTransactionKeys (commitmentN: uint64) (c: Channel): TxCreationKeys =
         let perCommitmentPoint = (buildLocalCommitmentSecret commitmentN c).PubKey
@@ -899,4 +890,3 @@ module Channel =
             else
                 failwith ""
             failwith ""
-    *)
