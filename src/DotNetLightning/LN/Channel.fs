@@ -210,7 +210,11 @@ type ChannelError =
 
 exception ChannelException of ChannelError
 
+
 module Channel =
+    let private RREx(ex: ChannelError) =
+        RBadTree.Leaf(RBad.Exception(ChannelException(ex)))
+
     let getOurMaxHTLCValueInFlight (channelValue: Money) =
         channelValue * 1000L / 10L
 
@@ -353,16 +357,18 @@ module Channel =
                                            // (pushMSat)
                                            // (backGroundFeeRate)
 
+        (**
         RResult.Good(getChannelCurried)
             <*> checkSmallerThenMaxPossible(channelValue)
             <*> checkPushValueLessThanChannelValue pushMSat channelValue
             <*> checkBackgroundFeeRate feeEstimator channelValue
-
+        *)
+        failwith ""
     let public checkRemoteFee(feeEstimator: IFeeEstimator, feeRatePerKw: FeeRatePerKw) =
         if (feeRatePerKw < feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background) ) then
-            RResult.Bad(!> ChannelException(Close("Peer's Feerate much to low")))
+            RResult.Bad(RREx(Close("Peer's Feerate much to low")))
         else if (feeRatePerKw.Value > feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority).Value * 2) then
-            RResult.Bad(!> ChannelException(Close("Peer's feerate much too high")))
+            RResult.Bad(RREx(Close("Peer's feerate much too high")))
         else
             Good()
 
@@ -380,48 +386,48 @@ module Channel =
 
         let checkMsg1 msg =
             if (msg.FundingSatoshis >= MAX_FUNDING_SATOSHIS) then
-                Bad(!> ChannelException(Close("Funding value > 2^24")))
+                Bad(RREx(Close("Funding value > 2^24")))
             else if (msg.ChannelReserveSatoshis > msg.FundingSatoshis) then
-                Bad(!> ChannelException(Close("Bogus ChannelReserveSatoshis")))
+                Bad(RREx(Close("Bogus ChannelReserveSatoshis")))
             else if (msg.PushMSat.MilliSatoshi > (msg.FundingSatoshis - msg.ChannelReserveSatoshis).Satoshi * 1000L) then
-                Bad(!> ChannelException(Close("PushMsat larger than funding value")))
+                Bad(RREx(Close("PushMsat larger than funding value")))
             else if (msg.DustLimitSatoshis > msg.FundingSatoshis) then
-                Bad(!> ChannelException(Close("Peer neve rwants payout outputs?")))
+                Bad(RREx(Close("Peer neve rwants payout outputs?")))
             else if (msg.DustLimitSatoshis > msg.ChannelReserveSatoshis) then
-                Bad(!> ChannelException(Close("Bogus; Channel reserve is less than dust limit")))
+                Bad(RREx(Close("Bogus; Channel reserve is less than dust limit")))
             else if (msg.HTLCMinimumMsat.MilliSatoshi >= (msg.FundingSatoshis - msg.ChannelReserveSatoshis).Satoshi * 1000L) then
-                Bad(!> ChannelException(Close("Minimum HTLC value is full channel value")))
+                Bad(RREx(Close("Minimum HTLC value is full channel value")))
             else
                 Good()
 
         let checkMsg2 msg =
             if (msg.ToSelfDelay > MAX_LOCAL_BREAKDOWN_TIMEOUT) then
-                Bad(!> ChannelException(Close("They wanted our payments to be delayed by a needlessly long period")))
+                Bad(RREx(Close("They wanted our payments to be delayed by a needlessly long period")))
             else if (msg.MaxAcceptedHTLCs < 1us) then
-                Bad(!> ChannelException(Close("0 max_accepted_htlcs makes for a useless channel")))
+                Bad(RREx(Close("0 max_accepted_htlcs makes for a useless channel")))
             else if (msg.MaxAcceptedHTLCs > 483us) then
-                Bad(!> ChannelException(Close("max_accepted_htlcs > 483")))
+                Bad(RREx(Close("max_accepted_htlcs > 483")))
             else
                 Good()
 
         let checkMsgAgainstConfig config msg =
             let theirAnnounce = (msg.ChannelFlags &&& 1uy) = 1uy
             if (msg.FundingSatoshis < config.PeerChannelConfigLimits.MinFundingSatoshis) then
-                Bad(!> ChannelException(Close("dust limit satoshis is less than the user specified limit")))
+                Bad(RREx(Close("dust limit satoshis is less than the user specified limit")))
             else if (msg.HTLCMinimumMsat > config.PeerChannelConfigLimits.MaxHTLCMinimumMSat) then
-                Bad(!> ChannelException(Close("HTLC minimum msat is higher than the user specified limit")))
+                Bad(RREx(Close("HTLC minimum msat is higher than the user specified limit")))
             else if (msg.MaxHTLCValueInFlightMsat < config.PeerChannelConfigLimits.MinMaxHTLCValueInFlightMSat) then
-                Bad(!> ChannelException(Close("Max htlc value in flight msat is less than the user specified limit")))
+                Bad(RREx(Close("Max htlc value in flight msat is less than the user specified limit")))
             else if (msg.ChannelReserveSatoshis > config.PeerChannelConfigLimits.MaxChannelReserveSatoshis) then
-                Bad(!> ChannelException(Close("Channel resere satoshis is higher than the user specified limit")))
+                Bad(RREx(Close("Channel resere satoshis is higher than the user specified limit")))
             else if (msg.MaxAcceptedHTLCs < config.PeerChannelConfigLimits.MinMaxAcceptedHTLCs) then
-                Bad(!> ChannelException(Close("dust limit satoshis is less than the user specified limit")))
+                Bad(RREx(Close("dust limit satoshis is less than the user specified limit")))
             else if (msg.DustLimitSatoshis < config.PeerChannelConfigLimits.MinDustLimitSatoshis ) then
-                Bad(!> ChannelException(Close("dust limit satoshis is less than the user specified limit")))
+                Bad(RREx(Close("dust limit satoshis is less than the user specified limit")))
             else if (msg.DustLimitSatoshis > config.PeerChannelConfigLimits.MaxDustLimitSatoshis) then
-                Bad(!> ChannelException(Close("dust limit satoshis is greater than the user specified limit")))
+                Bad(RREx(Close("dust limit satoshis is greater than the user specified limit")))
             else if (config.PeerChannelConfigLimits.ForceAnnouncedChannelPreference && localConfig.AnnouncedChannel <> theirAnnounce) then
-                Bad(!> ChannelException(Close("Peer tried to open channel but their announcement is different from ours")))
+                Bad(RREx(Close("Peer tried to open channel but their announcement is different from ours")))
             else
                 Good()
 
@@ -433,17 +439,17 @@ module Channel =
             let fundersAmountMSat = LightMoney.MilliSatoshis(msg.FundingSatoshis.Satoshi * 1000L - msg.PushMSat.MilliSatoshi)
 
             let toLocal = msg.PushMSat
-            let toRemote = fundersAmountMSat - backgroundFeeRate.Value * !> COMMITMENT_TX_BASE_WEIGHT
+            let toRemote = fundersAmountMSat.MilliSatoshi - backgroundFeeRate.Value.Satoshi * (int64 COMMITMENT_TX_BASE_WEIGHT)
             if (ourChannelReserveSatoshis < ourDustLimitSatoshis) then
-                Bad(!> ChannelException(Close("Suitable channel reserve not found. aborting")))
+                Bad(RREx(Close("Suitable channel reserve not found. aborting")))
             else if (msg.ChannelReserveSatoshis < ourDustLimitSatoshis) then
-                Bad(!> ChannelException(Close("channel_reserve_satoshis too small")))
+                Bad(RREx(Close("channel_reserve_satoshis too small")))
             else if (ourChannelReserveSatoshis < msg.DustLimitSatoshis) then
-                Bad(!> ChannelException(Close("Dust limit too high for our channel reserve")))
-            else if fundersAmountMSat < backgroundFeeRate.Value * !> COMMITMENT_TX_BASE_WEIGHT then
-                Bad(!> ChannelException(Close("Insufficient funding amount for initial commitment")))
-            else if toLocal.MilliSatoshi <= msg.ChannelReserveSatoshis.Satoshi * 1000L && toRemote.MilliSatoshi <= ourChannelReserveSatoshis.Satoshi * 1000L then
-                Bad(!> ChannelException(Close("Insufficient funding amount for initial commitment")))
+                Bad(RREx(Close("Dust limit too high for our channel reserve")))
+            else if fundersAmountMSat.MilliSatoshi < backgroundFeeRate.Value.Satoshi * (int64 COMMITMENT_TX_BASE_WEIGHT) then
+                Bad(RREx(Close("Insufficient funding amount for initial commitment")))
+            else if toLocal.MilliSatoshi <= msg.ChannelReserveSatoshis.Satoshi * 1000L && toRemote <= ourChannelReserveSatoshis.Satoshi * 1000L then
+                Bad(RREx(Close("Insufficient funding amount for initial commitment")))
             else
                 Good()
 
@@ -510,7 +516,7 @@ module Channel =
                 ChannelValueSatoshis = msg.FundingSatoshis
                 TheirDustLimit = msg.DustLimitSatoshis
                 OurDustLimit = ourDustLimitSatoshis
-                TheirMaxHTLCValueInFlight = LightMoney.Min(msg.MaxHTLCValueInFlightMsat, !> msg.FundingSatoshis)
+                TheirMaxHTLCValueInFlight = LightMoney(Math.Min(msg.MaxHTLCValueInFlightMsat.MilliSatoshi, msg.FundingSatoshis.Satoshi))
                 TheirChannelReserve = msg.ChannelReserveSatoshis
                 TheirHTLCMinimum = msg.HTLCMinimumMsat
                 OurHTLCMinimum = deriveOurHTLCMinimum(msg.FeeRatePerKw)
@@ -533,6 +539,7 @@ module Channel =
 
         checkMsg1 msg
             >>= fun _ -> checkRemoteFee(feeEstimator, msg.FeeRatePerKw)
+        failwith ""
 
     let buildLocalCommitmentSecret index c : Key =
         let res = ChannelUtils.buildCommitmentSecret(c.LocalKeys.CommitmentSeed, index)
@@ -569,6 +576,7 @@ module Channel =
         | Inbound h ->
             failwith "not impl"
 
+    (*
     /// Transaction nomencclature is somewhat confusing here as there are many different cases - a
     /// transaction is referred to as "a's transaction" implying that a will be able to broadcast the
     /// transaction. Thus, b will generally be spending a signature over such a trasnaction to a,
@@ -624,7 +632,7 @@ module Channel =
                 | LocalRemoved _ -> (not generatedByLocal, "LocalRemoved")
                 | _ -> (true, "Commited")
             if includeThis then
-                addHTLCOutput(htlc, false, None, stateName)
+                addHTLCOutput(HTLCOutPut.Inbound(htlc), false, None, stateName)
                 remoteHTLCTotalMSat <- htlc.Amount + remoteHTLCTotalMSat
             else
                 c.Logger.LogDebug(sprintf "  ...not including inbound HTLC %A (Hash: %A) with value %O due to state (%s)"
@@ -645,7 +653,7 @@ module Channel =
                 | AwaitingRemoteRevokeToRemove _ -> (generatedByLocal, "AwaitingRemoteRevokeToRemove")
                 | AwaitingRemovedRemoteRevoke _ -> (false, "AwaitingRemovedRemoteRevoke")
             if includeThis then
-                addHTLCOutput(htlc, true, Some(htlc.Source), stateName)
+                addHTLCOutput(HTLCOutPut.OutBound(htlc), true, Some(htlc.Source), stateName)
                 localHTLCTotalMSat <- htlc.Amount + localHTLCTotalMSat
             else
                 match htlc.State with
@@ -762,9 +770,9 @@ module Channel =
 
     let signCommitmentTransaction (tx: Transaction, theirSig: TransactionSignature, n: Network) (c: Channel) =
         if tx.Inputs.Count <> 1 then
-            Bad(!> "Tried to sign commitment transaction that had input count != 1")
+            Bad(RBadTree.Leaf(RBad.Message("Tried to sign commitment transaction that had input count != 1")))
         else if not (isNull tx.Inputs.[0].WitScript) || tx.Inputs.[0].WitScript <> WitScript.Empty then
-            Bad(!> "Tried to re-sign commitment tx")
+            Bad(RBadTree.Leaf(RBad.Message("Tried to re-sign commitment tx")))
         else
             let fundingRedeemScript = getFundingRedeemScript c
             let coin = ScriptCoin(tx.Inputs.[0].PrevOut,
@@ -796,7 +804,7 @@ module Channel =
                               (c: Channel): RResult<(Script * TransactionSignature * bool)> =
 
         if tx.Inputs.Count <> 1 then
-            Bad(!> "Tried to sign HTLC transaction that had input count != 1")
+            Bad(RBadTree.Leaf(RBad.Message"Tried to sign HTLC transaction that had input count != 1"))
         else
             let htlcRedeemScript = getHTLCRedeemScript htlc keys
             let ourHTLCKey = derivePrivateKey keys.PerCommitmentPoint c.LocalKeys.HTLCBaseKey
@@ -821,9 +829,9 @@ module Channel =
                             (n: Network)
                             (c: Channel): RResult<TransactionSignature> =
         if tx.Inputs.Count <> 1 then
-            Bad(!> "Tried to sign HTLC transaction that had input count != 1")
+            Bad(RBadTree.Leaf(RBad.Message("Tried to sign HTLC transaction that had input count != 1")))
         else if not (isNull tx.Inputs.[0].WitScript) || tx.Inputs.[0].WitScript <> WitScript.Empty then
-            Bad(!> "Tried to re-sign HTLC transaction")
+            Bad(RBadTree.Leaf(RBad.Message("Tried to re-sign HTLC transaction")))
         else 
             match createHTLCTxSignature tx htlc keys n c with
             | Bad b -> Bad b
@@ -883,12 +891,12 @@ module Channel =
                 )
                 |> List.tryLast
                 |> function | Some g -> Good g
-                            | None -> Bad (!> ChannelException(Ignore("Unable to find a pending HTLC which match the given HTLC ID")))
+                            | None -> Bad (RREx(Ignore("Unable to find a pending HTLC which match the given HTLC ID")))
 
 
             if (c.ChannelState &&& (ChannelState.AwaitingRemoteRevoke ||| ChannelState.PeerDisconnected ||| ChannelState.MonitorUpdateFailed) <> ChannelState.Zero) then
-                c.HoldingCellHTLCUpdates
                 failwith ""
             else
                 failwith ""
             failwith ""
+    *)

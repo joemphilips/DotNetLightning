@@ -50,11 +50,11 @@ module TCPServer =
             else
                 return ()
         }
-
-    let ProcessLinesAsync (socket: Socket) =
+    let private defaultHandler: ReadOnlySequence<byte> -> unit = printfn "%A"
+    let ProcessLinesAsync (socket: Socket) (handler: ReadOnlySequence<byte> -> unit) =
         let p = Pipe()
         let w = FillPipeAsync(socket, p.Writer)
-        let r = ReadPipeAsync ((byte)'\n') (printfn "%A") (p.Reader)
+        let r = ReadPipeAsync ((byte)'\n') handler (p.Reader)
         seq [r; w] |> Async.Parallel 
 
     let asyncSeqWatch(socket) =

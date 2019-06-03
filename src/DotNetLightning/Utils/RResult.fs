@@ -54,11 +54,13 @@ module RResult =
 
         member x.Join o = Fork (x, o)
 
+        (*
         static member op_Implicit(e: exn) =
             RBadTree.Leaf(RBad.Exception(e))
 
         static member op_Implicit(s: string) =
             RBadTree.Leaf(RBad.Message(s))
+        *)
 
     [<Struct>]
     [<StructuredFormatDisplay("StructuredDisplayString")>]
@@ -72,6 +74,7 @@ module RResult =
             | Bad b -> sprintf "Bad ( %A" b
 
         override x.ToString() = x.StructuredDisplayString
+
 
     module RResult =
         exception DerefException of RBadTree
@@ -200,6 +203,7 @@ module RResult =
             member inline x.Zero        ()      = rreturn LanguagePrimitives.GenericZero<_>
 
     let rresult = RResult.Builder ()
+
 
     type RResult<'T> with
         static member inline (>>=)  (x, uf) = RResult.rbind    uf x

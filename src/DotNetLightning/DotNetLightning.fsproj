@@ -3,19 +3,20 @@
     <TargetFramework>netcoreapp2.2</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\nsec\src\Cryptography\NSec.Cryptography.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="Utils/Utils.fs" />
     <Compile Include="Utils/Primitives.fs" />
     <Compile Include="Utils/NBitcoinExtensions.fs" />
     <Compile Include="Utils/RResult.fs" />
-    <Compile Include="Utils/Observable.fs" />
-    <Compile Include="Utils/Lens.fs" />
     <Compile Include="Utils/Config.fs" />
-    <Compile Include="Utils/Events.fs" />
     <Compile Include="Utils/TransactionUtils.fs" />
-    <Compile Include="Utils\Errors.fs" />
+    <Compile Include="Utils/Errors.fs" />
     <Compile Include="Serialize/Msgs.fs" />
     <Compile Include="Serialize/NetworkSerializer.fs" />
     <Compile Include="Serialize/PeerChannelEncryptor.fs" />
+    <Compile Include="DomainUtils/Events.fs" />
     <Compile Include="Chain/ChainInterface.fs" />
     <Compile Include="Chain/KeysInterface.fs" />
     <Compile Include="Crypto/ChaCha20Poly1305.fs" />
@@ -27,7 +28,8 @@
     <Compile Include="LN/PeerHandler.fs" />
     <Compile Include="Server/TCP.fs" />
     <Compile Include="Library.fs" />
-    <Compile Include="Playground.fs" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="System.Net.Sockets" Version="4.3.0" />
     <PackageReference Include="FSharp.Control.AsyncSeq" Version="2.0.21" />
     <PackageReference Include="FSharp.Core" Version="4.5.4" />
@@ -35,7 +37,6 @@
     <PackageReference Include="NBitcoin" Version="4.1.2.33-joemphilips006" />
     <PackageReference Include="System.IO.Pipelines" Version="4.5.3" />
     <PackageReference Include="System.Memory" Version="4.5.2" />
-    <ProjectReference Include="..\nsec\src\Cryptography\NSec.Cryptography.csproj" />
     <PackageReference Include="System.Reactive" Version="4.1.5" />
   </ItemGroup>
 </Project>

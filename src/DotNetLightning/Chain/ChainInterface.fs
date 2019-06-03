@@ -1,10 +1,7 @@
 namespace DotNetLightning.Chain
 open NBitcoin
 open DotNetLightning.Utils
-open System.Collections.Generic
 open Microsoft.Extensions.Logging
-open DotNetLightning.Utils.Aether
-open System.Collections.Generic
 
 
 type ChainError =
