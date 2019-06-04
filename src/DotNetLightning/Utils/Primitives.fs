@@ -6,6 +6,23 @@ open System
 [<AutoOpen>]
 module Primitives =
 
+    type NBitcoin.Utils with
+        static member ToUInt16(b: byte[], lendian: bool): uint16 =
+            if lendian then
+                uint16(b.[0]) + (uint16(b.[1]) <<< 8)
+            else
+                uint16(b.[1]) + (uint16(b.[0]) <<< 8)
+
+        static member ToBytes(d: uint16, lendian: bool): byte[] =
+            let mutable output = Array.zeroCreate 2
+            if lendian then
+                output.[0] <- byte d
+                output.[1] <- byte (d >>> 8)
+            else
+                output.[0] <- byte (d >>> 8)
+                output.[1] <- byte d
+            output
+
     /// Absolute block height
     type Blockheight = BlockHeight of uint32
 
@@ -58,18 +75,26 @@ module Primitives =
     }
     with
         static member FromUInt64(rawData: uint64): ShortChannelId =
-            let b = BitConverter.GetBytes(rawData)
+            let b = NBitcoin.Utils.ToBytes(rawData, false)
             // TODO: do not use Array.concat
-            let blockheight: uint32 = BitConverter.ToUInt32(Array.concat[| b.[0..3]; [|0uy|] |], 0)
-            let blockIndex = BitConverter.ToUInt32(Array.concat[| b.[3..6]; [| 0uy |] |], 0)
-            let txOutIndex = BitConverter.ToUInt16(b.[6..7], 0)
+            let bh = NBitcoin.Utils.ToUInt32(Array.concat[| b.[0..2]; [|0uy|] |], false)
+            let bi = NBitcoin.Utils.ToUInt32(Array.concat[| b.[3..5]; [|0uy |] |], false)
+            let txOutIndex = NBitcoin.Utils.ToUInt16(b.[6..7], false)
+            
             {
-                BlockHeight = blockheight
-                BlockIndex = blockIndex
+                BlockHeight = bh
+                BlockIndex = bi
                 TxOutIndex = txOutIndex
             }
+        member this.ToBytes(): byte[] =
+            Array.concat[|
+                        NBitcoin.Utils.ToBytes(this.BlockHeight, false).[0..2]
+                        NBitcoin.Utils.ToBytes(this.BlockIndex, false).[0..2]
+                        NBitcoin.Utils.ToBytes(this.TxOutIndex, false)
+                    |]
+        override this.ToString() =
+            sprintf "%dx%dx%d" this.BlockHeight this.BlockIndex this.TxOutIndex
 
-            
     type UserId = UserId of uint64
     type Delimiter = 
         Delimiter of byte[]

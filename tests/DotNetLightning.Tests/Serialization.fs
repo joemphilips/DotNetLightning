@@ -8,13 +8,17 @@ open Expecto
 open NBitcoin
 open NBitcoin.Crypto
 open DotNetLightning.Utils
-open System.IO.Pipelines
-open System.IO
 open DotNetLightning.Utils.NBitcoinExtensions
 
 module SerializationTest =
     let hex = NBitcoin.DataEncoders.HexEncoder()
     let base64 = NBitcoin.DataEncoders.Base64Encoder()
+    let ascii = System.Text.ASCIIEncoding.ASCII
+    let signMessageWith (privKey: Key) (msgHash: string) =
+        let msgBytes = msgHash |> ascii.GetBytes
+        printfn "%A, %d" msgBytes msgBytes.Length
+        privKey.SignCompact(msgBytes |> uint256, false) |> fun d -> ECDSASignature.FromBytesCompact(d, true)
+
     [<Tests>]
     let tests =
         testList "SerializationTest" [
@@ -45,29 +49,36 @@ module SerializationTest =
                 }
                 let expected = [|4; 0; 0; 0; 0; 0; 0; 0; 5; 0; 0; 0; 0; 0; 0; 0; 6; 0; 0; 0; 0; 0; 0; 0; 7; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 3; 0; 0; 0; 0; 0; 0; 0; 4; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 3; 27; 132; 197; 86; 123; 18; 100; 64; 153; 93; 62; 213; 170; 186; 5; 101; 215; 30; 24; 52; 96; 72; 25; 255; 156; 23; 245; 233; 213; 221; 7; 143 |] |> Array.map (byte)
                 Expect.equal (cr.ToBytes()) expected ""
-
+            testCase "short_channel_id" <| fun _ ->
+                let actual = ShortChannelId.FromUInt64(2316138423780173UL)
+                let expected = [| 0uy; 8uy; 58uy; 132uy; 0uy; 0uy; 3uy; 77uy;|]
+                Expect.equal (actual.ToBytes()) expected ""
+                
             testCase "announcement_signatures" <| fun _ ->
                 let privKey = Key(hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101"))
-                let sig1 = privKey.SignMessage("01010101010101010101010101010101") |> base64.DecodeData |> fun d -> ECDSASignature.FromBytesCompact(d)
-                let sig2 = privKey.SignMessage("02020202020202020202020202020202") |> base64.DecodeData |> fun d -> ECDSASignature.FromBytesCompact(d)
-                let announcementSig = { 
+                let sig1 = signMessageWith privKey "01010101010101010101010101010101"
+                let sig2 = signMessageWith privKey "02020202020202020202020202020202"
+                printfn "sig1 is DER: %s\nCompact representation: %s" (sig1.ToDER() |> hex.EncodeData) (sig1.ToBytesCompact() |> hex.EncodeData)
+                let actual = LightningMsg.AnnouncementSignatures{ 
                     ChannelId = ChannelId(uint256([| 4; 0; 0; 0; 0; 0; 0; 0; 5; 0; 0; 0; 0; 0; 0; 0; 6; 0; 0; 0; 0; 0; 0; 0; 7; 0; 0; 0; 0; 0; 0; 0 |] |> Array.map(uint8)))
                     ShortChannelId = ShortChannelId.FromUInt64(2316138423780173UL)
                     NodeSignature = sig1
                     BitcoinSignature = sig2
                 }
                 let expected = hex.DecodeData("040000000000000005000000000000000600000000000000070000000000000000083a840000034dd977cb9b53d93a6ff64bb5f1e158b4094b66e798fb12911168a3ccdf80a83096340a6a95da0ae8d9f776528eecdbb747eb6b545495a4319ed5378e35b21e073acf9953cef4700860f5967838eba2bae89288ad188ebf8b20bf995c3ea53a26df1876d0a3a0e13172ba286a673140190c02ba9da60a2e43a745188c8a83c7f3ef")
-                ()
+                Expect.equal (actual.ToBytes().Length) expected.Length ""
+                Expect.equal (actual.ToBytes()) expected ""
+
             testCase "channel_announcement" <| fun _ ->
                 let channelAnouncementTestCore (unknownFeatureBits: bool, nonbitcoinChainHash: bool, excessData: bool) = 
                     let privKey1 = Key(hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101"))
                     let privKey2 = Key(hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202"))
                     let privKey3 = Key(hex.DecodeData("0303030303030303030303030303030303030303030303030303030303030303"))
                     let privKey4 = Key(hex.DecodeData("0404040404040404040404040404040404040404040404040404040404040404"))
-                    let sig1 = privKey1.SignMessage("01010101010101010101010101010101") |> base64.DecodeData |> ECDSASignature
-                    let sig2 = privKey2.SignMessage("01010101010101010101010101010101") |> base64.DecodeData |> ECDSASignature
-                    let sig3 = privKey3.SignMessage("01010101010101010101010101010101") |> base64.DecodeData |> ECDSASignature
-                    let sig4 = privKey4.SignMessage("01010101010101010101010101010101") |> base64.DecodeData |> ECDSASignature
+                    let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
+                    let sig2 = signMessageWith privKey2 "01010101010101010101010101010101"
+                    let sig3 = signMessageWith privKey3 "01010101010101010101010101010101"
+                    let sig4 = signMessageWith privKey4 "01010101010101010101010101010101"
                     let mutable features = Flags([||])
                     if (unknownFeatureBits) then
                         features <- Flags([| 0xFFuy; 0xFFuy |])

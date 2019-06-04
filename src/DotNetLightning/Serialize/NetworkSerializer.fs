@@ -30,9 +30,7 @@ module NetworkSerializer =
         member this.Write (data: byte[] option) =
             match data with | Some d -> this.Write(d) | None -> ()
         member this.Write(data: ShortChannelId) =
-            this.Write(BitConverter.GetBytes(data.BlockHeight).AsSpan().Slice(1, 3).ToArray())
-            this.Write(BitConverter.GetBytes(data.BlockIndex).AsSpan().Slice(1, 3).ToArray())
-            this.Write(data.TxOutIndex)
+            this.Write(data.ToBytes())
         member this.Write(data: uint256, lendian: bool) =
             this.Write(data.ToBytes(lendian))
         member this.Write(data: PubKey) =
@@ -65,26 +63,21 @@ module NetworkSerializer =
         use w = new BinaryWriter(output)
         match s with
         | (Init msg) ->
-            w.Write((uint16)TypeFlag.Init)
             let l = msg.LocalFeatures.Value
             let g = msg.GlobalFeatures.Value
             serializeWithLen w l
             serializeWithLen w g
         | (Error msg) ->
-            w.Write((uint16)TypeFlag.Error)
             serializeWhichChannel w (msg.ChannelId)
             serializeWithLen w msg.Data
         | (Ping msg) ->
-            w.Write((uint16)TypeFlag.Ping)
             w.Write(msg.PongLen)
             w.Write(msg.BytesLen)
             w.Write(Array.zeroCreate<byte> ((int)msg.BytesLen))
         | (Pong msg) ->
-            w.Write((uint16)TypeFlag.Pong)
             w.Write(msg.BytesLen)
             w.Write(Array.zeroCreate<byte> ((int)msg.BytesLen))
         | (OpenChannel msg) ->
-            w.Write((uint16)TypeFlag.OpenChannel)
             w.Write(msg.Chainhash.ToBytes())
             w.Write(msg.TemporaryChannelId.Value.ToBytes())
             w.Write(msg.FundingSatoshis.Satoshi)
@@ -104,7 +97,6 @@ module NetworkSerializer =
             w.Write(msg.ChannelFlags)
             maybeSerializeWithLen w (msg.ShutdownScriptPubKey |> Option.map(fun x -> x.ToBytes()))
         | (AcceptChannel msg) ->
-            w.Write((uint16)TypeFlag.AcceptChannel)
             w.Write(msg.TemporaryChannelId.Value.ToBytes())
             w.Write(msg.DustLimitSatoshis.Satoshi)
             w.Write(msg.MaxHTLCValueInFlightMsat.MilliSatoshi)
@@ -121,37 +113,30 @@ module NetworkSerializer =
             w.Write(msg.FirstPerCommitmentPoint.ToBytes())
             maybeSerializeWithLen w (msg.ShutdownScriptPubKey |> Option.map(fun x -> x.ToBytes()))
         | (FundingCreated msg) ->
-            w.Write((uint16)TypeFlag.FundingCreated)
             w.Write(msg.TemporaryChannelId.Value.ToBytes())
             w.Write(msg.FundingTxId.Value.ToBytes())
             w.Write(msg.FundingOutputIndex)
             w.Write(msg.Signature)
         | (FundingSigned msg) ->
-            w.Write((uint16)TypeFlag.FundingSigned)
             w.Write(msg.ChannelId.Value.ToBytes())
             w.Write(msg.Signature)
         | (FundingLocked msg) ->
-            w.Write((uint16)TypeFlag.FundingLocked)
             w.Write(msg.ChannelId.Value.ToBytes())
             w.Write(msg.NextPerCommitmentPoint.ToBytes())
         | (Shutdown msg) ->
-            w.Write((uint16)TypeFlag.Shutdown)
             w.Write(msg.ChannelId.Value.ToBytes())
             serializeWithLen w (msg.ScriptPubKey.ToBytes())
         | (ClosingSigned msg) ->
-            w.Write((uint16)TypeFlag.ClosingSigned)
             w.Write(msg.ChannelId.Value.ToBytes())
             w.Write(msg.FeeSatoshis.Satoshi)
             w.Write(msg.Signature)
         | (ChannelReestablish msg) ->
-            // w.Write((uint16)TypeFlag.ChannelReestablish)
             w.Write(msg.ChannelId.Value.ToBytes())
             w.Write(Utils.ToBytes(msg.NextLocalCommitmentNumber, false))
             w.Write(Utils.ToBytes(msg.NextRemoteCommitmentNumber, false))
             w.Write(msg.DataLossProtect |> Option.map(fun x -> x.YourLastPerCommitmentSecret.Value.ToBytes()))
             w.Write(msg.DataLossProtect |> Option.map(fun x -> x.MyCurrentPerCommitmentPoint.ToBytes()))
         | (UpdateAddHTLC msg) ->
-            w.Write((uint16)TypeFlag.UpdateAddHTLC)
             w.Write(msg.ChannelId.Value.ToBytes())
             w.Write(msg.HTLCId.Value)
             w.Write(msg.AmountMSat.MilliSatoshi)
@@ -164,36 +149,31 @@ module NetworkSerializer =
             w.Write(msg.HTLCId.Value)
             w.Write(msg.PaymentPreimage.Value.ToBytes())
         | (UpdateFailHTLC msg) ->
-            w.Write((uint16)TypeFlag.UpdateFailHTLC)
             w.Write(msg.ChannelId.Value.ToBytes())
             w.Write(msg.HTLCId.Value)
             serializeWithLen w (msg.Reason.Data)
         | (UpdateFailMalformedHTLC msg) ->
-            w.Write((uint16)TypeFlag.UpdateFailMalformedHTLC)
             w.Write(msg.ChannelId.Value.ToBytes())
             w.Write(msg.HTLCId.Value)
             w.Write(msg.FailureCode.Value)
         | (CommitmentSigned msg) ->
-            w.Write((uint16)TypeFlag.CommitmentSigned)
             w.Write(msg.ChannelId.Value.ToBytes())
             w.Write(msg.Signature)
             w.Write((uint16)msg.HTLCSignatures.Length)
             msg.HTLCSignatures |> List.iter (w.Write)
         | (RevokeAndACK msg) ->
-            w.Write((uint16)TypeFlag.RevokeAndACK)
             w.Write(msg.ChannelId.Value.ToBytes())
             w.Write(msg.PerCommitmentSecret.Value.ToBytes())
             w.Write(msg.MyCurrentPerCommitmentPoint.ToBytes())
         | (UpdateFee msg) ->
-            w.Write((uint16)TypeFlag.UpdateFee)
             w.Write(msg.ChannelId.Value.ToBytes())
             w.Write(msg.FeeratePerKW.Satoshi)
         | (AnnouncementSignatures msg) ->
-            w.Write((uint16)TypeFlag.AnnouncementSignatures)
             w.Write(msg.ChannelId.Value.ToBytes())
             w.Write(msg.ShortChannelId)
+            w.Write(msg.NodeSignature)
+            w.Write(msg.BitcoinSignature)
         | (ChannelAnnouncement msg) ->
-            w.Write((uint16)TypeFlag.ChannelAnnouncement)
             w.Write(msg.NodeSignature1)
             w.Write(msg.NodeSignature2)
             w.Write(msg.BitcoinSignature1)
@@ -206,7 +186,6 @@ module NetworkSerializer =
             w.Write(msg.Contents.BitcoinKey1)
             w.Write(msg.Contents.BitcoinKey2)
         | (NodeAnnouncement msg) ->
-            w.Write((uint16)TypeFlag.NodeAnnouncement)
             w.Write(msg.Signature)
             serializeWithLen w (msg.Contents.Features.Value)
             w.Write(msg.Contents.Timestamp)
