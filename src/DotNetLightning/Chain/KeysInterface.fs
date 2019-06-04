@@ -2,6 +2,7 @@ namespace DotNetLightning
 open Microsoft.Extensions.Logging
 open NBitcoin
 open NBitcoin.Crypto
+open Utils.Primitives
 
 /// OutPoint
 type StaticOutput = {
@@ -65,7 +66,7 @@ type IKeysRepository =
     abstract member GetSessionKey: unit -> Key
     /// Get a unique temporary channel id. Channel will be refered to by this until the funding TX is
     /// created, at which point they will use the outpoint in the funding TX.
-    abstract member GetChannelId: unit -> uint256
+    abstract member GetChannelId: unit -> ChannelId
 
 
 /// `KeyManager` in rust-lightning
@@ -81,11 +82,11 @@ type DefaultKeyRepository(seed: uint256, network: Network, logger: ILogger) =
     member val ChannelIdChildIndex = 0u with get, set
     member val SessionChildIndex = 0u with get, set
     interface IKeysRepository with
-        member this.GetChannelId(): uint256 = 
+        member this.GetChannelId(): ChannelId = 
             let idx = this.ChannelIdChildIndex
             let childPrivKey  = this.ChannelIdMasterKey.Derive((int)idx, true)
             this.ChannelIdChildIndex <- this.ChannelIdChildIndex + 1u
-            uint256(Hashes.SHA256(childPrivKey.ToBytes()))
+            ChannelId (uint256(Hashes.SHA256(childPrivKey.ToBytes())))
         // TODO: Update
         member this.GetChannelKeys(): ChannelKeys = 
             let seed = uint256(RandomUtils.GetBytes(32))

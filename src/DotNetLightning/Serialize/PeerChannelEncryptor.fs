@@ -80,12 +80,11 @@ let hkdfExtractExpand(salt: byte[], ikm: byte[]) =
     let t2 = Hashes.HMACSHA256(prk, Array.append t1 [|2uy|])
     (t1, t2)
 
-type PeerChannelEncryptorStream(theirNodeId: NodeId option, noiseState: NoiseState, inner: Stream) =
+type PeerChannelEncryptorStream(theirNodeId: NodeId option, noiseState: NoiseState) =
     member this.TheirNodeId = theirNodeId
-    member this.Inner = inner
     member val NoiseState = noiseState with get, set
 
-    static member NewOutbound(theirNodeId: NodeId, inner): PeerChannelEncryptorStream =
+    static member NewOutbound(theirNodeId: NodeId): PeerChannelEncryptorStream =
         let hashInput = Array.concat[| NOISE_H; theirNodeId.Value.ToBytes()|]
         let h = uint256(Hashes.SHA256(hashInput))
         PeerChannelEncryptorStream(
@@ -94,11 +93,10 @@ type PeerChannelEncryptorStream(theirNodeId: NodeId option, noiseState: NoiseSta
                     State = PreActOne
                     DirectionalState = OutBound ({ IE = Key() })
                     BidirectionalState = {H = h; CK = uint256(NOISE_CK)}
-                },
-            inner
+                }
             )
 
-    static member NewInbound (ourNodeSecret: Key, inner: Stream) =
+    static member NewInbound (ourNodeSecret: Key) =
         let hashInput = Array.concat[|NOISE_H; ourNodeSecret.PubKey.ToBytes()|]
         let h = uint256(Hashes.SHA256(hashInput))
 
@@ -108,8 +106,7 @@ type PeerChannelEncryptorStream(theirNodeId: NodeId option, noiseState: NoiseSta
                     State = PreActOne
                     DirectionalState = InBound { IE = None; RE = None; TempK2 = None}
                     BidirectionalState = {H = h; CK = uint256(NOISE_CK)}
-                },
-            inner
+                }
         )
 
     static member EncryptWithAd(n: uint64, key: uint256, h: ReadOnlySpan<byte>, plainText: ReadOnlySpan<byte>) =

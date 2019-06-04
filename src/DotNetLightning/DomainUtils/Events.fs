@@ -1,4 +1,4 @@
-namespace DotNetLightning.Utils
+namespace DotNetLightning.DomainUtils
 open NBitcoin
 open BTCPayServer.Lightning
 open DotNetLightning.Serialize.Msgs

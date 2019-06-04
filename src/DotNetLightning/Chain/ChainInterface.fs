@@ -1,10 +1,7 @@
 namespace DotNetLightning.Chain
 open NBitcoin
 open DotNetLightning.Utils
-open System.Collections.Generic
 open Microsoft.Extensions.Logging
-open DotNetLightning.Utils.Aether
-open System.Collections.Generic
 
 
 type ChainError =
@@ -32,7 +29,7 @@ type ConfirmationTarget =
     | HighPriority
 
 type IFeeEstimator =
-    abstract member GetEstSatPer1000Weight: (ConfirmationTarget) -> FeeRate
+    abstract member GetEstSatPer1000Weight: (ConfirmationTarget) -> FeeRatePerKw
 
 /// Utility for tracking registered txn/outpoints and checking for matches
 type ChainWatchedUtil = {
