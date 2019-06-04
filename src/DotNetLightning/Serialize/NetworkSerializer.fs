@@ -16,16 +16,6 @@ module NetworkSerializer =
         | ChannelId (Primitives.ChannelId id) -> 
             w.Write(id.ToBytes())
 
-    let private serializeWithLen (w: BinaryWriter) (data: byte[]) =
-        w.Write((uint16)data.Length)
-        w.Write(data)
-
-    let private maybeSerializeWithLen
-        (w: BinaryWriter) (data: byte[] option) =
-        match data with
-        | Some d -> serializeWithLen w (d)
-        | None -> ()
-
     type BinaryWriter with
         member this.Write (data: byte[] option) =
             match data with | Some d -> this.Write(d) | None -> ()
@@ -41,8 +31,19 @@ module NetworkSerializer =
             this.Write(data.Red)
             this.Write(data.Green)
             this.Write(data.Blue)
+        member this.WriteWithLen(data: byte[]) =
+            let length = BitConverter.GetBytes((uint16)data.Length)
+            Array.Reverse(length)
+            this.Write(length)
+            this.Write(data)
         member this.Write(data: DateTime) =
             failwith "not impl"
+
+    let private maybeSerializeWithLen
+        (w: BinaryWriter) (data: byte[] option) =
+        match data with
+        | Some d -> w.WriteWithLen(d)
+        | None -> ()
 
 
     let private serializeOnionPacket (w: BinaryWriter) (data: OnionPacket) =
@@ -65,11 +66,11 @@ module NetworkSerializer =
         | (Init msg) ->
             let l = msg.LocalFeatures.Value
             let g = msg.GlobalFeatures.Value
-            serializeWithLen w l
-            serializeWithLen w g
+            w.WriteWithLen(l)
+            w.WriteWithLen(g)
         | (Error msg) ->
             serializeWhichChannel w (msg.ChannelId)
-            serializeWithLen w msg.Data
+            w.WriteWithLen(msg.Data)
         | (Ping msg) ->
             w.Write(msg.PongLen)
             w.Write(msg.BytesLen)
@@ -125,7 +126,7 @@ module NetworkSerializer =
             w.Write(msg.NextPerCommitmentPoint.ToBytes())
         | (Shutdown msg) ->
             w.Write(msg.ChannelId.Value.ToBytes())
-            serializeWithLen w (msg.ScriptPubKey.ToBytes())
+            w.WriteWithLen(msg.ScriptPubKey.ToBytes())
         | (ClosingSigned msg) ->
             w.Write(msg.ChannelId.Value.ToBytes())
             w.Write(msg.FeeSatoshis.Satoshi)
@@ -151,7 +152,7 @@ module NetworkSerializer =
         | (UpdateFailHTLC msg) ->
             w.Write(msg.ChannelId.Value.ToBytes())
             w.Write(msg.HTLCId.Value)
-            serializeWithLen w (msg.Reason.Data)
+            w.WriteWithLen(msg.Reason.Data)
         | (UpdateFailMalformedHTLC msg) ->
             w.Write(msg.ChannelId.Value.ToBytes())
             w.Write(msg.HTLCId.Value)
@@ -178,16 +179,17 @@ module NetworkSerializer =
             w.Write(msg.NodeSignature2)
             w.Write(msg.BitcoinSignature1)
             w.Write(msg.BitcoinSignature2)
-            serializeWithLen w (msg.Contents.Features.Value)
-            w.Write(msg.Contents.ChainHash, true)
+            w.WriteWithLen(msg.Contents.Features.Value)
+            w.Write(msg.Contents.ChainHash, false)
             w.Write(msg.Contents.ShortChannelId)
             w.Write(msg.Contents.NodeId1.Value)
             w.Write(msg.Contents.NodeId2.Value)
             w.Write(msg.Contents.BitcoinKey1)
             w.Write(msg.Contents.BitcoinKey2)
+            w.Write(msg.Contents.ExcessData)
         | (NodeAnnouncement msg) ->
             w.Write(msg.Signature)
-            serializeWithLen w (msg.Contents.Features.Value)
+            w.WriteWithLen(msg.Contents.Features.Value)
             w.Write(msg.Contents.Timestamp)
             w.Write(msg.Contents.NodeId.Value)
             w.Write(msg.Contents.RGB)
@@ -198,7 +200,7 @@ module NetworkSerializer =
                 |> List.iter(fun addr -> w.Write(addr.GetId()); addr.WriteTo(w))
         | (ChannelUpdate msg) ->
             w.Write(msg.Signature)
-            w.Write(msg.Contents.ChainHash, true)
+            w.Write(msg.Contents.ChainHash, false)
             w.Write(msg.Contents.ShortChannelId)
             w.Write(msg.Contents.Timestamp)
             w.Write(msg.Contents.Flags)
