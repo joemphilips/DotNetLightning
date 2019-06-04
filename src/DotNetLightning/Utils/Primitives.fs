@@ -1,6 +1,7 @@
 namespace DotNetLightning.Utils
 open NBitcoin
 open System
+open System
 
 [<AutoOpen>]
 module Primitives =
@@ -57,7 +58,16 @@ module Primitives =
     }
     with
         static member FromUInt64(rawData: uint64): ShortChannelId =
-            failwith ""
+            let b = BitConverter.GetBytes(rawData)
+            // TODO: do not use Array.concat
+            let blockheight: uint32 = BitConverter.ToUInt32(Array.concat[| b.[0..3]; [|0uy|] |], 0)
+            let blockIndex = BitConverter.ToUInt32(Array.concat[| b.[3..6]; [| 0uy |] |], 0)
+            let txOutIndex = BitConverter.ToUInt16(b.[6..7], 0)
+            {
+                BlockHeight = blockheight
+                BlockIndex = blockIndex
+                TxOutIndex = txOutIndex
+            }
 
             
     type UserId = UserId of uint64

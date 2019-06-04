@@ -1,6 +1,8 @@
 namespace DotNetLightning.Utils
 open NBitcoin
 open NBitcoin.Crypto
+open NBitcoin.Crypto
+open System.Numerics
 
 module NBitcoinExtensions =
     module FeeRate =
@@ -21,3 +23,8 @@ module NBitcoinExtensions =
         /// (serialized R value + S value) in byte array.
         member this.ToBytesCompact() =
             Array.append (this.R.ToByteArray()) (this.S.ToByteArray())
+
+        static member FromBytesCompact(bytes: byte[]) =
+            let r = NBitcoin.BouncyCastle.Math.BigInteger(bytes.[0..31])
+            let s = NBitcoin.BouncyCastle.Math.BigInteger(bytes.[31..])
+            ECDSASignature(r, s)

@@ -33,8 +33,8 @@ module NetworkSerializer =
             this.Write(BitConverter.GetBytes(data.BlockHeight).AsSpan().Slice(1, 3).ToArray())
             this.Write(BitConverter.GetBytes(data.BlockIndex).AsSpan().Slice(1, 3).ToArray())
             this.Write(data.TxOutIndex)
-        member this.Write(data: uint256) =
-            this.Write(data.ToBytes())
+        member this.Write(data: uint256, lendian: bool) =
+            this.Write(data.ToBytes(lendian))
         member this.Write(data: PubKey) =
             this.Write(data.ToBytes())
         member this.Write(data: ECDSASignature) =
@@ -45,6 +45,7 @@ module NetworkSerializer =
             this.Write(data.Blue)
         member this.Write(data: DateTime) =
             failwith "not impl"
+
 
     let private serializeOnionPacket (w: BinaryWriter) (data: OnionPacket) =
         w.Write(data.Version)
@@ -143,10 +144,10 @@ module NetworkSerializer =
             w.Write(msg.FeeSatoshis.Satoshi)
             w.Write(msg.Signature)
         | (ChannelReestablish msg) ->
-            w.Write((uint16)TypeFlag.ChannelReestablish)
+            // w.Write((uint16)TypeFlag.ChannelReestablish)
             w.Write(msg.ChannelId.Value.ToBytes())
-            w.Write(msg.NextLocalCommitmentNumber)
-            w.Write(msg.NextRemoteCommitmentNumber)
+            w.Write(Utils.ToBytes(msg.NextLocalCommitmentNumber, false))
+            w.Write(Utils.ToBytes(msg.NextRemoteCommitmentNumber, false))
             w.Write(msg.DataLossProtect |> Option.map(fun x -> x.YourLastPerCommitmentSecret.Value.ToBytes()))
             w.Write(msg.DataLossProtect |> Option.map(fun x -> x.MyCurrentPerCommitmentPoint.ToBytes()))
         | (UpdateAddHTLC msg) ->
@@ -198,7 +199,7 @@ module NetworkSerializer =
             w.Write(msg.BitcoinSignature1)
             w.Write(msg.BitcoinSignature2)
             serializeWithLen w (msg.Contents.Features.Value)
-            w.Write(msg.Contents.ChainHash)
+            w.Write(msg.Contents.ChainHash, true)
             w.Write(msg.Contents.ShortChannelId)
             w.Write(msg.Contents.NodeId1.Value)
             w.Write(msg.Contents.NodeId2.Value)
@@ -211,14 +212,14 @@ module NetworkSerializer =
             w.Write(msg.Contents.Timestamp)
             w.Write(msg.Contents.NodeId.Value)
             w.Write(msg.Contents.RGB)
-            w.Write(msg.Contents.Alias)
+            w.Write(msg.Contents.Alias, true)
             let addrLen = msg.Contents.Addresses |> List.sumBy(fun addr -> addr.Length)
             w.Write(addrLen)
             msg.Contents.Addresses
                 |> List.iter(fun addr -> w.Write(addr.GetId()); addr.WriteTo(w))
         | (ChannelUpdate msg) ->
             w.Write(msg.Signature)
-            w.Write(msg.Contents.ChainHash)
+            w.Write(msg.Contents.ChainHash, true)
             w.Write(msg.Contents.ShortChannelId)
             w.Write(msg.Contents.Timestamp)
             w.Write(msg.Contents.Flags)
