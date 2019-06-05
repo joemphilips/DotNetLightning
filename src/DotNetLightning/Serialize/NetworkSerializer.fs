@@ -158,7 +158,9 @@ module NetworkSerializer =
             w.Write(msg.Contents.NodeId.Value)
             w.Write(msg.Contents.RGB)
             w.Write(msg.Contents.Alias, true)
-            let addrLen = msg.Contents.Addresses |> List.sumBy(fun addr -> addr.Length)
+            let mutable addrLen = (msg.Contents.Addresses |> List.sumBy(fun addr -> addr.Length + 1us)) // 1 byte for type field
+            let excessAddrLen = (uint16 msg.Contents.ExcessAddressData.Length)
+            addrLen <- excessAddrLen + addrLen
             w.Write(addrLen, false)
             msg.Contents.Addresses
                 |> List.iter(fun addr -> w.Write(addr.GetId()); w.Write(addr))
