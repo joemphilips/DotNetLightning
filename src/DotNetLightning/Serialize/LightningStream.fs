@@ -76,7 +76,7 @@ type LightningStream(inner: Stream) =
             buf.[0] <- (byte (data >>> 24))
             buf.[1] <- (byte (data >>> 16))
             buf.[2] <- (byte (data >>> 8))
-            buf.[2] <- byte data
+            buf.[3] <- byte data
         this.Write(buf, 0, 4)
 
     member this.Write(data: uint64, lendian: bool) =
