@@ -14,6 +14,7 @@
     <Compile Include="Utils/TransactionUtils.fs" />
     <Compile Include="Utils/Errors.fs" />
     <Compile Include="Serialize/Msgs.fs" />
+    <Compile Include="Serialize/LightningStream.fs" />
     <Compile Include="Serialize/NetworkSerializer.fs" />
     <Compile Include="Serialize/PeerChannelEncryptor.fs" />
     <Compile Include="DomainUtils/Events.fs" />

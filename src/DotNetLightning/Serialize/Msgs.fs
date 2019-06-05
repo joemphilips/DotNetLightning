@@ -268,22 +268,6 @@ module Msgs =
                                 | IPv6 _ -> 18us
                                 | OnionV2 _ -> 12us
                                 | OnionV3 _ -> 37us
-        member this.WriteTo(w: BinaryWriter) =
-            match this with
-            | IPv4 d ->
-                w.Write(d.Address.GetAddressBytes())
-                w.Write((uint16)d.Port)
-            | IPv6 d ->
-                w.Write(d.Address.GetAddressBytes())
-                w.Write((uint16)d.Port)
-            | OnionV2 d ->
-                w.Write(d.Addr)
-                w.Write((uint16)d.Port)
-            | OnionV3 d ->
-                w.Write(d.ed25519PubKey)
-                w.Write(d.CheckSum)
-                w.Write(d.Version)
-                w.Write((uint16)d.Port)
 
 
     and OnionV2EndPoint = {
