@@ -1,6 +1,5 @@
 namespace DotNetLightning.DomainUtils
 open NBitcoin
-open BTCPayServer.Lightning
 open DotNetLightning.Serialize.Msgs
 
 type MessageSendEvent =

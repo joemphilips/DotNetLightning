@@ -35,7 +35,6 @@
     <PackageReference Include="System.Net.Sockets" Version="4.3.0" />
     <PackageReference Include="FSharp.Control.AsyncSeq" Version="2.0.21" />
     <PackageReference Include="FSharp.Core" Version="4.5.4" />
-    <PackageReference Include="BTCPayServer.Lightning.Common" Version="1.1.0.11" />
     <PackageReference Include="NBitcoin" Version="4.1.2.33-joemphilips010" />
     <PackageReference Include="System.IO.Pipelines" Version="4.5.3" />
     <PackageReference Include="System.Memory" Version="4.5.2" />

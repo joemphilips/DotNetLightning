@@ -1,6 +1,5 @@
 namespace DotNetLightning.LN
 open NBitcoin
-open BTCPayServer.Lightning
 open DotNetLightning.Utils
 
 /// A hop in route
@@ -10,7 +9,7 @@ type RouteHop = {
     /// The channel that should be used from the previous hop to reach this node.
     ShortChannelId: ShortChannelId
     /// The fee of this hop. FOr the last hop, this should be the full value of the payment.
-    Fee: LightMoney
+    Fee: LNMoney
     /// The CLTV delta added for this hop. For the last hop, this should be the full CLTV value
     /// expected at the detination, in excess of the current block height.
     CLTVExpiryDelta: uint32

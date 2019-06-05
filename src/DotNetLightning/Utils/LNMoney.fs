@@ -1,6 +1,7 @@
 namespace DotNetLightning.Utils
 open System
 open System.Globalization
+open NBitcoin
 
 [<Flags>]
 type LNMoneyUnit =
@@ -41,6 +42,15 @@ type LNMoney = LNMoney of int64
         static member Satoshis(satoshis: decimal) =
             LNMoney.FromUnit(satoshis * (decimal LNMoneyUnit.Satoshi), LNMoneyUnit.Satoshi)
 
+        static member Satoshis(sats: int64) =
+            LNMoney.FromUnit(decimal (sats * int64 LNMoneyUnit.Satoshi), LNMoneyUnit.Satoshi)
+
+        static member Satoshis(sats: uint64) =
+            LNMoney.FromUnit(decimal (sats * uint64 LNMoneyUnit.Satoshi), LNMoneyUnit.Satoshi)
+
+        static member MilliSatoshis(sats: int64) =
+            LNMoney.FromUnit(decimal sats, LNMoneyUnit.Satoshi)
+
         static member Zero = LNMoney(0L)
         static member TryParse(bitcoin: string, result: outref<LNMoney>) =
             match Decimal.TryParse(bitcoin, LNMoney.BitcoinStyle, CultureInfo.InvariantCulture) with
@@ -64,11 +74,14 @@ type LNMoney = LNMoney of int64
         static member Max (LNMoney a, LNMoney b) = if a >= b then a else b
         static member Min (LNMoney a, LNMoney b) = if a <= b then a else b
 
+        static member op_Implicit(money: Money) = LNMoney.Satoshis(money.Satoshi)
+
         // --------- Utilities
         member this.Abs() =
             if this < LNMoney.Zero then LNMoney(-this.Value) else this
 
         member this.MilliSatoshi = let (LNMoney v) = this in v
+        member this.Satoshi = this.MilliSatoshi / 1000L
         member this.Value = this.MilliSatoshi
 
         member this.Split(parts: int): LNMoney seq =

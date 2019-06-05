@@ -1,5 +1,4 @@
 namespace DotNetLightning.LN
-open BTCPayServer.Lightning
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils
 open NBitcoin
@@ -23,7 +22,7 @@ type TxCreationKeys = {
 type HTLCOutputInCommitment = {
     /// There are two types of htlc 1. Offered, 2. Received
     Offered: bool
-    Amount: LightMoney
+    Amount: LNMoney
     CLTVExpiry: uint32
     PaymentHash: PaymentHash
     TransactionOutputIndex: uint32 option

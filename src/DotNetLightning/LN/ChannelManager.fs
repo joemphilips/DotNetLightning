@@ -1,7 +1,7 @@
 namespace DotNetLightning.LN
 open NBitcoin
+open DotNetLightning.Utils
 open DotNetLightning.Utils.Primitives
-open BTCPayServer.Lightning
 open DotNetLightning.Serialize.Msgs
 
 type PendingForwardHTLCInfo = {
@@ -9,7 +9,7 @@ type PendingForwardHTLCInfo = {
     IncomingSharedSecret: uint8
     PaymentHash: uint256
     ShortChannelId: ShortChannelId
-    AmountToForward: LightMoney
+    AmountToForward: LNMoney
     OutgoingCLTVValue: uint32
 }
 
@@ -28,7 +28,7 @@ type HTLCPreviousHopData =
 type OutboundRoute = {
     Route: Route
     SessionPrev: Key
-    FirstHopHTLC: LightMoney
+    FirstHopHTLC: LNMoney
 }
 
 type HTLCSource =

@@ -6,7 +6,6 @@ open System.IO
 open System.Net
 open NBitcoin.Crypto
 open DotNetLightning.Utils.Error
-open BTCPayServer.Lightning
 
 [<Struct>]
 type DecodeError =
@@ -121,11 +120,11 @@ module Msgs =
         Chainhash: uint256
         TemporaryChannelId: ChannelId
         FundingSatoshis: Money
-        PushMSat: LightMoney
+        PushMSat: LNMoney
         DustLimitSatoshis: Money
-        MaxHTLCValueInFlightMsat: LightMoney
+        MaxHTLCValueInFlightMsat: LNMoney
         ChannelReserveSatoshis: Money
-        HTLCMinimumMsat: LightMoney
+        HTLCMinimumMsat: LNMoney
         FeeRatePerKw: FeeRatePerKw
         ToSelfDelay: BlockHeightOffset
         MaxAcceptedHTLCs: uint16
@@ -141,9 +140,9 @@ module Msgs =
     type AcceptChannel = {
         TemporaryChannelId: ChannelId
         DustLimitSatoshis: Money
-        MaxHTLCValueInFlightMsat: LightMoney
+        MaxHTLCValueInFlightMsat: LNMoney
         ChannelReserveSatoshis: Money
-        HTLCMinimumMSat: LightMoney
+        HTLCMinimumMSat: LNMoney
         MinimumDepth: uint32
         ToSelfDelay: BlockHeightOffset
         MaxAcceptedHTLCs: uint16
@@ -189,7 +188,7 @@ module Msgs =
     type UpdateAddHTLC = {
         ChannelId: ChannelId
         HTLCId: HTLCId
-        AmountMSat: LightMoney
+        AmountMSat: LNMoney
         PaymentHash: PaymentHash
         CLTVExpiry: uint32
         OnionRoutingPacket: OnionPacket
@@ -327,8 +326,8 @@ module Msgs =
         Timestamp: uint32
         Flags: uint16
         CLTVExpiryDelta: uint16
-        HTLCMinimumMSat: LightMoney
-        FeeBaseMSat: LightMoney
+        HTLCMinimumMSat: LNMoney
+        FeeBaseMSat: LNMoney
         FeeProportionalMillionths: uint32
         ExcessData: byte[]
     }
@@ -446,6 +445,6 @@ module Msgs =
 
     type OnionRealm0HopData = {
         ShortChannelId: ShortChannelId
-        AmtToForward: LightMoney
+        AmtToForward: LNMoney
         OutgoingCLTVValue: uint32
     }

@@ -5,7 +5,6 @@ open System
 open System.Text
 open System.Linq
 open DotNetLightning
-open BTCPayServer.Lightning
 open Microsoft.Extensions.Logging
 open DotNetLightning.Chain
 open DotNetLightning.Utils.RResult
@@ -14,12 +13,12 @@ open DotNetLightning.Utils.NBitcoinExtensions
 open NBitcoin.Crypto
 
 type ChannelValueStat = {
-    ValueToSelf: LightMoney;
-    ChannelValue: LightMoney;
-    ChannelReserve: LightMoney;
-    PendingOutboundHTLCsAmount: LightMoney;
-    PendingInBoundHTLCsAmount: LightMoney;
-    HoldingCellOutBoundAmount: LightMoney;
+    ValueToSelf: LNMoney;
+    ChannelValue: LNMoney;
+    ChannelReserve: LNMoney;
+    PendingOutboundHTLCsAmount: LNMoney;
+    PendingInBoundHTLCsAmount: LNMoney;
+    HoldingCellOutBoundAmount: LNMoney;
 }
 
 type InboundHTLCRemovalReason =
@@ -39,7 +38,7 @@ type InboundHTLCState =
 
 type InboundHTLCOutput = {
     HTLCId: HTLCId
-    Amount: LightMoney
+    Amount: LNMoney
     CLTVExpiry: uint32
     PaymentHash: PaymentHash
     State: InboundHTLCState
@@ -54,7 +53,7 @@ type OutboundHTLCState =
 
 type OutboundHTLCOutput = {
     HTLCId: HTLCId
-    Amount: LightMoney
+    Amount: LNMoney
     CLTVExpiry: uint32
     PaymentHash: PaymentHash
     State: OutboundHTLCState
@@ -154,7 +153,7 @@ type Channel = {
     ShutdownPubKey: PubKey
     CurrentLocalCommitmentTxNumber: uint64
     CurrentRemoteCommitmentTxNumber: uint64
-    ValueToSelf: LightMoney
+    ValueToSelf: LNMoney
     PendingInboundHTLCs: InboundHTLCOutput list
     PendingOutboundHTLCs: OutboundHTLCOutput list
     HoldingCellHTLCUpdates: HTLCUpdateAwaitingACK list
@@ -164,14 +163,14 @@ type Channel = {
     MonitorPendingCommitmentSigned: bool
     MonitorPendingForwards: (PendingForwardHTLCInfo * uint64) list
     MonitorPendingFailures: (HTLCSource * PaymentHash * HTLCFailReason) list
-    PendingUpdateFee: LightMoney option
-    HoldingCellUpdateFee: LightMoney option
+    PendingUpdateFee: LNMoney option
+    HoldingCellUpdateFee: LNMoney option
     NextLocalHTLCId: HTLCId
     NextRemoteHTLCId: HTLCId
     ChannelUpdateCount: uint32
     FeeRatePerKw: FeeRatePerKw
-    MaxCommitmentTxOutputLocal: (LightMoney * LightMoney)
-    MaxCommitmentTxOutputRemote: (LightMoney * LightMoney)
+    MaxCommitmentTxOutputLocal: (LNMoney * LNMoney)
+    MaxCommitmentTxOutputRemote: (LNMoney * LNMoney)
     LastLocalCommitmentTxn: Transaction list
     LastSentClosingFee: (uint64 * uint64) option
     FundingTxConfirmedIn: TxId option
@@ -182,11 +181,11 @@ type Channel = {
 
     TheirDustLimit: Money
     OurDustLimit: Money
-    TheirMaxHTLCValueInFlight: LightMoney
+    TheirMaxHTLCValueInFlight: LNMoney
 
     TheirChannelReserve: Money
-    TheirHTLCMinimum: LightMoney
-    OurHTLCMinimum: LightMoney
+    TheirHTLCMinimum: LNMoney
+    OurHTLCMinimum: LNMoney
     TheirToSelfDelay: BlockHeightOffset
     TheirMaxAcceptedHTLCs: uint16
     MinimumDepth: uint32
@@ -227,8 +226,8 @@ module Channel =
         failwith "Not implemnted"
 
     /// TODO:
-    let deriveOurHTLCMinimum(FeeRatePerKw atOpenBackGroundFee): LightMoney =
-        LightMoney.Satoshis(1000UL)
+    let deriveOurHTLCMinimum(FeeRatePerKw atOpenBackGroundFee): LNMoney =
+        LNMoney.Satoshis(1000UL)
 
     let private getChannel (userId: UserId)
                            (config: UserConfig)
@@ -252,7 +251,7 @@ module Channel =
             ShutdownPubKey = keysProvider.GetShutdownPubKey()
             CurrentLocalCommitmentTxNumber = INITIAL_COMMITMENT_NUMBER
             CurrentRemoteCommitmentTxNumber = INITIAL_COMMITMENT_NUMBER
-            ValueToSelf = LightMoney.MilliSatoshis(channelValue.Satoshi * 1000L) - pushMSat
+            ValueToSelf = LNMoney.MilliSatoshis(channelValue.Satoshi * 1000L) - pushMSat
             PendingInboundHTLCs = List.empty
             PendingOutboundHTLCs = List.empty
             HoldingCellHTLCUpdates = List.empty
@@ -268,8 +267,8 @@ module Channel =
             MonitorPendingForwards = List.empty
             MonitorPendingFailures = List.empty
 
-            MaxCommitmentTxOutputLocal = (LightMoney.MilliSatoshis(channelValue.Satoshi * (1000L)) - pushMSat, pushMSat)
-            MaxCommitmentTxOutputRemote = (LightMoney.MilliSatoshis(channelValue.Satoshi * (1000L)) - pushMSat, pushMSat)
+            MaxCommitmentTxOutputLocal = (LNMoney.MilliSatoshis(channelValue.Satoshi * (1000L)) - pushMSat, pushMSat)
+            MaxCommitmentTxOutputRemote = (LNMoney.MilliSatoshis(channelValue.Satoshi * (1000L)) - pushMSat, pushMSat)
 
             LastLocalCommitmentTxn = List.empty
 
@@ -282,9 +281,9 @@ module Channel =
             FeeRatePerKw = fee
             TheirDustLimit = Money.Zero
             OurDustLimit = deriveOurDustLimitSatoshis(backGroundFeeRate)
-            TheirMaxHTLCValueInFlight = LightMoney.Zero
+            TheirMaxHTLCValueInFlight = LNMoney.Zero
             TheirChannelReserve = Money.Zero
-            TheirHTLCMinimum = LightMoney.Zero
+            TheirHTLCMinimum = LNMoney.Zero
             OurHTLCMinimum = deriveOurHTLCMinimum(fee)
             TheirToSelfDelay = BlockHeightOffset 0us
             TheirMaxAcceptedHTLCs = 0us
@@ -307,7 +306,7 @@ module Channel =
                            keyProvider: IKeysRepository,
                            theirNodeId: PubKey,
                            channelValue: Money,
-                           pushMSat: LightMoney,
+                           pushMSat: LNMoney,
                            userId: UserId,
                            logger: ILogger,
                            config: UserConfig): RResult<Channel>  =
@@ -319,9 +318,9 @@ module Channel =
             else
                 Good(channelValue)
 
-        let checkPushValueLessThanChannelValue (pushMSat: LightMoney) (channelValue: Money) =
-            if pushMSat.ToUnit(LightMoneyUnit.Satoshi) >= (channelValue.ToDecimal(MoneyUnit.Satoshi)) then
-                RResult.Bad(RBadTree.Leaf(RBad.Message("push value > channel value")))
+        let checkPushValueLessThanChannelValue (pushMSat: LNMoney) (channelValue: Money) =
+            if pushMSat >= (!> channelValue) then
+                RResult.Bad(!> ("push value > channel value"))
             else
                 Good(pushMSat)
 
@@ -434,7 +433,7 @@ module Channel =
             let ourDustLimitSatoshis = deriveOurDustLimitSatoshis(backgroundFeeRate)
             let ourChannelReserveSatoshis = getOurChannelReserve(msg.ChannelReserveSatoshis)
             // check if the funder's amount for the initial commitment tx is sufficient for fee payment
-            let fundersAmountMSat = LightMoney.MilliSatoshis(msg.FundingSatoshis.Satoshi * 1000L - msg.PushMSat.MilliSatoshi)
+            let fundersAmountMSat = LNMoney.MilliSatoshis(msg.FundingSatoshis.Satoshi * 1000L - msg.PushMSat.MilliSatoshi)
 
             let toLocal = msg.PushMSat
             let toRemote = fundersAmountMSat.MilliSatoshi - backgroundFeeRate.Value.Satoshi * (int64 COMMITMENT_TX_BASE_WEIGHT)
@@ -499,8 +498,8 @@ module Channel =
                 MonitorPendingForwards = List.empty
                 MonitorPendingFailures = List.empty
 
-                MaxCommitmentTxOutputLocal = (pushMSat, LightMoney.MilliSatoshis(channelValue.Satoshi * (1000L)) - pushMSat)
-                MaxCommitmentTxOutputRemote = (pushMSat, LightMoney.MilliSatoshis(channelValue.Satoshi * (1000L)) - pushMSat)
+                MaxCommitmentTxOutputLocal = (pushMSat, LNMoney.MilliSatoshis(channelValue.Satoshi * (1000L)) - pushMSat)
+                MaxCommitmentTxOutputRemote = (pushMSat, LNMoney.MilliSatoshis(channelValue.Satoshi * (1000L)) - pushMSat)
 
                 LastLocalCommitmentTxn = List.empty
 
@@ -514,7 +513,7 @@ module Channel =
                 ChannelValueSatoshis = msg.FundingSatoshis
                 TheirDustLimit = msg.DustLimitSatoshis
                 OurDustLimit = ourDustLimitSatoshis
-                TheirMaxHTLCValueInFlight = LightMoney(Math.Min(msg.MaxHTLCValueInFlightMsat.MilliSatoshi, msg.FundingSatoshis.Satoshi))
+                TheirMaxHTLCValueInFlight = LNMoney(Math.Min(msg.MaxHTLCValueInFlightMsat.MilliSatoshi, msg.FundingSatoshis.Satoshi))
                 TheirChannelReserve = msg.ChannelReserveSatoshis
                 TheirHTLCMinimum = msg.HTLCMinimumMsat
                 OurHTLCMinimum = deriveOurHTLCMinimum(msg.FeeRatePerKw)
@@ -609,9 +608,9 @@ module Channel =
         let mutable txOuts: (TxOut * (HTLCOutputInCommitment * HTLCSource option) option) list = List.empty
         let mutable includedDustHTLCs: (HTLCOutputInCommitment * HTLCSource option) list = List.empty
         let dustLimitSatoshis = if local then c.OurDustLimit else c.TheirDustLimit
-        let mutable remoteHTLCTotalMSat = LightMoney.Zero
-        let mutable localHTLCTotalMSat = LightMoney.Zero
-        let mutable valueToSelfMSatOffset = LightMoney.Zero
+        let mutable remoteHTLCTotalMSat = LNMoney.Zero
+        let mutable localHTLCTotalMSat = LNMoney.Zero
+        let mutable valueToSelfMSatOffset = LNMoney.Zero
 
         c.Logger.LogDebug(sprintf "building commitment tx number %d for %s generated by %s with fee %O"
                                   commitmentN
@@ -660,9 +659,9 @@ module Channel =
                 | _ -> ()
 
         let valueToSelfMSat = c.ValueToSelf - localHTLCTotalMSat + valueToSelfMSatOffset
-        assert (valueToSelfMSat >= LightMoney.Zero)
+        assert (valueToSelfMSat >= LNMoney.Zero)
 
-        let valueToRemoteMSat = LightMoney(c.ChannelValueSatoshis.Satoshi * 1000L - c.ValueToSelf.MilliSatoshi -
+        let valueToRemoteMSat = LNMoney(c.ChannelValueSatoshis.Satoshi * 1000L - c.ValueToSelf.MilliSatoshi -
                                            remoteHTLCTotalMSat.MilliSatoshi - valueToSelfMSatOffset.MilliSatoshi)
         
         let totalFee = int64((uint64 feeRatePerKW.Value.Satoshi) * ((COMMITMENT_TX_BASE_WEIGHT + (uint64 txOuts.Length) * COMMITMENT_TX_WEIGHT_PER_HTLC) / 1000UL))

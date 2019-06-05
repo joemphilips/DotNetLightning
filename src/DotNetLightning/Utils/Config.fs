@@ -1,7 +1,5 @@
-namespace DotNetLightning
-open BTCPayServer.Lightning
+namespace DotNetLightning.Utils
 open NBitcoin
-open BTCPayServer.Lightning
 
 type ChannelHandshakeConfig = {
     /// Confirmations we will wait for before considering the channel locked in.
@@ -14,10 +12,10 @@ type ChannelHandshakeConfig = {
 /// These limits are only applied to our counterpaty's limits, not our own
 type ChannelHandshakeLimits = {
     MinFundingSatoshis: Money
-    MaxHTLCMinimumMSat: LightMoney
+    MaxHTLCMinimumMSat: LNMoney
     /// The remote node sets a limit on the maximum value of pending HTLCs to them at any given time
     /// to limit their funds exposure to HTLCs. This allows you to set a minimum such value.
-    MinMaxHTLCValueInFlightMSat: LightMoney
+    MinMaxHTLCValueInFlightMSat: LNMoney
     /// The remote node will require we keep a certain amount in direct payment to ourselves at all
     /// time, ensuring that we are able to be pusnished if we broadcast an old state. This allows to
     /// you limit the amount which we will have to keep to ourselves (and cannot use for HTLCs).
@@ -50,8 +48,8 @@ module ChannelHandshakeLimits =
     let public Create() =
         {
             MinFundingSatoshis = Money.Zero
-            MaxHTLCMinimumMSat = LightMoney.Coins(21_000_000_000m)
-            MinMaxHTLCValueInFlightMSat = LightMoney.Zero
+            MaxHTLCMinimumMSat = LNMoney.Coins(21_000_000_000m)
+            MinMaxHTLCValueInFlightMSat = LNMoney.Zero
             MaxChannelReserveSatoshis = Money.Zero
             MinMaxAcceptedHTLCs = 0us
             MinDustLimitSatoshis = Money.Satoshis(546m)
