@@ -9,6 +9,7 @@ open NBitcoin
 open NBitcoin.Crypto
 open DotNetLightning.Utils
 open DotNetLightning.Utils.NBitcoinExtensions
+open System.Net
 
 module SerializationTest =
     let hex = NBitcoin.DataEncoders.HexEncoder()
@@ -16,7 +17,6 @@ module SerializationTest =
     let ascii = System.Text.ASCIIEncoding.ASCII
     let signMessageWith (privKey: Key) (msgHash: string) =
         let msgBytes = msgHash |> ascii.GetBytes
-        printfn "%A, %d" msgBytes msgBytes.Length
         privKey.SignCompact(msgBytes |> uint256, false) |> fun d -> ECDSASignature.FromBytesCompact(d, true)
 
     [<Tests>]
@@ -58,7 +58,6 @@ module SerializationTest =
                 let privKey = Key(hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101"))
                 let sig1 = signMessageWith privKey "01010101010101010101010101010101"
                 let sig2 = signMessageWith privKey "02020202020202020202020202020202"
-                printfn "sig1 is DER: %s\nCompact representation: %s" (sig1.ToDER() |> hex.EncodeData) (sig1.ToBytesCompact() |> hex.EncodeData)
                 let actual = LightningMsg.AnnouncementSignatures{ 
                     ChannelId = ChannelId(uint256([| 4; 0; 0; 0; 0; 0; 0; 0; 5; 0; 0; 0; 0; 0; 0; 0; 6; 0; 0; 0; 0; 0; 0; 0; 7; 0; 0; 0; 0; 0; 0; 0 |] |> Array.map(uint8)))
                     ShortChannelId = ShortChannelId.FromUInt64(2316138423780173UL)
@@ -123,4 +122,263 @@ module SerializationTest =
                 channelAnnouncementTestCore (false, false, true)
                 channelAnnouncementTestCore (false, true, false)
                 channelAnnouncementTestCore (true, false, true)
+            testCase "node_announcement" <| fun _ ->
+                let nodeAnnouncementTestCore(unknownFeatureBits: bool, ipv4: bool, ipv6: bool, onionv2: bool, onionv3: bool, excessAddressData: bool, excessData: bool) =
+                    let privKey1 = Key(hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101"))
+                    let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
+                    let mutable features = GlobalFeatures.Flags [||]
+                    if unknownFeatureBits then
+                        features <- Flags [| 0xFFuy; 0xFFuy |]
+                    let mutable addresses = List.Empty
+                    if ipv4 then
+                        addresses <- addresses @ [NetAddress.IPv4 (IPEndPoint(IPAddress([|255uy;
+                                                                                          254uy;
+                                                                                          253uy;
+                                                                                          252uy|]), 9735))]
+                    if ipv6 then
+                        addresses <- addresses @ [NetAddress.IPv6 (IPEndPoint(IPAddress([|255uy;
+                                                                                          254uy;
+                                                                                          253uy;
+                                                                                          252uy;
+                                                                                          251uy;
+                                                                                          250uy;
+                                                                                          249uy;
+                                                                                          248uy;
+                                                                                          247uy;
+                                                                                          246uy;
+                                                                                          245uy;
+                                                                                          244uy;
+                                                                                          243uy;
+                                                                                          242uy;
+                                                                                          241uy;
+                                                                                          240uy|]), 9735))]
+                    if onionv2 then
+                        addresses <- addresses @ [NetAddress.OnionV2({
+                            Addr =[| 255uy
+                                     254uy
+                                     253uy
+                                     252uy
+                                     251uy
+                                     250uy
+                                     249uy
+                                     248uy
+                                     247uy
+                                     246uy |]
+                            Port = 9735us } )]
+                    if onionv3 then
+                        addresses <- addresses @ [NetAddress.OnionV3({ 
+                            ed25519PubKey = [| 255uy
+                                               254uy
+                                               253uy
+                                               252uy
+                                               251uy
+                                               250uy
+                                               249uy
+                                               248uy
+                                               247uy
+                                               246uy
+                                               245uy
+                                               244uy
+                                               243uy
+                                               242uy
+                                               241uy
+                                               240uy
+                                               239uy
+                                               238uy
+                                               237uy
+                                               236uy
+                                               235uy
+                                               234uy
+                                               233uy
+                                               232uy
+                                               231uy
+                                               230uy
+                                               229uy
+                                               228uy
+                                               227uy
+                                               226uy
+                                               225uy
+                                               224uy|]
+                            CheckSum = 32us
+                            Version = 16uy
+                            Port = 9735us
+                         })]
+                    let mutable addrLen = 0us
+                    for addr in addresses do
+                        addrLen <- addrLen + addr.Length + 1us
+
+                    let unsignedNodeAnnouncement = {
+                        Features = features
+                        Timestamp = 20190119u
+                        NodeId = NodeId(privKey1.PubKey)
+                        RGB = {Blue = 32uy; Red = 32uy; Green = 32uy}
+                        Alias = uint256([| for _ in 0..31 -> 16uy|])
+                        Addresses = addresses
+                        ExcessAddressData = if excessAddressData then [|33uy
+                                                                        108uy
+                                                                        40uy
+                                                                        11uy
+                                                                        83uy
+                                                                        149uy
+                                                                        162uy
+                                                                        84uy
+                                                                        110uy
+                                                                        126uy
+                                                                        75uy
+                                                                        38uy
+                                                                        99uy
+                                                                        224uy
+                                                                        79uy
+                                                                        129uy
+                                                                        22uy
+                                                                        34uy
+                                                                        241uy
+                                                                        90uy
+                                                                        79uy
+                                                                        146uy
+                                                                        232uy
+                                                                        58uy
+                                                                        162uy
+                                                                        233uy
+                                                                        43uy
+                                                                        162uy
+                                                                        165uy
+                                                                        115uy
+                                                                        193uy
+                                                                        57uy
+                                                                        20uy
+                                                                        44uy
+                                                                        84uy
+                                                                        174uy
+                                                                        99uy
+                                                                        7uy
+                                                                        42uy
+                                                                        30uy
+                                                                        193uy
+                                                                        238uy
+                                                                        125uy
+                                                                        192uy
+                                                                        192uy
+                                                                        75uy
+                                                                        222uy
+                                                                        92uy
+                                                                        132uy
+                                                                        120uy
+                                                                        6uy
+                                                                        23uy
+                                                                        42uy
+                                                                        160uy
+                                                                        92uy
+                                                                        146uy
+                                                                        194uy
+                                                                        42uy
+                                                                        232uy
+                                                                        227uy
+                                                                        8uy
+                                                                        209uy
+                                                                        210uy
+                                                                        105uy|] else [||]
+                        ExcessData = if excessData then [|59uy
+                                                          18uy
+                                                          204uy
+                                                          25uy
+                                                          92uy
+                                                          224uy
+                                                          162uy
+                                                          209uy
+                                                          189uy
+                                                          166uy
+                                                          168uy
+                                                          139uy
+                                                          239uy
+                                                          161uy
+                                                          159uy
+                                                          160uy
+                                                          127uy
+                                                          81uy
+                                                          202uy
+                                                          167uy
+                                                          92uy
+                                                          232uy
+                                                          56uy
+                                                          55uy
+                                                          242uy
+                                                          137uy
+                                                          101uy
+                                                          96uy
+                                                          11uy
+                                                          138uy
+                                                          172uy
+                                                          171uy
+                                                          8uy
+                                                          85uy
+                                                          255uy
+                                                          176uy
+                                                          231uy
+                                                          65uy
+                                                          236uy
+                                                          95uy
+                                                          124uy
+                                                          65uy
+                                                          66uy
+                                                          30uy
+                                                          152uy
+                                                          41uy
+                                                          169uy
+                                                          212uy
+                                                          134uy
+                                                          17uy
+                                                          200uy
+                                                          200uy
+                                                          49uy
+                                                          247uy
+                                                          27uy
+                                                          229uy
+                                                          234uy
+                                                          115uy
+                                                          230uy
+                                                          101uy
+                                                          148uy
+                                                          151uy
+                                                          127uy
+                                                          253uy|] else [||]
+                    }
+                    addrLen <- addrLen + uint16 unsignedNodeAnnouncement.ExcessAddressData.Length
+                    let nodeAnnouncement = LightningMsg.NodeAnnouncement{
+                        Signature = sig1
+                        Contents = unsignedNodeAnnouncement
+                    }
+
+                    let actual = nodeAnnouncement.ToBytes()
+                    let mutable expected = hex.DecodeData("d977cb9b53d93a6ff64bb5f1e158b4094b66e798fb12911168a3ccdf80a83096340a6a95da0ae8d9f776528eecdbb747eb6b545495a4319ed5378e35b21e073a")
+                    if unknownFeatureBits then
+                        expected <- Array.append expected (hex.DecodeData("0002ffff"))
+                    else
+                        expected <- Array.append expected (hex.DecodeData("0000"))
+                    expected <- Array.append expected (hex.DecodeData("013413a7031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f2020201010101010101010101010101010101010101010101010101010101010101010"))
+                    expected <- Array.append expected ([| byte(addrLen >>> 8); byte addrLen |])
+                    if ipv4 then
+                        expected <- Array.append expected (hex.DecodeData("01fffefdfc2607"))
+                    if ipv6 then
+                        expected <- Array.append expected (hex.DecodeData("02fffefdfcfbfaf9f8f7f6f5f4f3f2f1f02607"))
+                    if onionv2 then
+                        expected <- Array.append expected (hex.DecodeData("03fffefdfcfbfaf9f8f7f62607"))
+                    if onionv3 then
+                        expected <- Array.append expected (hex.DecodeData("04fffefdfcfbfaf9f8f7f6f5f4f3f2f1f0efeeedecebeae9e8e7e6e5e4e3e2e1e00020102607"))
+                    if excessAddressData then
+                        expected <- Array.append expected (hex.DecodeData("216c280b5395a2546e7e4b2663e04f811622f15a4f92e83aa2e92ba2a573c139142c54ae63072a1ec1ee7dc0c04bde5c847806172aa05c92c22ae8e308d1d269"))
+                    if excessData then
+                        expected <- Array.append expected (hex.DecodeData("3b12cc195ce0a2d1bda6a88befa19fa07f51caa75ce83837f28965600b8aacab0855ffb0e741ec5f7c41421e9829a9d48611c8c831f71be5ea73e66594977ffd"))
+                    for offset in seq { for x in 1..400 do if x % 50 = 0 then yield x} do
+                        Expect.equal actual.[offset..(offset + 50)] expected.[offset..(offset + 50)] (sprintf "failed in %d" offset)
+                    Expect.equal actual expected ""
+                nodeAnnouncementTestCore(true, true, true, true, true, true, true)
+                nodeAnnouncementTestCore(false, false, false, false, false, false, false)
+                nodeAnnouncementTestCore(false, true, false, false, false, false, false)
+                nodeAnnouncementTestCore(false, false, true, false, false, false, false)
+                nodeAnnouncementTestCore(false, false, false, true, false, false, false)
+                nodeAnnouncementTestCore(false, false, false, false, true, false, false)
+                nodeAnnouncementTestCore(false, false, false, false, false, true, false)
+                nodeAnnouncementTestCore(false, true, false, true, false, true, false)
+                nodeAnnouncementTestCore(false, false, true, false, true, false, false)
       ]

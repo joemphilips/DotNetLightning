@@ -31,6 +31,10 @@ module NetworkSerializer =
             this.Write(data.Red)
             this.Write(data.Green)
             this.Write(data.Blue)
+        member this.Write(data: uint32, lendian: bool) =
+            let d = BitConverter.GetBytes(data)
+            Array.Reverse(d)
+            this.Write(d)
         member this.WriteWithLen(data: byte[]) =
             let length = BitConverter.GetBytes((uint16)data.Length)
             Array.Reverse(length)
@@ -190,7 +194,7 @@ module NetworkSerializer =
         | (NodeAnnouncement msg) ->
             w.Write(msg.Signature)
             w.WriteWithLen(msg.Contents.Features.Value)
-            w.Write(msg.Contents.Timestamp)
+            w.Write(msg.Contents.Timestamp, false)
             w.Write(msg.Contents.NodeId.Value)
             w.Write(msg.Contents.RGB)
             w.Write(msg.Contents.Alias, true)
@@ -202,7 +206,7 @@ module NetworkSerializer =
             w.Write(msg.Signature)
             w.Write(msg.Contents.ChainHash, false)
             w.Write(msg.Contents.ShortChannelId)
-            w.Write(msg.Contents.Timestamp)
+            w.Write(msg.Contents.Timestamp, false)
             w.Write(msg.Contents.Flags)
             w.Write(msg.Contents.CLTVExpiryDelta)
             w.Write(msg.Contents.HTLCMinimumMSat.MilliSatoshi)
