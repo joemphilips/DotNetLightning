@@ -10,8 +10,26 @@ open NBitcoin.Crypto
 open DotNetLightning.Utils
 open DotNetLightning.Utils.NBitcoinExtensions
 open System.Net
+open System
 
 module SerializationTest =
+    let CheckArrayEqual (actual: 'a array) (expected: 'a array) =
+        // Expect.hasLength actual (expected.Length) ""
+        let mutable index = 0
+        try
+            for offset in seq { for x in 1..Int32.MaxValue do if x % 50 = 0 then yield x} do
+                index <- offset
+                Expect.equal actual.[offset..(offset + 50)] expected.[offset..(offset + 50)] (sprintf "failed in %d" offset)
+        with
+        | :? IndexOutOfRangeException as ex-> 
+            try
+                Expect.equal actual.[(actual.Length - 50)..(actual.Length - 1)] expected.[(actual.Length - 50)..(actual.Length - 1)] (sprintf "failed in last 50 of actual: %d (expected length was %d)" (actual.Length) (expected.Length))
+                Expect.equal actual expected ""
+            with
+            | :? IndexOutOfRangeException as ex ->
+                Expect.equal actual.[(expected.Length - 50)..(expected.Length - 1)] expected.[(expected.Length - 50)..(expected.Length - 1)] (sprintf "failed in last 50 of expected: %d (actual length was %d)" (expected.Length) (actual.Length))
+                Expect.equal actual expected ""
+
     let hex = NBitcoin.DataEncoders.HexEncoder()
     let base64 = NBitcoin.DataEncoders.Base64Encoder()
     let ascii = System.Text.ASCIIEncoding.ASCII
@@ -369,8 +387,8 @@ module SerializationTest =
                         expected <- Array.append expected (hex.DecodeData("216c280b5395a2546e7e4b2663e04f811622f15a4f92e83aa2e92ba2a573c139142c54ae63072a1ec1ee7dc0c04bde5c847806172aa05c92c22ae8e308d1d269"))
                     if excessData then
                         expected <- Array.append expected (hex.DecodeData("3b12cc195ce0a2d1bda6a88befa19fa07f51caa75ce83837f28965600b8aacab0855ffb0e741ec5f7c41421e9829a9d48611c8c831f71be5ea73e66594977ffd"))
-                    for offset in seq { for x in 1..400 do if x % 50 = 0 then yield x} do
-                        Expect.equal actual.[offset..(offset + 50)] expected.[offset..(offset + 50)] (sprintf "failed in %d" offset)
+                    // CheckArrayEqual actual expected
+                    Expect.sequenceContainsOrder actual expected ""
                     Expect.equal actual expected ""
                 nodeAnnouncementTestCore(true, true, true, true, true, true, true)
                 nodeAnnouncementTestCore(false, false, false, false, false, false, false)
@@ -381,4 +399,49 @@ module SerializationTest =
                 nodeAnnouncementTestCore(false, false, false, false, false, true, false)
                 nodeAnnouncementTestCore(false, true, false, true, false, true, false)
                 nodeAnnouncementTestCore(false, false, true, false, true, false, false)
+            testCase "channel_update msg" <| fun _ ->
+                let channelUpdateTestCore (nonBitcoinChainHash: bool, direction: bool, disable: bool, htlcMaximumMSat: bool) =
+                    let privKey = Key(hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101"))
+                    let sig1 = signMessageWith privKey "01010101010101010101010101010101"
+                    let unsignedChannelUpdate = {
+                        ChainHash = if (not nonBitcoinChainHash) then uint256(hex.DecodeData("6fe28c0ab6f1b372c1a6a246ae63f74f931e8365e15a089c68d6190000000000")) else uint256(hex.DecodeData("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"))
+                        ShortChannelId = ShortChannelId.FromUInt64(2316138423780173UL)
+                        Timestamp = 20190119u
+                        Flags = ((if direction && disable then (2us) else if disable then (2us) else if direction then 1us else 0us) ||| (if htlcMaximumMSat then (1us <<< 8) else 0us))
+                        CLTVExpiryDelta = !> 144us
+                        HTLCMinimumMSat = LNMoney.MilliSatoshis(1000000L)
+                        FeeBaseMSat = LNMoney.MilliSatoshis(10000L)
+                        FeeProportionalMillionths = 20u
+                        ExcessData = if htlcMaximumMSat then [| 0uy; 0uy; 0uy; 0uy; 59uy; 154uy; 202uy; 0uy |] else [||]
+                    }
+                    let channelUpdate = LightningMsg.ChannelUpdate{
+                        Signature = sig1
+                        Contents = unsignedChannelUpdate
+                    }
+                    let actual = channelUpdate.ToBytes()
+                    let mutable expected = hex.DecodeData("d977cb9b53d93a6ff64bb5f1e158b4094b66e798fb12911168a3ccdf80a83096340a6a95da0ae8d9f776528eecdbb747eb6b545495a4319ed5378e35b21e073a")
+                    if nonBitcoinChainHash then
+                        expected <- Array.append expected (hex.DecodeData("43497fd7f826957108f4a30fd9cec3aeba79972084e90ead01ea330900000000"))
+                    else
+                        expected <- Array.append expected (hex.DecodeData("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"))
+                    expected <- Array.append expected (hex.DecodeData("00083a840000034d013413a7"))
+                    if htlcMaximumMSat then
+                        expected <- Array.append expected (hex.DecodeData("01"))
+                    else
+                        expected <- Array.append expected (hex.DecodeData("00"))
+                    expected <- Array.append expected (hex.DecodeData("00"))
+                    if direction then
+                        expected.[expected.Length - 1] <- 1uy
+                    if disable then
+                        expected.[expected.Length - 1] <- expected.[expected.Length - 1] ||| 1uy <<< 1
+                    expected <- Array.append expected (hex.DecodeData("009000000000000f42400000271000000014"))
+                    if htlcMaximumMSat then
+                        expected <- Array.append expected (hex.DecodeData("000000003b9aca00"))
+                    CheckArrayEqual actual expected
+                channelUpdateTestCore(false, false, false, false)
+                channelUpdateTestCore(true, false, false, false)
+                channelUpdateTestCore(false, true, false, false)
+                channelUpdateTestCore(false, false, true, false)
+                channelUpdateTestCore(false, false, false, true)
+                channelUpdateTestCore(true, true, true, true)
       ]

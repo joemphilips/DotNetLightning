@@ -33,6 +33,9 @@ module Primitives =
     /// to restrict into the range smaller than BlockHeight
     type BlockHeightOffset = BlockHeightOffset of uint16 with
         member x.Value = let (BlockHeightOffset v) = x in v
+        static member op_Implicit(v: uint16) =
+            BlockHeightOffset v
+
 
     type PaymentPreimage = PaymentPreimage of uint256 with
         member x.Value = let (PaymentPreimage v) = x in v

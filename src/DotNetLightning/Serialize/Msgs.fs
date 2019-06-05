@@ -325,7 +325,7 @@ module Msgs =
         ShortChannelId: ShortChannelId
         Timestamp: uint32
         Flags: uint16
-        CLTVExpiryDelta: uint16
+        CLTVExpiryDelta: BlockHeightOffset
         HTLCMinimumMSat: LNMoney
         FeeBaseMSat: LNMoney
         FeeProportionalMillionths: uint32

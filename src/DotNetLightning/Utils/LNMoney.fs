@@ -49,7 +49,7 @@ type LNMoney = LNMoney of int64
             LNMoney.FromUnit(decimal (sats * uint64 LNMoneyUnit.Satoshi), LNMoneyUnit.Satoshi)
 
         static member MilliSatoshis(sats: int64) =
-            LNMoney.FromUnit(decimal sats, LNMoneyUnit.Satoshi)
+            LNMoney.FromUnit(decimal sats, LNMoneyUnit.MilliSatoshi)
 
         static member Zero = LNMoney(0L)
         static member TryParse(bitcoin: string, result: outref<LNMoney>) =

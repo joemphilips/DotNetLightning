@@ -164,17 +164,19 @@ module NetworkSerializer =
             w.Write(addrLen, false)
             msg.Contents.Addresses
                 |> List.iter(fun addr -> w.Write(addr.GetId()); w.Write(addr))
+            w.Write(msg.Contents.ExcessAddressData)
+            w.Write(msg.Contents.ExcessData)
         | (ChannelUpdate msg) ->
             w.Write(msg.Signature)
             w.Write(msg.Contents.ChainHash, false)
             w.Write(msg.Contents.ShortChannelId)
             w.Write(msg.Contents.Timestamp, false)
             w.Write(msg.Contents.Flags, false)
-            w.Write(msg.Contents.CLTVExpiryDelta ,false)
+            w.Write(msg.Contents.CLTVExpiryDelta.Value, false)
             w.Write(msg.Contents.HTLCMinimumMSat.MilliSatoshi, false)
-            w.Write(msg.Contents.FeeBaseMSat.MilliSatoshi, false)
-            w.Write(msg.Contents.FeeProportionalMillionths, false)
-            w.Write(msg.Contents.HTLCMinimumMSat.MilliSatoshi, false)
+            w.Write((uint32) msg.Contents.FeeBaseMSat.MilliSatoshi, false)
+            w.Write((uint32) msg.Contents.FeeProportionalMillionths, false)
+            w.Write(msg.Contents.ExcessData)
 
     let toBytes (s: LightningMsg): byte[] =
         use ms = new MemoryStream()
