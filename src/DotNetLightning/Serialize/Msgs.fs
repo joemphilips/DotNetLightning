@@ -31,7 +31,7 @@ type LocalFeatures =
             (x.Value.[0] &&& (1uy <<< 3)) <> 0uy
 
 module LocalFeatures =
-    let SetInitialRoutingSync(x: LocalFeatures) =
+    let setInitialRoutingSync(x: LocalFeatures) =
         if
             x.Value.Length = 0
         then
@@ -170,8 +170,6 @@ module Msgs =
     type FundingLocked = {
         ChannelId: ChannelId
         NextPerCommitmentPoint: PubKey
-        Shutdown: ChannelId
-        ScriptPubKey: Script
     }
 
     type Shutdown = {
@@ -222,12 +220,12 @@ module Msgs =
     type RevokeAndACK = {
         ChannelId: ChannelId
         PerCommitmentSecret: PaymentPreimage
-        MyCurrentPerCommitmentPoint: PubKey
+        NextPerCommitmentPoint: PubKey
     }
 
     type UpdateFee = {
         ChannelId: ChannelId
-        FeeratePerKW: Money
+        FeeratePerKW: FeeRatePerKw
     }
 
     type DataLossProtect = {

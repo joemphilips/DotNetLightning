@@ -36,6 +36,18 @@ module SerializationTest =
     let signMessageWith (privKey: Key) (msgHash: string) =
         let msgBytes = msgHash |> ascii.GetBytes
         privKey.SignCompact(msgBytes |> uint256, false) |> fun d -> ECDSASignature.FromBytesCompact(d, true)
+    let privKey1 = Key(hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101"))
+    let privKey2 = Key(hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202"))
+    let privKey3 = Key(hex.DecodeData("0303030303030303030303030303030303030303030303030303030303030303"))
+    let privKey4 = Key(hex.DecodeData("0404040404040404040404040404040404040404040404040404040404040404"))
+    let privKey5 = Key(hex.DecodeData("0505050505050505050505050505050505050505050505050505050505050505"))
+    let privKey6 = Key(hex.DecodeData("0606060606060606060606060606060606060606060606060606060606060606"))
+    let pubkey1 = privKey1.PubKey
+    let pubkey2 = privKey2.PubKey
+    let pubkey3 = privKey3.PubKey
+    let pubkey4 = privKey4.PubKey
+    let pubkey5 = privKey5.PubKey
+    let pubkey6 = privKey6.PubKey
 
     [<Tests>]
     let tests =
@@ -55,14 +67,13 @@ module SerializationTest =
                 Expect.equal actual expected "channel_reestablish_no_secret failed"
 
             testCase "channel_reestablish with secret" <| fun _ ->
-                let pubkey = Key(hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101")).PubKey
                 let cr = ChannelReestablish{
                     ChannelId = ChannelId(uint256([|4; 0; 0; 0; 0; 0; 0; 0; 5; 0; 0; 0; 0; 0; 0; 0; 6; 0; 0; 0; 0; 0; 0; 0; 7; 0; 0; 0; 0; 0; 0; 0 |] |> Array.map(uint8)))
                     NextLocalCommitmentNumber = 3UL
                     NextRemoteCommitmentNumber = 4UL
                     DataLossProtect = OptionalField.Some({
                                           YourLastPerCommitmentSecret = PaymentPreimage(uint256([|for _ in 0..31 -> 9uy|]))
-                                          MyCurrentPerCommitmentPoint = pubkey
+                                          MyCurrentPerCommitmentPoint = pubkey1
                                       })
                 }
                 let expected = [|4; 0; 0; 0; 0; 0; 0; 0; 5; 0; 0; 0; 0; 0; 0; 0; 6; 0; 0; 0; 0; 0; 0; 0; 7; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 3; 0; 0; 0; 0; 0; 0; 0; 4; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 3; 27; 132; 197; 86; 123; 18; 100; 64; 153; 93; 62; 213; 170; 186; 5; 101; 215; 30; 24; 52; 96; 72; 25; 255; 156; 23; 245; 233; 213; 221; 7; 143 |] |> Array.map (byte)
@@ -73,9 +84,8 @@ module SerializationTest =
                 Expect.equal (actual.ToBytes()) expected ""
                 
             testCase "announcement_signatures" <| fun _ ->
-                let privKey = Key(hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101"))
-                let sig1 = signMessageWith privKey "01010101010101010101010101010101"
-                let sig2 = signMessageWith privKey "02020202020202020202020202020202"
+                let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
+                let sig2 = signMessageWith privKey1 "02020202020202020202020202020202"
                 let actual = LightningMsg.AnnouncementSignatures{ 
                     ChannelId = ChannelId(uint256([| 4; 0; 0; 0; 0; 0; 0; 0; 5; 0; 0; 0; 0; 0; 0; 0; 6; 0; 0; 0; 0; 0; 0; 0; 7; 0; 0; 0; 0; 0; 0; 0 |] |> Array.map(uint8)))
                     ShortChannelId = ShortChannelId.FromUInt64(2316138423780173UL)
@@ -88,10 +98,6 @@ module SerializationTest =
 
             testCase "channel_announcement" <| fun _ ->
                 let channelAnnouncementTestCore (unknownFeatureBits: bool, nonbitcoinChainHash: bool, excessData: bool) = 
-                    let privKey1 = Key(hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101"))
-                    let privKey2 = Key(hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202"))
-                    let privKey3 = Key(hex.DecodeData("0303030303030303030303030303030303030303030303030303030303030303"))
-                    let privKey4 = Key(hex.DecodeData("0404040404040404040404040404040404040404040404040404040404040404"))
                     let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
                     let sig2 = signMessageWith privKey2 "01010101010101010101010101010101"
                     let sig3 = signMessageWith privKey3 "01010101010101010101010101010101"
@@ -142,7 +148,6 @@ module SerializationTest =
                 channelAnnouncementTestCore (true, false, true)
             testCase "node_announcement" <| fun _ ->
                 let nodeAnnouncementTestCore(unknownFeatureBits: bool, ipv4: bool, ipv6: bool, onionv2: bool, onionv3: bool, excessAddressData: bool, excessData: bool) =
-                    let privKey1 = Key(hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101"))
                     let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
                     let mutable features = GlobalFeatures.Flags [||]
                     if unknownFeatureBits then
@@ -228,7 +233,7 @@ module SerializationTest =
                     let unsignedNodeAnnouncement = {
                         Features = features
                         Timestamp = 20190119u
-                        NodeId = NodeId(privKey1.PubKey)
+                        NodeId = NodeId(pubkey1)
                         RGB = {Blue = 32uy; Red = 32uy; Green = 32uy}
                         Alias = uint256([| for _ in 0..31 -> 16uy|])
                         Addresses = addresses
@@ -401,8 +406,7 @@ module SerializationTest =
                 nodeAnnouncementTestCore(false, false, true, false, true, false, false)
             testCase "channel_update msg" <| fun _ ->
                 let channelUpdateTestCore (nonBitcoinChainHash: bool, direction: bool, disable: bool, htlcMaximumMSat: bool) =
-                    let privKey = Key(hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101"))
-                    let sig1 = signMessageWith privKey "01010101010101010101010101010101"
+                    let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
                     let unsignedChannelUpdate = {
                         ChainHash = if (not nonBitcoinChainHash) then uint256(hex.DecodeData("6fe28c0ab6f1b372c1a6a246ae63f74f931e8365e15a089c68d6190000000000")) else uint256(hex.DecodeData("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"))
                         ShortChannelId = ShortChannelId.FromUInt64(2316138423780173UL)
@@ -444,4 +448,245 @@ module SerializationTest =
                 channelUpdateTestCore(false, false, true, false)
                 channelUpdateTestCore(false, false, false, true)
                 channelUpdateTestCore(true, true, true, true)
+
+            testCase "open_channel" <| fun _ ->
+                let openChannelTestCore(nonBitcoinChainHash: bool, randomBit: bool, shutdown: bool) =
+                    let pubkey1 = Key(hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101")).PubKey
+                    let pubkey2 = Key(hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202")).PubKey
+                    let pubkey3 = Key(hex.DecodeData("0303030303030303030303030303030303030303030303030303030303030303")).PubKey
+                    let pubkey4 = Key(hex.DecodeData("0404040404040404040404040404040404040404040404040404040404040404")).PubKey
+                    let pubkey5 = Key(hex.DecodeData("0505050505050505050505050505050505050505050505050505050505050505")).PubKey
+                    let pubkey6 = Key(hex.DecodeData("0606060606060606060606060606060606060606060606060606060606060606")).PubKey
+                    let openChannel = OpenChannel{
+                        Chainhash = if (not nonBitcoinChainHash) then uint256(hex.DecodeData("6fe28c0ab6f1b372c1a6a246ae63f74f931e8365e15a089c68d6190000000000")) else uint256(hex.DecodeData("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"))
+                        TemporaryChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
+                        FundingSatoshis = Money.Satoshis(1311768467284833366UL)
+                        PushMSat = LNMoney.MilliSatoshis(2536655962884945560L)
+                        DustLimitSatoshis = Money.Satoshis(3608586615801332854UL)
+                        MaxHTLCValueInFlightMsat = LNMoney.MilliSatoshis(8517154655701053848L)
+                        ChannelReserveSatoshis = Money.Satoshis(8665828695742877976UL)
+                        HTLCMinimumMsat = LNMoney.Satoshis(2316138423780173UL)
+                        FeeRatePerKw = FeeRatePerKw(Money.Satoshis(821716L))
+                        ToSelfDelay = BlockHeightOffset(49340us)
+                        MaxAcceptedHTLCs = 49340us
+                        FundingPubKey = pubkey1
+                        RevocationBasepoint = pubkey2
+                        PaymentBasepoint = pubkey3
+                        DelayedPaymentBasepoint = pubkey4
+                        HTLCBasepoint = pubkey5
+                        FirstPerCommitmentPoint = pubkey6
+                        ChannelFlags = if randomBit then 1uy <<< 5 else 0uy
+                        ShutdownScriptPubKey = if shutdown then Some (pubkey1.Hash.ScriptPubKey) else None
+                    }
+                    let actual = openChannel.ToBytes()
+                    let mutable expected = [||]
+                    if nonBitcoinChainHash then
+                        expected <- Array.append expected (hex.DecodeData("43497fd7f826957108f4a30fd9cec3aeba79972084e90ead01ea330900000000"))
+                    else
+                        expected <- Array.append expected (hex.DecodeData("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"))
+                    expected <- Array.append expected (hex.DecodeData("02020202020202020202020202020202020202020202020202020202020202021234567890123456233403289122369832144668701144767633030896203198784335490624111800083a840000034d000c89d4c0bcc0bc031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f024d4b6cd1361032ca9bd2aeb9d900aa4d45d9ead80ac9423374c451a7254d076602531fe6068134503d2723133227c867ac8fa6c83c537e9a44c3c5bdbdcb1fe33703462779ad4aad39514614751a71085f2f10e1c7a593e4e030efb5b8721ce55b0b0362c0a046dacce86ddd0343c6d3c7c79c2208ba0d9c9cf24a6d046d21d21f90f703f006a18d5653c4edf5391ff23a61f03ff83d237e880ee61187fa9f379a028e0a"))
+                    if randomBit then
+                        expected <- Array.append expected (hex.DecodeData("20"))
+                    else
+                        expected <- Array.append expected (hex.DecodeData("00"))
+                    if shutdown then
+                        expected <- Array.append expected (hex.DecodeData("001976a91479b000887626b294a914501a4cd226b58b23598388ac"))
+                    CheckArrayEqual actual expected
+                openChannelTestCore(false, false, false)
+                openChannelTestCore(true, false, false)
+                openChannelTestCore(false, true, false)
+                openChannelTestCore(false, false, true)
+                openChannelTestCore(true, true, true)
+            testCase "accept_channel" <| fun _ ->
+                let acceptChannelTestCore(shutdown: bool) =
+                    let acceptChannel = LightningMsg.AcceptChannel{
+                        TemporaryChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy|]))
+                        DustLimitSatoshis = Money.Satoshis(1311768467284833366L)
+                        MaxHTLCValueInFlightMsat = LNMoney.MilliSatoshis(2536655962884945560L)
+                        ChannelReserveSatoshis = Money.Satoshis(3608586615801332854L)
+                        HTLCMinimumMSat = LNMoney.MilliSatoshis(2316138423780173L)
+                        MinimumDepth = 821716u
+                        ToSelfDelay = BlockHeightOffset(49340us)
+                        MaxAcceptedHTLCs = 49340us
+                        FundingPubKey = pubkey1
+                        RevocationBasepoint = pubkey2
+                        PaymentBasepoint = pubkey3
+                        DelayedPaymentBasepoint = pubkey4
+                        HTLCBasepoint = pubkey5
+                        FirstPerCommitmentPoint = pubkey6
+                        ShutdownScriptPubKey = if shutdown then Some(pubkey1.Hash.ScriptPubKey) else None
+                    }
+                    let actual = acceptChannel.ToBytes()
+                    let mutable expected = hex.DecodeData("020202020202020202020202020202020202020202020202020202020202020212345678901234562334032891223698321446687011447600083a840000034d000c89d4c0bcc0bc031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f024d4b6cd1361032ca9bd2aeb9d900aa4d45d9ead80ac9423374c451a7254d076602531fe6068134503d2723133227c867ac8fa6c83c537e9a44c3c5bdbdcb1fe33703462779ad4aad39514614751a71085f2f10e1c7a593e4e030efb5b8721ce55b0b0362c0a046dacce86ddd0343c6d3c7c79c2208ba0d9c9cf24a6d046d21d21f90f703f006a18d5653c4edf5391ff23a61f03ff83d237e880ee61187fa9f379a028e0a")
+                    if shutdown then
+                        expected <- Array.append expected (hex.DecodeData("001976a91479b000887626b294a914501a4cd226b58b23598388ac"))
+                    CheckArrayEqual actual expected
+                acceptChannelTestCore(false)
+                acceptChannelTestCore(true)
+            testCase "funding_created" <| fun _ ->
+                let privKey1 = Key(hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101"))
+                let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
+                let fundingCreated = LightningMsg.FundingCreated {
+                    TemporaryChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
+                    FundingTxId = TxId(uint256(hex.DecodeData("c2d4449afa8d26140898dd54d3390b057ba2a5afcf03ba29d7dc0d8b9ffe966e")))
+                    FundingOutputIndex = 255us
+                    Signature = sig1
+                }
+                let actual = fundingCreated.ToBytes()
+                let expected = hex.DecodeData("02020202020202020202020202020202020202020202020202020202020202026e96fe9f8b0ddcd729ba03cfafa5a27b050b39d354dd980814268dfa9a44d4c200ffd977cb9b53d93a6ff64bb5f1e158b4094b66e798fb12911168a3ccdf80a83096340a6a95da0ae8d9f776528eecdbb747eb6b545495a4319ed5378e35b21e073a")
+                CheckArrayEqual actual expected
+            testCase "funding_signed" <| fun _ ->
+                let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
+                let fundingSigned = LightningMsg.FundingSigned{
+                    ChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
+                    Signature = sig1
+                }
+                let expected = hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202d977cb9b53d93a6ff64bb5f1e158b4094b66e798fb12911168a3ccdf80a83096340a6a95da0ae8d9f776528eecdbb747eb6b545495a4319ed5378e35b21e073a")
+                CheckArrayEqual (fundingSigned.ToBytes()) expected
+                ()
+            testCase "funding_locked" <| fun _ ->
+                let fundingLocked = LightningMsg.FundingLocked {
+                    ChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
+                    NextPerCommitmentPoint = pubkey1
+                }
+                let expected = hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f")
+                CheckArrayEqual (fundingLocked.ToBytes()) expected
+            testCase "shutdown" <| fun _ ->
+                let shutDownTestCore (scriptType: uint8) =
+                    let script = Script("OP_TRUE")
+                    let spk =
+                        if (scriptType = 1uy) then
+                            pubkey1.Hash.ScriptPubKey
+                        else if (scriptType = 2uy) then
+                            script.Hash.ScriptPubKey
+                        else if (scriptType = 3uy) then
+                            pubkey1.WitHash.ScriptPubKey
+                        else
+                            script.WitHash.ScriptPubKey
+                    let shutdown = LightningMsg.Shutdown {
+                        ChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
+                        ScriptPubKey = spk
+                    }
+                    let mutable expected = hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202")
+                    expected <- Array.append expected (if (scriptType = 1uy) then
+                                                           hex.DecodeData("001976a91479b000887626b294a914501a4cd226b58b23598388ac")
+                                                       else if (scriptType = 2uy) then
+                                                           hex.DecodeData("0017a914da1745e9b549bd0bfa1a569971c77eba30cd5a4b87")
+                                                       else if (scriptType = 3uy) then
+                                                           hex.DecodeData("0016001479b000887626b294a914501a4cd226b58b235983")
+                                                       else
+                                                           hex.DecodeData("002200204ae81572f06e1b88fd5ced7a1a000945432e83e1551e6f721ee9c00b8cc33260"))
+                    CheckArrayEqual (shutdown.ToBytes()) expected
+                shutDownTestCore(1uy)
+                shutDownTestCore(2uy)
+                shutDownTestCore(3uy)
+                shutDownTestCore(4uy)
+            testCase "update_add_htlc" <| fun _ ->
+                let onionRoutingPacket = {
+                    Version = 255uy
+                    PublicKey = pubkey1
+                    HopData = [| for _ in 1..(20*65) -> 1uy |]
+                    HMAC = uint256([| for _ in 0..31 -> 2uy |])
+                }
+                let updateAddHtlc = LightningMsg.UpdateAddHTLC {
+                    ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
+                    HTLCId = HTLCId(2316138423780173UL)
+                    AmountMSat = LNMoney.MilliSatoshis(3608586615801332854L)
+                    PaymentHash = PaymentHash(uint256[| for _ in 0..31 -> 1uy |])
+                    CLTVExpiry = 821716u
+                    OnionRoutingPacket = onionRoutingPacket
+                }
+                let expected = hex.DecodeData("020202020202020202020202020202020202020202020202020202020202020200083a840000034d32144668701144760101010101010101010101010101010101010101010101010101010101010101000c89d4ff031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010202020202020202020202020202020202020202020202020202020202020202")
+                CheckArrayEqual (updateAddHtlc.ToBytes()) expected
+
+            testCase "update_fulfill_htlc" <| fun _ ->
+                let updateFulfillHTLC = LightningMsg.UpdateFulfillHTLC {
+                    ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
+                    HTLCId = HTLCId(2316138423780173UL)
+                    PaymentPreimage = PaymentPreimage(uint256([| for _ in 0..31 -> 1uy |]))
+                }
+                let expected = hex.DecodeData("020202020202020202020202020202020202020202020202020202020202020200083a840000034d0101010101010101010101010101010101010101010101010101010101010101")
+                CheckArrayEqual (updateFulfillHTLC.ToBytes()) expected
+            testCase "update_fail_htlc" <| fun _ ->
+                let reason = {
+                    Data = [| for _ in 0..31 -> 1uy |]
+                }
+                let updateFailHTLC = LightningMsg.UpdateFailHTLC {
+                    ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
+                    HTLCId = HTLCId(2316138423780173UL)
+                    Reason = reason
+                }
+                let expected = hex.DecodeData("020202020202020202020202020202020202020202020202020202020202020200083a840000034d00200101010101010101010101010101010101010101010101010101010101010101")
+                CheckArrayEqual (updateFailHTLC.ToBytes()) expected
+            testCase "update_fail_malformed_htlc" <| fun _ ->
+                let updateFailMalformedHTLC = LightningMsg.UpdateFailMalformedHTLC {
+                    ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
+                    HTLCId = HTLCId(2316138423780173UL)
+                    Sha256OfOnion = uint256([| for _ in 0..31 -> 1uy |])
+                    FailureCode = Error.ErrorCode(255us)
+                } 
+                let expected = hex.DecodeData("020202020202020202020202020202020202020202020202020202020202020200083a840000034d010101010101010101010101010101010101010101010101010101010101010100ff")
+                CheckArrayEqual (updateFailMalformedHTLC.ToBytes()) expected
+            ftestCase "commitment_signed" <| fun _ ->
+                let testCommitmentSignedCore (htlcs: bool) =
+                    let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
+                    let sig2 = signMessageWith privKey2 "01010101010101010101010101010101"
+                    let sig3 = signMessageWith privKey2 "01010101010101010101010101010101"
+                    let sig4 = signMessageWith privKey2 "01010101010101010101010101010101"
+                    let commitmentSigned = LightningMsg.CommitmentSigned {
+                        ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
+                        Signature = sig1
+                        HTLCSignatures = if htlcs then [ sig2; sig3; sig4 ] else []
+                    }
+                    let mutable expected = hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202d977cb9b53d93a6ff64bb5f1e158b4094b66e798fb12911168a3ccdf80a83096340a6a95da0ae8d9f776528eecdbb747eb6b545495a4319ed5378e35b21e073a")
+                    if htlcs then
+                        expected <- Array.append expected (hex.DecodeData("00031735b6a427e80d5fe7cd90a2f4ee08dc9c27cda7c35a4172e5d85b12c49d4232537e98f9b1f3c5e6989a8b9644e90e8918127680dbd0d4043510840fc0f1e11a216c280b5395a2546e7e4b2663e04f811622f15a4f91e83aa2e92ba2a573c139142c54ae63072a1ec1ee7dc0c04bde5c847806172aa05c92c22ae8e308d1d2692b12cc195ce0a2d1bda6a88befa19fa07f51caa75ce83837f28965600b8aacab0855ffb0e741ec5f7c41421e9829a9d48611c8c831f71be5ea73e66594977ffd"))
+                    else
+                        expected <- Array.append expected (hex.DecodeData("0000"))
+                    CheckArrayEqual (commitmentSigned.ToBytes()) expected
+
+                testCommitmentSignedCore true
+                testCommitmentSignedCore false
+            testCase "revoke_and_ack" <| fun _ ->
+                let raa = LightningMsg.RevokeAndACK {
+                    ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
+                    PerCommitmentSecret = PaymentPreimage(uint256([| for _ in 0..31 -> 1uy |]))
+                    NextPerCommitmentPoint = pubkey1
+                }
+                let expected = hex.DecodeData("02020202020202020202020202020202020202020202020202020202020202020101010101010101010101010101010101010101010101010101010101010101031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f")
+                CheckArrayEqual (raa.ToBytes()) expected
+            testCase "update_fee" <| fun _ ->
+                let updateFee = LightningMsg.UpdateFee {
+                    ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
+                    FeeratePerKW = FeeRatePerKw(Money.Satoshis(20190119L))
+                }
+                let expected = hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202013413a7")
+                CheckArrayEqual (updateFee.ToBytes()) expected
+
+            testCase "init" <| fun _ ->
+                let initTestCore (unknownGlobalBits: bool, initialRoutingSync: bool) =
+                    let flags = if unknownGlobalBits then [| 0xffuy; 0xffuy |] else [||]
+                    let globalFeatures = GlobalFeatures.Flags(flags)
+                    let mutable localFeatures = LocalFeatures.Flags([||])
+                    if initialRoutingSync then
+                        localFeatures <- localFeatures |> LocalFeatures.setInitialRoutingSync
+
+                    let init = LightningMsg.Init {
+                        GlobalFeatures = globalFeatures
+                        LocalFeatures = localFeatures
+                    }
+                    let mutable expected = [||]
+                    if unknownGlobalBits then
+                        expected <- Array.append expected (hex.DecodeData("0002ffff"))
+                    else
+                        expected <- Array.append expected (hex.DecodeData("0000"))
+                    if initialRoutingSync then
+                        expected <- Array.append expected (hex.DecodeData("000108"))
+                    else
+                        expected <- Array.append expected (hex.DecodeData("0000"))
+                    CheckArrayEqual (init.ToBytes()) (expected)
+                initTestCore(false, false)
+                initTestCore(true, false)
+                initTestCore(false, true)
+                initTestCore(true, true)
       ]

@@ -129,10 +129,10 @@ module NetworkSerializer =
         | (RevokeAndACK msg) ->
             w.Write(msg.ChannelId.Value.ToBytes())
             w.Write(msg.PerCommitmentSecret.Value.ToBytes())
-            w.Write(msg.MyCurrentPerCommitmentPoint.ToBytes())
+            w.Write(msg.NextPerCommitmentPoint.ToBytes())
         | (UpdateFee msg) ->
             w.Write(msg.ChannelId.Value.ToBytes())
-            w.Write(msg.FeeratePerKW.Satoshi, false)
+            w.Write(msg.FeeratePerKW.Value.Satoshi, false)
         | (AnnouncementSignatures msg) ->
             w.Write(msg.ChannelId.Value.ToBytes())
             w.Write(msg.ShortChannelId)
