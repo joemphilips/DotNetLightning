@@ -28,10 +28,10 @@ module NetworkSerializer =
     let Serialize (w: LightningStream) (s: LightningMsg) =
         match s with
         | (Init msg) ->
-            let l: byte[] = msg.LocalFeatures.Value
             let g: byte[] = msg.GlobalFeatures.Value
-            w.WriteWithLen(l)
+            let l: byte[] = msg.LocalFeatures.Value
             w.WriteWithLen(g)
+            w.WriteWithLen(l)
         | (Error msg) ->
             serializeWhichChannel w (msg.ChannelId)
             w.WriteWithLen(msg.Data)
@@ -43,7 +43,7 @@ module NetworkSerializer =
             w.Write(msg.BytesLen, false)
             w.Write(Array.zeroCreate<byte> ((int)msg.BytesLen))
         | (OpenChannel msg) ->
-            w.Write(msg.Chainhash.ToBytes())
+            w.Write(msg.Chainhash, false)
             w.Write(msg.TemporaryChannelId.Value.ToBytes())
             w.Write(msg.FundingSatoshis.Satoshi, false)
             w.Write(msg.PushMSat.MilliSatoshi, false)
@@ -51,8 +51,9 @@ module NetworkSerializer =
             w.Write(msg.MaxHTLCValueInFlightMsat.MilliSatoshi, false)
             w.Write(msg.ChannelReserveSatoshis.Satoshi, false)
             w.Write(msg.HTLCMinimumMsat.MilliSatoshi, false)
-            w.Write(msg.FeeRatePerKw.Value.Satoshi, false)
+            w.Write(msg.FeeRatePerKw.Value, false)
             w.Write(msg.ToSelfDelay.Value, false)
+            w.Write(msg.MaxAcceptedHTLCs, false)
             w.Write(msg.FundingPubKey.ToBytes())
             w.Write(msg.RevocationBasepoint.ToBytes())
             w.Write(msg.PaymentBasepoint.ToBytes())
@@ -109,7 +110,6 @@ module NetworkSerializer =
             w.Write(msg.CLTVExpiry, false)
             w.Write(msg.OnionRoutingPacket)
         | (UpdateFulfillHTLC msg) ->
-            w.Write((uint16)TypeFlag.UpdateFulfillHTLC, false)
             w.Write(msg.ChannelId.Value.ToBytes())
             w.Write(msg.HTLCId.Value, false)
             w.Write(msg.PaymentPreimage.Value.ToBytes())
@@ -120,6 +120,7 @@ module NetworkSerializer =
         | (UpdateFailMalformedHTLC msg) ->
             w.Write(msg.ChannelId.Value.ToBytes())
             w.Write(msg.HTLCId.Value, false)
+            w.Write(msg.Sha256OfOnion, false)
             w.Write(msg.FailureCode.Value, false)
         | (CommitmentSigned msg) ->
             w.Write(msg.ChannelId.Value.ToBytes())
@@ -132,7 +133,7 @@ module NetworkSerializer =
             w.Write(msg.NextPerCommitmentPoint.ToBytes())
         | (UpdateFee msg) ->
             w.Write(msg.ChannelId.Value.ToBytes())
-            w.Write(msg.FeeratePerKW.Value.Satoshi, false)
+            w.Write(msg.FeeratePerKW.Value, false)
         | (AnnouncementSignatures msg) ->
             w.Write(msg.ChannelId.Value.ToBytes())
             w.Write(msg.ShortChannelId)

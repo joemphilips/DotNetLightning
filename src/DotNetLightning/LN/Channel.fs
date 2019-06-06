@@ -364,7 +364,7 @@ module Channel =
     let public checkRemoteFee(feeEstimator: IFeeEstimator, feeRatePerKw: FeeRatePerKw) =
         if (feeRatePerKw < feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background) ) then
             RResult.Bad(RREx(Close("Peer's Feerate much to low")))
-        else if (feeRatePerKw.Value > feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority).Value * 2) then
+        else if (feeRatePerKw.Value > feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority).Value * 2u) then
             RResult.Bad(RREx(Close("Peer's feerate much too high")))
         else
             Good()
@@ -436,14 +436,14 @@ module Channel =
             let fundersAmountMSat = LNMoney.MilliSatoshis(msg.FundingSatoshis.Satoshi * 1000L - msg.PushMSat.MilliSatoshi)
 
             let toLocal = msg.PushMSat
-            let toRemote = fundersAmountMSat.MilliSatoshi - backgroundFeeRate.Value.Satoshi * (int64 COMMITMENT_TX_BASE_WEIGHT)
+            let toRemote = fundersAmountMSat.MilliSatoshi - (int64 backgroundFeeRate.Value) * (int64 COMMITMENT_TX_BASE_WEIGHT)
             if (ourChannelReserveSatoshis < ourDustLimitSatoshis) then
                 Bad(RREx(Close("Suitable channel reserve not found. aborting")))
             else if (msg.ChannelReserveSatoshis < ourDustLimitSatoshis) then
                 Bad(RREx(Close("channel_reserve_satoshis too small")))
             else if (ourChannelReserveSatoshis < msg.DustLimitSatoshis) then
                 Bad(RREx(Close("Dust limit too high for our channel reserve")))
-            else if fundersAmountMSat.MilliSatoshi < backgroundFeeRate.Value.Satoshi * (int64 COMMITMENT_TX_BASE_WEIGHT) then
+            else if fundersAmountMSat.MilliSatoshi < (int64 backgroundFeeRate.Value) * (int64 COMMITMENT_TX_BASE_WEIGHT) then
                 Bad(RREx(Close("Insufficient funding amount for initial commitment")))
             else if toLocal.MilliSatoshi <= msg.ChannelReserveSatoshis.Satoshi * 1000L && toRemote <= ourChannelReserveSatoshis.Satoshi * 1000L then
                 Bad(RREx(Close("Insufficient funding amount for initial commitment")))
@@ -664,7 +664,7 @@ module Channel =
         let valueToRemoteMSat = LNMoney(c.ChannelValueSatoshis.Satoshi * 1000L - c.ValueToSelf.MilliSatoshi -
                                            remoteHTLCTotalMSat.MilliSatoshi - valueToSelfMSatOffset.MilliSatoshi)
         
-        let totalFee = int64((uint64 feeRatePerKW.Value.Satoshi) * ((COMMITMENT_TX_BASE_WEIGHT + (uint64 txOuts.Length) * COMMITMENT_TX_WEIGHT_PER_HTLC) / 1000UL))
+        let totalFee = int64((uint64 feeRatePerKW.Value) * ((COMMITMENT_TX_BASE_WEIGHT + (uint64 txOuts.Length) * COMMITMENT_TX_WEIGHT_PER_HTLC) / 1000UL))
         let (valueToSelfSat, valueToRemoteSat) =
             if c.ChannelOutbound then
                 (valueToSelfMSat.MilliSatoshi / 1000L - totalFee), (valueToRemoteMSat.MilliSatoshi / 1000L)

@@ -61,7 +61,7 @@ module Primitives =
     type TxId = TxId of uint256 with
         member x.Value = let (TxId v) = x in v
 
-    type FeeRatePerKw = FeeRatePerKw of Money with
+    type FeeRatePerKw = FeeRatePerKw of uint32 with
         member x.Value = let (FeeRatePerKw v) = x in v
     /// Block Hash
     type BlockId = BlockId of uint256 with

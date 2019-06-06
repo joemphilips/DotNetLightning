@@ -136,9 +136,9 @@ module ChannelUtils =
         txIn.PrevOut <- OutPoint(prevHash, htlc.TransactionOutputIndex.Value)
 
         let totalFee = if htlc.Offered then
-                           feeRate.Satoshi * HTLC_TIMEOUT_TX_WEIGHT / 1000L
+                           (int64 feeRate) * HTLC_TIMEOUT_TX_WEIGHT / 1000L
                        else
-                           feeRate.Satoshi * HTLC_SUCCESS_TX_WEIGHT / 1000L
+                           (int64 feeRate) * HTLC_SUCCESS_TX_WEIGHT / 1000L
 
         let txOut = TxOut(!>(htlc.Amount.MilliSatoshi / 1000L - totalFee),
                           (getRevokableRedeemScript revocationKey toSelfDelay aDelayedPaymentKey).WitHash.ScriptPubKey)
