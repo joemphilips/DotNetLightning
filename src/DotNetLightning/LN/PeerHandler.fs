@@ -6,6 +6,7 @@ open DotNetLightning.Utils.RResult
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Serialize.PeerChannelEncryptor
 open Microsoft.Extensions.Logging
+open DotNetLightning.Serialize
 
 /// Provides references to interface which handle differnt types of messages.
 type MessageHandler = {
@@ -37,10 +38,11 @@ type InitSyncTracker =
     | NoSyncRequested
 
 type Peer = {
-    ChannelEncryptor: PeerChannelEncryptorStream
+    ChannelEncryptor: PeerChannelEncryptor
     IsOutBound : bool
     TheirNodeId: PubKey option
     TheirGlobalFeatures: GlobalFeatures option
+    TheirLocalFeatures: LocalFeatures option
     PendingOutBoundBuffer: byte[] list
     PendingOutBoundBufferFirstMsgOffset: uint32
     AwaitingWriteEvent: bool
@@ -67,6 +69,8 @@ type PeerHolder = {
     NodeIdDescriptor: Map<NodeId, ISocketDescriptor>
 }
 
+/// A PeerManager manages a set of peers, described by their SocketDescirptor and marshalls socket
+/// events into messages which it passes onto its MessageHandlers.
 type PeerManager = {
     MessageHandler: MessageHandler
     Peers: PeerHolder
@@ -97,7 +101,11 @@ module PeerManager =
             Logger = logger
         }
 
-    ///
+    /// Get the list of node ids for peers which have completed the initial handshake
+    /// 
+    /// For outbound connections, this will be the same as the their_node_id parameter passed into
+    /// new_outbound_connection, however entries will only appear once the initial handshake has
+    /// completed and we are sure the remote peer has the private key for the given node_id.
     let getPeerNodeIds (pm: PeerManager): PubKey list =
        pm.Peers.Peers
        |> Map.toList
@@ -117,7 +125,7 @@ module PeerManager =
     let newOutBoundConnection (theirNodeId: NodeId)
                               (descriptor: ISocketDescriptor)
                               (pm: PeerManager): RResult<PeerManager * byte[]> =
-        let peerEncyptor = PeerChannelEncryptorStream.NewOutbound(theirNodeId)
+        let peerEncyptor = PeerChannelEncryptor.NewOutbound(theirNodeId)
         let res = peerEncyptor.GetActOne()
         let pendingReadBuffer = Array.zeroCreate(50) // Noise act 2 is 50 bytes. 
         let newPeerMap = pm.Peers.Peers
@@ -126,6 +134,7 @@ module PeerManager =
                             IsOutBound = true
                             TheirNodeId = None
                             TheirGlobalFeatures = None
+                            TheirLocalFeatures = None
                             PendingOutBoundBuffer = List.empty
                             PendingOutBoundBufferFirstMsgOffset = 0u
                             AwaitingWriteEvent = false
@@ -138,3 +147,28 @@ module PeerManager =
             Good({ pm with Peers = { pm.Peers with Peers = newPeerMap }}, res)
         else
             failwith "PeerManager driver duplicated descriptors!"
+
+    let newInboundConnection(descriptor: ISocketDescriptor) (pm: PeerManager) =
+        let peerEncryptor = PeerChannelEncryptor.NewInbound(pm.OurNodeSecret)
+        let pendingReadBuffer = Array.zeroCreate 50
+        let newPeer = {
+            ChannelEncryptor = peerEncryptor
+            IsOutBound = false
+            TheirNodeId = None
+            TheirGlobalFeatures = None
+            TheirLocalFeatures = None
+
+            PendingOutBoundBuffer = List.empty
+            PendingOutBoundBufferFirstMsgOffset = 0u
+            AwaitingWriteEvent = false
+            PendingReadBuffer = pendingReadBuffer
+            PendingReadBufferPos = 0u
+            PendingReadIsHeader = false
+            SyncStatus = InitSyncTracker.NoSyncRequested
+        }
+        {
+            pm with Peers = { pm.Peers with Peers = pm.Peers.Peers |> Map.add descriptor newPeer }
+        }
+
+    let doAttemptWriteData (descriptor: ISocketDescriptor) (peer: Peer) (pm: PeerManager) =
+        failwith ""

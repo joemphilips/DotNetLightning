@@ -80,14 +80,14 @@ let hkdfExtractExpand(salt: byte[], ikm: byte[]) =
     let t2 = Hashes.HMACSHA256(prk, Array.append t1 [|2uy|])
     (t1, t2)
 
-type PeerChannelEncryptorStream(theirNodeId: NodeId option, noiseState: NoiseState) =
+type PeerChannelEncryptor(theirNodeId: NodeId option, noiseState: NoiseState) =
     member this.TheirNodeId = theirNodeId
     member val NoiseState = noiseState with get, set
 
-    static member NewOutbound(theirNodeId: NodeId): PeerChannelEncryptorStream =
+    static member NewOutbound(theirNodeId: NodeId): PeerChannelEncryptor =
         let hashInput = Array.concat[| NOISE_H; theirNodeId.Value.ToBytes()|]
         let h = uint256(Hashes.SHA256(hashInput))
-        PeerChannelEncryptorStream(
+        PeerChannelEncryptor(
             Some(theirNodeId),
             InProgress {
                     State = PreActOne
@@ -100,7 +100,7 @@ type PeerChannelEncryptorStream(theirNodeId: NodeId option, noiseState: NoiseSta
         let hashInput = Array.concat[|NOISE_H; ourNodeSecret.PubKey.ToBytes()|]
         let h = uint256(Hashes.SHA256(hashInput))
 
-        PeerChannelEncryptorStream(
+        PeerChannelEncryptor(
             None,
             InProgress {
                     State = PreActOne
@@ -145,7 +145,7 @@ type PeerChannelEncryptorStream(theirNodeId: NodeId option, noiseState: NoiseSta
                 if state <> PreActOne then
                     failwith "Requested act at wrong step"
                 else
-                    let (res, _)= PeerChannelEncryptorStream.OutBoundNoiseAct(bState, ie, this.TheirNodeId.Value.Value)
+                    let (res, _)= PeerChannelEncryptor.OutBoundNoiseAct(bState, ie, this.TheirNodeId.Value.Value)
                     this.NoiseState <- InProgress({ State = PostActone; DirectionalState = dState; BidirectionalState = bState })
                     res
             | _ -> failwith "Wrong direction for act"
@@ -159,10 +159,10 @@ type PeerChannelEncryptorStream(theirNodeId: NodeId option, noiseState: NoiseSta
             match dState with
             | OutBound {IE = ie} ->
                 if state = PostActone then
-                    match PeerChannelEncryptorStream.InBoundNoiseAct(bState, actTwo, ie) with
+                    match PeerChannelEncryptor.InBoundNoiseAct(bState, actTwo, ie) with
                     | Ok (re, tempK2) ->
                         let ourNodeId = ourNodeSecret.PubKey
-                        let res = PeerChannelEncryptorStream.EncryptWithAd(
+                        let res = PeerChannelEncryptor.EncryptWithAd(
                                         1UL,
                                         tempK2,
                                         ReadOnlySpan(bState.H.ToBytes()),
