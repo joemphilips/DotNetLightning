@@ -1,6 +1,7 @@
 module MsgGenerators
 
 open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Utils.Error
 open PrimitiveGenerators
 open NBitcoin
 open FsCheck
@@ -18,6 +19,14 @@ let initGen =
     Gen.map2 (fun g l -> { GlobalFeatures = g; LocalFeatures = l})
         globalFeaturesGen
         localFeaturesGen
+
+let errorMsgGen = gen {
+    let specificC = SpecificChannel <!> (ChannelId <!> uint256Gen)
+    let allC = Gen.constant WhichChannel.All
+    let! c = Gen.oneof [specificC; allC]
+    let! d = bytesGen
+    return {ChannelId = c; Data = d}
+}
 
 let pingGen =
     Gen.map2(fun pLen bLen -> { PongLen = pLen; BytesLen = bLen })
@@ -70,3 +79,316 @@ let openChannelGen =
         <*> pubKeyGen
         <*> Arb.generate<uint8>
         <*> (Gen.optionOf pushScriptGen)
+
+let acceptChannelGen =
+    let constructor = fun a b c d e f g h i j k l m n o ->
+        {
+            TemporaryChannelId = a
+            DustLimitSatoshis = b
+            MaxHTLCValueInFlightMsat = c
+            ChannelReserveSatoshis = d
+            HTLCMinimumMSat = e
+            MinimumDepth = f
+            ToSelfDelay = g
+            MaxAcceptedHTLCs = h
+            FundingPubKey = i
+            RevocationBasepoint = j
+            PaymentBasepoint = k
+            DelayedPaymentBasepoint = l
+            HTLCBasepoint = m
+            FirstPerCommitmentPoint = n
+            ShutdownScriptPubKey = o
+        }
+
+    constructor
+        <!> temporaryChannelGen
+        <*> moneyGen
+        <*> lnMoneyGen
+        <*> moneyGen
+        <*> lnMoneyGen
+        <*> Arb.generate<uint32>
+        <*> (BlockHeightOffset <!> Arb.generate<uint16>)
+        <*> Arb.generate<uint16>
+        <*> pubKeyGen
+        <*> pubKeyGen
+        <*> pubKeyGen
+        <*> pubKeyGen
+        <*> pubKeyGen
+        <*> pubKeyGen
+        <*> (Gen.optionOf pushScriptGen)
+
+let fundingCreatedGen =
+    let constructor = fun a b c d ->
+        {
+            TemporaryChannelId = a
+            FundingTxId = b
+            FundingOutputIndex = c
+            Signature = d
+        }
+
+    constructor
+        <!> temporaryChannelGen
+        <*> (TxId <!> uint256Gen)
+        <*> Arb.generate<uint16>
+        <*> signatureGen
+
+let fundingSignedGen = gen {
+    let! c = ChannelId <!> uint256Gen
+    let! s = signatureGen
+    return {
+        FundingSigned.ChannelId = c
+        Signature = s
+    }
+}
+
+let fundingLockedGen = gen {
+    let! c = ChannelId <!> uint256Gen
+    let! pk = pubKeyGen
+    return {ChannelId = c; NextPerCommitmentPoint = pk}
+}
+
+let shutdownGen = gen {
+    let! c = ChannelId <!> uint256Gen
+    let! sc = pushScriptGen 
+    return { ChannelId = c; ScriptPubKey = sc }
+}
+
+let closingSignedGen = gen {
+    let! c = ChannelId <!> uint256Gen
+    let! m = moneyGen
+    let! s = signatureGen
+    return { ChannelId=c; FeeSatoshis=m; Signature=s}
+}
+
+let onionPacketGen = gen {
+    let! v = Arb.generate<uint8>
+    let! pk = pubKeyGen
+    let! hopData = bytesOfNGen(1366)
+    let! hmac = uint256Gen
+    return { Version = v; PublicKey=pk; HopData=hopData; HMAC=hmac }
+}
+
+let updateAddHTLCGen = gen {
+    let! c = ChannelId <!> uint256Gen
+    let! htlc = HTLCId <!> Arb.generate<uint64>
+    let! amount = lnMoneyGen
+    let! paymentHash = PaymentHash <!> uint256Gen
+    let! cltvE = Arb.generate<uint32>
+    let! onionRoutingPacket = onionPacketGen
+    return {
+        ChannelId = c
+        HTLCId = htlc
+        AmountMSat = amount
+        PaymentHash = paymentHash
+        CLTVExpiry = cltvE
+        OnionRoutingPacket = onionRoutingPacket
+    }
+}
+
+let updateFulfillHTLCGen = gen {
+    let! c = ChannelId <!> uint256Gen
+    let! htlc = HTLCId <!> Arb.generate<uint64>
+    let! paymentPreimage = PaymentPreimage <!> uint256Gen
+    return { ChannelId = c; HTLCId = htlc; PaymentPreimage = paymentPreimage }
+}
+
+
+let updateFailHTLCGen = gen {
+    let! c = ChannelId <!> uint256Gen
+    let! htlc = HTLCId <!> Arb.generate<uint64>
+    let! reason = bytesGen |> Gen.map (fun bs -> { Data = bs})
+    return {
+        ChannelId = c
+        HTLCId = htlc
+        Reason = reason
+    }
+}
+
+let updateFailMalformedHTLCGen = gen {
+    let! c = ChannelId <!> uint256Gen
+    let! htlc = HTLCId <!> Arb.generate<uint64>
+    let! sha256 = uint256Gen
+    let! ec = ErrorCode <!> Arb.generate<uint16>
+    return {
+        ChannelId = c
+        HTLCId = htlc
+        Sha256OfOnion = sha256
+        FailureCode = ec
+    }
+}
+
+let commitmentSignedGen = gen {
+    let! c = ChannelId <!> uint256Gen
+    let! s = signatureGen
+    let! ss = Gen.listOf signatureGen
+    return {
+        ChannelId = c
+        Signature = s
+        HTLCSignatures = ss
+    }
+}
+
+let revokeAndACKGen = gen {
+    let! c = ChannelId <!> uint256Gen
+    let! paymentPreimage = PaymentPreimage <!> uint256Gen
+    let! pk = pubKeyGen 
+    return {
+        ChannelId = c
+        PerCommitmentSecret = paymentPreimage
+        NextPerCommitmentPoint = pk
+    }
+}
+let updateFeeGen = gen {
+    let! c = ChannelId <!> uint256Gen
+    let! fr = FeeRatePerKw <!> Arb.generate<uint32>
+    return {
+        ChannelId = c
+        FeeratePerKW = fr
+    }
+}
+
+let private dataLossProtectGen = gen {
+    let! paymentPreimage = PaymentPreimage <!> uint256Gen
+    let! pk = pubKeyGen
+    return {
+        YourLastPerCommitmentSecret = paymentPreimage
+        MyCurrentPerCommitmentPoint = pk
+    }
+}
+
+let channelReestablishGen = gen {
+    let! c = ChannelId <!> uint256Gen
+    let! n1 = Arb.generate<uint64>
+    let! n2 = Arb.generate<uint64>
+    let! d = Gen.optionOf dataLossProtectGen
+
+    return {
+        ChannelId = c
+        NextLocalCommitmentNumber = n1
+        NextRemoteCommitmentNumber = n2
+        DataLossProtect = d
+    }
+}
+
+let announcementSignaturesGen = gen {
+    let! c = ChannelId <!> uint256Gen
+    let! s = ShortChannelId.FromUInt64 <!> Arb.generate<uint64>
+    let! ns = signatureGen
+    let! bs = signatureGen
+    return {
+        ChannelId = c
+        ShortChannelId = s
+        NodeSignature = ns
+        BitcoinSignature = bs
+    }
+}
+
+let private netAddressGen: Gen<NetAddress> =
+    failwith ""
+
+let private unsignedNodeAnnouncementGen = gen {
+    let! f = globalFeaturesGen
+    let! t = Arb.generate<uint32>
+    let! nodeId = NodeId <!> pubKeyGen
+    let! rgb = (fun r g b -> {Red = r; Green = g; Blue = b})
+                <!> Arb.generate<uint8>
+                <*> Arb.generate<uint8>
+                <*> Arb.generate<uint8>
+
+    let! a = uint256Gen
+    let! addrs = Gen.listOf(netAddressGen)
+    let! eAddrs = bytesGen
+    let! ed = bytesGen
+
+    return {
+        Features = f
+        Timestamp = t
+        NodeId = nodeId
+        RGB = rgb
+        Alias = a
+        Addresses = addrs
+        ExcessAddressData = eAddrs
+        ExcessData = ed
+    }
+}
+
+let nodeAnnouncementGen = gen {
+    let! c = unsignedNodeAnnouncementGen
+    let! s = signatureGen
+    return {
+        NodeAnnouncement.Contents = c
+        Signature = s
+    }
+}
+
+let private unsignedChannelAnnouncementGen = gen {
+    let! g = globalFeaturesGen
+    let! ch = uint256Gen
+    let! s = ShortChannelId.FromUInt64 <!> Arb.generate<uint64>
+    let! n1 = NodeId <!> pubKeyGen
+    let! n2 = NodeId <!> pubKeyGen
+    let! b1 = pubKeyGen
+    let! b2 = pubKeyGen
+    let! e = bytesGen
+
+    return {
+        Features = g
+        ChainHash = ch
+        ShortChannelId = s
+        NodeId1 = n1
+        NodeId2 = n2
+        BitcoinKey1 = b1
+        BitcoinKey2 = b2
+        ExcessData = e
+    }
+}
+
+let channelAnnouncementGen = gen {
+    let! n1 = signatureGen
+    let! n2 = signatureGen
+    let! b1 = signatureGen
+    let! b2 = signatureGen
+    let! c = unsignedChannelAnnouncementGen
+    return {
+        NodeSignature1 = n1
+        NodeSignature2 = n2
+        BitcoinSignature1 = b1
+        BitcoinSignature2 = b2
+        Contents = c
+    }
+}
+
+let private unsignedChannelUpdateGen = gen {
+    let! ch = uint256Gen
+    let! s = ShortChannelId.FromUInt64 <!> Arb.generate<uint64>
+    let! ts = Arb.generate<uint32>
+    let! f = Arb.generate<uint16>
+    let! cltvE = BlockHeightOffset <!> Arb.generate<uint16>
+    let! htlcMin = lnMoneyGen
+    let! feeBase = lnMoneyGen
+    let! feePM = Arb.generate<uint32>
+    let! ed = bytesGen
+
+
+    return {
+        ChainHash = ch
+        ShortChannelId = s
+        Timestamp = ts
+        Flags = f
+        CLTVExpiryDelta = cltvE
+        HTLCMinimumMSat = htlcMin
+        FeeBaseMSat = feeBase
+        FeeProportionalMillionths = feePM
+        ExcessData = ed
+    }
+}
+
+let channelUpdateGen = gen {
+    let! s = signatureGen
+    let! c = unsignedChannelUpdateGen
+
+    return {
+        Signature = s
+        Contents = c
+    }
+}

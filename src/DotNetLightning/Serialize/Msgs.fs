@@ -803,36 +803,23 @@ module Msgs =
 
     /// Struct used to return valeus from revoke_and_ack messages, cotaining a bunch of commitment
     /// transaction updates if they were pending.
-    [<CLIMutable>]
     type CommitmentUpdate = {
-        mutable UpdateAddHTLCs: UpdateAddHTLC list
-        mutable UpdateFulfillHTLCs: UpdateFulfillHTLC list
-        mutable UpdateFailHTLCs: UpdateFailHTLC list
-        mutable UpdateFailMalformedHTLCs: UpdateFailMalformedHTLC list
-        mutable UpdateFee: UpdateFee option
-        mutable CommitmentSigned: CommitmentSigned
+        UpdateAddHTLCs: UpdateAddHTLC list
+        UpdateFulfillHTLCs: UpdateFulfillHTLC list
+        UpdateFailHTLCs: UpdateFailHTLC list
+        UpdateFailMalformedHTLCs: UpdateFailMalformedHTLC list
+        UpdateFee: UpdateFee option
+        CommitmentSigned: CommitmentSigned
     }
-    with
-        interface ILightningSerializable<CommitmentUpdate> with
-            member this.Deserialize(ls) =
-                failwith ""
-            member this.Serialize(ls) =
-                failwith ""
+
     /// The information we received from a peer along the route of a payment we originated. This is
-    /// returned by ChannelMessageHandler::HandleUpdateFailHTLC to be passed into
+    /// returned by ChannelMessageHandler.HandleUpdateFailHTLC to be passed into
     /// RoutingMessageHandler.HandleHTLCFailChannelUpdate to update our network map.
-    [<CLIMutable>]
     type HTLCFailChannelUpdate = {
-        mutable ChannelUpdateMessage: ChannelUpdate
-        mutable ChannelClosed: ChannelClosed
-        mutable NodeFailure: NodeFailure
+        ChannelUpdateMessage: ChannelUpdate
+        ChannelClosed: ChannelClosed
+        NodeFailure: NodeFailure
     }
-    with
-        interface ILightningSerializable<HTLCFailChannelUpdate> with
-            member this.Deserialize(ls) =
-                failwith ""
-            member this.Serialize(ls) =
-                failwith ""
 
     and ChannelClosed = {
         ShortChannelId: ShortChannelId
@@ -844,41 +831,6 @@ module Msgs =
         NodeId: NodeId
         IsPermanent: bool
     }
-    /// All possible messages in Lightning P2P Network
-    type LightningMsg = 
-        /// BOLT1: Basic Control
-        | Init of Init
-        | Error of ErrorMessage
-        | Ping of Ping
-        | Pong of Pong
-
-        /// BOLT2: Channel Establishment and closing.
-        // Channel establish msgs.
-        | OpenChannel of OpenChannel
-        | AcceptChannel of AcceptChannel
-        | FundingCreated of FundingCreated
-        | FundingSigned of FundingSigned
-        | FundingLocked of FundingLocked
-        // Closing
-        | Shutdown of Shutdown
-        | ClosingSigned of ClosingSigned
-        // Message retrasmission
-        | ChannelReestablish of ChannelReestablish
-
-        /// BOLT2: Normal operations
-        | UpdateAddHTLC of UpdateAddHTLC
-        | UpdateFulfillHTLC of UpdateFulfillHTLC
-        | UpdateFailHTLC of UpdateFailHTLC
-        | UpdateFailMalformedHTLC of UpdateFailMalformedHTLC
-        | CommitmentSigned of CommitmentSigned
-        | RevokeAndACK of RevokeAndACK
-        | UpdateFee of UpdateFee
-
-        /// BOLT7: Routing
-        | AnnouncementSignatures of AnnouncementSignatures
-        | ChannelAnnouncement of ChannelAnnouncement
-        | NodeAnnouncement of NodeAnnouncement
-        | ChannelUpdate of ChannelUpdate
 
     // -----------
     type IChannelMessageHandler =
