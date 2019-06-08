@@ -61,14 +61,14 @@ module SerializationTest =
                     NextRemoteCommitmentNumber = 4UL
                     DataLossProtect = None
                     }
-                let actual = (LightningMsg.ChannelReestablish cr).ToBytes()
+                let actual = cr.ToBytes()
                 let expected =
                     [|4; 0; 0; 0; 0; 0; 0; 0; 5; 0; 0; 0; 0; 0; 0; 0; 6; 0; 0; 0; 0; 0; 0; 0; 7; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 3; 0; 0; 0; 0; 0; 0; 0; 4|] 
                     |> Array.map(uint8)
                 Expect.equal actual expected "channel_reestablish_no_secret failed"
 
             testCase "channel_reestablish with secret" <| fun _ ->
-                let cr = ChannelReestablish{
+                let cr = {
                     ChannelId = ChannelId(uint256([|4; 0; 0; 0; 0; 0; 0; 0; 5; 0; 0; 0; 0; 0; 0; 0; 6; 0; 0; 0; 0; 0; 0; 0; 7; 0; 0; 0; 0; 0; 0; 0 |] |> Array.map(uint8)))
                     NextLocalCommitmentNumber = 3UL
                     NextRemoteCommitmentNumber = 4UL
@@ -87,7 +87,7 @@ module SerializationTest =
             testCase "announcement_signatures" <| fun _ ->
                 let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
                 let sig2 = signMessageWith privKey1 "02020202020202020202020202020202"
-                let actual = LightningMsg.AnnouncementSignatures{ 
+                let actual = { 
                     ChannelId = ChannelId(uint256([| 4; 0; 0; 0; 0; 0; 0; 0; 5; 0; 0; 0; 0; 0; 0; 0; 6; 0; 0; 0; 0; 0; 0; 0; 7; 0; 0; 0; 0; 0; 0; 0 |] |> Array.map(uint8)))
                     ShortChannelId = ShortChannelId.FromUInt64(2316138423780173UL)
                     NodeSignature = sig1
@@ -117,13 +117,13 @@ module SerializationTest =
                         BitcoinKey2 = privKey4.PubKey
                         ExcessData = if excessData then ([| 10; 0; 0; 20; 0; 0; 30; 0; 0; 40 |] |> Array.map(byte)) else [||]
                     }
-                    let channelAnnouncement = LightningMsg.ChannelAnnouncement({
+                    let channelAnnouncement = {
                                                   NodeSignature1 = sig1
                                                   NodeSignature2 = sig2
                                                   BitcoinSignature1 = sig3
                                                   BitcoinSignature2 = sig4
                                                   Contents = unsignedChannelAnnoucement
-                                              })
+                                              }
 
                     let mutable expected = hex.DecodeData("d977cb9b53d93a6ff64bb5f1e158b4094b66e798fb12911168a3ccdf80a83096340a6a95da0ae8d9f776528eecdbb747eb6b545495a4319ed5378e35b21e073a1735b6a427e80d5fe7cd90a2f4ee08dc9c27cda7c35a4172e5d85b12c49d4232537e98f9b1f3c5e6989a8b9644e90e8918127680dbd0d4043510840fc0f1e11a216c280b5395a2546e7e4b2663e04f811622f15a4f91e83aa2e92ba2a573c139142c54ae63072a1ec1ee7dc0c04bde5c847806172aa05c92c22ae8e308d1d2692b12cc195ce0a2d1bda6a88befa19fa07f51caa75ce83837f28965600b8aacab0855ffb0e741ec5f7c41421e9829a9d48611c8c831f71be5ea73e66594977ffd")
                     if (unknownFeatureBits) then
@@ -368,8 +368,8 @@ module SerializationTest =
                                                           253uy|] else [||]
                     }
                     addrLen <- addrLen + uint16 unsignedNodeAnnouncement.ExcessAddressData.Length
-                    let nodeAnnouncement = LightningMsg.NodeAnnouncement{
-                        Signature = sig1
+                    let nodeAnnouncement = {
+                        NodeAnnouncement.Signature = sig1
                         Contents = unsignedNodeAnnouncement
                     }
 
@@ -419,8 +419,8 @@ module SerializationTest =
                         FeeProportionalMillionths = 20u
                         ExcessData = if htlcMaximumMSat then [| 0uy; 0uy; 0uy; 0uy; 59uy; 154uy; 202uy; 0uy |] else [||]
                     }
-                    let channelUpdate = LightningMsg.ChannelUpdate{
-                        Signature = sig1
+                    let channelUpdate = {
+                        ChannelUpdate.Signature = sig1
                         Contents = unsignedChannelUpdate
                     }
                     let actual = channelUpdate.ToBytes()
@@ -452,7 +452,7 @@ module SerializationTest =
 
             testCase "open_channel" <| fun _ ->
                 let openChannelTestCore(nonBitcoinChainHash: bool, randomBit: bool, shutdown: bool) =
-                    let openChannel = OpenChannel{
+                    let openChannel = {
                         Chainhash = if (not nonBitcoinChainHash) then uint256(hex.DecodeData("6fe28c0ab6f1b372c1a6a246ae63f74f931e8365e15a089c68d6190000000000")) else uint256(hex.DecodeData("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"))
                         TemporaryChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
                         FundingSatoshis = Money.Satoshis(1311768467284833366UL)
@@ -494,8 +494,8 @@ module SerializationTest =
                 openChannelTestCore(true, true, true)
             testCase "accept_channel" <| fun _ ->
                 let acceptChannelTestCore(shutdown: bool) =
-                    let acceptChannel = LightningMsg.AcceptChannel{
-                        TemporaryChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy|]))
+                    let acceptChannel = {
+                        AcceptChannel.TemporaryChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy|]))
                         DustLimitSatoshis = Money.Satoshis(1311768467284833366L)
                         MaxHTLCValueInFlightMsat = LNMoney.MilliSatoshis(2536655962884945560L)
                         ChannelReserveSatoshis = Money.Satoshis(3608586615801332854L)
@@ -522,8 +522,8 @@ module SerializationTest =
                 let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
                 let txData = hex.DecodeData("c2d4449afa8d26140898dd54d3390b057ba2a5afcf03ba29d7dc0d8b9ffe966e")
                 Array.Reverse txData
-                let fundingCreated = LightningMsg.FundingCreated {
-                    TemporaryChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
+                let fundingCreated = {
+                    FundingCreated.TemporaryChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
                     FundingTxId = TxId(uint256(txData, true))
                     FundingOutputIndex = 255us
                     Signature = sig1
@@ -534,16 +534,16 @@ module SerializationTest =
                 CheckArrayEqual actual expected
             testCase "funding_signed" <| fun _ ->
                 let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
-                let fundingSigned = LightningMsg.FundingSigned{
-                    ChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
+                let fundingSigned = {
+                    FundingSigned.ChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
                     Signature = sig1
                 }
                 let expected = hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202d977cb9b53d93a6ff64bb5f1e158b4094b66e798fb12911168a3ccdf80a83096340a6a95da0ae8d9f776528eecdbb747eb6b545495a4319ed5378e35b21e073a")
                 CheckArrayEqual (fundingSigned.ToBytes()) expected
                 ()
             testCase "funding_locked" <| fun _ ->
-                let fundingLocked = LightningMsg.FundingLocked {
-                    ChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
+                let fundingLocked = {
+                    FundingLocked.ChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
                     NextPerCommitmentPoint = pubkey1
                 }
                 let expected = hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f")
@@ -560,8 +560,8 @@ module SerializationTest =
                             pubkey1.WitHash.ScriptPubKey
                         else
                             script.WitHash.ScriptPubKey
-                    let shutdown = LightningMsg.Shutdown {
-                        ChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
+                    let shutdown = {
+                        Shutdown.ChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
                         ScriptPubKey = spk
                     }
                     let mutable expected = hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202")
@@ -585,8 +585,8 @@ module SerializationTest =
                     HopData = [| for _ in 1..(20*65) -> 1uy |]
                     HMAC = uint256([| for _ in 0..31 -> 2uy |])
                 }
-                let updateAddHtlc = LightningMsg.UpdateAddHTLC {
-                    ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
+                let updateAddHtlc = {
+                    UpdateAddHTLC.ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
                     HTLCId = HTLCId(2316138423780173UL)
                     AmountMSat = LNMoney.MilliSatoshis(3608586615801332854L)
                     PaymentHash = PaymentHash(uint256[| for _ in 0..31 -> 1uy |])
@@ -597,7 +597,7 @@ module SerializationTest =
                 CheckArrayEqual (updateAddHtlc.ToBytes()) expected
 
             testCase "update_fulfill_htlc" <| fun _ ->
-                let updateFulfillHTLC = LightningMsg.UpdateFulfillHTLC {
+                let updateFulfillHTLC = {
                     ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
                     HTLCId = HTLCId(2316138423780173UL)
                     PaymentPreimage = PaymentPreimage(uint256([| for _ in 0..31 -> 1uy |]))
@@ -616,7 +616,7 @@ module SerializationTest =
                 let expected = hex.DecodeData("020202020202020202020202020202020202020202020202020202020202020200083a840000034d00200101010101010101010101010101010101010101010101010101010101010101")
                 CheckArrayEqual (updateFailHTLC.ToBytes()) expected
             testCase "update_fail_malformed_htlc" <| fun _ ->
-                let updateFailMalformedHTLC = LightningMsg.UpdateFailMalformedHTLC {
+                let updateFailMalformedHTLC = {
                     ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
                     HTLCId = HTLCId(2316138423780173UL)
                     Sha256OfOnion = uint256([| for _ in 0..31 -> 1uy |])
@@ -630,7 +630,7 @@ module SerializationTest =
                     let sig2 = signMessageWith privKey2 "01010101010101010101010101010101"
                     let sig3 = signMessageWith privKey3 "01010101010101010101010101010101"
                     let sig4 = signMessageWith privKey4 "01010101010101010101010101010101"
-                    let commitmentSigned = LightningMsg.CommitmentSigned {
+                    let commitmentSigned = {
                         ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
                         Signature = sig1
                         HTLCSignatures = if htlcs then [ sig2; sig3; sig4 ] else []
@@ -645,7 +645,7 @@ module SerializationTest =
                 testCommitmentSignedCore true
                 testCommitmentSignedCore false
             testCase "revoke_and_ack" <| fun _ ->
-                let raa = LightningMsg.RevokeAndACK {
+                let raa = {
                     ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
                     PerCommitmentSecret = PaymentPreimage(uint256([| for _ in 0..31 -> 1uy |]))
                     NextPerCommitmentPoint = pubkey1
@@ -653,7 +653,7 @@ module SerializationTest =
                 let expected = hex.DecodeData("02020202020202020202020202020202020202020202020202020202020202020101010101010101010101010101010101010101010101010101010101010101031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f")
                 CheckArrayEqual (raa.ToBytes()) expected
             testCase "update_fee" <| fun _ ->
-                let updateFee = LightningMsg.UpdateFee {
+                let updateFee = {
                     ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
                     FeeratePerKW = FeeRatePerKw(20190119u)
                 }
@@ -669,7 +669,7 @@ module SerializationTest =
                     if initialRoutingSync then
                         localFeatures <- localFeatures |> LocalFeatures.setInitialRoutingSync
 
-                    let init = LightningMsg.Init {
+                    let init = {
                         GlobalFeatures = globalFeatures
                         LocalFeatures = localFeatures
                     }
@@ -689,22 +689,22 @@ module SerializationTest =
                 initTestCore(true, true)
 
             testCase "error" <| fun _ ->
-                let err = LightningMsg.Error {
-                    ChannelId = WhichChannel.ChannelId(ChannelId(uint256([| for _ in 0..31 -> 2uy |])))
+                let err = {
+                    ChannelId = WhichChannel.SpecificChannel(ChannelId(uint256([| for _ in 0..31 -> 2uy |])))
                     Data = ascii.GetBytes("rust-lightning")
                 }
                 let expected = hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202000e727573742d6c696768746e696e67")
                 Expect.equal (err.ToBytes()) (expected) ""
 
             testCase "ping" <| fun _ ->
-                let ping = LightningMsg.Ping {
+                let ping = {
                     PongLen = 64us
                     BytesLen = 64us
                 }
                 let expected = hex.DecodeData("0040004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
                 Expect.equal (ping.ToBytes()) (expected) ""
             testCase "pong" <| fun _ ->
-                let ping = LightningMsg.Pong {
+                let ping = {
                     BytesLen = 64us
                 }
                 let expected = hex.DecodeData("004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")

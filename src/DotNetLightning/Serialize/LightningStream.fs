@@ -293,3 +293,21 @@ type LightningReaderStream(inner: Stream) =
             PubKey(b, true)
         else
             raise (SerializationException("Invalid Pubkey encoding"))
+
+    member this.ReadECDSACompact() =
+        let data = this.ReadBytes(64)
+        ECDSASignature.FromBytesCompact(data)
+
+    member this.ReadScript() =
+        let d = this.ReadWithLen()
+        Script(d)
+
+    member this.ReadRGB() =
+        let r = this.ReadUInt8()
+        let g = this.ReadUInt8()
+        let b = this.ReadUInt8()
+        {
+            Red = r
+            Green = g
+            Blue = b
+        }

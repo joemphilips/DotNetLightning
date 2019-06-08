@@ -2,6 +2,7 @@ namespace DotNetLightning.Serialize
 open NBitcoin
 open DotNetLightning.Utils
 open DotNetLightning.Utils.RResult
+open System.Runtime.CompilerServices
 open System.IO
 open System.Net
 open NBitcoin.Crypto
@@ -69,6 +70,31 @@ module Msgs =
         | ChannelUpdate = 258us
 
     // #endregion 
+    type ILightningSerializable<'T when 'T: (new: unit -> 'T) and 'T :> ILightningSerializable<'T>> =
+        abstract Deserialize: LightningReaderStream -> unit
+        abstract Serialize: LightningWriterStream -> unit
+
+    [<Extension>]
+    type ILightningSerializableExtension() =
+        [<Extension>]
+        static member ToBytes(this: ILightningSerializable<'T>) =
+            use ms = new MemoryStream()
+            use ls = new LightningWriterStream(ms)
+            this.Serialize(ls)
+            ms.ToArray()
+
+        [<Extension>]
+        static member FromBytes(this: ILightningSerializable<'T>, data: byte[]) =
+            use ms = new MemoryStream(data)
+            use ls = new LightningReaderStream(ms)
+            let instance = new 'T()
+            instance.Deserialize(ls)
+            instance
+
+        [<Extension>]
+        static member Clone(this: ILightningSerializable<'T>) =
+            this.FromBytes(this.ToBytes())
+
 
     [<Struct>]
     type GlobalFeatures =
@@ -78,174 +104,479 @@ module Msgs =
     // ---------- network message primitives
     type OptionalField<'T> = 'T option
 
-    [<Struct>]
-    type OnionPacket = {
-        Version: uint8
-        PublicKey: PubKey
-        HopData: byte[]
-        HMAC: uint256
-    }
+    [<CLIMutable>]
+    type OnionPacket =
+        {
+            mutable Version: uint8
+            mutable PublicKey: PubKey
+            mutable HopData: byte[]
+            mutable HMAC: uint256
+        }
+        with
+            interface ILightningSerializable<OnionPacket> with
+                member this.Deserialize(ls: LightningReaderStream) =
+                    this.Version <- ls.ReadUInt8()
+                    this.PublicKey <- ls.ReadPubKey()
+                    this.HopData <- ls.ReadBytes(1366) 
+                    this.HMAC <- ls.ReadUInt256(false)
+
+                member this.Serialize(ls) =
+                    ls.Write(this.Version)
+                    ls.Write(this.PublicKey.ToBytes())
+                    ls.Write(this.HopData)
+                    ls.Write(this.HMAC, false)
 
     type OnionErrorPacket = {
         Data: byte[]
     }
 
-    /// Helper functions 
 
+    [<CLIMutable>]
     type Init =
         {
-            GlobalFeatures: GlobalFeatures
-            LocalFeatures: LocalFeatures
+            mutable GlobalFeatures: GlobalFeatures
+            mutable LocalFeatures: LocalFeatures
         }
+        with
+            interface ILightningSerializable<Init> with
+                member this.Deserialize(ls: LightningReaderStream) =
+                    this.GlobalFeatures <- GlobalFeatures.Flags(ls.ReadWithLen())
+                    this.LocalFeatures <- LocalFeatures.Flags(ls.ReadWithLen())
+                member this.Serialize(ls) =
+                    let g: byte[] = this.GlobalFeatures.Value
+                    let l: byte[] = this.LocalFeatures.Value
+                    ls.WriteWithLen(g)
+                    ls.WriteWithLen(l)
 
+    [<CLIMutable>]
     type ErrorMessage = 
         {
-            ChannelId: WhichChannel
-            Data: byte[]
+            mutable ChannelId: WhichChannel
+            mutable Data: byte[]
         }
+        with
+            interface ILightningSerializable<ErrorMessage> with
+                member this.Deserialize(ls) =
+                    match ls.ReadUInt256(false) with
+                    | id when id = uint256.Zero ->
+                        this.ChannelId <- All
+                    | id ->
+                        this.ChannelId <- SpecificChannel(Primitives.ChannelId(id))
+                    this.Data <- ls.ReadWithLen()
+                member this.Serialize(ls) =
+                    match this.ChannelId with
+                    | SpecificChannel (Primitives.ChannelId id) -> ls.Write(id.ToBytes())
+                    | All -> ls.Write(Array.zeroCreate 32)
+                    ls.WriteWithLen(this.Data)
+
     and WhichChannel =
-        | ChannelId of ChannelId
+        | SpecificChannel of ChannelId
         | All
 
+    [<CLIMutable>]
     type Ping = {
-        PongLen: uint16
-        BytesLen: uint16
+        mutable PongLen: uint16
+        mutable BytesLen: uint16
     }
+    with
+        interface ILightningSerializable<Ping> with
+            member this.Deserialize(ls) =
+                this.PongLen <- ls.ReadUInt16(false)
+                this.BytesLen <- ls.ReadUInt16(false)
+                ls.ReadBytes(int32 this.BytesLen) |> ignore
+            member this.Serialize(ls) =
+                ls.Write(this.PongLen, false)
+                ls.Write(this.BytesLen, false)
+                ls.Write(Array.zeroCreate<byte> ((int)this.BytesLen))
 
+    [<CLIMutable>]
     type Pong = {
-        BytesLen: uint16
+        mutable BytesLen: uint16
     }
+    with
+        interface ILightningSerializable<Pong> with
+            member this.Deserialize(ls) =
+                this.BytesLen <- ls.ReadUInt16(false)
+                ls.ReadBytes(int32 this.BytesLen) |> ignore
+            member this.Serialize(ls) =
+                ls.Write(this.BytesLen, true)
+                ls.Write(Array.zeroCreate<byte> ((int)this.BytesLen))
 
+    [<CLIMutable>]
     type OpenChannel = {
-        Chainhash: uint256
-        TemporaryChannelId: ChannelId
-        FundingSatoshis: Money
-        PushMSat: LNMoney
-        DustLimitSatoshis: Money
-        MaxHTLCValueInFlightMsat: LNMoney
-        ChannelReserveSatoshis: Money
-        HTLCMinimumMsat: LNMoney
-        FeeRatePerKw: FeeRatePerKw
-        ToSelfDelay: BlockHeightOffset
-        MaxAcceptedHTLCs: uint16
-        FundingPubKey: PubKey
-        RevocationBasepoint: PubKey
-        PaymentBasepoint: PubKey
-        DelayedPaymentBasepoint: PubKey
-        HTLCBasepoint: PubKey
-        FirstPerCommitmentPoint: PubKey
-        ChannelFlags: uint8
-        ShutdownScriptPubKey: OptionalField<Script>
+        mutable Chainhash: uint256
+        mutable TemporaryChannelId: ChannelId
+        mutable FundingSatoshis: Money
+        mutable PushMSat: LNMoney
+        mutable DustLimitSatoshis: Money
+        mutable MaxHTLCValueInFlightMsat: LNMoney
+        mutable ChannelReserveSatoshis: Money
+        mutable HTLCMinimumMsat: LNMoney
+        mutable FeeRatePerKw: FeeRatePerKw
+        mutable ToSelfDelay: BlockHeightOffset
+        mutable MaxAcceptedHTLCs: uint16
+        mutable FundingPubKey: PubKey
+        mutable RevocationBasepoint: PubKey
+        mutable PaymentBasepoint: PubKey
+        mutable DelayedPaymentBasepoint: PubKey
+        mutable HTLCBasepoint: PubKey
+        mutable FirstPerCommitmentPoint: PubKey
+        mutable ChannelFlags: uint8
+        mutable ShutdownScriptPubKey: OptionalField<Script>
     }
+    with
+        interface ILightningSerializable<OpenChannel> with
+            member this.Deserialize(ls) =
+                this.Chainhash <- ls.ReadUInt256(false)
+                this.TemporaryChannelId <- ChannelId(ls.ReadUInt256(true))
+                this.FundingSatoshis <- Money.Satoshis(ls.ReadInt64(false))
+                this.PushMSat <- LNMoney.MilliSatoshis(ls.ReadUInt64(false))
+                this.DustLimitSatoshis <- Money.Satoshis(ls.ReadInt64(false))
+                this.MaxHTLCValueInFlightMsat <- LNMoney.MilliSatoshis(ls.ReadInt64(false))
+                this.ChannelReserveSatoshis <- Money.Satoshis(ls.ReadInt64(false))
+                this.HTLCMinimumMsat <- LNMoney.MilliSatoshis(ls.ReadInt64(false))
+                this.FeeRatePerKw <- FeeRatePerKw(ls.ReadUInt32(false))
+                this.ToSelfDelay <- BlockHeightOffset(ls.ReadUInt16(false))
+                this.MaxAcceptedHTLCs <- ls.ReadUInt16(false)
+                this.FundingPubKey <- ls.ReadPubKey()
+                this.RevocationBasepoint <- ls.ReadPubKey()
+                this.PaymentBasepoint <- ls.ReadPubKey()
+                this.DelayedPaymentBasepoint <- ls.ReadPubKey()
+                this.HTLCBasepoint <- ls.ReadPubKey()
+                this.FirstPerCommitmentPoint <- ls.ReadPubKey()
+                this.ChannelFlags <- ls.ReadUInt8()
+                this.ShutdownScriptPubKey |> ignore
+                failwith "update OptionalField part"
+            member this.Serialize(ls) =
+                ls.Write(this.Chainhash, false)
+                ls.Write(this.TemporaryChannelId.Value.ToBytes())
+                ls.Write(this.FundingSatoshis.Satoshi, false)
+                ls.Write(this.PushMSat.MilliSatoshi, false)
+                ls.Write(this.DustLimitSatoshis.Satoshi, false)
+                ls.Write(this.MaxHTLCValueInFlightMsat.MilliSatoshi, false)
+                ls.Write(this.ChannelReserveSatoshis.Satoshi, false)
+                ls.Write(this.HTLCMinimumMsat.MilliSatoshi, false)
+                ls.Write(this.FeeRatePerKw.Value, false)
+                ls.Write(this.ToSelfDelay.Value, false)
+                ls.Write(this.MaxAcceptedHTLCs, false)
+                ls.Write(this.FundingPubKey.ToBytes())
+                ls.Write(this.RevocationBasepoint.ToBytes())
+                ls.Write(this.PaymentBasepoint.ToBytes())
+                ls.Write(this.DelayedPaymentBasepoint.ToBytes())
+                ls.Write(this.HTLCBasepoint.ToBytes())
+                ls.Write(this.FirstPerCommitmentPoint.ToBytes())
+                ls.Write(this.ChannelFlags)
+                ls.WriteWithLen(this.ShutdownScriptPubKey |> Option.map(fun x -> x.ToBytes()))
+
+    [<CLIMutable>]
     type AcceptChannel = {
-        TemporaryChannelId: ChannelId
-        DustLimitSatoshis: Money
-        MaxHTLCValueInFlightMsat: LNMoney
-        ChannelReserveSatoshis: Money
-        HTLCMinimumMSat: LNMoney
-        MinimumDepth: uint32
-        ToSelfDelay: BlockHeightOffset
-        MaxAcceptedHTLCs: uint16
-        FundingPubKey: PubKey
-        RevocationBasepoint: PubKey
-        PaymentBasepoint: PubKey
-        DelayedPaymentBasepoint: PubKey
-        HTLCBasepoint: PubKey
-        FirstPerCommitmentPoint: PubKey
-        ShutdownScriptPubKey: OptionalField<Script>
+        mutable TemporaryChannelId: ChannelId
+        mutable DustLimitSatoshis: Money
+        mutable MaxHTLCValueInFlightMsat: LNMoney
+        mutable ChannelReserveSatoshis: Money
+        mutable HTLCMinimumMSat: LNMoney
+        mutable MinimumDepth: uint32
+        mutable ToSelfDelay: BlockHeightOffset
+        mutable MaxAcceptedHTLCs: uint16
+        mutable FundingPubKey: PubKey
+        mutable RevocationBasepoint: PubKey
+        mutable PaymentBasepoint: PubKey
+        mutable DelayedPaymentBasepoint: PubKey
+        mutable HTLCBasepoint: PubKey
+        mutable FirstPerCommitmentPoint: PubKey
+        mutable ShutdownScriptPubKey: OptionalField<Script>
     }
+    with
+        interface ILightningSerializable<AcceptChannel> with
+            member this.Deserialize(ls) =
+                this.TemporaryChannelId <- ChannelId(ls.ReadUInt256(false))
+                this.DustLimitSatoshis <- ls.ReadUInt64(false) |> Money.Satoshis
+                this.MaxHTLCValueInFlightMsat <- ls.ReadUInt64(false) |> LNMoney.MilliSatoshis
+                this.ChannelReserveSatoshis <- ls.ReadUInt64(false) |> Money.Satoshis
+                this.HTLCMinimumMSat <- ls.ReadUInt64(false) |> LNMoney.MilliSatoshis
+                this.MinimumDepth <- ls.ReadUInt32(false)
+                this.ToSelfDelay <- ls.ReadUInt16(false) |> BlockHeightOffset
+                this.MaxAcceptedHTLCs <- ls.ReadUInt16(false)
+                this.FundingPubKey <- ls.ReadPubKey()
+                this.RevocationBasepoint <- ls.ReadPubKey()
+                this.PaymentBasepoint <- ls.ReadPubKey()
+                this.DelayedPaymentBasepoint <- ls.ReadPubKey()
+                this.HTLCBasepoint <- ls.ReadPubKey()
+                this.FirstPerCommitmentPoint <- ls.ReadPubKey()
+                failwith "consider optional field handling"
+                this.ShutdownScriptPubKey |> ignore
+            member this.Serialize(ls) =
+                ls.Write(this.TemporaryChannelId.Value.ToBytes())
+                ls.Write(this.DustLimitSatoshis.Satoshi, false)
+                ls.Write(this.MaxHTLCValueInFlightMsat.MilliSatoshi, false)
+                ls.Write(this.ChannelReserveSatoshis.Satoshi, false)
+                ls.Write(this.HTLCMinimumMSat.MilliSatoshi, false)
+                ls.Write(this.MinimumDepth, false)
+                ls.Write(this.ToSelfDelay.Value, false)
+                ls.Write(this.MaxAcceptedHTLCs, false)
+                ls.Write(this.FundingPubKey.ToBytes())
+                ls.Write(this.RevocationBasepoint.ToBytes())
+                ls.Write(this.PaymentBasepoint.ToBytes())
+                ls.Write(this.DelayedPaymentBasepoint.ToBytes())
+                ls.Write(this.HTLCBasepoint.ToBytes())
+                ls.Write(this.FirstPerCommitmentPoint.ToBytes())
+                ls.WriteWithLen(this.ShutdownScriptPubKey |> Option.map(fun x -> x.ToBytes()))
 
+    [<CLIMutable>]
     type FundingCreated = {
-        TemporaryChannelId: ChannelId
-        FundingTxId: TxId
-        FundingOutputIndex: uint16
-        Signature: ECDSASignature
+        mutable TemporaryChannelId: ChannelId
+        mutable FundingTxId: TxId
+        mutable FundingOutputIndex: uint16
+        mutable Signature: ECDSASignature
     }
+    with
+        interface ILightningSerializable<FundingCreated> with
+            member this.Deserialize(ls) =
+                failwith ""
+            member this.Serialize(ls) =
+                ls.Write(this.TemporaryChannelId.Value.ToBytes())
+                ls.Write(this.FundingTxId.Value.ToBytes())
+                ls.Write(this.FundingOutputIndex, false)
+                ls.Write(this.Signature)
 
+    [<CLIMutable>]
     type FundingSigned = {
-        ChannelId: ChannelId
-        Signature: ECDSASignature
+        mutable ChannelId: ChannelId
+        mutable Signature: ECDSASignature
     }
+    with
+        interface ILightningSerializable<FundingSigned> with
+            member this.Deserialize(ls) =
+                this.ChannelId <- ChannelId(ls.ReadUInt256(false))
+                this.Signature <- ls.ReadECDSACompact()
+            member this.Serialize(ls) =
+                ls.Write(this.ChannelId.Value.ToBytes())
+                ls.Write(this.Signature)
 
+    [<CLIMutable>]
     type FundingLocked = {
-        ChannelId: ChannelId
-        NextPerCommitmentPoint: PubKey
+        mutable ChannelId: ChannelId
+        mutable NextPerCommitmentPoint: PubKey
     }
+    with
+        interface ILightningSerializable<FundingLocked> with
+            member this.Deserialize(ls) =
+                this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
+                this.NextPerCommitmentPoint <- ls.ReadPubKey()
+            member this.Serialize(ls) =
+                ls.Write(this.ChannelId.Value.ToBytes())
+                ls.Write(this.NextPerCommitmentPoint.ToBytes())
 
+    [<CLIMutable>]
     type Shutdown = {
-        ChannelId: ChannelId
-        ScriptPubKey: Script
+        mutable ChannelId: ChannelId
+        mutable ScriptPubKey: Script
     }
+    with
+        interface ILightningSerializable<Shutdown> with
+            member this.Deserialize(ls) =
+                this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
+                this.ScriptPubKey <- ls.ReadScript()
+            member this.Serialize(ls) =
+                ls.Write(this.ChannelId.Value.ToBytes())
+                ls.WriteWithLen(this.ScriptPubKey.ToBytes())
 
+    [<CLIMutable>]
     type ClosingSigned = {
-        ChannelId: ChannelId
-        FeeSatoshis: Money
-        Signature: ECDSASignature
+        mutable ChannelId: ChannelId
+        mutable FeeSatoshis: Money
+        mutable Signature: ECDSASignature
     }
+    with
+        interface ILightningSerializable<ClosingSigned> with
+            member this.Deserialize(ls) =
+                this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
+                this.FeeSatoshis <- ls.ReadUInt64(false) |> Money.Satoshis
+                this.Signature <- ls.ReadECDSACompact()
+            member this.Serialize(ls) =
+                ls.Write(this.ChannelId.Value.ToBytes())
+                ls.Write(this.FeeSatoshis.Satoshi, false)
+                ls.Write(this.Signature)
 
+    [<CLIMutable>]
     type UpdateAddHTLC = {
-        ChannelId: ChannelId
-        HTLCId: HTLCId
-        AmountMSat: LNMoney
-        PaymentHash: PaymentHash
-        CLTVExpiry: uint32
-        OnionRoutingPacket: OnionPacket
+        mutable ChannelId: ChannelId
+        mutable HTLCId: HTLCId
+        mutable AmountMSat: LNMoney
+        mutable PaymentHash: PaymentHash
+        mutable CLTVExpiry: uint32
+        mutable OnionRoutingPacket: OnionPacket
     }
+    with
+        interface ILightningSerializable<UpdateAddHTLC> with
+            member this.Deserialize(ls) =
+                this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
+                this.HTLCId <- ls.ReadUInt64(false) |> HTLCId
+                this.AmountMSat <- ls.ReadUInt64(false) |> LNMoney.MilliSatoshis
+                this.PaymentHash <- ls.ReadUInt256(false) |> PaymentHash
+                this.CLTVExpiry <- ls.ReadUInt32(false)
+                (this.OnionRoutingPacket :> ILightningSerializable<OnionPacket>).Deserialize(ls)
+            member this.Serialize(ls) =
+                ls.Write(this.ChannelId.Value.ToBytes())
+                ls.Write(this.HTLCId.Value, false)
+                ls.Write(this.AmountMSat.MilliSatoshi, false)
+                ls.Write(this.PaymentHash.Value.ToBytes())
+                ls.Write(this.CLTVExpiry, false)
+                (this.OnionRoutingPacket :> ILightningSerializable<OnionPacket>).Serialize(ls)
 
+    [<CLIMutable>]
     type UpdateFulfillHTLC = {
-        ChannelId: ChannelId
-        HTLCId: HTLCId
-        PaymentPreimage: PaymentPreimage
+        mutable ChannelId: ChannelId
+        mutable HTLCId: HTLCId
+        mutable PaymentPreimage: PaymentPreimage
     }
+    with
+        interface ILightningSerializable<UpdateFulfillHTLC> with
+            member this.Deserialize(ls) =
+                this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
+                this.HTLCId <- ls.ReadUInt64(false) |> HTLCId
+                this.PaymentPreimage <- ls.ReadUInt256(false) |> PaymentPreimage
+            member this.Serialize(ls) =
+                ls.Write(this.ChannelId.Value.ToBytes())
+                ls.Write(this.HTLCId.Value, false)
+                ls.Write(this.PaymentPreimage.Value.ToBytes())
 
+    [<CLIMutable>]
     type UpdateFailHTLC = {
-        ChannelId: ChannelId
-        HTLCId: HTLCId
-        Reason: OnionErrorPacket
+        mutable ChannelId: ChannelId
+        mutable HTLCId: HTLCId
+        mutable Reason: OnionErrorPacket
     }
+    with
+        interface ILightningSerializable<UpdateFailHTLC> with
+            member this.Deserialize(ls) =
+                this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
+                this.HTLCId <- ls.ReadUInt64(false) |> HTLCId
+                this.Reason <- { Data = ls.ReadWithLen() }
+            member this.Serialize(ls) =
+                ls.Write(this.ChannelId.Value.ToBytes())
+                ls.Write(this.HTLCId.Value, false)
+                ls.WriteWithLen(this.Reason.Data)
 
+    [<CLIMutable>]
     type UpdateFailMalformedHTLC = {
-        ChannelId: ChannelId
-        HTLCId: HTLCId
-        Sha256OfOnion: uint256
-        FailureCode: ErrorCode
+        mutable ChannelId: ChannelId
+        mutable HTLCId: HTLCId
+        mutable Sha256OfOnion: uint256
+        mutable FailureCode: ErrorCode
     }
+    with
+        interface ILightningSerializable<UpdateFailMalformedHTLC> with
+            member this.Deserialize(ls) =
+                this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
+                this.HTLCId <- ls.ReadUInt64(false) |> HTLCId
+                this.Sha256OfOnion <- ls.ReadUInt256(false)
+                this.FailureCode <- ls.ReadUInt16(false) |> ErrorCode
+            member this.Serialize(ls) =
+                ls.Write(this.ChannelId.Value.ToBytes())
+                ls.Write(this.HTLCId.Value, false)
+                ls.Write(this.Sha256OfOnion, false)
+                ls.Write(this.FailureCode.Value, false)
 
+    [<CLIMutable>]
     type CommitmentSigned = {
-        ChannelId: ChannelId
-        Signature: ECDSASignature
-        HTLCSignatures: ECDSASignature list
+        mutable ChannelId: ChannelId
+        mutable Signature: ECDSASignature
+        mutable HTLCSignatures: ECDSASignature list
     }
+    with
+        interface ILightningSerializable<CommitmentSigned> with
+            member this.Deserialize(ls) =
+                this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
+                this.Signature <- ls.ReadECDSACompact()
+                this.HTLCSignatures <- 
+                    let len = ls.ReadUInt16(false)
+                    seq { 0us..len-1us } |> Seq.map(fun _ -> ls.ReadECDSACompact()) |> Seq.toList
+            member this.Serialize(ls) =
+                ls.Write(this.ChannelId.Value.ToBytes())
+                ls.Write(this.Signature)
+                ls.Write((uint16)this.HTLCSignatures.Length, false)
+                this.HTLCSignatures |> List.iter (ls.Write)
 
+    [<CLIMutable>]
     type RevokeAndACK = {
-        ChannelId: ChannelId
-        PerCommitmentSecret: PaymentPreimage
-        NextPerCommitmentPoint: PubKey
+        mutable ChannelId: ChannelId
+        mutable PerCommitmentSecret: PaymentPreimage
+        mutable NextPerCommitmentPoint: PubKey
     }
+    with
+        interface ILightningSerializable<RevokeAndACK> with
+            member this.Deserialize(ls) =
+                this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
+                this.PerCommitmentSecret <- ls.ReadUInt256(false) |> PaymentPreimage
+                this.NextPerCommitmentPoint <- ls.ReadPubKey()
+            member this.Serialize(ls) =
+                ls.Write(this.ChannelId.Value.ToBytes())
+                ls.Write(this.PerCommitmentSecret.Value.ToBytes())
+                ls.Write(this.NextPerCommitmentPoint.ToBytes())
 
+    [<CLIMutable>]
     type UpdateFee = {
-        ChannelId: ChannelId
-        FeeratePerKW: FeeRatePerKw
+        mutable ChannelId: ChannelId
+        mutable FeeratePerKW: FeeRatePerKw
     }
+    with
+        interface ILightningSerializable<UpdateFee> with
+            member this.Deserialize(ls) =
+                this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
+                this.FeeratePerKW <- ls.ReadUInt32(false) |> FeeRatePerKw
+            member this.Serialize(ls) =
+                ls.Write(this.ChannelId.Value.ToBytes())
+                ls.Write(this.FeeratePerKW.Value, false)
 
+    [<CLIMutable>]
     type DataLossProtect = {
-        YourLastPerCommitmentSecret: PaymentPreimage
-        MyCurrentPerCommitmentPoint: PubKey
+        mutable YourLastPerCommitmentSecret: PaymentPreimage
+        mutable MyCurrentPerCommitmentPoint: PubKey
     }
 
+    [<CLIMutable>]
     type ChannelReestablish = {
-        ChannelId: ChannelId
-        NextLocalCommitmentNumber: uint64
-        NextRemoteCommitmentNumber: uint64
-        DataLossProtect: OptionalField<DataLossProtect>
+        mutable ChannelId: ChannelId
+        mutable NextLocalCommitmentNumber: uint64
+        mutable NextRemoteCommitmentNumber: uint64
+        mutable DataLossProtect: OptionalField<DataLossProtect>
     }
+    with
+        interface ILightningSerializable<ChannelReestablish> with
+            member this.Deserialize(ls) =
+                this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
+                this.NextLocalCommitmentNumber <- ls.ReadUInt64(false)
+                this.NextRemoteCommitmentNumber <- ls.ReadUInt64(false)
+                this.DataLossProtect |> ignore
+                failwith "Update optional field part"
+            member this.Serialize(ls) =
+                ls.Write(this.ChannelId.Value.ToBytes())
+                ls.Write(Utils.ToBytes(this.NextLocalCommitmentNumber, false))
+                ls.Write(Utils.ToBytes(this.NextRemoteCommitmentNumber, false))
+                ls.Write(this.DataLossProtect |> Option.map(fun x -> x.YourLastPerCommitmentSecret.Value.ToBytes()))
+                ls.Write(this.DataLossProtect |> Option.map(fun x -> x.MyCurrentPerCommitmentPoint.ToBytes()))
 
+    [<CLIMutable>]
     type AnnouncementSignatures = {
-        ChannelId: ChannelId
-        ShortChannelId: ShortChannelId
-        NodeSignature: ECDSASignature
-        BitcoinSignature: ECDSASignature
+        mutable ChannelId: ChannelId
+        mutable ShortChannelId: ShortChannelId
+        mutable NodeSignature: ECDSASignature
+        mutable BitcoinSignature: ECDSASignature
     }
+    with
+        interface ILightningSerializable<AnnouncementSignatures> with
+            member this.Deserialize(ls) =
+                this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
+                this.ShortChannelId <- ls.ReadUInt32(false) |> ShortChannelId
+                this.NodeSignature <- ls.ReadECDSACompact()
+                this.BitcoinSignature <- ls.ReadECDSACompact()
+                failwith ""
+            member this.Serialize(ls) =
+                ls.Write(this.ChannelId.Value.ToBytes())
+                ls.Write(this.ShortChannelId)
+                ls.Write(this.NodeSignature)
+                ls.Write(this.BitcoinSignature)
 
     type NetAddress =
         | IPv4 of IPEndPoint
@@ -279,61 +610,166 @@ module Msgs =
     }
 
 
-
     /// Only exposed as broadcast of node_announcement should be filtered by node_id
     /// The unsigned part of node_anouncement
+    [<CLIMutable>]
     type UnsignedNodeAnnouncement = {
-        Features: GlobalFeatures
-        Timestamp: uint32
-        NodeId: NodeId
-        RGB: RGB
-        Alias: uint256
-        Addresses: NetAddress list
-        ExcessAddressData: byte[]
-        ExcessData: byte[]
+        mutable Features: GlobalFeatures
+        mutable Timestamp: uint32
+        mutable NodeId: NodeId
+        mutable RGB: RGB
+        mutable Alias: uint256
+        mutable Addresses: NetAddress list
+        mutable ExcessAddressData: byte[]
+        mutable ExcessData: byte[]
     }
+    with
+        interface ILightningSerializable<UnsignedNodeAnnouncement> with
+            member this.Deserialize(ls) =
+                this.Features <- ls.ReadWithLen() |> GlobalFeatures.Flags
+                this.Timestamp <- ls.ReadUInt32(false)
+                this.NodeId <- ls.ReadPubKey() |> NodeId
+                this.RGB <- ls.ReadRGB()
+                this.Alias <- ls.ReadUInt256(false)
+                failwith "Update address part"
+            member this.Serialize(ls) =
+                failwith ""
 
+    [<CLIMutable>]
     type NodeAnnouncement = {
-        Signature: ECDSASignature
-        Contents: UnsignedNodeAnnouncement
+        mutable Signature: ECDSASignature
+        mutable Contents: UnsignedNodeAnnouncement
     }
+    with
+        interface ILightningSerializable<NodeAnnouncement> with
+            member this.Deserialize(ls) =
+                this.Signature <- ls.ReadECDSACompact()
+                (this.Contents :> ILightningSerializable<UnsignedNodeAnnouncement>).Deserialize(ls)
+            member this.Serialize(ls) =
+                ls.Write(this.Signature)
+                ls.WriteWithLen(this.Contents.Features.Value)
+                ls.Write(this.Contents.Timestamp, false)
+                ls.Write(this.Contents.NodeId.Value)
+                ls.Write(this.Contents.RGB)
+                ls.Write(this.Contents.Alias, true)
+                let mutable addrLen = (this.Contents.Addresses |> List.sumBy(fun addr -> addr.Length + 1us)) // 1 byte for type field
+                let excessAddrLen = (uint16 this.Contents.ExcessAddressData.Length)
+                addrLen <- excessAddrLen + addrLen
+                ls.Write(addrLen, false)
+                this.Contents.Addresses
+                    |> List.iter(fun addr -> ls.Write(addr.GetId()); ls.Write(addr))
+                ls.Write(this.Contents.ExcessAddressData)
+                ls.Write(this.Contents.ExcessData)
 
 
+    [<CLIMutable>]
     type UnsignedChannelAnnouncement = {
-        Features: GlobalFeatures
-        ChainHash: uint256
-        ShortChannelId: ShortChannelId
-        NodeId1: NodeId
-        NodeId2: NodeId
-        BitcoinKey1: PubKey
-        BitcoinKey2: PubKey
-        ExcessData: byte[]
+        mutable Features: GlobalFeatures
+        mutable ChainHash: uint256
+        mutable ShortChannelId: ShortChannelId
+        mutable NodeId1: NodeId
+        mutable NodeId2: NodeId
+        mutable BitcoinKey1: PubKey
+        mutable BitcoinKey2: PubKey
+        mutable ExcessData: byte[]
     }
+    with
+        interface ILightningSerializable<UnsignedChannelAnnouncement> with
+            member this.Deserialize(ls) =
+                this.Features <- ls.ReadWithLen() |> GlobalFeatures.Flags
+                this.ChainHash <- ls.ReadUInt256(false)
+                this.ShortChannelId <- ls.ReadUInt64(false) |> ShortChannelId.FromUInt64
+                this.NodeId1 <- ls.ReadPubKey() |> NodeId
+                this.NodeId2 <- ls.ReadPubKey() |> NodeId
+                this.BitcoinKey1 <- ls.ReadPubKey()
+                this.BitcoinKey2 <- ls.ReadPubKey()
+                failwith "Handle Excessdata"
+            member this.Serialize(ls) =
+                failwith ""
 
+    [<CLIMutable>]
     type ChannelAnnouncement = {
-        NodeSignature1: ECDSASignature
-        NodeSignature2: ECDSASignature
-        BitcoinSignature1: ECDSASignature
-        BitcoinSignature2: ECDSASignature
-        Contents: UnsignedChannelAnnouncement
+        mutable NodeSignature1: ECDSASignature
+        mutable NodeSignature2: ECDSASignature
+        mutable BitcoinSignature1: ECDSASignature
+        mutable BitcoinSignature2: ECDSASignature
+        mutable Contents: UnsignedChannelAnnouncement
     }
+    with
+        interface ILightningSerializable<ChannelAnnouncement> with
+            member this.Deserialize(ls) =
+                this.NodeSignature1 <- ls.ReadECDSACompact()
+                this.NodeSignature2 <- ls.ReadECDSACompact()
+                this.BitcoinSignature1 <- ls.ReadECDSACompact()
+                this.BitcoinSignature2 <- ls.ReadECDSACompact()
+                (this.Contents :> ILightningSerializable<UnsignedChannelAnnouncement>).Deserialize(ls)
+            member this.Serialize(ls) =
+                ls.Write(this.NodeSignature1)
+                ls.Write(this.NodeSignature2)
+                ls.Write(this.BitcoinSignature1)
+                ls.Write(this.BitcoinSignature2)
+                ls.WriteWithLen(this.Contents.Features.Value)
+                ls.Write(this.Contents.ChainHash, false)
+                ls.Write(this.Contents.ShortChannelId)
+                ls.Write(this.Contents.NodeId1.Value)
+                ls.Write(this.Contents.NodeId2.Value)
+                ls.Write(this.Contents.BitcoinKey1)
+                ls.Write(this.Contents.BitcoinKey2)
+                ls.Write(this.Contents.ExcessData)
 
+    [<CLIMutable>]
     type UnsignedChannelUpdate = {
-        ChainHash: uint256
-        ShortChannelId: ShortChannelId
-        Timestamp: uint32
-        Flags: uint16
-        CLTVExpiryDelta: BlockHeightOffset
-        HTLCMinimumMSat: LNMoney
-        FeeBaseMSat: LNMoney
-        FeeProportionalMillionths: uint32
-        ExcessData: byte[]
+        mutable ChainHash: uint256
+        mutable ShortChannelId: ShortChannelId
+        mutable Timestamp: uint32
+        mutable Flags: uint16
+        mutable CLTVExpiryDelta: BlockHeightOffset
+        mutable HTLCMinimumMSat: LNMoney
+        mutable FeeBaseMSat: LNMoney
+        mutable FeeProportionalMillionths: uint32
+        mutable ExcessData: byte[]
     }
 
+    [<CLIMutable>]
     type ChannelUpdate = {
-        Signature: ECDSASignature
-        Contents: UnsignedChannelUpdate
+        mutable Signature: ECDSASignature
+        mutable Contents: UnsignedChannelUpdate
     }
+    with
+        interface ILightningSerializable<ChannelUpdate> with
+            member this.Deserialize(ls) =
+                this.Signature <- ls.ReadECDSACompact()
+                let chainHash = ls.ReadUInt256(false)
+                let shortChannelId = ls.ReadUInt64(false) |> ShortChannelId.FromUInt64
+                let ts = ls.ReadUInt32(false)
+                let f = ls.ReadUInt16(false)
+                let cltvE = ls.ReadUInt16(false) |> BlockHeightOffset
+                let htlcMinimum = ls.ReadUInt64(false) |> LNMoney.MilliSatoshis
+                let feeBase = ls.ReadUInt64(false) |> LNMoney.MilliSatoshis
+                let feeProportionalMillionths = ls.ReadUInt32(false)
+                this.Contents <- {
+                    ChainHash = chainHash
+                    ShortChannelId = shortChannelId
+                    Timestamp = ts
+                    Flags = f
+                    CLTVExpiryDelta = cltvE
+                    HTLCMinimumMSat = htlcMinimum
+                    FeeBaseMSat = feeBase
+                    FeeProportionalMillionths = feeProportionalMillionths
+                    ExcessData = [||]
+                }
+                failwith "Handle Excess data"
+            member this.Serialize(ls) =
+                ls.Write(this.Signature)
+                ls.Write(this.Contents.ChainHash, false)
+                ls.Write(this.Contents.ShortChannelId)
+                ls.Write(this.Contents.Timestamp, false)
+                ls.Write(this.Contents.Flags, false)
+                ls.Write(this.Contents.CLTVExpiryDelta.Value, false)
+                ls.Write(this.Contents.HTLCMinimumMSat.MilliSatoshi, false)
+                ls.Write((uint32) this.Contents.FeeBaseMSat.MilliSatoshi, false)
+                ls.Write((uint32) this.Contents.FeeProportionalMillionths, false)
+                ls.Write(this.Contents.ExcessData)
 
     type ErrorAction = 
         | DisconnectPeer of ErrorMessage option
@@ -347,23 +783,37 @@ module Msgs =
 
     /// Struct used to return valeus from revoke_and_ack messages, cotaining a bunch of commitment
     /// transaction updates if they were pending.
+    [<CLIMutable>]
     type CommitmentUpdate = {
-        UpdateAddHTLCs: UpdateAddHTLC list
-        UpdateFulfillHTLCs: UpdateFulfillHTLC list
-        UpdateFailHTLCs: UpdateFailHTLC list
-        UpdateFailMalformedHTLCs: UpdateFailMalformedHTLC list
-        UpdateFee: UpdateFee option
-        CommitmentSigned: CommitmentSigned
+        mutable UpdateAddHTLCs: UpdateAddHTLC list
+        mutable UpdateFulfillHTLCs: UpdateFulfillHTLC list
+        mutable UpdateFailHTLCs: UpdateFailHTLC list
+        mutable UpdateFailMalformedHTLCs: UpdateFailMalformedHTLC list
+        mutable UpdateFee: UpdateFee option
+        mutable CommitmentSigned: CommitmentSigned
     }
-
+    with
+        interface ILightningSerializable<CommitmentUpdate> with
+            member this.Deserialize(ls) =
+                failwith ""
+            member this.Serialize(ls) =
+                failwith ""
     /// The information we received from a peer along the route of a payment we originated. This is
     /// returned by ChannelMessageHandler::HandleUpdateFailHTLC to be passed into
     /// RoutingMessageHandler.HandleHTLCFailChannelUpdate to update our network map.
+    [<CLIMutable>]
     type HTLCFailChannelUpdate = {
-        ChannelUpdateMessage: ChannelUpdate
-        ChannelClosed: ChannelClosed
-        NodeFailure: NodeFailure
+        mutable ChannelUpdateMessage: ChannelUpdate
+        mutable ChannelClosed: ChannelClosed
+        mutable NodeFailure: NodeFailure
     }
+    with
+        interface ILightningSerializable<HTLCFailChannelUpdate> with
+            member this.Deserialize(ls) =
+                failwith ""
+            member this.Serialize(ls) =
+                failwith ""
+
     and ChannelClosed = {
         ShortChannelId: ShortChannelId
         /// when this true, this channel should be permanently removed from the
@@ -374,7 +824,6 @@ module Msgs =
         NodeId: NodeId
         IsPermanent: bool
     }
-
     /// All possible messages in Lightning P2P Network
     type LightningMsg = 
         /// BOLT1: Basic Control
