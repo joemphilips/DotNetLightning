@@ -9,12 +9,16 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Utils/FromRustLightning.fs" />
+    <Compile Include="Generators/Msgs.fs" />
+    <Compile Include="Generators/Generators.fs" />
     <Compile Include="Serialization.fs" />
+    <Compile Include="SerializationPropertyTests.fs" />
     <Compile Include="FunctionalTests.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Expecto" Version="8.*" />
+    <PackageReference Include="Expecto.FsCheck" Version="8.10.1" />
     <PackageReference Include="FSharp.Core" Version="4.*" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="2.2.0" />
     <PackageReference Include="YoloDev.Expecto.TestSdk" Version="0.*" />

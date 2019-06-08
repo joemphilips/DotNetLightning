@@ -8,41 +8,41 @@ open System.Net
 open NBitcoin.Crypto
 open DotNetLightning.Utils.Error
 
-[<Struct>]
-type DecodeError =
-    | UnknownVersion
-    | UnknownRequiredFeature
-    | InvalidValue
-    | ShortRead
-    | ExtraAddressesPerType
-    | BadLengthDescriptor
-    | IO of IOException
-
-[<Struct>]
-type LocalFeatures =
-    Flags of byte[]
-        member x.Value = let (Flags v) = x in v
-        member x.SupportsDataLossProect(): bool =
-            (x.Value.[0] &&& 3uy) <> 0uy
-
-        member x.RequiresDataLossProect(): bool =
-            (x.Value.[0] &&& 1uy) <> 0uy
-
-        member x.InitialRoutingSync(): bool =
-            (x.Value.[0] &&& (1uy <<< 3)) <> 0uy
-
-module LocalFeatures =
-    let setInitialRoutingSync(x: LocalFeatures) =
-        if
-            x.Value.Length = 0
-        then
-            Flags [|1uy <<< 3|]
-        else
-            x.Value.[0] <- (x.Value.[0] ||| (1uy <<< 3))
-            x
-
 // #region serialization
 module Msgs =
+    [<Struct>]
+    type DecodeError =
+        | UnknownVersion
+        | UnknownRequiredFeature
+        | InvalidValue
+        | ShortRead
+        | ExtraAddressesPerType
+        | BadLengthDescriptor
+        | IO of IOException
+
+    [<Struct>]
+    type LocalFeatures =
+        Flags of byte[]
+            member x.Value = let (Flags v) = x in v
+            member x.SupportsDataLossProect(): bool =
+                (x.Value.[0] &&& 3uy) <> 0uy
+
+            member x.RequiresDataLossProect(): bool =
+                (x.Value.[0] &&& 1uy) <> 0uy
+
+            member x.InitialRoutingSync(): bool =
+                (x.Value.[0] &&& (1uy <<< 3)) <> 0uy
+
+    module LocalFeatures =
+        let setInitialRoutingSync(x: LocalFeatures) =
+            if
+                x.Value.Length = 0
+            then
+                Flags [|1uy <<< 3|]
+            else
+                x.Value.[0] <- (x.Value.[0] ||| (1uy <<< 3))
+                x
+
 
     type TypeFlag =
         | Init = 16us
@@ -199,7 +199,7 @@ module Msgs =
                 this.BytesLen <- ls.ReadUInt16(false)
                 ls.ReadBytes(int32 this.BytesLen) |> ignore
             member this.Serialize(ls) =
-                ls.Write(this.BytesLen, true)
+                ls.Write(this.BytesLen, false)
                 ls.Write(Array.zeroCreate<byte> ((int)this.BytesLen))
 
     [<CLIMutable>]
@@ -568,10 +568,9 @@ module Msgs =
         interface ILightningSerializable<AnnouncementSignatures> with
             member this.Deserialize(ls) =
                 this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
-                this.ShortChannelId <- ls.ReadUInt32(false) |> ShortChannelId
+                this.ShortChannelId <- ls.ReadUInt64(false) |> ShortChannelId.FromUInt64
                 this.NodeSignature <- ls.ReadECDSACompact()
                 this.BitcoinSignature <- ls.ReadECDSACompact()
-                failwith ""
             member this.Serialize(ls) =
                 ls.Write(this.ChannelId.Value.ToBytes())
                 ls.Write(this.ShortChannelId)
@@ -597,6 +596,25 @@ module Msgs =
                                 | OnionV2 _ -> 12us
                                 | OnionV3 _ -> 37us
 
+        member this.WriteTo(ls: LightningWriterStream) =
+         match this with
+         | IPv4 d ->
+             ls.Write(d.Address.GetAddressBytes())
+             ls.Write((uint16)d.Port, false)
+         | IPv6 d ->
+             ls.Write(d.Address.GetAddressBytes())
+             ls.Write((uint16)d.Port, false)
+         | OnionV2 d ->
+             ls.Write(d.Addr)
+             ls.Write((uint16)d.Port, false)
+         | OnionV3 d ->
+             ls.Write(d.ed25519PubKey)
+             ls.Write(d.CheckSum, false)
+             ls.Write(d.Version)
+             ls.Write((uint16)d.Port, false)
+
+        static member ReadFrom(ls) =
+            failwith ""
 
     and OnionV2EndPoint = {
         Addr: byte[]
@@ -631,9 +649,23 @@ module Msgs =
                 this.NodeId <- ls.ReadPubKey() |> NodeId
                 this.RGB <- ls.ReadRGB()
                 this.Alias <- ls.ReadUInt256(false)
-                failwith "Update address part"
+                let addrlen = ls.ReadUInt16(false)
+                this.Addresses <- [1us..addrlen] |> List.map(fun a -> NetAddress.ReadFrom(ls))
+                failwith "Update Excess data part"
             member this.Serialize(ls) =
-                failwith ""
+                ls.WriteWithLen(this.Features.Value)
+                ls.Write(this.Timestamp, false)
+                ls.Write(this.NodeId.Value)
+                ls.Write(this.RGB)
+                ls.Write(this.Alias, true)
+                let mutable addrLen = (this.Addresses |> List.sumBy(fun addr -> addr.Length + 1us)) // 1 byte for type field
+                let excessAddrLen = (uint16 this.ExcessAddressData.Length)
+                addrLen <- excessAddrLen + addrLen
+                ls.Write(addrLen, false)
+                this.Addresses
+                    |> List.iter(fun addr -> ls.Write(addr.GetId()); addr.WriteTo(ls))
+                ls.Write(this.ExcessAddressData)
+                ls.Write(this.ExcessData)
 
     [<CLIMutable>]
     type NodeAnnouncement = {
@@ -647,19 +679,7 @@ module Msgs =
                 (this.Contents :> ILightningSerializable<UnsignedNodeAnnouncement>).Deserialize(ls)
             member this.Serialize(ls) =
                 ls.Write(this.Signature)
-                ls.WriteWithLen(this.Contents.Features.Value)
-                ls.Write(this.Contents.Timestamp, false)
-                ls.Write(this.Contents.NodeId.Value)
-                ls.Write(this.Contents.RGB)
-                ls.Write(this.Contents.Alias, true)
-                let mutable addrLen = (this.Contents.Addresses |> List.sumBy(fun addr -> addr.Length + 1us)) // 1 byte for type field
-                let excessAddrLen = (uint16 this.Contents.ExcessAddressData.Length)
-                addrLen <- excessAddrLen + addrLen
-                ls.Write(addrLen, false)
-                this.Contents.Addresses
-                    |> List.iter(fun addr -> ls.Write(addr.GetId()); ls.Write(addr))
-                ls.Write(this.Contents.ExcessAddressData)
-                ls.Write(this.Contents.ExcessData)
+                (this.Contents :> ILightningSerializable<UnsignedNodeAnnouncement>).Serialize(ls)
 
 
     [<CLIMutable>]
@@ -685,7 +705,14 @@ module Msgs =
                 this.BitcoinKey2 <- ls.ReadPubKey()
                 failwith "Handle Excessdata"
             member this.Serialize(ls) =
-                failwith ""
+                ls.WriteWithLen(this.Features.Value)
+                ls.Write(this.ChainHash, false)
+                ls.Write(this.ShortChannelId)
+                ls.Write(this.NodeId1.Value)
+                ls.Write(this.NodeId2.Value)
+                ls.Write(this.BitcoinKey1)
+                ls.Write(this.BitcoinKey2)
+                ls.Write(this.ExcessData)
 
     [<CLIMutable>]
     type ChannelAnnouncement = {
@@ -708,14 +735,7 @@ module Msgs =
                 ls.Write(this.NodeSignature2)
                 ls.Write(this.BitcoinSignature1)
                 ls.Write(this.BitcoinSignature2)
-                ls.WriteWithLen(this.Contents.Features.Value)
-                ls.Write(this.Contents.ChainHash, false)
-                ls.Write(this.Contents.ShortChannelId)
-                ls.Write(this.Contents.NodeId1.Value)
-                ls.Write(this.Contents.NodeId2.Value)
-                ls.Write(this.Contents.BitcoinKey1)
-                ls.Write(this.Contents.BitcoinKey2)
-                ls.Write(this.Contents.ExcessData)
+                (this.Contents :> ILightningSerializable<UnsignedChannelAnnouncement>).Serialize(ls)
 
     [<CLIMutable>]
     type UnsignedChannelUpdate = {

@@ -608,7 +608,7 @@ module SerializationTest =
                 let reason = {
                     Data = [| for _ in 0..31 -> 1uy |]
                 }
-                let updateFailHTLC = LightningMsg.UpdateFailHTLC {
+                let updateFailHTLC = {
                     ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
                     HTLCId = HTLCId(2316138423780173UL)
                     Reason = reason
