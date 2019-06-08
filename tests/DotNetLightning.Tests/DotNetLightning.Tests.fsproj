@@ -9,6 +9,7 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Utils/FromRustLightning.fs" />
+    <Compile Include="Generators/Primitives.fs" />
     <Compile Include="Generators/Msgs.fs" />
     <Compile Include="Generators/Generators.fs" />
     <Compile Include="Serialization.fs" />

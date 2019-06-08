@@ -1,0 +1,27 @@
+module PrimitiveGenerators
+open FsCheck
+open NBitcoin
+open DotNetLightning.Utils.Primitives
+open DotNetLightning.Utils
+open System
+open NBitcoin
+
+let byteGen = byte <!> Gen.choose(0, 127)
+let bytesGen = Gen.listOf(byteGen)
+let bytesOfNGen(n) = Gen.listOfLength n byteGen |> Gen.map(List.toArray)
+let uint256Gen = bytesOfNGen(32) |> Gen.map(fun bs -> uint256(bs))
+let temporaryChannelGen = uint256Gen |> Gen.map ChannelId
+let moneyGen = Arb.generate<uint64> |> Gen.map(Money.Satoshis)
+let lnMoneyGen = Arb.generate<uint64> |> Gen.map(LNMoney.MilliSatoshis)
+
+// crypto stuffs
+
+let keyGen = Gen.fresh (fun () -> Key())
+let pubKeyGen = keyGen |> Gen.map(fun k -> k.PubKey)
+
+// scripts
+
+let pushOnlyOpcodeGen = bytesOfNGen(4) |> Gen.map(Op.GetPushOp)
+let pushOnlyOpcodesGen = Gen.listOf pushOnlyOpcodeGen
+
+let pushScriptGen = Gen.nonEmptyListOf pushOnlyOpcodeGen |> Gen.map(fun ops -> Script(ops))
