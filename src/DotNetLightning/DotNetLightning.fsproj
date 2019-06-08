@@ -16,11 +16,11 @@
     <Compile Include="Utils/Errors.fs" />
     <Compile Include="Serialize/LightningStream.fs" />
     <Compile Include="Serialize/Msgs.fs" />
-    <Compile Include="Serialize/PeerChannelEncryptor.fs" />
     <Compile Include="DomainUtils/Events.fs" />
     <Compile Include="Chain/ChainInterface.fs" />
     <Compile Include="Chain/KeysInterface.fs" />
     <Compile Include="Crypto/ChaCha20Poly1305.fs" />
+    <Compile Include="LN/PeerChannelEncryptor.fs" />
     <Compile Include="LN/ChannelUtils.fs" />
     <Compile Include="LN/Router.fs" />
     <Compile Include="LN/ChannelManager.fs" />

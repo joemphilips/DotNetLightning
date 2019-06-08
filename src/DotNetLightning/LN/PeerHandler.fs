@@ -4,7 +4,6 @@ open System
 open DotNetLightning.Utils
 open DotNetLightning.Utils.RResult
 open DotNetLightning.Serialize.Msgs
-open DotNetLightning.Serialize.PeerChannelEncryptor
 open Microsoft.Extensions.Logging
 open DotNetLightning.Serialize
 
