@@ -3,6 +3,7 @@ open NBitcoin
 open NBitcoin.Crypto
 open System.IO
 open DotNetLightning.Utils.Primitives
+open DotNetLightning.Utils.Aether
 open DotNetLightning.Serialize.Msgs
 open System
 open System.Diagnostics
@@ -44,25 +45,99 @@ module PeerChannelEncryptor =
         /// At the end of the handshake, it is used for deriving the encryption keys for Lightning Messages.
         CK: uint256
     }
+        with
+            static member h_ =
+                (fun state -> state.H),
+                (fun h state -> { state with BidirectionalNoiseState.H = h })
+            static member ck_ =
+                (fun state -> state.CK),
+                (fun ck state -> { state with BidirectionalNoiseState.CK = ck })
 
     type DirectionalNoisestate =
         | OutBound of OutBound
         | InBound of InBound
+        with
+            static member outBound_: Prism<DirectionalNoisestate, _> =
+                (fun state ->
+                    match state with
+                    | OutBound o -> Some o
+                    | InBound i -> None),
+                (fun o state ->
+                    match state with
+                    | OutBound _ -> OutBound o
+                    | _ -> state)
+
+            static member inBound_: Prism<DirectionalNoisestate, _> =
+                (fun state ->
+                    match state with
+                    | OutBound _ -> None
+                    | InBound i -> Some i),
+                (fun i state ->
+                    match state with
+                    | InBound _ -> InBound i
+                    | _ -> state)
+
     and OutBound = { IE: Key }
+        with
+            static member ie_ =
+                (fun ob -> ob.IE),
+                (fun ie ob -> { ob with OutBound.IE = ie})
     and InBound = {
         IE: PubKey option // Some if state >= PostActOne
         RE: Key option // Some if state >= PostActTwo
         TempK2: uint256 option // Some if state >= PostActTwo
     }
+        with
+            static member ie_: Prism<InBound, _> =
+                (fun ib -> ib.IE),
+                (fun ie ib -> { ib with InBound.IE = Some ie})
+
+            static member re_ =
+                (fun ib -> ib.RE),
+                (fun re ib -> { ib with InBound.RE = Some re })
+
+            static member tempK2_ =
+                (fun ib -> ib.TempK2),
+                (fun tempk2 ib -> {ib with InBound.TempK2 = Some tempk2})
 
     type NoiseState =
         | InProgress of InProgressNoiseState
         | Finished of FinishedNoiseState
+        with
+            static member inprogress_ =
+                (fun ns ->
+                    match ns with
+                    | InProgress i -> Some i
+                    | _ -> None),
+                (fun ipns ns ->
+                    match ns with
+                    | InProgress _ -> InProgress ipns
+                    | _ -> ns)
+            static member finished_ =
+                (fun ns ->
+                    match ns with
+                    | Finished state -> Some state
+                    | _ -> None),
+                (fun finishedNS ns ->
+                    match ns with
+                    | Finished _ -> Finished finishedNS
+                    | _ -> ns)
     and InProgressNoiseState = {
         State: NoiseStep
         DirectionalState: DirectionalNoisestate
         BidirectionalState: BidirectionalNoiseState
     }
+        with
+            static member state_ =
+                (fun ipns -> ipns.State),
+                (fun noiseStep ipns -> { ipns with InProgressNoiseState.State = noiseStep })
+            static member directionalState_ =
+                (fun ipns -> ipns.DirectionalState),
+                (fun ds ipns -> { ipns with InProgressNoiseState.DirectionalState = ds })
+            static member biDirectionalState_ =
+                (fun ipns -> ipns.BidirectionalState),
+                (fun bidirectionalState ipns -> { ipns with InProgressNoiseState.BidirectionalState = bidirectionalState })
+
     and FinishedNoiseState = {
         SK: uint256
         SN: uint64
@@ -71,6 +146,25 @@ module PeerChannelEncryptor =
         RN: uint64
         RCK: uint256
     }
+        with
+            static member sk_ =
+                (fun fns -> fns.SK),
+                (fun sk fns -> { fns with FinishedNoiseState.SK = sk })
+            static member sn_ =
+                (fun fns -> fns.SN),
+                (fun sn fns -> { fns with FinishedNoiseState.SN = sn })
+            static member sck_ =
+                (fun fns -> fns.SCK),
+                (fun sck fns -> { fns with FinishedNoiseState.SCK = sck })
+            static member rk_ =
+                (fun fns -> fns.RK),
+                (fun rk fns -> { fns with FinishedNoiseState.SCK = rk })
+            static member rn_ =
+                (fun fns -> fns.RN),
+                (fun rn fns -> { fns with FinishedNoiseState.RN = rn })
+            static member rck_ =
+                (fun fns -> fns.RCK),
+                (fun rck fns -> { fns with FinishedNoiseState.RCK = rck })
 
     let private getNonce (n: uint64) =
         let nonceBytes = ReadOnlySpan(Array.concat[|Array.zeroCreate 4; BitConverter.GetBytes(n) |])

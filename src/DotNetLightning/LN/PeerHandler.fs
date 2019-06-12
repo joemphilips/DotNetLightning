@@ -67,6 +67,14 @@ type PeerHolder = {
     PeersHeadingSend: Set<ISocketDescriptor>
     NodeIdDescriptor: Map<NodeId, ISocketDescriptor>
 }
+    with
+        static member Peers_ =
+            (fun ph -> ph.Peers),
+            (fun peers ph -> { ph with Peers = peers })
+
+        static member PeersHeadingSend_ =
+            (fun ph -> ph.Peers),
+            (fun ps ph -> {ph with PeersHeadingSend = ps})
 
 /// A PeerManager manages a set of peers, described by their SocketDescirptor and marshalls socket
 /// events into messages which it passes onto its MessageHandlers.
@@ -77,6 +85,10 @@ type PeerManager = {
     InitialSyncsSent: uint32
     Logger: ILogger
 }
+    with
+        static member Peers_ =
+            (fun pm -> pm.Peers),
+            (fun ps pm -> { pm with PeerManager.Peers = ps})
 
 [<AutoOpen>]
 module PeerManager =

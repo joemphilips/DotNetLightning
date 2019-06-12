@@ -8,6 +8,7 @@ open DotNetLightning
 open Microsoft.Extensions.Logging
 open DotNetLightning.Chain
 open DotNetLightning.Utils.RResult
+open DotNetLightning.Utils.Aether
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Utils.NBitcoinExtensions
 open NBitcoin.Crypto
@@ -202,6 +203,20 @@ type Channel = {
     ChannelMonitor: ChannelMonitor
     Logger: ILogger
 }
+    with
+
+        static member Config_ =
+            (fun c -> c.Config), (fun config c -> { c with Config = config })
+        static member ChannelState_ =
+            (fun c -> c.ChannelState), (fun s c -> { c with ChannelState = s})
+        static  member LocalKeys_ =
+            (fun c -> c.LocalKeys), (fun s c -> { c with LocalKeys = s})
+
+        static member PendingUpdateFee_: Prism<Channel, LNMoney> =
+            (fun c -> c.PendingUpdateFee), (fun pendingUpdateFee c -> { c with PendingUpdateFee = Some pendingUpdateFee})
+
+        static member HoldingCellUpdateFee_ =
+            (fun c -> c.HoldingCellUpdateFee), (fun holdingCellUpdateFee c -> { c with HoldingCellUpdateFee = Some holdingCellUpdateFee })
 
 type ChannelError =
     | Ignore of string
