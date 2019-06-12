@@ -11,6 +11,7 @@
     <Compile Include="Utils/LNMoney.fs" />
     <Compile Include="Utils/NBitcoinExtensions.fs" />
     <Compile Include="Utils/RResult.fs" />
+    <Compile Include="Utils/Aether.fs" />
     <Compile Include="Utils/Config.fs" />
     <Compile Include="Utils/TransactionUtils.fs" />
     <Compile Include="Utils/Errors.fs" />
