@@ -1,25 +1,22 @@
 module PeerChannelEncryptorTests
 open Expecto
 open NBitcoin
+open DotNetLightning.Utils.Aether
+open DotNetLightning.Utils.Aether.Operators
 open DotNetLightning.Utils
 open DotNetLightning.LN
-open DotNetLightning.Serialize
 
 let hex = NBitcoin.DataEncoders.HexEncoder()
 
 [<Tests>]
 let tests =
     testList "PeerChannelEncryptorTests" [
-        ptestCase "get outbound peer for initiator test vectors" <| fun _ ->
+        ftestCase "get outbound peer for initiator test vectors" <| fun _ ->
             let theirNodeId = PubKey("028d7500dd4c12685d1f568b4c2b5048e8534b873319f3a8daa612b469132ec7f7")
 
             let mutable outboundPeer = PeerChannelEncryptor.NewOutbound(NodeId theirNodeId)
-            let newState =
-                match outboundPeer.NoiseState with
-                | InProgress ns ->
-                    let newOS = OutBound { IE = Key(hex.DecodeData("1212121212121212121212121212121212121212121212121212121212121212")) }
-                    InProgress { ns with DirectionalState = newOS }
-                | _ -> failwith ""
+            let o = NoiseState.inprogress_ >?> InProgressNoiseState.directionalState_ >?> DirectionalNoisestate.outBound_ >?> OutBound.ie_
+            let newState = Optic.set o (Key(hex.DecodeData("1212121212121212121212121212121212121212121212121212121212121212"))) outboundPeer.NoiseState
 
             outboundPeer.NoiseState <- newState
 
