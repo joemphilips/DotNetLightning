@@ -97,6 +97,18 @@ module RResult =
             | _                   , RResult.Bad   tbad  -> RResult.Bad tbad
             | RResult.Good  fgood , RResult.Good  tgood -> rreturn (fgood tgood)
 
+        let rlift2 f x y =
+            rapply (rapply (rpure f) x) y
+
+        let rlift3 f x y z =
+            rapply (rapply (rapply (rpure f) x) y) z
+
+        let rlift4 f x y z a =
+            rapply (rapply (rapply (rapply (rpure f) x) y) z) a
+
+        let lift5 f x y z a b =
+            rapply (rapply (rapply (rapply (rapply (rpure f) x) y) z) a) b
+
         // Functor
         let inline rmap (m : 'T -> 'U) (t: RResult<'T>): RResult<'U> =
             match t with
@@ -141,7 +153,7 @@ module RResult =
         let inline rtoResult (t : RResult<'T>) =
             match t with
             | RResult.Good  good  -> Ok     good
-            | RResult.Bad   bad   -> Error  bad
+            | RResult.Bad   bad   -> Result.Error  bad
 
         // Exception aware combinators
 
@@ -210,3 +222,18 @@ module RResult =
         static member inline (<|>)  (x, s)  = RResult.rorElse   s x
         static member inline (~%%)  x       = RResult.rderef    x
         static member inline (%%)   (x, bf) = RResult.rderefOr bf x
+        static member inline ( *>)  (m1, m2) = RResult.rlift2 (fun _ x -> x) m1 m2
+        static member inline ( <*)  (m1, m2) = RResult.rlift2 (fun x _ -> x) m1 m2
+
+    [<AutoOpen>]
+    module List =
+        // Description of the below functions:
+        // http://fsharpforfunandprofit.com/posts/elevated-world-5/#asynclist
+        let rec traverseRResultA f list =
+            let cons head tail = head :: tail
+            let initState = RResult.rreturn []
+            let folder h t =
+                RResult.rreturn cons <*> (f h) <*> t
+            List.foldBack folder list initState
+        let sequenceRResultA x = traverseRResultA id x
+
