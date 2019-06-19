@@ -6,6 +6,8 @@ open DotNetLightning.Utils.RResult
 open DotNetLightning.Serialize.Msgs
 open Microsoft.Extensions.Logging
 open DotNetLightning.Serialize
+open System.Net
+open System.IO.Pipelines
 
 /// Provides references to interface which handle differnt types of messages.
 type MessageHandler = {
@@ -16,12 +18,9 @@ type MessageHandler = {
     RouteHandler: IRoutingMessageHandler
 }
 
-/// Proides an object which can be used to send data to and which uniquely identifies a connection
-/// to a remote host. You will need to be able to generate multiple of these which meet E
-type ISocketDescriptor =
-    inherit IComparable
-    abstract SendData: data: byte[] * writeOffset: uint32 * resumeRead: bool -> uint32
-    abstract DisconnectSocket: unit -> unit
+
+type ConnectionId =
+        ConnectionId of string
 
 type PeerHandleError = {
     /// Used to indicate that we probably can't make any future connecitons to this peer, implying
@@ -63,18 +62,18 @@ type Peer = {
             | NodeSyncing _ -> true
 
 type PeerHolder = {
-    Peers: Map<ISocketDescriptor, Peer>
-    PeersHeadingSend: Set<ISocketDescriptor>
-    NodeIdDescriptor: Map<NodeId, ISocketDescriptor>
+    Peers: Map<ConnectionId, Peer>
+    NodeIdToConnectionId: Map<NodeId, ConnectionId>
 }
     with
         static member Peers_ =
             (fun ph -> ph.Peers),
             (fun peers ph -> { ph with Peers = peers })
 
-        static member PeersHeadingSend_ =
-            (fun ph -> ph.Peers),
-            (fun ps ph -> {ph with PeersHeadingSend = ps})
+        static member NodeIdToConnectionid_ =
+            (fun ph -> ph.NodeIdToConnectionId ),
+            (fun newMap ph -> { ph with NodeIdToConnectionId = newMap })
+
 
 /// A PeerManager manages a set of peers, described by their SocketDescirptor and marshalls socket
 /// events into messages which it passes onto its MessageHandlers.
@@ -104,8 +103,7 @@ module PeerManager =
             MessageHandler = messageHandler
             Peers = {
                 Peers = Map.empty
-                PeersHeadingSend = Set.empty
-                NodeIdDescriptor = Map.empty
+                NodeIdToConnectionId = Map.empty
             }
             OurNodeSecret = ourNodeSecret
             InitialSyncsSent = 0u
@@ -134,13 +132,13 @@ module PeerManager =
     /// throws error when descriptor is duplicative with some other descriptor which has not yet
     /// has a disconnect_event.
     let newOutBoundConnection (theirNodeId: NodeId)
-                              (descriptor: ISocketDescriptor)
+                              (connId: ConnectionId)
                               (pm: PeerManager): RResult<PeerManager * byte[]> =
-        let peerEncyptor = PeerChannelEncryptor.NewOutbound(theirNodeId)
+        let peerEncyptor = PeerChannelEncryptor.newOutBound(theirNodeId)
         let res = peerEncyptor.GetActOne()
         let pendingReadBuffer = Array.zeroCreate(50) // Noise act 2 is 50 bytes. 
         let newPeerMap = pm.Peers.Peers
-                         |> Map.add descriptor {
+                         |> Map.add connId {
                             ChannelEncryptor = peerEncyptor
                             IsOutBound = true
                             TheirNodeId = None
@@ -159,8 +157,8 @@ module PeerManager =
         else
             failwith "PeerManager driver duplicated descriptors!"
 
-    let newInboundConnection(descriptor: ISocketDescriptor) (pm: PeerManager) =
-        let peerEncryptor = PeerChannelEncryptor.NewInbound(pm.OurNodeSecret)
+    let newInboundConnection(connId: ConnectionId) (pm: PeerManager) =
+        let peerEncryptor = PeerChannelEncryptor.NewInBound(pm.OurNodeSecret)
         let pendingReadBuffer = Array.zeroCreate 50
         let newPeer = {
             ChannelEncryptor = peerEncryptor
@@ -178,8 +176,8 @@ module PeerManager =
             SyncStatus = InitSyncTracker.NoSyncRequested
         }
         {
-            pm with Peers = { pm.Peers with Peers = pm.Peers.Peers |> Map.add descriptor newPeer }
+            pm with Peers = { pm.Peers with Peers = pm.Peers.Peers |> Map.add connId newPeer }
         }
 
-    let doAttemptWriteData (descriptor: ISocketDescriptor) (peer: Peer) (pm: PeerManager) =
+    let doAttemptWriteData (connId: ConnectionId) (peer: Peer) (pm: PeerManager) =
         failwith ""
