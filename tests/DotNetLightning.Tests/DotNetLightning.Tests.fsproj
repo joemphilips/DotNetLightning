@@ -2,6 +2,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.0</TargetFramework>
+    <DotnetFscCompilerPath></DotnetFscCompilerPath>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\DotNetLightning\DotNetLightning.fsproj" />
@@ -16,6 +17,7 @@
     <Compile Include="SerializationPropertyTests.fs" />
     <Compile Include="PeerChannelEncryptorTests.fs" />
     <Compile Include="FunctionalTests.fs" />
+    <Compile Include="ChannelTests.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
   <ItemGroup>
