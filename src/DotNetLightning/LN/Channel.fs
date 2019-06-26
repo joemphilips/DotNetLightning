@@ -13,7 +13,7 @@ open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Utils.NBitcoinExtensions
 open NBitcoin.Crypto
 
-type ChannelValueStat = {
+type ChannelValueStat = internal {
     ValueToSelf: LNMoney;
     ChannelValue: LNMoney;
     ChannelReserve: LNMoney;
@@ -23,11 +23,13 @@ type ChannelValueStat = {
 }
 
 type InboundHTLCRemovalReason =
+    internal
     | FailRelay of OnionErrorPacket
     | FailMalformed of uint256 * uint16
     | Fullfill of PaymentPreimage
 
 type InboundHTLCState =
+    internal
     // added by remote, to be included in next local commitment tx
     | RemoteAnnounced of PendingHTLCStatus
     // Included in a received commitment_signed message (implying we've revoke_and_ack'd it), but
@@ -37,7 +39,7 @@ type InboundHTLCState =
     | LocalRemoved of InboundHTLCRemovalReason
     | Commited
 
-type InboundHTLCOutput = {
+type InboundHTLCOutput = internal {
     HTLCId: Primitives.HTLCId
     Amount: LNMoney
     CLTVExpiry: uint32
@@ -46,6 +48,7 @@ type InboundHTLCOutput = {
 }
 
 type OutboundHTLCState =
+    internal
     | LocalAnnounced of OnionPacket
     | Commited
     | RemoteRemoved of HTLCFailReason option
@@ -143,7 +146,7 @@ module ChannelConstants =
     [<Literal>]
     let OFFERED_HTLC_SCRIPT_WEIGHT = 133uy
 
-type Channel = {
+type Channel = internal {
     Config: ChannelConfig
     UserId: UserId
     ChannelId: ChannelId
@@ -205,37 +208,37 @@ type Channel = {
 }
     with
 
-        static member Config_ =
+        static member internal Config_ =
             (fun c -> c.ChannelState), (fun s c -> { c with ChannelState = s})
 
-        static  member LocalKeys_ =
+        static member internal LocalKeys_ =
             (fun c -> c.LocalKeys), (fun s c -> { c with LocalKeys = s})
 
-        static member PendingInboundHTLCs_ =
+        static member internal PendingInboundHTLCs_ =
             (fun c -> c.PendingInboundHTLCs), (fun v c -> { c with PendingInboundHTLCs = v })
 
-        static member PendingOutboundHTLCs_ =
+        static member internal PendingOutboundHTLCs_ =
             (fun c -> c.PendingOutboundHTLCs), (fun v c -> { c with PendingOutboundHTLCs = v })
 
-        static member PendingUpdateFee_: Prism<Channel, LNMoney> =
+        static member internal PendingUpdateFee_: Prism<Channel, LNMoney> =
             (fun c -> c.PendingUpdateFee), (fun pendingUpdateFee c -> { c with PendingUpdateFee = Some pendingUpdateFee})
 
-        static member HoldingCellUpdateFee_ =
+        static member internal HoldingCellUpdateFee_ =
             (fun c -> c.HoldingCellUpdateFee), (fun holdingCellUpdateFee c -> { c with HoldingCellUpdateFee = Some holdingCellUpdateFee })
 
-        static member TheirToSelfDelay_: Lens<_,_> =
+        static member internal TheirToSelfDelay_: Lens<_,_> =
             (fun c -> c.TheirToSelfDelay),
             (fun v c -> { c with TheirToSelfDelay = v})
         
-        static member OurDustLimit_ : Lens<_,_> =
+        static member internal OurDustLimit_ : Lens<_,_> =
             (fun c -> c.OurDustLimit),
             (fun v c -> { c with OurDustLimit = v})
 
-        static member ChannelMonitor_ : Lens<_,_> =
+        static member internal ChannelMonitor_ : Lens<_,_> =
             (fun c -> c.ChannelMonitor),
             (fun v c -> { c with ChannelMonitor = v})
 
-        static member TheirFundingPubKey_: Prism<_, _> =
+        static member internal TheirFundingPubKey_: Prism<_, _> =
             (fun c -> c.TheirFundingPubKey),
             (fun v c -> { c with TheirFundingPubKey = Some v})
 
@@ -247,9 +250,10 @@ type ChannelError =
 exception ChannelException of ChannelError
 
 
+[<RequireQualifiedAccess>]
 module Channel =
     let private RREx(ex: ChannelError) =
-        RBadTree.Leaf(RBad.Exception(ChannelException(ex)))
+        RResult.rexn(ChannelException(ex))
 
     let getOurMaxHTLCValueInFlight (channelValue: Money) =
         channelValue * 1000L / 10L
@@ -400,9 +404,9 @@ module Channel =
 
     let public checkRemoteFee(feeEstimator: IFeeEstimator, feeRatePerKw: FeeRatePerKw) =
         if (feeRatePerKw < feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background) ) then
-            RResult.Bad(RREx(Close("Peer's Feerate much to low")))
+            RREx(Close("Peer's Feerate much to low"))
         else if (feeRatePerKw.Value > feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority).Value * 2u) then
-            RResult.Bad(RREx(Close("Peer's feerate much too high")))
+            RREx(Close("Peer's feerate much too high"))
         else
             Good()
 
@@ -420,48 +424,48 @@ module Channel =
 
         let checkMsg1 msg =
             if (msg.FundingSatoshis >= MAX_FUNDING_SATOSHIS) then
-                Bad(RREx(Close("Funding value > 2^24")))
+                RREx(Close("Funding value > 2^24"))
             else if (msg.ChannelReserveSatoshis > msg.FundingSatoshis) then
-                Bad(RREx(Close("Bogus ChannelReserveSatoshis")))
+                RREx(Close("Bogus ChannelReserveSatoshis"))
             else if (msg.PushMSat.MilliSatoshi > (msg.FundingSatoshis - msg.ChannelReserveSatoshis).Satoshi * 1000L) then
-                Bad(RREx(Close("PushMsat larger than funding value")))
+                RREx(Close("PushMsat larger than funding value"))
             else if (msg.DustLimitSatoshis > msg.FundingSatoshis) then
-                Bad(RREx(Close("Peer neve rwants payout outputs?")))
+                RREx(Close("Peer neve rwants payout outputs?"))
             else if (msg.DustLimitSatoshis > msg.ChannelReserveSatoshis) then
-                Bad(RREx(Close("Bogus; Channel reserve is less than dust limit")))
+                RREx(Close("Bogus; Channel reserve is less than dust limit"))
             else if (msg.HTLCMinimumMsat.MilliSatoshi >= (msg.FundingSatoshis - msg.ChannelReserveSatoshis).Satoshi * 1000L) then
-                Bad(RREx(Close("Minimum HTLC value is full channel value")))
+                RREx(Close("Minimum HTLC value is full channel value"))
             else
                 Good()
 
         let checkMsg2 msg =
             if (msg.ToSelfDelay > MAX_LOCAL_BREAKDOWN_TIMEOUT) then
-                Bad(RREx(Close("They wanted our payments to be delayed by a needlessly long period")))
+                RREx(Close("They wanted our payments to be delayed by a needlessly long period"))
             else if (msg.MaxAcceptedHTLCs < 1us) then
-                Bad(RREx(Close("0 max_accepted_htlcs makes for a useless channel")))
+                RREx(Close("0 max_accepted_htlcs makes for a useless channel"))
             else if (msg.MaxAcceptedHTLCs > 483us) then
-                Bad(RREx(Close("max_accepted_htlcs > 483")))
+                RREx(Close("max_accepted_htlcs > 483"))
             else
                 Good()
 
         let checkMsgAgainstConfig config msg =
             let theirAnnounce = (msg.ChannelFlags &&& 1uy) = 1uy
             if (msg.FundingSatoshis < config.PeerChannelConfigLimits.MinFundingSatoshis) then
-                Bad(RREx(Close("dust limit satoshis is less than the user specified limit")))
+                RREx(Close("dust limit satoshis is less than the user specified limit"))
             else if (msg.HTLCMinimumMsat > config.PeerChannelConfigLimits.MaxHTLCMinimumMSat) then
-                Bad(RREx(Close("HTLC minimum msat is higher than the user specified limit")))
+                RREx(Close("HTLC minimum msat is higher than the user specified limit"))
             else if (msg.MaxHTLCValueInFlightMsat < config.PeerChannelConfigLimits.MinMaxHTLCValueInFlightMSat) then
-                Bad(RREx(Close("Max htlc value in flight msat is less than the user specified limit")))
+                RREx(Close("Max htlc value in flight msat is less than the user specified limit"))
             else if (msg.ChannelReserveSatoshis > config.PeerChannelConfigLimits.MaxChannelReserveSatoshis) then
-                Bad(RREx(Close("Channel resere satoshis is higher than the user specified limit")))
+                RREx(Close("Channel resere satoshis is higher than the user specified limit"))
             else if (msg.MaxAcceptedHTLCs < config.PeerChannelConfigLimits.MinMaxAcceptedHTLCs) then
-                Bad(RREx(Close("dust limit satoshis is less than the user specified limit")))
+                RREx(Close("dust limit satoshis is less than the user specified limit"))
             else if (msg.DustLimitSatoshis < config.PeerChannelConfigLimits.MinDustLimitSatoshis ) then
-                Bad(RREx(Close("dust limit satoshis is less than the user specified limit")))
+                RREx(Close("dust limit satoshis is less than the user specified limit"))
             else if (msg.DustLimitSatoshis > config.PeerChannelConfigLimits.MaxDustLimitSatoshis) then
-                Bad(RREx(Close("dust limit satoshis is greater than the user specified limit")))
+                RREx(Close("dust limit satoshis is greater than the user specified limit"))
             else if (config.PeerChannelConfigLimits.ForceAnnouncedChannelPreference && localConfig.AnnouncedChannel <> theirAnnounce) then
-                Bad(RREx(Close("Peer tried to open channel but their announcement is different from ours")))
+                RREx(Close("Peer tried to open channel but their announcement is different from ours"))
             else
                 Good()
 
@@ -475,15 +479,15 @@ module Channel =
             let toLocal = msg.PushMSat
             let toRemote = fundersAmountMSat.MilliSatoshi - (int64 backgroundFeeRate.Value) * (int64 COMMITMENT_TX_BASE_WEIGHT)
             if (ourChannelReserveSatoshis < ourDustLimitSatoshis) then
-                Bad(RREx(Close("Suitable channel reserve not found. aborting")))
+                RREx(Close("Suitable channel reserve not found. aborting"))
             else if (msg.ChannelReserveSatoshis < ourDustLimitSatoshis) then
-                Bad(RREx(Close("channel_reserve_satoshis too small")))
+                RREx(Close("channel_reserve_satoshis too small"))
             else if (ourChannelReserveSatoshis < msg.DustLimitSatoshis) then
-                Bad(RREx(Close("Dust limit too high for our channel reserve")))
+                RREx(Close("Dust limit too high for our channel reserve"))
             else if fundersAmountMSat.MilliSatoshi < (int64 backgroundFeeRate.Value) * (int64 COMMITMENT_TX_BASE_WEIGHT) then
-                Bad(RREx(Close("Insufficient funding amount for initial commitment")))
+                RREx(Close("Insufficient funding amount for initial commitment"))
             else if toLocal.MilliSatoshi <= msg.ChannelReserveSatoshis.Satoshi * 1000L && toRemote <= ourChannelReserveSatoshis.Satoshi * 1000L then
-                Bad(RREx(Close("Insufficient funding amount for initial commitment")))
+                RREx(Close("Insufficient funding amount for initial commitment"))
             else
                 Good()
 
@@ -924,7 +928,7 @@ module Channel =
                 )
                 |> List.tryLast
                 |> function | Some g -> Good g
-                            | None -> Bad (RREx(Ignore("Unable to find a pending HTLC which match the given HTLC ID")))
+                            | None -> RREx(Ignore("Unable to find a pending HTLC which match the given HTLC ID"))
 
 
             if (c.ChannelState &&& (ChannelState.AwaitingRemoteRevoke ||| ChannelState.PeerDisconnected ||| ChannelState.MonitorUpdateFailed) <> ChannelState.Zero) then

@@ -6,6 +6,7 @@
     <ProjectReference Include="..\nsec\src\Cryptography\NSec.Cryptography.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Utils/Utils.fs" />
     <Compile Include="Utils/Primitives.fs" />
     <Compile Include="Utils/LNMoney.fs" />
