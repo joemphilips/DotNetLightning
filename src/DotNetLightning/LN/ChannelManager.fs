@@ -27,13 +27,21 @@ type HTLCPreviousHopData =
 
 type OutboundRoute = {
     Route: Route
-    SessionPrev: Key
+    SessionPriv: Key
     FirstHopHTLC: LNMoney
 }
 
 type HTLCSource =
     | PreviousHopData of HTLCPreviousHopData
     | OutboundRoute of OutboundRoute
+    with
+        /// For test
+        static member internal Dummy() =
+            OutboundRoute {
+                Route = Route []
+                SessionPriv = Key([| for _ in 0..31 -> 1uy|])
+                FirstHopHTLC = LNMoney.Zero
+            }
 
 type HTLCFailureData = {
     Data: byte[]

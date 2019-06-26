@@ -4,6 +4,7 @@ open DotNetLightning.Utils.Primitives
 open Microsoft.Extensions.Logging
 open NBitcoin
 open System
+open DotNetLightning.Utils.Aether
 
 /// An error enum representing a failure to persist a channel monitor update.
 type ChannelMonitorUpdateErr =
@@ -70,6 +71,10 @@ type LocalStorage = {
     CurrentRemoteCommitmentTxId: TxId option
     PreviousRemoteCommitmentTxId: TxId option
 }
+    with
+        static member FundingInfo_: Prism<_,_> =
+            (fun ls -> ls.FundingInfo),
+            (fun v ls -> { ls with FundingInfo = Some v})
 
 type WatchTowerStorage = {
     RevocationBaseKey: PubKey
@@ -79,6 +84,27 @@ type WatchTowerStorage = {
 type Storage =
     | Local of LocalStorage
     | WatchTower of WatchTowerStorage
+    with
+        static member Local_: Prism<_, _> =
+            (fun s ->
+                match s with
+                | Local ls -> Some ls
+                | WatchTower _ -> None),
+            (fun v s -> 
+                match s with
+                | Local ls -> Local v
+                | WatchTower _ -> s)
+
+        static member WatchTower_: Prism<_, _> =
+            (fun s ->
+                match s with
+                | Local _ -> None
+                | WatchTower wts -> Some wts),
+            (fun v s -> 
+                match s with
+                | Local _ -> s
+                | WatchTower wts -> WatchTower v)
+
 
 /// A ChannelMonitor handles chain events (block connected and disconnected) and generates
 /// on-chain transactions to ensure no loss of funds occurs.
@@ -127,6 +153,10 @@ type ChannelMonitor = {
     Logger: ILogger
 }
     with
+        static member KeyStorage_: Lens<_,_> =
+            (fun cm -> cm.KeyStorage),
+            (fun v cm -> { cm with KeyStorage = v})
+
         member this.GetFundingTxo(): OutPoint option =
             match this.KeyStorage with
             | Local { FundingInfo = fi } ->

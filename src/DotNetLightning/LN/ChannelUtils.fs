@@ -4,6 +4,19 @@ open DotNetLightning.Utils
 open NBitcoin
 open NBitcoin.Crypto
 
+module private KeyCreationHelpers =
+    let derivePublicKey (perCommitmentPoint: PubKey) (basePoint: PubKey) =
+        let sha = Hashes.SHA256(Array.concat (seq [perCommitmentPoint.ToBytes(); basePoint.ToBytes()]) )
+        let key = Key(sha).PubKey
+        basePoint.Add(key)
+
+    let derivePublicRevocationKey (perCommitmentPoint: PubKey) (revocationBasePoint: PubKey) =
+        let revAppendCommitHashKey = Hashes.SHA256(Array.concat (seq[ revocationBasePoint.ToBytes(); perCommitmentPoint.ToBytes() ])) |> Key
+        let commitAppendRevHashKey = Hashes.SHA256(Array.concat (seq [perCommitmentPoint.ToBytes(); revocationBasePoint.ToBytes() ])) |> Key
+
+        let partA = revocationBasePoint.GetSharedPubkey(revAppendCommitHashKey)
+        let partB = perCommitmentPoint.GetSharedPubkey(commitAppendRevHashKey)
+        partA.Add(partB)
 
 type TxCreationKeys = {
     PerCommitmentPoint: PubKey
@@ -13,7 +26,22 @@ type TxCreationKeys = {
     ADelayedPaymentKey: PubKey
     BPaymentKey: PubKey
 }
-
+    with
+        static member Create(perCommitmentPoint: PubKey,
+                             a_DelayedPaymentBase: PubKey,
+                             a_HTLCBase: PubKey,
+                             b_RevocationBase: PubKey,
+                             b_PaymentBase: PubKey,
+                             b_HTLCBase: PubKey) =
+            let helper = KeyCreationHelpers.derivePublicKey(perCommitmentPoint)
+            {
+                TxCreationKeys.PerCommitmentPoint = perCommitmentPoint
+                RevocationKey = KeyCreationHelpers.derivePublicRevocationKey(perCommitmentPoint) (b_RevocationBase)
+                AHTLCKey = helper (a_HTLCBase)
+                BHTLCKey = helper (b_HTLCBase)
+                ADelayedPaymentKey = helper (a_DelayedPaymentBase)
+                BPaymentKey = helper (b_PaymentBase)
+            }
 
 /// It has three ways to spend.
 /// 1. Use old commitment tx
@@ -29,7 +57,6 @@ type HTLCOutputInCommitment = {
 }
 
 
-[<AutoOpen>]
 module ChannelUtils =
     [<Literal>]
     let HTLC_SUCCESS_TX_WEIGHT = 703L;
@@ -37,6 +64,9 @@ module ChannelUtils =
     [<Literal>]
     let HTLC_TIMEOUT_TX_WEIGHT = 663L;
 
+    /// Various funcitons for key derivation and tx creation for use within channels. Primarily used in Channel
+    /// and ChannelMonitor
+    /// refs: https://github.com/rustyrussell/ccan/blob/master/ccan/crypto/shachain/design.txt
     let buildCommitmentSecret (commitmentSeed: uint256, index: uint64): uint256 =
         let mutable res = commitmentSeed.ToBytes()
         for i in 0..48 do
@@ -44,7 +74,7 @@ module ChannelUtils =
             if index &&& (1UL <<< bitpos) = (1UL <<< bitpos) then
                 res.[bitpos / 8] <- (res.[bitpos / 8] ^^^ (1uy <<< (7 &&& bitpos)))
                 res <- Hashes.SHA256(res)
-        new uint256(res)
+        uint256(res)
 
     let derivePrivateKey (perCommitmentPoint: PubKey) (baseSecret: Key): Key =
         let res = Hashes.SHA256(Array.concat[|perCommitmentPoint.ToBytes(); baseSecret.PubKey.ToBytes() |])

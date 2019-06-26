@@ -9,6 +9,9 @@ module NBitcoinExtensions =
         let FeePerKWeight (feeRate: FeeRate) =
             Money.Satoshis(feeRate.FeePerK.Satoshi / 4L)
 
+    type NBitcoin.Transaction with
+        member this.GetTxId() = TxId (this.GetHash())
+
     type ECDSASignature with
 
         /// ** Description **
