@@ -1,66 +1,64 @@
 namespace DotNetLightning.Server
+open DotNetLightning.Utils
+open DotNetLightning.Utils.RResult
+
+open Microsoft.Extensions.Logging
 open System
 open System.Buffers
-open System.Net.Sockets
 open System.IO.Pipelines
 open FSharp.Control
+open Microsoft.AspNetCore.Connections
+open System.Threading.Tasks
+open DotNetLightning.Serialize
+open DotNetLightning.Serialize.Msgs
+open DotNetLightning.LN
+open System
+open System.Buffers
 
-/// https://devblogs.microsoft.com/dotnet/system-io-pipelines-high-performance-io-in-net/
-module TCPServer =
-    let FillPipeAsync (socket: Socket, writer: PipeWriter): Async<unit> =
-        let minimumBufferSize = 512
-        let rec fillPipe (socket: Socket) (writer: PipeWriter) =
+
+type PeerConnectionHandler(logger: ILogger<PeerConnectionHandler>,
+                           peerManager: PeerManager) =
+    inherit ConnectionHandler()
+    member val Logger = logger with get
+    member val PeerManager = peerManager with get
+    override this.OnConnectedAsync(connection: ConnectionContext) =
+        let noiseState = this.PeerManager.Peers
+        let handler = this.PeerManager.Peers.Peers |> Map.tryFind(ConnectionId connection.ConnectionId)
+        let input = connection.Transport.Input.AsStream()
+        use input2 = new LightningReaderStream(input)
+        let rec loop () =
             async {
-                let mem = writer.GetMemory minimumBufferSize
-                try
-                    let! bytesRead = socket.ReceiveAsync(mem, SocketFlags.None).AsTask() |> Async.AwaitTask
-                    if bytesRead = 0 then
-                        return ()
-                    else
-                        match! writer.FlushAsync().AsTask() |> Async.AwaitTask with
-                        | t when t.IsCompleted -> ()
-                        | _ -> return! fillPipe socket writer
-                with
-                    | ex ->
-                        return printfn "fillpipe failed with %O" ex
+                let msg = input2.ReadUInt16(false)
+                match matchMsgType msg with
+                | ValueSome (LightningMsgHeader.InitType) -> failwith ""
+                | ValueSome (LightningMsgHeader.PingType) -> failwith ""
+                | ValueNone ->
+                    logger.LogWarning(sprintf "Unknown msg type %d" msg)
+                return! loop()
             }
-        async {
-            do! fillPipe socket writer
-            writer.Complete()
-        }
+        loop () |> Async.StartAsTask :> Task
 
-    let rec ReadPipeAsync (delimiter: byte) ( processor ) (reader: PipeReader): Async<unit> =
-        let rec readPipe buf =
-            async {
-                let pos = buf.PositionOf(delimiter)
-                if pos.HasValue then
-                    processor (buf.Slice(0, pos.Value))
-                    return! readPipe buf
+        (*
+        task {
+            let input = connection.Transport.Input
+            let rec loop () = vtask {
+                let! result = input.ReadAsync()
+                let buf = result.Buffer
+                if (result.IsCanceled) then
+                    return ()
+                elif buf.IsEmpty then
+                    return ()
                 else
+                    let nextStep = this.PeerManager.Peers
+                    match (_parser.TryParseMessage(&buf, handler)) with
+                    | Good msg ->
+                        match msg with
+                        | Init m -> failwith ""
+                        | OpenChannel m ->  failwith "" //this.PeerManager.MessageHandler.ChanHandler.HandleOpenChannel m
+                        | _ -> failwith "unknowns msg"
+                    | Bad _ -> failwith "failed to parse msg"
                     return ()
             }
-        async {
-            let! res = reader.ReadAsync().AsTask() |> Async.AwaitTask
-            let buf = res.Buffer
-            do! readPipe buf
-            reader.AdvanceTo(buf.Start, buf.End)
-
-            if not (res.IsCompleted) then
-                return! ReadPipeAsync delimiter processor reader
-            else
-                return ()
-        }
-    let private defaultHandler: ReadOnlySequence<byte> -> unit = printfn "%A"
-    let ProcessLinesAsync (socket: Socket) (handler: ReadOnlySequence<byte> -> unit) =
-        let p = Pipe()
-        let w = FillPipeAsync(socket, p.Writer)
-        let r = ReadPipeAsync ((byte)'\n') handler (p.Reader)
-        seq [r; w] |> Async.Parallel 
-
-    let asyncSeqWatch(socket) =
-        asyncSeq {
-            yield 1
-            while true do
-                do! Async.Sleep 10000
-                yield 3
-        }
+            return! loop()
+        } :> Task
+    *)

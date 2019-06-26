@@ -2,6 +2,7 @@ namespace DotNetLightning.Serialize
 open NBitcoin
 open DotNetLightning.Utils
 open DotNetLightning.Utils.RResult
+open System
 open System.Runtime.CompilerServices
 open System.IO
 open System.Net
@@ -831,6 +832,44 @@ module Msgs =
         NodeId: NodeId
         IsPermanent: bool
     }
+
+    [<Struct>]
+    type LightningMsgHeader =
+        | InitType = 16us
+        | ErrorType = 17us
+        | PingType = 18us
+        | PongType = 19us
+        | OpenChannelType = 32us
+        | AcceptChannelType = 33us
+        | FundingCreatedType = 34us
+        | FundingSignedType = 35us
+        | FundingLockedType = 36us
+        | ShutDownType = 38us
+        | ClosingSignedType= 39us
+        | UpdateAddHTLCType= 128us
+        | UpdateFulFillHTLCtype = 130us
+        | UpdateFailHTLCType= 131us
+        | UpdateMalformedHTLCType = 135us
+        | CommitmentSignedType = 132us
+        | RevokeAndACKType = 133us
+        | UpdateFeeType = 134us
+        | ChannelReestablishType = 136us
+        | AnnouncementSignatureType = 259us
+        | ChannelAnnouncementType = 256us
+        | NodeAnnouncementType = 257us
+        | ChannelUpdateType = 258us
+
+
+    let lnMsgType = typeof<LightningMsgHeader>
+
+    /// TODO: use Active Pattern when possible
+    let matchMsgType (f : uint16) =
+        if Enum.IsDefined(lnMsgType, f) then
+            ValueSome (LanguagePrimitives.EnumOfValue f)
+        else
+            ValueNone
+
+
 
     // -----------
     type IChannelMessageHandler =

@@ -1,5 +1,6 @@
 namespace DotNetLightning.Utils
 open NBitcoin
+open Aether
 
 type ChannelHandshakeConfig = {
     /// Confirmations we will wait for before considering the channel locked in.
@@ -7,6 +8,11 @@ type ChannelHandshakeConfig = {
     /// equivalent limit applied to outbound channel) 
     MinimumDepth: uint32
 }
+    with
+        static member Zero =
+            {
+                MinimumDepth = 6u
+            }
 
 /// Optional Channel limits which are applied during channel creation.
 /// These limits are only applied to our counterpaty's limits, not our own
@@ -43,39 +49,68 @@ type ChannelHandshakeLimits = {
     /// appropriate for any nodes which are not online very reliably)
     ForceAnnouncedChannelPreference: bool
 }
+    with
+        static member Zero =
+            {
+                MinFundingSatoshis = Money.Zero
+                MaxHTLCMinimumMSat = LNMoney.Coins(21_000_000_000m)
+                MinMaxHTLCValueInFlightMSat = LNMoney.Zero
+                MaxChannelReserveSatoshis = Money.Zero
+                MinMaxAcceptedHTLCs = 0us
+                MinDustLimitSatoshis = Money.Satoshis(546m)
+                MaxDustLimitSatoshis = Money.Coins(21_000_000_000m)
+                MaxMinimumDepth = 144u
+                ForceAnnouncedChannelPreference = true
+            }
 
-module ChannelHandshakeLimits =
-    let public Create() =
-        {
-            MinFundingSatoshis = Money.Zero
-            MaxHTLCMinimumMSat = LNMoney.Coins(21_000_000_000m)
-            MinMaxHTLCValueInFlightMSat = LNMoney.Zero
-            MaxChannelReserveSatoshis = Money.Zero
-            MinMaxAcceptedHTLCs = 0us
-            MinDustLimitSatoshis = Money.Satoshis(546m)
-            MaxDustLimitSatoshis = Money.Coins(21_000_000_000m)
-            MaxMinimumDepth = 144u
-            ForceAnnouncedChannelPreference = true
-        }
 
 type UserConfig = {
     OwnChannelConfig: ChannelHandshakeConfig
     PeerChannelConfigLimits: ChannelHandshakeLimits
     ChannelOptions: ChannelConfig
 }
+    with
+        static member Zero =
+            {
+                OwnChannelConfig = ChannelHandshakeConfig.Zero
+                PeerChannelConfigLimits = ChannelHandshakeLimits.Zero
+                ChannelOptions = ChannelConfig.Zero
+            }
+
+        static member OwnChannelConfig_: Lens<_, _> =
+            (fun uc -> uc.OwnChannelConfig),
+            (fun v uc -> { uc with OwnChannelConfig = v })
+
+        static member PeerCahnnelConfigLimits_ : Lens<_,_> =
+            (fun uc -> uc.PeerChannelConfigLimits),
+            (fun v uc -> { uc with PeerChannelConfigLimits = v })
+
+        static member ChannelOptions_: Lens<_,_> =
+            (fun uc -> uc.ChannelOptions),
+            (fun v uc -> { uc with ChannelOptions = v })
 
 and ChannelConfig = {
     // Amount (in millionth of a satoshi) the channel will change per transfered satoshi.
     // This may be allowed to change at runtime in a later update, however doing so must result in
     // update mesages sent to notify all nodes of our updated relay fee.
-    FeePropotionalMillionths: uint32
+    FeeProportionalMillionths: uint32
     // Set to announce the channel publicly and notify all nodes that they can route via this channel.
     // This should only be set to true for nodes which expect to be online reliably.
     // As the node which funds a cahnnel picks this value this will only pply for new outbound channels unless
     // `ChannleHandshaekLimits.ForceAnnnoucedChannelPreferences` is set.
     AnnouncedChannel: bool
 }
+    with
+        static member Zero =
+            {
+                FeeProportionalMillionths = 0u
+                AnnouncedChannel = false
+            }
 
-module ChannelConfig =
-    [<CompiledName("Create")>]
-    let public create() = {FeePropotionalMillionths = 0u; AnnouncedChannel = false}
+        static member FeeProportionalMillionths_: Lens<_, _> =
+            (fun cc -> cc.FeeProportionalMillionths),
+            (fun v cc -> { cc with FeeProportionalMillionths = v })
+
+        static member AnnouncedChannel_ : Lens<_, _> =
+            (fun cc -> cc.AnnouncedChannel),
+            (fun v cc -> { cc with AnnouncedChannel = v })

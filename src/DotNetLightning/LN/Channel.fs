@@ -38,7 +38,7 @@ type InboundHTLCState =
     | Commited
 
 type InboundHTLCOutput = {
-    HTLCId: HTLCId
+    HTLCId: Primitives.HTLCId
     Amount: LNMoney
     CLTVExpiry: uint32
     PaymentHash: PaymentHash
@@ -206,17 +206,39 @@ type Channel = {
     with
 
         static member Config_ =
-            (fun c -> c.Config), (fun config c -> { c with Config = config })
-        static member ChannelState_ =
             (fun c -> c.ChannelState), (fun s c -> { c with ChannelState = s})
+
         static  member LocalKeys_ =
             (fun c -> c.LocalKeys), (fun s c -> { c with LocalKeys = s})
+
+        static member PendingInboundHTLCs_ =
+            (fun c -> c.PendingInboundHTLCs), (fun v c -> { c with PendingInboundHTLCs = v })
+
+        static member PendingOutboundHTLCs_ =
+            (fun c -> c.PendingOutboundHTLCs), (fun v c -> { c with PendingOutboundHTLCs = v })
 
         static member PendingUpdateFee_: Prism<Channel, LNMoney> =
             (fun c -> c.PendingUpdateFee), (fun pendingUpdateFee c -> { c with PendingUpdateFee = Some pendingUpdateFee})
 
         static member HoldingCellUpdateFee_ =
             (fun c -> c.HoldingCellUpdateFee), (fun holdingCellUpdateFee c -> { c with HoldingCellUpdateFee = Some holdingCellUpdateFee })
+
+        static member TheirToSelfDelay_: Lens<_,_> =
+            (fun c -> c.TheirToSelfDelay),
+            (fun v c -> { c with TheirToSelfDelay = v})
+        
+        static member OurDustLimit_ : Lens<_,_> =
+            (fun c -> c.OurDustLimit),
+            (fun v c -> { c with OurDustLimit = v})
+
+        static member ChannelMonitor_ : Lens<_,_> =
+            (fun c -> c.ChannelMonitor),
+            (fun v c -> { c with ChannelMonitor = v})
+
+        static member TheirFundingPubKey_: Prism<_, _> =
+            (fun c -> c.TheirFundingPubKey),
+            (fun v c -> { c with TheirFundingPubKey = Some v})
+
 
 type ChannelError =
     | Ignore of string
@@ -319,7 +341,7 @@ module Channel =
     // ----- constructors -------
     let public newOutBound(feeEstimator: IFeeEstimator,
                            keyProvider: IKeysRepository,
-                           theirNodeId: PubKey,
+                           NodeId theirNodeId,
                            channelValue: Money,
                            pushMSat: LNMoney,
                            userId: UserId,
@@ -773,20 +795,22 @@ module Channel =
         PayToMultiSigTemplate.Instance.GenerateScriptPubKey(2, pks)
 
 
-    let signCommitmentTransaction (tx: Transaction, theirSig: TransactionSignature, n: Network) (c: Channel) =
+    let signCommitmentTransaction (tx: Transaction, theirSig: ECDSASignature, n: Network, forceLowR: bool option) (c: Channel) =
+        let forceLowR = defaultArg forceLowR true
         if tx.Inputs.Count <> 1 then
-            Bad(RBadTree.Leaf(RBad.Message("Tried to sign commitment transaction that had input count != 1")))
+            RResult.rmsg("Tried to sign commitment transaction that had input count != 1")
         else if not (isNull tx.Inputs.[0].WitScript) || tx.Inputs.[0].WitScript <> WitScript.Empty then
-            Bad(RBadTree.Leaf(RBad.Message("Tried to re-sign commitment tx")))
+            RResult.rmsg("Tried to re-sign commitment tx")
         else
             let fundingRedeemScript = getFundingRedeemScript c
             let coin = ScriptCoin(tx.Inputs.[0].PrevOut,
                                   TxOut(c.ChannelValueSatoshis, fundingRedeemScript.WitHash.ScriptPubKey),
                                   fundingRedeemScript)
             let b = n.CreateTransactionBuilder()
+            b.UseLowR <- forceLowR
             Good(b.AddCoins(coin)
                 .AddKeys(c.LocalKeys.FundingKey)
-                .SignTransaction(tx))
+                .SignTransaction(tx, SigHash.All))
 
     /// Builds the HTLC-success or htlc-timeout tx which spends a given HTLC output
     let buildHTLCTransaction (prevHash: TxId)
@@ -811,8 +835,8 @@ module Channel =
         if tx.Inputs.Count <> 1 then
             Bad(RBadTree.Leaf(RBad.Message"Tried to sign HTLC transaction that had input count != 1"))
         else
-            let htlcRedeemScript = getHTLCRedeemScript htlc keys
-            let ourHTLCKey = derivePrivateKey keys.PerCommitmentPoint c.LocalKeys.HTLCBaseKey
+            let htlcRedeemScript = ChannelUtils.getHTLCRedeemScript htlc keys
+            let ourHTLCKey = ChannelUtils.derivePrivateKey keys.PerCommitmentPoint c.LocalKeys.HTLCBaseKey
             let amount = Money.Satoshis(htlc.Amount.MilliSatoshi / 1000L)
             let p = n.CreateTransactionBuilder()
                      .AddKeys(ourHTLCKey)
@@ -832,11 +856,11 @@ module Channel =
                             (htlc: HTLCOutputInCommitment) 
                             (keys: TxCreationKeys)
                             (n: Network)
-                            (c: Channel): RResult<TransactionSignature> =
+                            (c: Channel): RResult<Transaction> =
         if tx.Inputs.Count <> 1 then
-            Bad(RBadTree.Leaf(RBad.Message("Tried to sign HTLC transaction that had input count != 1")))
+            RResult.rmsg("Tried to sign HTLC transaction that had input count != 1")
         else if not (isNull tx.Inputs.[0].WitScript) || tx.Inputs.[0].WitScript <> WitScript.Empty then
-            Bad(RBadTree.Leaf(RBad.Message("Tried to re-sign HTLC transaction")))
+            RResult.rmsg("Tried to re-sign HTLC transaction")
         else 
             match createHTLCTxSignature tx htlc keys n c with
             | Bad b -> Bad b
@@ -846,20 +870,24 @@ module Channel =
                          .AddCoins(ScriptCoin(tx.Inputs.[0].PrevOut,
                                               TxOut(amount, htlcRedeemScript.WitHash.ScriptPubKey),
                                               htlcRedeemScript))
-                let sb = StringBuilder()
-                sb.Append("0") |> ignore
-                
-                if localTx then
-                    let pks = htlcRedeemScript.GetAllPubKeys()
-                    sb.AppendFormat(" {0} {1}", TransactionSignature(theirSig, SigHash.All), ourSig) |> ignore
-                else
-                    let pks = htlcRedeemScript.GetAllPubKeys()
-                    sb.AppendFormat(" {0} {1}", ourSig, TransactionSignature(theirSig, SigHash.All)) |> ignore
+                let scriptStr =
+                    let sb = StringBuilder()
+                    // multisig dummy
+                    sb.Append("0") |> ignore
+                    
+                    if localTx then
+                        let pks = htlcRedeemScript.GetAllPubKeys()
+                        sb.AppendFormat(" {0} {1}", TransactionSignature(theirSig, SigHash.All), ourSig) |> ignore
+                    else
+                        let pks = htlcRedeemScript.GetAllPubKeys()
+                        sb.AppendFormat(" {0} {1}", ourSig, TransactionSignature(theirSig, SigHash.All)) |> ignore
 
-                (if htlc.Offered then sb.Append(" 0") else sb.AppendFormat(" {0}", preImage.Value.Value)) |> ignore
-                sb.AppendFormat(" {0}", htlcRedeemScript) |> ignore
-                tx.Inputs.[0].WitScript <- WitScript(sb.ToString())
-                Good(ourSig)
+                    (if htlc.Offered then sb.Append(" 0") else sb.AppendFormat(" {0}", preImage.Value.Value)) |> ignore
+                    sb.AppendFormat(" {0}", htlcRedeemScript) |> ignore
+                    sb.ToString()
+
+                tx.Inputs.[0].WitScript <- WitScript(scriptStr)
+                Good(tx)
 
     /// Per HTLC, only one get_update_fail_htlc or get_update_fulfill_htlc call may be made.
     /// In such cases we debug_assert!(false) and return an IgnoreError. Thus, will always return

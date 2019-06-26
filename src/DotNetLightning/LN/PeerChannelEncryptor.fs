@@ -176,6 +176,73 @@ module PeerChannelEncryptor =
         let t2 = Hashes.HMACSHA256(prk, Array.append t1 [|2uy|])
         (t1, t2)
 
+    type PeerChannelEncryptor = {
+        TheirNodeId: NodeId option
+        mutable NoiseState: NoiseState
+    }
+        with
+            static member theirNodeId_ =
+                (fun pce -> pce.TheirNodeId),
+                (fun nodeid pce -> { pce with TheirNodeId = nodeid })
+            static member noiseState_ =
+                (fun pce -> pce.NoiseState),
+                (fun ns pce -> { pce with NoiseState = ns })
+
+    module PeerChannelEncryptor =
+        let newOutBound (theirNodeId: NodeId) =
+            let hashInput = Array.concat[| NOISE_H; theirNodeId.Value.ToBytes()|]
+            let h = uint256(Hashes.SHA256(hashInput))
+            {
+                TheirNodeId = Some(theirNodeId)
+                NoiseState = InProgress {
+                        State = PreActOne
+                        DirectionalState = OutBound ({ IE = Key() })
+                        BidirectionalState = {H = h; CK = uint256(NOISE_CK)}
+                    }
+            }
+
+        let newInBound (ourNodeSecret: Key) =
+            let hashInput = Array.concat[|NOISE_H; ourNodeSecret.PubKey.ToBytes()|]
+            let h = uint256(Hashes.SHA256(hashInput))
+
+            {
+                TheirNodeId = None
+                NoiseState = InProgress {
+                        State = PreActOne
+                        DirectionalState = InBound { IE = None; RE = None; TempK2 = None}
+                        BidirectionalState = {H = h; CK = uint256(NOISE_CK)}
+                    }
+            }
+        let outBoundNoiseAct state (ourKey: Key) theirKey =
+            let ourPub = ourKey.PubKey
+            let h = Hashes.SHA256(Array.concat ([| state.H.ToBytes(); ourPub.ToBytes() |]))
+            failwith "needs update"
+
+
+    type PeerChannelEncryptor with
+        static member NewOutBound(theirNodeId) = PeerChannelEncryptor.newOutBound theirNodeId
+        static member NewInBound ourNodeSecret = PeerChannelEncryptor.newInBound ourNodeSecret
+        static member OutBoundNoiseAct(state: BidirectionalNoiseState, ourKey: Key, theirKey: PubKey): (byte[] * uint256) =
+            PeerChannelEncryptor.outBoundNoiseAct state ourKey theirKey
+        member this.GetActOne(): byte[] =
+            match this.NoiseState with
+            | InProgress { State = state; DirectionalState = dState; BidirectionalState = bState } ->
+                match dState with
+                | OutBound { IE = ie }->
+                    if state <> PreActOne then
+                        failwith "Requested act at wrong step"
+                    else
+                        let (res, _)= PeerChannelEncryptor.OutBoundNoiseAct(bState, ie, this.TheirNodeId.Value.Value)
+                        this.NoiseState <- InProgress({ State = PostActone; DirectionalState = dState; BidirectionalState = bState })
+                        res
+                | _ -> failwith "Wrong direction for act"
+            | _ -> failwith "Cannot get act one after noise handshakae completes"
+        member this.IsReadyForEncryption(): bool =
+            match this.NoiseState with
+            | InProgress _ -> false
+            | Finished _ -> false
+
+    (*
     type PeerChannelEncryptor(theirNodeId: NodeId option, noiseState: NoiseState) =
         member this.TheirNodeId = theirNodeId
         member val NoiseState = noiseState with get, set
@@ -232,20 +299,6 @@ module PeerChannelEncryptor =
 
         static member InBoundNoiseAct(state: BidirectionalNoiseState, act: byte[], ourKey: Key): Result<(PubKey * uint256), HandleError> =
             failwith "Not impl"
-
-        member this.GetActOne(): byte[] =
-            match this.NoiseState with
-            | InProgress { State = state; DirectionalState = dState; BidirectionalState = bState } ->
-                match dState with
-                | OutBound { IE = ie }->
-                    if state <> PreActOne then
-                        failwith "Requested act at wrong step"
-                    else
-                        let (res, _)= PeerChannelEncryptor.OutBoundNoiseAct(bState, ie, this.TheirNodeId.Value.Value)
-                        this.NoiseState <- InProgress({ State = PostActone; DirectionalState = dState; BidirectionalState = bState })
-                        res
-                | _ -> failwith "Wrong direction for act"
-            | _ -> failwith "Cannot get act one after noise handshakae completes"
 
         member this.ProessActOneWithEphemeralKey(actTwo: byte[], ourNodeSecret: Key): Result<byte[], HandleError> = 
             Debug.Assert(actTwo.Length = 50)
@@ -304,3 +357,4 @@ module PeerChannelEncryptor =
             match this.NoiseState with
             | InProgress _ -> false
             | Finished _ -> false
+        *)
