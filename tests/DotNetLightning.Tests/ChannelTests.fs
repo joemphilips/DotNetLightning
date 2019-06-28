@@ -139,18 +139,20 @@ let tests =
 
             let testCommitment (theirSigHex: string) (ourSigHex: string) (txHex: string) (n: Network) (unsignedTx: Transaction * HTLCOutputInCommitment list) (chan) =
                 let tx, _ = unsignedTx
+                /// given their signature...
                 let theirSig = ECDSASignature.FromDER(hex.DecodeData(theirSigHex))
                 let redeem = chan |> Channel.getFundingRedeemScript
                 let theirPk = chan.TheirFundingPubKey.Value
-                let coin  = ScriptCoin(coin = Coin(fromOutpoint = tx.Inputs.[0].PrevOut, fromTxOut = TxOut(chan.ChannelValueSatoshis, redeem.WitHash.ScriptPubKey)), redeem=redeem)
-                let b = n.CreateTransactionBuilder().AddCoins(coin :> ICoin).AddKnownSignature(theirPk, theirSig, tx.Inputs.[0].PrevOut)
-                Expect.isEmpty (b.Check(fst unsignedTx)) ""
+                let b =
+                    let coin  = ScriptCoin(coin = Coin(fromOutpoint = tx.Inputs.[0].PrevOut, fromTxOut = TxOut(chan.ChannelValueSatoshis, redeem.WitHash.ScriptPubKey)), redeem=redeem)
+                    n.CreateTransactionBuilder().AddCoins(coin :> ICoin).AddKnownSignature(theirPk, theirSig, tx.Inputs.[0].PrevOut)
+                Expect.isEmpty (b.Check(fst unsignedTx)) "their signature is invalid"
 
                 let signedTxRR = chan |> Channel.signCommitmentTransaction (tx, theirSig, n, Some true)
                 let signedTxR = RResult.rtoResult signedTxRR
-                Expect.isOk (signedTxR) ""
+                Expect.isOk (signedTxR) "result of signing operation is not good."
                 let signedTx = RResult.rderef signedTxRR
-                Expect.equal (signedTx.ToBytes()) (hex.DecodeData(txHex)) ""
+                Expect.equal (signedTx.ToBytes()) (hex.DecodeData(txHex)) "signed tx does not matches the one expected"
                 (signedTx, snd unsignedTx)
 
             let testHtlcOutput (htlcIdx: int32) (theirSigHex: string) (ourSigHex: string) (txHex: string) (n: Network) (unsignedTx: Transaction * HTLCOutputInCommitment list) chan =
@@ -159,22 +161,24 @@ let tests =
                 let htlc = htlcs.[htlcIdx]
                 let htlcTx = chan |> Channel.buildHTLCTransaction (tx.GetTxId()) (htlc) (true) (keys) (chan.FeeRatePerKw) <| n
                 let htlcRedeemScript = ChannelUtils.getHTLCRedeemScript htlc keys
+
+                // check their sig 
                 let theirPk = chan.TheirFundingPubKey.Value
                 let coin = ScriptCoin(Coin(tx.Inputs.[0].PrevOut, TxOut(chan.ChannelValueSatoshis, htlcRedeemScript.WitHash.ScriptPubKey)), htlcRedeemScript)
                 let b = n.CreateTransactionBuilder().AddCoins(coin).AddKnownSignature(theirPk, remoteSig, (fst unsignedTx).Inputs.[0].PrevOut)
-                Expect.isEmpty (b.Check(fst unsignedTx)) ""
+                Expect.isEmpty (b.Check(fst unsignedTx)) "their signature is invalid"
                 let mutable preImage = None
                 if (not htlc.Offered) then
                     for i in 0uy..5uy do
                         let out = PaymentHash([| for _ in 1..31 -> i |] |> Hashes.SHA256 |> uint256 )
                         if (out = htlc.PaymentHash) then
                             preImage <- Some (PaymentPreimage([| for _ in 1..31 -> i|] |> uint256))
-                Expect.isSome preImage ""
+                Expect.isSome preImage "No preimage found in htlc.PaymentHash"
                 let signedTxRR = chan |> Channel.signHTLCTransaction (htlcTx) (remoteSig) (preImage) htlc keys n
                 let signedTxR = RResult.rtoResult signedTxRR
-                Expect.isOk (signedTxR) ""
+                Expect.isOk (signedTxR) "Failed to sign HTLC transaction"
                 let signedTx = RResult.rderef signedTxRR
-                Expect.equal (signedTx.ToBytes()) (hex.DecodeData(txHex)) ""
+                Expect.equal (signedTx.ToBytes()) (hex.DecodeData(txHex)) "signed tx does not match to expected one."
                 (signedTx, snd unsignedTx)
 
             let testCase1 (channelLocal) =
@@ -234,6 +238,7 @@ let tests =
                        |> fun c -> { c with ValueToSelf = LNMoney.MilliSatoshis 6993000000L } // 7000000000 - 7000000
                        |> fun c -> { c with FeeRatePerKw = FeeRatePerKw 0u }
 
+            /// Commitment tx with all five HTLCs untrimmed (minimum feerate)
             let testCase2 (channelLocal) =
                 let mutable tx = getUnsignedTx channelLocal
                 tx <- testCommitment("304402204fd4928835db1ccdfc40f5c78ce9bd65249b16348df81f0c44328dcdefc97d630220194d3869c38bc732dd87d13d2958015e2fc16829e74cd4377f84d215c0b70606")
@@ -284,6 +289,7 @@ let tests =
                                     channelLocal
             testCase2 ({ chan with ValueToSelf = LNMoney.MilliSatoshis(6993000000L); FeeRatePerKw = FeeRatePerKw 0u })
 
+            /// Commitment tx with seven outputs untrimmed (maximum feerate)
             let testCase3 (channelLocal) =
                 let mutable tx = getUnsignedTx channelLocal
                 tx <- testCommitment "3045022100a5c01383d3ec646d97e40f44318d49def817fcd61a0ef18008a665b3e151785502203e648efddd5838981ef55ec954be69c4a652d021e6081a100d034de366815e9b"
@@ -336,6 +342,98 @@ let tests =
                 ()
             
             testCase3 ({ chan with ValueToSelf = LNMoney.MilliSatoshis 6993000000L; FeeRatePerKw = FeeRatePerKw 647u })
+
+            /// commitment tx with six outputs untrimmed (minimum feerate)
+            let testCase4 channelLocal =
+                let mutable tx = getUnsignedTx channelLocal
+                tx <- testCommitment "3044022072714e2fbb93cdd1c42eb0828b4f2eff143f717d8f26e79d6ada4f0dcb681bbe02200911be4e5161dd6ebe59ff1c58e1997c4aea804f81db6b698821db6093d7b057"
+                                     "3045022100a2270d5950c89ae0841233f6efea9c951898b301b2e89e0adbd2c687b9f32efa02207943d90f95b9610458e7c65a576e149750ff3accaacad004cd85e70b235e27de"
+                                     "02000000000101bef67e4e2fb9ddeeb3461973cd4c62abb35050b1add772995b820b584a488489000000000038b02b8006d007000000000000220020403d394747cae42e98ff01734ad5c08f82ba123d3d9a620abda88989651e2ab5d007000000000000220020748eba944fedc8827f6b06bc44678f93c0f9e6078b35c6331ed31e75f8ce0c2db80b000000000000220020c20b5d1f8584fd90443e7b7b720136174fa4b9333c261d04dbbd012635c0f419a00f0000000000002200208c48d15160397c9731df9bc3b236656efb6665fbfe92b4a6878e88a499f741c4c0c62d0000000000160014ccf1af2f2aabee14bb40fa3851ab2301de8431104e9d6a00000000002200204adb4e2f00643db396dd120d4e7dc17625f5f2c11a40d857accc862d6b7dd80e0400483045022100a2270d5950c89ae0841233f6efea9c951898b301b2e89e0adbd2c687b9f32efa02207943d90f95b9610458e7c65a576e149750ff3accaacad004cd85e70b235e27de01473044022072714e2fbb93cdd1c42eb0828b4f2eff143f717d8f26e79d6ada4f0dcb681bbe02200911be4e5161dd6ebe59ff1c58e1997c4aea804f81db6b698821db6093d7b05701475221023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb21030e9f7b623d2ccc7c9bd44d66d5ce21ce504c0acf6385a132cec6d3c39fa711c152ae3e195220"
+                                     n
+                                     tx
+                                     channelLocal
+
+                tx <- testHtlcOutput 0
+                                     "3044022062ef2e77591409d60d7817d9bb1e71d3c4a2931d1a6c7c8307422c84f001a251022022dad9726b0ae3fe92bda745a06f2c00f92342a186d84518588cf65f4dfaada8"
+                                     "3045022100a4c574f00411dd2f978ca5cdc1b848c311cd7849c087ad2f21a5bce5e8cc5ae90220090ae39a9bce2fb8bc879d7e9f9022df249f41e25e51f1a9bf6447a9eeffc098"
+                                     "02000000000101579c183eca9e8236a5d7f5dcd79cfec32c497fdc0ec61533cde99ecd436cadd10000000000000000000123060000000000002200204adb4e2f00643db396dd120d4e7dc17625f5f2c11a40d857accc862d6b7dd80e0500473044022062ef2e77591409d60d7817d9bb1e71d3c4a2931d1a6c7c8307422c84f001a251022022dad9726b0ae3fe92bda745a06f2c00f92342a186d84518588cf65f4dfaada801483045022100a4c574f00411dd2f978ca5cdc1b848c311cd7849c087ad2f21a5bce5e8cc5ae90220090ae39a9bce2fb8bc879d7e9f9022df249f41e25e51f1a9bf6447a9eeffc09801008576a91414011f7254d96b819c76986c277d115efce6f7b58763ac67210394854aa6eab5b2a8122cc726e9dded053a2184d88256816826d6231c068d4a5b7c820120876475527c21030d417a46946384f88d5f3337267c5e579765875dc4daca813e21734b140639e752ae67a914b43e1b38138a41b37f7cd9a1d274bc63e3a9b5d188ac6868f6010000"
+                                     n
+                                     tx
+                                     channelLocal
+
+                tx <- testHtlcOutput 1
+                                     "3045022100e968cbbb5f402ed389fdc7f6cd2a80ed650bb42c79aeb2a5678444af94f6c78502204b47a1cb24ab5b0b6fe69fe9cfc7dba07b9dd0d8b95f372c1d9435146a88f8d4"
+                                     "304402207679cf19790bea76a733d2fa0672bd43ab455687a068f815a3d237581f57139a0220683a1a799e102071c206b207735ca80f627ab83d6616b4bcd017c5d79ef3e7d0"
+                                     "02000000000101579c183eca9e8236a5d7f5dcd79cfec32c497fdc0ec61533cde99ecd436cadd10100000000000000000109060000000000002200204adb4e2f00643db396dd120d4e7dc17625f5f2c11a40d857accc862d6b7dd80e0500483045022100e968cbbb5f402ed389fdc7f6cd2a80ed650bb42c79aeb2a5678444af94f6c78502204b47a1cb24ab5b0b6fe69fe9cfc7dba07b9dd0d8b95f372c1d9435146a88f8d40147304402207679cf19790bea76a733d2fa0672bd43ab455687a068f815a3d237581f57139a0220683a1a799e102071c206b207735ca80f627ab83d6616b4bcd017c5d79ef3e7d0012001010101010101010101010101010101010101010101010101010101010101018a76a91414011f7254d96b819c76986c277d115efce6f7b58763ac67210394854aa6eab5b2a8122cc726e9dded053a2184d88256816826d6231c068d4a5b7c8201208763a9144b6b2e5444c2639cc0fb7bcea5afba3f3cdce23988527c21030d417a46946384f88d5f3337267c5e579765875dc4daca813e21734b140639e752ae677502f501b175ac686800000000"
+                                     n
+                                     tx
+                                     channelLocal
+
+                tx <- testHtlcOutput 2
+                                     "3045022100aa91932e305292cf9969cc23502bbf6cef83a5df39c95ad04a707c4f4fed5c7702207099fc0f3a9bfe1e7683c0e9aa5e76c5432eb20693bf4cb182f04d383dc9c8c2"
+                                     "304402200df76fea718745f3c529bac7fd37923e7309ce38b25c0781e4cf514dd9ef8dc802204172295739dbae9fe0474dcee3608e3433b4b2af3a2e6787108b02f894dcdda3"
+                                     "02000000000101579c183eca9e8236a5d7f5dcd79cfec32c497fdc0ec61533cde99ecd436cadd1020000000000000000010b0a0000000000002200204adb4e2f00643db396dd120d4e7dc17625f5f2c11a40d857accc862d6b7dd80e0500483045022100aa91932e305292cf9969cc23502bbf6cef83a5df39c95ad04a707c4f4fed5c7702207099fc0f3a9bfe1e7683c0e9aa5e76c5432eb20693bf4cb182f04d383dc9c8c20147304402200df76fea718745f3c529bac7fd37923e7309ce38b25c0781e4cf514dd9ef8dc802204172295739dbae9fe0474dcee3608e3433b4b2af3a2e6787108b02f894dcdda301008576a91414011f7254d96b819c76986c277d115efce6f7b58763ac67210394854aa6eab5b2a8122cc726e9dded053a2184d88256816826d6231c068d4a5b7c820120876475527c21030d417a46946384f88d5f3337267c5e579765875dc4daca813e21734b140639e752ae67a9148a486ff2e31d6158bf39e2608864d63fefd09d5b88ac6868f7010000"
+                                     n
+                                     tx
+                                     channelLocal
+
+                tx <- testHtlcOutput 3
+                                     "3044022035cac88040a5bba420b1c4257235d5015309113460bc33f2853cd81ca36e632402202fc94fd3e81e9d34a9d01782a0284f3044370d03d60f3fc041e2da088d2de58f"
+                                     "304402200daf2eb7afd355b4caf6fb08387b5f031940ea29d1a9f35071288a839c9039e4022067201b562456e7948616c13acb876b386b511599b58ac1d94d127f91c50463a6"
+                                     "02000000000101579c183eca9e8236a5d7f5dcd79cfec32c497fdc0ec61533cde99ecd436cadd103000000000000000001d90d0000000000002200204adb4e2f00643db396dd120d4e7dc17625f5f2c11a40d857accc862d6b7dd80e0500473044022035cac88040a5bba420b1c4257235d5015309113460bc33f2853cd81ca36e632402202fc94fd3e81e9d34a9d01782a0284f3044370d03d60f3fc041e2da088d2de58f0147304402200daf2eb7afd355b4caf6fb08387b5f031940ea29d1a9f35071288a839c9039e4022067201b562456e7948616c13acb876b386b511599b58ac1d94d127f91c50463a6012004040404040404040404040404040404040404040404040404040404040404048a76a91414011f7254d96b819c76986c277d115efce6f7b58763ac67210394854aa6eab5b2a8122cc726e9dded053a2184d88256816826d6231c068d4a5b7c8201208763a91418bc1a114ccf9c052d3d23e28d3b0a9d1227434288527c21030d417a46946384f88d5f3337267c5e579765875dc4daca813e21734b140639e752ae677502f801b175ac686800000000"
+                                     n
+                                     tx
+                                     channelLocal
+                ()
+
+            testCase4 ({ chan with ValueToSelf = LNMoney.MilliSatoshis(6993000000L); FeeRatePerKw = FeeRatePerKw 648u })
+
+            /// commitment tx with six outputs untrimmed (maximum feerate)
+            let testCase5 channelLocal =
+                let mutable tx = getUnsignedTx channelLocal
+                testCommitment "3044022001d55e488b8b035b2dd29d50b65b530923a416d47f377284145bc8767b1b6a75022019bb53ddfe1cefaf156f924777eaaf8fdca1810695a7d0a247ad2afba8232eb4"
+                                "304402203ca8f31c6a47519f83255dc69f1894d9a6d7476a19f498d31eaf0cd3a85eeb63022026fd92dc752b33905c4c838c528b692a8ad4ced959990b5d5ee2ff940fa90eea"
+                                "02000000000101bef67e4e2fb9ddeeb3461973cd4c62abb35050b1add772995b820b584a488489000000000038b02b8006d007000000000000220020403d394747cae42e98ff01734ad5c08f82ba123d3d9a620abda88989651e2ab5d007000000000000220020748eba944fedc8827f6b06bc44678f93c0f9e6078b35c6331ed31e75f8ce0c2db80b000000000000220020c20b5d1f8584fd90443e7b7b720136174fa4b9333c261d04dbbd012635c0f419a00f0000000000002200208c48d15160397c9731df9bc3b236656efb6665fbfe92b4a6878e88a499f741c4c0c62d0000000000160014ccf1af2f2aabee14bb40fa3851ab2301de84311077956a00000000002200204adb4e2f00643db396dd120d4e7dc17625f5f2c11a40d857accc862d6b7dd80e040047304402203ca8f31c6a47519f83255dc69f1894d9a6d7476a19f498d31eaf0cd3a85eeb63022026fd92dc752b33905c4c838c528b692a8ad4ced959990b5d5ee2ff940fa90eea01473044022001d55e488b8b035b2dd29d50b65b530923a416d47f377284145bc8767b1b6a75022019bb53ddfe1cefaf156f924777eaaf8fdca1810695a7d0a247ad2afba8232eb401475221023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb21030e9f7b623d2ccc7c9bd44d66d5ce21ce504c0acf6385a132cec6d3c39fa711c152ae3e195220"
+                                n
+                                tx
+                                channelLocal
+
+                Expect.equal (snd tx).Length 4 ""
+
+                testHtlcOutput 0
+                               "3045022100d1cf354de41c1369336cf85b225ed033f1f8982a01be503668df756a7e668b66022001254144fb4d0eecc61908fccc3388891ba17c5d7a1a8c62bdd307e5a513f992"
+                               "3044022056eb1af429660e45a1b0b66568cb8c4a3aa7e4c9c292d5d6c47f86ebf2c8838f022065c3ac4ebe980ca7a41148569be4ad8751b0a724a41405697ec55035dae66402"
+                               "02000000000101ca94a9ad516ebc0c4bdd7b6254871babfa978d5accafb554214137d398bfcf6a0000000000000000000175020000000000002200204adb4e2f00643db396dd120d4e7dc17625f5f2c11a40d857accc862d6b7dd80e0500483045022100d1cf354de41c1369336cf85b225ed033f1f8982a01be503668df756a7e668b66022001254144fb4d0eecc61908fccc3388891ba17c5d7a1a8c62bdd307e5a513f99201473044022056eb1af429660e45a1b0b66568cb8c4a3aa7e4c9c292d5d6c47f86ebf2c8838f022065c3ac4ebe980ca7a41148569be4ad8751b0a724a41405697ec55035dae6640201008576a91414011f7254d96b819c76986c277d115efce6f7b58763ac67210394854aa6eab5b2a8122cc726e9dded053a2184d88256816826d6231c068d4a5b7c820120876475527c21030d417a46946384f88d5f3337267c5e579765875dc4daca813e21734b140639e752ae67a914b43e1b38138a41b37f7cd9a1d274bc63e3a9b5d188ac6868f6010000"
+                               n
+                               tx
+                               channelLocal
+
+                testHtlcOutput 1
+                               "3045022100d065569dcb94f090345402736385efeb8ea265131804beac06dd84d15dd2d6880220664feb0b4b2eb985fadb6ec7dc58c9334ea88ce599a9be760554a2d4b3b5d9f4"
+                               "3045022100914bb232cd4b2690ee3d6cb8c3713c4ac9c4fb925323068d8b07f67c8541f8d9022057152f5f1615b793d2d45aac7518989ae4fe970f28b9b5c77504799d25433f7f"
+                               "02000000000101ca94a9ad516ebc0c4bdd7b6254871babfa978d5accafb554214137d398bfcf6a0100000000000000000122020000000000002200204adb4e2f00643db396dd120d4e7dc17625f5f2c11a40d857accc862d6b7dd80e0500483045022100d065569dcb94f090345402736385efeb8ea265131804beac06dd84d15dd2d6880220664feb0b4b2eb985fadb6ec7dc58c9334ea88ce599a9be760554a2d4b3b5d9f401483045022100914bb232cd4b2690ee3d6cb8c3713c4ac9c4fb925323068d8b07f67c8541f8d9022057152f5f1615b793d2d45aac7518989ae4fe970f28b9b5c77504799d25433f7f012001010101010101010101010101010101010101010101010101010101010101018a76a91414011f7254d96b819c76986c277d115efce6f7b58763ac67210394854aa6eab5b2a8122cc726e9dded053a2184d88256816826d6231c068d4a5b7c8201208763a9144b6b2e5444c2639cc0fb7bcea5afba3f3cdce23988527c21030d417a46946384f88d5f3337267c5e579765875dc4daca813e21734b140639e752ae677502f501b175ac686800000000"
+                               n
+                               tx
+                               channelLocal
+
+                testHtlcOutput 2
+                               "3045022100d4e69d363de993684eae7b37853c40722a4c1b4a7b588ad7b5d8a9b5006137a102207a069c628170ee34be5612747051bdcc087466dbaa68d5756ea81c10155aef18"
+                               "304402200e362443f7af830b419771e8e1614fc391db3a4eb799989abfc5ab26d6fcd032022039ab0cad1c14dfbe9446bf847965e56fe016e0cbcf719fd18c1bfbf53ecbd9f9"
+                               "02000000000101ca94a9ad516ebc0c4bdd7b6254871babfa978d5accafb554214137d398bfcf6a020000000000000000015d060000000000002200204adb4e2f00643db396dd120d4e7dc17625f5f2c11a40d857accc862d6b7dd80e0500483045022100d4e69d363de993684eae7b37853c40722a4c1b4a7b588ad7b5d8a9b5006137a102207a069c628170ee34be5612747051bdcc087466dbaa68d5756ea81c10155aef180147304402200e362443f7af830b419771e8e1614fc391db3a4eb799989abfc5ab26d6fcd032022039ab0cad1c14dfbe9446bf847965e56fe016e0cbcf719fd18c1bfbf53ecbd9f901008576a91414011f7254d96b819c76986c277d115efce6f7b58763ac67210394854aa6eab5b2a8122cc726e9dded053a2184d88256816826d6231c068d4a5b7c820120876475527c21030d417a46946384f88d5f3337267c5e579765875dc4daca813e21734b140639e752ae67a9148a486ff2e31d6158bf39e2608864d63fefd09d5b88ac6868f7010000"
+                               n
+                               tx
+                               channelLocal
+
+                testHtlcOutput 3
+                               "30450221008ec888e36e4a4b3dc2ed6b823319855b2ae03006ca6ae0d9aa7e24bfc1d6f07102203b0f78885472a67ff4fe5916c0bb669487d659527509516fc3a08e87a2cc0a7c"
+                               "304402202c3e14282b84b02705dfd00a6da396c9fe8a8bcb1d3fdb4b20a4feba09440e8b02202b058b39aa9b0c865b22095edcd9ff1f71bbfe20aa4993755e54d042755ed0d5"
+                               "02000000000101ca94a9ad516ebc0c4bdd7b6254871babfa978d5accafb554214137d398bfcf6a03000000000000000001f2090000000000002200204adb4e2f00643db396dd120d4e7dc17625f5f2c11a40d857accc862d6b7dd80e05004830450221008ec888e36e4a4b3dc2ed6b823319855b2ae03006ca6ae0d9aa7e24bfc1d6f07102203b0f78885472a67ff4fe5916c0bb669487d659527509516fc3a08e87a2cc0a7c0147304402202c3e14282b84b02705dfd00a6da396c9fe8a8bcb1d3fdb4b20a4feba09440e8b02202b058b39aa9b0c865b22095edcd9ff1f71bbfe20aa4993755e54d042755ed0d5012004040404040404040404040404040404040404040404040404040404040404048a76a91414011f7254d96b819c76986c277d115efce6f7b58763ac67210394854aa6eab5b2a8122cc726e9dded053a2184d88256816826d6231c068d4a5b7c8201208763a91418bc1a114ccf9c052d3d23e28d3b0a9d1227434288527c21030d417a46946384f88d5f3337267c5e579765875dc4daca813e21734b140639e752ae677502f801b175ac686800000000"
+                               n
+                               tx
+                               channelLocal
+                ()
+
+            testCase5 ({ chan with ValueToSelf = LNMoney.MilliSatoshis(6993000000L); FeeRatePerKw = FeeRatePerKw 2069u })
             ()
 
     ]
