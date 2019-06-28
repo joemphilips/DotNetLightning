@@ -30,14 +30,31 @@ type InboundHTLCRemovalReason =
 
 type InboundHTLCState =
     internal
-    // added by remote, to be included in next local commitment tx
+    /// added by remote, to be included in next local commitment tx
     | RemoteAnnounced of PendingHTLCStatus
-    // Included in a received commitment_signed message (implying we've revoke_and_ack'd it), but
-    // the remote side hasn't et revoked their previous state.
+    /// Included in a received commitment_signed message (implying we've revoke_and_ack'd it), but
+    /// the remote side hasn't et revoked their previous state, which we need them to do before we
+    /// acept this htlc. Implies AwaitingRemoteRevoke.
+    /// We also have not yet included this HTLC in a commitment_signed message, and are waiting on
+    /// a remote revoke_and_ack on a previous state before we can do so.
     | AwaitingRemoteRevokeToAnnounce of PendingHTLCStatus
+    /// Included in a received commitment_signed message (implying we've revoke_and_ack'ed it), but
+    /// the remote side hasn't yet revoked their previous state, which we need them to do before we
+    /// accept this HTLC. Implies AwaitingRemoteRevoke.
+    /// We have included this HTLC in our latest commitment_signed and are now just waiting on a
+    /// revoke_and_ack.
     | AwaitingAnnouncedRemoteRevoke of PendingHTLCStatus
-    | LocalRemoved of InboundHTLCRemovalReason
     | Commited
+    /// Removed by us and a new commitment_signed was sent (if we were AwaitingRemoteRevoke when we
+    /// created it we would have put it in the holding cell instead). When they next revoke_and_ack
+    /// we'll drop it.
+    /// Note that we have to keep eye on the HTLC until we've revoked HTLCs that we can't claim
+    /// it before the timeout (obviously doesn't apply to revoked HTLCs that we can't claim anyway).
+    /// That said, ChannelMonitor does this for us (see ChannelMonitor.WouldBroadcastAtHeight)
+    /// so we actually remove the HTLC from our own local state before then, once we're sure that
+    /// the next commitment_signed and ChannelMonitor.ProvideLatestLocalCommitmentTxInfo will not
+    /// included this HTLC.
+    | LocalRemoved of InboundHTLCRemovalReason
 
 type InboundHTLCOutput = internal {
     HTLCId: Primitives.HTLCId
@@ -49,10 +66,34 @@ type InboundHTLCOutput = internal {
 
 type OutboundHTLCState =
     internal
+    /// Added by us and include in a commitment_signed (if we were AwaitingRemoteRevoke when we
+    /// created it we would have put it in the holding cell instead). When they next revoke_and_ack
+    /// we will promite to Commitmed (note that they may not accept it until the next time we
+    /// revoke, but we don't really care about that:
+    ///  * they've revoked, so worst case we can announce an old state and get our (option on)
+    ///    money back (though we won't), and,
+    ///  * we'll send them a revoke when they send a commitment_signed, and since only they're
+    ///    allowed to remove it, the "can only be removed once commited on both sides" requirement
+    ///    doesn't matter to us and it's up to them to enforce it, worst-case they jump ahead but
+    ///    we'll never get out of sync).
+    /// Note that we Box the OnionPacket as it's rather large and we don't want to blow up
+    /// OutboundHTLCOutput's size just for a temporary bit
     | LocalAnnounced of OnionPacket
     | Commited
+    /// Remote removed this (outbound) HTLC. We're waiting on their commitment_signed to finalize
+    /// the change (though they'll need to revoke before we fail the payment).
     | RemoteRemoved of HTLCFailReason option
+    /// Remote removed this and sent a commitment_signed (implying we've revoke_and_ack'ed it), but
+    /// the remote side hasn't yet revoked their previous state, which we need them to do before we
+    /// can do any backwards failing. Implies AwaitingRemoteRevoke.
+    /// We also have not yet remove this HTLC in a commitment_signed message, and are waiting on a
+    /// remote revoke_and_ack on a previous state before we can do so.
     | AwaitingRemoteRevokeToRemove of HTLCFailReason option
+    /// Remote removed this and sent a commitment_signed (implying we've revoke_and_ack'ed it), but
+    /// the remote side hasn't yet revoked their previous state, which we we need them to do before we
+    /// can do any backwards failing. Implies AwaitingRemoteRevoke.
+    /// We have removed this HTLC in our latest commitment_signed and are now just waiting on a 
+    /// revoke_and_ack to drop completely.
     | AwaitingRemovedRemoteRevoke of HTLCFailReason option
 
 type OutboundHTLCOutput = {
@@ -90,22 +131,64 @@ type HTLCUpdateAwaitingACK =
     | ClaimHTLC of  ClaimHTLCRecord
     | FailHTLC of FailHTLCRecord
 
+/// There are a few "states" and then a number of flags which can be applied:
+/// We first move through init with OurInitSent -> TheirInitSent -> FundingCreated -> FundingSent.
+/// TheirFundingLocked and OurFundingLocked then get set on FundingSent, and when both are set we
+/// move on to ChannelFunded.
+/// Note that PeerDisconnected can be set on both ChannelFunded and FundingSent.
+/// ChannelFunded can then get all remaining flags set on it, until we finish shutdown, then we
+/// move on to ShutdownComplete, at which point most calls into this channel are disallowed
 [<Flags>]
 type ChannelState =
-    | Zero = 0u
-    | OurInitSent =        1u
-    | TheirInitSent =      2u
-    | FundingCreated =     4u
-    | FundingSent =        8u
-    | TheirFundingLocked = 16u
-    | OurFundingLocked =   32u
-    | ChannelFunded =      64u
-    | PeerDisconnected =   128u
-    | MonitorUpdateFailed = 256u
+    /// Should not used in real situaion. Because we always send (openchannel/acceptc_channel)
+    /// when initalize a channel
+    | Zero =                 0u
+    /// Implies we have (or are prepared to) send our open_channel_accept_channel message
+    | OurInitSent =          1u
+    /// Implies we have received their open_channel/accept_channel message
+    | TheirInitSent =        2u
+    /// We have sent funding_created and are awaiting a funding_signed to advance to FundingSent.
+    /// Note that this is nonsense for an inbound channel as we immediately generate funding_signed
+    /// upon receipt of funding_created, so simply skip this state.
+    | FundingCreated =       4u
+    /// Set when we have received/sent funding_created and funding_signed and are thus now waiting
+    /// on the funding transaction to confirm. The FundingLocked flags are set to indicate when we
+    /// and our counterparty consider the funding transaction confirmed.
+    | FundingSent =          8u
+    /// Flags which can be set on FundingSent to indicate they sent us a funding_locked message.
+    /// Once both TheirFundingLocked and OurFundingLocked are set, state moves to ChannelFunded.
+    | TheirFundingLocked =   16u
+    /// Flag which can be set on FundingSent to indicate we sent them a funding_locked message.
+    /// Once both TheirFundingLocked and OurFundingLocked are set, state moves on to ChannelFunded.
+    | OurFundingLocked =     32u
+    | ChannelFunded =        64u
+    /// Flags which is set on ChannelFunded and FundingSent indicating remote side is considered
+    /// "disconnected" and no updates are allowed until after we've done a channel_reestablish
+    /// dance.
+    | PeerDisconnected =     128u
+    /// Flag which is set on ChannelFunded and FundingSent indicating the user has told us they
+    /// failed to upate our ChannelMonitor somewhere and we should pause sending any outbound
+    /// messages until they've managed to do so.
+    | MonitorUpdateFailed =  256u
+    /// Flag which implies that we have sent a commitment_signed but are awaiting the responding
+    /// revoke_and_ack message. During this time period, we can't generate new commitment_signed
+    /// messages as then we will be unable to determine which HTLCs they included in their
+    /// revoke_and_ack implicit ACK, so instead we have to hold them away temporarily to be sent
+    /// later.
+    /// Flag is set on ChannelFunded.
     | AwaitingRemoteRevoke = 512u
-    | RemoteShutdownSent = 1024u
-    | LocalShutdownSent = 2048u
-    | ShutdownComplete = 4096u
+    /// Flag which is set on ChannelFunded or FundingSent after receiving a shutdown message from
+    /// the remote end. If set, they may not add any new HTLCs to the channel, and we are expected
+    /// to respond with our own shutdown message when possible.
+    | RemoteShutdownSent =   1024u
+    /// Flag which is set on ChannelFunded or FundingSent after sending a shotdown message. At this
+    /// point, we may not add any new HTLCs to the channel.
+    /// TODO: Investigate some kind of timeout mechanism by which point the remote end must provide
+    /// us their shutdown.
+    | LocalShutdownSent =    2048u
+    /// We've successfully negotiated a closing_signed dance. At this point ChannelManager is about
+    /// to drop us, but we store this anyway.
+    | ShutdownComplete =     4096u
 
 [<AutoOpen>]
 module ChannelConstants =

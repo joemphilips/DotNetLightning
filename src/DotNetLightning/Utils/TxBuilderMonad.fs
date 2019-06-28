@@ -1,17 +1,24 @@
 namespace DotNetLightning.Utils
 open NBitcoin
+open NBitcoin.Crypto
 
 type TxState =
     | PSBT of PSBT
     | TransactionBuilder of TransactionBuilder
-    | Transaction of Transaction
-
+    | Transaction of Transaction * TxMetaData
+and TxMetaData = {
+    SignaturesWithIndex: ((ECDSASignature * PubKey option) list * int32) list
+    ScriptWithIndex: (Script * int32) list
+    /// lets only consider case of witness output, so not holding entire previous tx
+    /// (like PSBT does in case of non-witness output)
+    PrevOut: (TxOut * int32) list
+}
 type TxBuildingComputation<'a> =
-    TxBuildingComputation of (PSBT -> 'a * PSBT)
+    TxBuildingComputation of (TransactionBuilder -> 'a * TransactionBuilder)
 
+[<RequireQualifiedAccess>]
 module TxBuildingComputation =
-    let runT txBuilder state =
-        let (TxBuildingComputation innerFn) = txBuilder
+    let run (TxBuildingComputation innerFn) state =
         innerFn state
 
     let returnT x =
@@ -19,10 +26,13 @@ module TxBuildingComputation =
             (x, state)
         TxBuildingComputation innerFn
 
+    let getBuilder = TxBuildingComputation(fun state -> (state, state))
+    let setBuilder s = TxBuildingComputation(fun _ -> ((), s))
+
     let bindT f xT =
         let innerFn state =
-            let x, state2 = runT xT state
-            runT (f x) state2
+            let x, state2 = run xT state
+            run (f x) state2
         TxBuildingComputation innerFn
 
     let mapT f =
@@ -41,12 +51,20 @@ module TxBuildingComputation =
 
 
 module TxBuilderClient =
-    open TxBuildingComputation
 
-    let addSignature (pk) (signature: TransactionSignature) =
-        toUnitComputation (fun state ->
-            state.Inputs.[0].PartialSigs.Add(pk, signature)
+    let addSignature (pk) (signature: TransactionSignature) (op) =
+        TxBuildingComputation.toUnitComputation (fun state ->
+            state.AddKnownSignature(pk, signature, op) |> ignore
             state
         )
 
+    let sign (key: Key) =
+        TxBuildingComputation.toComputation(fun state ->
+            state.AddKeys(key) |> ignore
+            let tx = state.BuildTransaction(true)
+            let signa = tx.Inputs
+                        |> Seq.collect(fun i -> i.WitScript.Pushes)
+                        |> Seq.choose(fun bs -> if TransactionSignature.IsValid(bs) then Some (TransactionSignature(bs)) else None)
+            signa, state.ContinueToBuild tx
+        )
     ()

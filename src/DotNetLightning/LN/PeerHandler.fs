@@ -134,12 +134,13 @@ module PeerManager =
     let newOutBoundConnection (theirNodeId: NodeId)
                               (connId: ConnectionId)
                               (pm: PeerManager): RResult<PeerManager * byte[]> =
-        let peerEncyptor = PeerChannelEncryptor.newOutBound(theirNodeId)
-        let res = peerEncyptor.GetActOne()
+        let act1, peerEncryptor =
+            PeerChannelEncryptor.newOutBound(theirNodeId)
+            |> PeerChannelEncryptor.getActOne
         let pendingReadBuffer = Array.zeroCreate(50) // Noise act 2 is 50 bytes. 
         let newPeerMap = pm.Peers.Peers
                          |> Map.add connId {
-                            ChannelEncryptor = peerEncyptor
+                            ChannelEncryptor = peerEncryptor
                             IsOutBound = true
                             TheirNodeId = None
                             TheirGlobalFeatures = None
@@ -153,12 +154,12 @@ module PeerManager =
                             SyncStatus = InitSyncTracker.NoSyncRequested
                             }
         if true then
-            Good({ pm with Peers = { pm.Peers with Peers = newPeerMap }}, res)
+            Good({ pm with Peers = { pm.Peers with Peers = newPeerMap }}, act1)
         else
             failwith "PeerManager driver duplicated descriptors!"
 
     let newInboundConnection(connId: ConnectionId) (pm: PeerManager) =
-        let peerEncryptor = PeerChannelEncryptor.NewInBound(pm.OurNodeSecret)
+        let peerEncryptor = PeerChannelEncryptor.newInBound(pm.OurNodeSecret)
         let pendingReadBuffer = Array.zeroCreate 50
         let newPeer = {
             ChannelEncryptor = peerEncryptor
