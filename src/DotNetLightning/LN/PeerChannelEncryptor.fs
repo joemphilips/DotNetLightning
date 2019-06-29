@@ -9,6 +9,7 @@ open DotNetLightning.Serialize.Msgs
 open System
 open System.Diagnostics
 
+open System.Runtime.CompilerServices
 
 [<AutoOpen>]
 module PeerChannelEncryptor =
@@ -138,10 +139,14 @@ module PeerChannelEncryptor =
                 (fun bidirectionalState ipns -> { ipns with InProgressNoiseState.BidirectionalState = bidirectionalState })
 
     and FinishedNoiseState = {
+        /// Sending key
         SK: uint256
+        /// Sending nonce
         SN: uint64
         SCK: uint256
+        /// Reading key
         RK: uint256
+        /// Reading nonce
         RN: uint64
         RCK: uint256
     }
@@ -248,14 +253,14 @@ module PeerChannelEncryptor =
             let nonceBytes = ReadOnlySpan(Array.concat[| Array.zeroCreate 4; BitConverter.GetBytes(n) |]) // little endian
             NSec.Cryptography.Nonce(nonceBytes, 0)
 
-        let decryptWithAD(n: uint64, key: uint256, h: uint256, plaintext: ReadOnlySpan<byte>): RResult<byte[]> =
+        let decryptWithAD(n: uint64, key: uint256, h: uint256, cipherText: ReadOnlySpan<byte>): RResult<byte[]> =
             let nonce = getNonce n
             let keySpan = ReadOnlySpan(key.ToBytes())
             let hSpan = ReadOnlySpan(h.ToBytes())
             let blobF = NSec.Cryptography.KeyBlobFormat.RawSymmetricKey
             let chachaKey = NSec.Cryptography.Key.Import(chacha20, keySpan, blobF)
-            match chacha20.Decrypt(chachaKey, &nonce, hSpan, plaintext) with
-            | true, i -> Good i
+            match chacha20.Decrypt(chachaKey, &nonce, hSpan, cipherText) with
+            | true, plainText -> Good plainText
             | false, _ -> RResult.rbad(RBad.Object({ HandleError.Error = "Bad MAC"; Action = Some(DisconnectPeer(None))} ))
 
         let private encryptWithAD(n: uint64, key: uint256, h: ReadOnlySpan<byte>, plainText: ReadOnlySpan<byte>) =
@@ -299,9 +304,10 @@ module PeerChannelEncryptor =
                 let s2 = { state with H = Hashes.SHA256(Array.concat [| state.H.ToBytes(); theirPub.ToBytes() |]) |> uint256 }
                 let ss = SharedSecret.FromKeyPair(theirPub, ourKey)
                 let tempK, s3 = hkdf (s2, ss)
-                let dec = decryptWithAD (0UL, tempK, s3.H, ReadOnlySpan(act.[34..]))
-                let s4 = { s3 with H = Hashes.SHA256(Array.concat [| s3.H.ToBytes(); act.[34..] |]) |> uint256 }
-                Good ((theirPub, tempK), s4)
+                decryptWithAD (0UL, tempK, s3.H, ReadOnlySpan(act.[34..]))
+                >>= fun _ ->
+                    let s4 = { s3 with H = Hashes.SHA256(Array.concat [| s3.H.ToBytes(); act.[34..] |]) |> uint256 }
+                    Good ((theirPub, tempK), s4)
 
         let getActOne (pce: PeerChannelEncryptor) : byte[] * PeerChannelEncryptor =
             match pce.NoiseState with
@@ -398,28 +404,35 @@ module PeerChannelEncryptor =
                     else if (actThree.[0] <> 0uy) then
                         RResult.rbad (RBad.Object({ HandleError.Error = "Unknown handshake version number"; Action = Some (DisconnectPeer(None))}))
                     else
-                        decryptWithAD (1UL, tempk2.Value, bState.H, ReadOnlySpan(actThree.[1..50]))
+                        printfn "runnning decrypt with ad in act three"
+                        decryptWithAD (1UL, tempk2.Value, bState.H, ReadOnlySpan(actThree.[1..49]))
                         >>= fun theirNodeId ->
-                            if PubKey.Check (theirNodeId, true) then
+                            printfn "successfully running actThree. theirNodeId %A\n and its length is %d" theirNodeId (theirNodeId.Length)
+                            if not (PubKey.Check (theirNodeId, true)) then
                                 RResult.rbad(RBad.Object({ HandleError.Error = "Bad Nodeid from Peer"; Action = Some (DisconnectPeer(None))}))
                             else
+                                let bState2 =
+                                    bState
+                                    |> Optic.set (BidirectionalNoiseState.H_) (Array.concat[| bState.H.ToBytes(); actThree.[1..49] |] |> Hashes.SHA256 |> uint256)
                                 let pce2 =
                                     pce
-                                    |> Optic.set (PeerChannelEncryptor.H_) (Array.concat[| bState.H.ToBytes(); actThree.[1..50] |] |> uint256)
+                                    |> Optic.set (PeerChannelEncryptor.BState_) (bState2)
                                     |> Optic.set (PeerChannelEncryptor.TheirNodeId_) (PubKey(theirNodeId) |> NodeId)
                                 let ss = SharedSecret.FromKeyPair(pce2.TheirNodeId.Value.Value, re.Value)
-                                let tempK, bState2 = hkdf(bState, ss)
-                                decryptWithAD(0UL, tempK, bState2.H, ReadOnlySpan(actThree.[50..]))
+                                let tempK, bState3 = hkdf(bState2, ss)
+                                printfn "Going to decrypt 2 in act three %A \n length is %A" actThree.[50..] (actThree.[50..].Length)
+                                decryptWithAD(0UL, tempK, bState3.H, ReadOnlySpan(actThree.[50..]))
                                 |>> fun _ ->
-                                    let (rk, sk) = hkdfExtractExpand(bState2.CK.ToBytes(), [||])
+                                    printfn "successfully running actThree 2"
+                                    let (rk, sk) = hkdfExtractExpand(bState3.CK.ToBytes(), [||])
                                     let pce3 = Optic.set (PeerChannelEncryptor.NoiseState_)
                                                          (Finished({
                                                             FinishedNoiseState.SK = sk |> uint256
                                                             SN = 0UL
-                                                            SCK = bState.CK
+                                                            SCK = bState3.CK
                                                             RK = rk |> uint256
                                                             RN= 0UL
-                                                            RCK = bState2.CK
+                                                            RCK = bState3.CK
                                                          }))
                                                          pce2
                                     pce3.TheirNodeId.Value, pce3
@@ -438,3 +451,56 @@ module PeerChannelEncryptor =
             match this.NoiseState with
             | InProgress _ -> false
             | Finished _ -> true
+
+
+    type H = ByRefLike
+
+
+module PeerChannelEncryptorStruct =
+
+    // -- struct base api ----
+    [<IsByRefLike;Struct>]
+    type NoiseState =
+        | InProgress of InProgressNoiseState
+        | Finished
+
+    
+    and [<IsByRefLike;Struct>] InProgressNoiseState = {
+        State: NoiseStep
+        DirectionalState: DirectionalNoisestate
+        BidirectionalState: BidirectionalNoiseState
+    }
+    and [<IsByRefLike;Struct>] NoiseStep =
+        | PreActOne
+        | PostActOne
+        | PostActTwo
+
+    and [<IsByRefLike;Struct>] BidirectionalNoiseState = {
+        /// The handshake hash. This value is the accumulated hash of all handhsake data that has been sent
+        /// and received so far during the handshake process.
+        H: uint256
+        /// The chaining key. This value is the accumulated hash of all previous ECDH outputs.
+        /// At the end of the handshake, it is used for deriving the encryption keys for Lightning Messages.
+        CK: uint256
+    }
+
+    and [<IsByRefLike;Struct>] DirectionalNoiseState =
+        | OutBound of outState: OutBound
+        | InBound of inState: InBound
+
+    and [<IsByRefLike;Struct>] OutBound = { IE: Key }
+
+    and [<IsByRefLike;Struct>] InBound = {
+        /// intermediate pubkey, not-empty if state >= PostActOne
+        IE: Span<byte>
+        /// intermediate privkey not-empty if state >= PostActTwo
+        RE: Span<byte>
+        TempK2: uint256 voption // Some if state >= PostActTwo
+    }
+
+    [<IsByRefLike;Struct>]
+    type PeerChannelEncryptorStruct =
+        {
+            TheirNodeId: Span<byte>
+            NoiseState: NoiseState
+        }
