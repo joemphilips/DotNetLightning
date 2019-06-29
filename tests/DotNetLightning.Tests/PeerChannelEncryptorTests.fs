@@ -84,7 +84,7 @@ let tests =
             let ourEphemeral = hex.DecodeData("2222222222222222222222222222222222222222222222222222222222222222") |> Key
 
             /// Transport - responder successful handshake
-            let testCase1() =
+            let testCase1 =
                 let inboundPeer1 = ourNodeId |> PeerChannelEncryptor.newInBound
                 let actOne = hex.DecodeData("00036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6a")
                 let actOneExpected = hex.DecodeData("0002466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f276e2470b93aac583c9ef6eafca3f730ae")
@@ -95,8 +95,76 @@ let tests =
 
                 let actThree = hex.DecodeData("00b9e3a702e93e3a9948c2ed6e5fd7590a6e1c3a0344cfc9d5b57357049aa22355361aa02e55a8fc28fef5bd6d71ad0c38228dc68b1c466263b47fdf31e560e139ba")
                 let actThreeExpected = hex.DecodeData("034f355bdcb7cc0af728ef3cceb9615d90684bb5b2ca5f859ab0f0b704075871aa") |> PubKey |> NodeId
-                let actual = inboundPeer2 |> PeerChannelEncryptor.processActThree(actThree)
-                Expect.isOk (actual |> RResult.rtoResult) ""
-                Expect.equal (actual |> RResult.rderef |> fst) (actThreeExpected) ""
-            testCase1()
+                let actualRR = inboundPeer2 |> PeerChannelEncryptor.processActThree(actThree)
+                Expect.isOk (actualRR |> RResult.rtoResult) ""
+                let actual, nextState = actualRR |> RResult.rderef
+                Expect.equal (actual) (actThreeExpected) ""
+                match nextState.NoiseState with
+                | Finished { SK = sk; SN = sn; SCK = sck; RK = rk; RN = rn; RCK = rck } ->
+                    Expect.equal (sk) (hex.DecodeData("bb9020b8965f4df047e07f955f3c4b88418984aadc5cdb35096b9ea8fa5c3442") |> uint256) ""
+                    Expect.equal sn 0UL ""
+                    Expect.equal (sck) (hex.DecodeData("919219dbb2920afa8db80f9a51787a840bcf111ed8d588caf9ab4be716e42b01") |> uint256) ""
+                    Expect.equal (rk) (hex.DecodeData("969ab31b4d288cedf6218839b27a3e2140827047f2c0f01bf5c04435d43511a9") |> uint256) ""
+                    Expect.equal (rn) (0UL) ""
+                    Expect.equal (rck) (hex.DecodeData("919219dbb2920afa8db80f9a51787a840bcf111ed8d588caf9ab4be716e42b01") |> uint256) ""
+                | _ -> failwith ""
+
+            /// Trnansport-responder act1 short read test
+            let testCase2 =
+                let inboundPeer = PeerChannelEncryptor.newInBound(ourNodeId)
+                let actOne = hex.DecodeData("00036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c")
+                Expect.throwsT<System.Exception>(fun _ -> PeerChannelEncryptor.processActOneWithKey actOne ourNodeId inboundPeer |> ignore) "did not throw error"
+
+            /// Transport-responder act1 bad version test
+            let testCase3 =
+                let inboundPeer = PeerChannelEncryptor.newInBound(ourNodeId)
+                let actOne = "01036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6a" |> hex.DecodeData
+                let actualRR = inboundPeer |> PeerChannelEncryptor.processActOneWithEphemeralKey (actOne, ourNodeId, ourEphemeral)
+                Expect.isError (actualRR |> RResult.rtoResult) ""
+
+            /// Transport responder act1 babd key serialization test
+            let testCase4 =
+                let inboundPeer = ourNodeId |> PeerChannelEncryptor.newInBound
+                let actOne = hex.DecodeData("00046360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6a")
+                let actualRR = inboundPeer |> PeerChannelEncryptor.processActOneWithEphemeralKey (actOne, ourNodeId, ourEphemeral)
+                Expect.isError  (actualRR |> RResult.rtoResult) ""
+
+            /// Transport-responder act1 bad MAC test
+            let testCase5 =
+                let inboundPeer = ourNodeId |> PeerChannelEncryptor.newInBound
+                let actOne = hex.DecodeData("00036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6b")
+                let actualRR = inboundPeer |> PeerChannelEncryptor.processActOneWithEphemeralKey (actOne, ourNodeId, ourEphemeral)
+                Expect.isError (actualRR |> RResult.rtoResult) ""
+
+            /// Transport responder act3 bad version test
+            let testCase6 =
+                let inboundPeer = ourNodeId |> PeerChannelEncryptor.newInBound
+                let actOne = hex.DecodeData("00036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6a")
+                let actual1, inboundPeer2 = inboundPeer |> PeerChannelEncryptor.processActOneWithEphemeralKey (actOne, ourNodeId, ourEphemeral) |> RResult.rderef
+
+                let actThree = hex.DecodeData("01b9e3a702e93e3a9948c2ed6e5fd7590a6e1c3a0344cfc9d5b57357049aa22355361aa02e55a8fc28fef5bd6d71ad0c38228dc68b1c466263b47fdf31e560e139ba")
+                let actualRR = inboundPeer2 |> PeerChannelEncryptor.processActThree actThree
+                Expect.isError (actualRR |> RResult.rtoResult) ""
+
+            /// Transport responder act3 short read test
+            let testCase7 =
+                let inboundPeer = PeerChannelEncryptor.newInBound(ourNodeId)
+                let actOne = hex.DecodeData("00036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6a")
+                let _, inboundPeer2 = inboundPeer |> PeerChannelEncryptor.processActOneWithEphemeralKey (actOne, ourNodeId, ourEphemeral) |> RResult.rderef
+                let actThree = hex.DecodeData("00b9e3a702e93e3a9948c2ed6e5fd7590a6e1c3a0344cfc9d5b57357049aa22355361aa02e55a8fc28fef5bd6d71ad0c38228dc68b1c466263b47fdf31e560e139")
+                Expect.throwsT<System.Exception>(fun _ ->
+                         inboundPeer2 |> PeerChannelEncryptor.processActThree actThree |> ignore
+                     ) "did not throw error"
+
+            /// Transport-responder act3 bad MAC for ciphertext
+            let testCase8 =
+                let inboundPeer = PeerChannelEncryptor.newInBound ourNodeId
+                let actOne = hex.DecodeData("00036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6a")
+                let expectedActOneResult = hex.DecodeData("0002466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f276e2470b93aac583c9ef6eafca3f730ae")
+                let actualActOneResult, inboundPeer2 = inboundPeer |> PeerChannelEncryptor.processActOneWithEphemeralKey(actOne, ourNodeId, ourEphemeral) |> RResult.rderef
+                Expect.equal actualActOneResult expectedActOneResult ""
+                let actThree = hex.DecodeData("00bfe3a702e93e3a9948c2ed6e5fd7590a6e1c3a0344cfc9d5b57357049aa2235536ad09a8ee351870c2bb7f78b754a26c6cef79a98d25139c856d7efd252c2ae73c")
+                let RR = PeerChannelEncryptor.processActThree actThree inboundPeer2 |> RResult.rtoResult
+                Expect.isError RR ""
+            ()
     ]

@@ -294,7 +294,7 @@ module PeerChannelEncryptor =
             (resultToSend, tempK), { s3 with H = Hashes.SHA256(Array.concat [| s3.H.ToBytes(); c |]) |> uint256 }
 
         let private inBoundNoiseAct (state: BidirectionalNoiseState, act: byte[], ourKey: Key): RResult<(PubKey * uint256) * BidirectionalNoiseState> =
-            assert (act.Length = 50)
+            if (act.Length <> 50) then failwithf "Invalid act length: %d" (act.Length)
             if (act.[0] <> 0uy) then
                 RResult.rbad(RBad.Object { HandleError.Error = ("Unknown handshake version number"); Action = Some (DisconnectPeer(None)) } )
             else if not (PubKey.Check(act.[1..33], true)) then
@@ -354,11 +354,11 @@ module PeerChannelEncryptor =
             | _ ->
                 failwith "Cannot get acg one after noise handshake completes"
 
-        let processActOneWithKey (actTwo: byte[]) (ourNodeSecret: Key) (pce: PeerChannelEncryptor): RResult<byte[] * _> =
-            assert (actTwo.Length = 50)
+        let processActOneWithKey (actOne: byte[]) (ourNodeSecret: Key) (pce: PeerChannelEncryptor): RResult<byte[] * _> =
+            if (actOne.Length <> 50) then failwithf "invalid actOne length: %d" (actOne.Length)
 
             let ephemeralKey = Key()
-            processActOneWithEphemeralKey (actTwo, ourNodeSecret, ephemeralKey) pce
+            processActOneWithEphemeralKey (actOne, ourNodeSecret, ephemeralKey) pce
 
         let processActTwo (actTwo: byte[], ourNodeSecret: Key) (pce: PeerChannelEncryptor): RResult<(byte[] * NodeId) * PeerChannelEncryptor> = 
             match pce.NoiseState with
@@ -394,7 +394,7 @@ module PeerChannelEncryptor =
             | _ -> failwith "Cannot get act one after noise handshake completes"
 
         let processActThree (actThree: byte[]) (pce: PeerChannelEncryptor): RResult<NodeId * PeerChannelEncryptor> =
-            assert (actThree.Length = 66)
+            if (actThree.Length <> 66) then failwithf "actThree must be 66 bytes, but it was %d" (actThree.Length)
             match pce.NoiseState with
             | InProgress { State = state; DirectionalState = dState; BidirectionalState = bState } ->
                 match dState with
