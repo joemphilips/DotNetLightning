@@ -2,6 +2,7 @@ namespace DotNetLightning.LN
 open NBitcoin
 open NBitcoin.Crypto
 open System.IO
+open DotNetLightning.Utils
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils.Aether
 open DotNetLightning.Utils.Aether.Operators
@@ -122,6 +123,25 @@ module PeerChannelEncryptor =
                     match ns with
                     | Finished _ -> Finished finishedNS
                     | _ -> ns)
+
+            static member internal SK_: Prism<_, _> =
+                NoiseState.Finished_ >?> FinishedNoiseState.SK_
+
+            static member internal SN_: Prism<_, _> =
+                NoiseState.Finished_ >?> FinishedNoiseState.SN_
+
+            static member internal SCK_: Prism<_, _> =
+                NoiseState.Finished_ >?> FinishedNoiseState.SCK_
+
+            static member internal RK_: Prism<_, _> =
+                NoiseState.Finished_ >?> FinishedNoiseState.RK_
+
+            static member internal RN_: Prism<_, _> =
+                NoiseState.Finished_ >?> FinishedNoiseState.RN_
+
+            static member internal RCK_: Prism<_, _> =
+                NoiseState.Finished_ >?> FinishedNoiseState.RCK_
+
     and InProgressNoiseState = {
         State: NoiseStep
         DirectionalState: DirectionalNoisestate
@@ -173,7 +193,7 @@ module PeerChannelEncryptor =
 
     type PeerChannelEncryptor = internal {
         TheirNodeId: NodeId option
-        NoiseState: NoiseState
+        mutable NoiseState: NoiseState
     }
         with
             static member internal TheirNodeId_: Prism<_, _> =
@@ -185,6 +205,7 @@ module PeerChannelEncryptor =
 
             static member internal Finished_: Prism<_, _> =
                 PeerChannelEncryptor.NoiseState_ >-> NoiseState.Finished_
+
 
             static member internal InProgress_: Prism<_,_> =
                 PeerChannelEncryptor.NoiseState_ >-> NoiseState.InProgress_
@@ -223,7 +244,6 @@ module PeerChannelEncryptor =
                 PeerChannelEncryptor.InBound_ >?> InBound.TempK2_
 
     module PeerChannelEncryptor =
-        open DotNetLightning.Utils
         let newOutBound (NodeId theirNodeId) =
             let hashInput = Array.concat[| NOISE_H; theirNodeId.ToBytes()|]
             let h = uint256(Hashes.SHA256(hashInput))
@@ -253,17 +273,17 @@ module PeerChannelEncryptor =
             let nonceBytes = ReadOnlySpan(Array.concat[| Array.zeroCreate 4; BitConverter.GetBytes(n) |]) // little endian
             NSec.Cryptography.Nonce(nonceBytes, 0)
 
-        let decryptWithAD(n: uint64, key: uint256, h: uint256, cipherText: ReadOnlySpan<byte>): RResult<byte[]> =
+        let internal decryptWithAD(n: uint64, key: uint256, h: byte[], cipherText: ReadOnlySpan<byte>): RResult<byte[]> =
             let nonce = getNonce n
             let keySpan = ReadOnlySpan(key.ToBytes())
-            let hSpan = ReadOnlySpan(h.ToBytes())
+            let hSpan = ReadOnlySpan(h)
             let blobF = NSec.Cryptography.KeyBlobFormat.RawSymmetricKey
             let chachaKey = NSec.Cryptography.Key.Import(chacha20, keySpan, blobF)
             match chacha20.Decrypt(chachaKey, &nonce, hSpan, cipherText) with
             | true, plainText -> Good plainText
             | false, _ -> RResult.rbad(RBad.Object({ HandleError.Error = "Bad MAC"; Action = Some(DisconnectPeer(None))} ))
 
-        let private encryptWithAD(n: uint64, key: uint256, h: ReadOnlySpan<byte>, plainText: ReadOnlySpan<byte>) =
+        let internal encryptWithAD(n: uint64, key: uint256, h: ReadOnlySpan<byte>, plainText: ReadOnlySpan<byte>) =
             let nonce = getNonce n
             let keySpan = ReadOnlySpan(key.ToBytes())
             let blobF = NSec.Cryptography.KeyBlobFormat.RawSymmetricKey
@@ -304,7 +324,7 @@ module PeerChannelEncryptor =
                 let s2 = { state with H = Hashes.SHA256(Array.concat [| state.H.ToBytes(); theirPub.ToBytes() |]) |> uint256 }
                 let ss = SharedSecret.FromKeyPair(theirPub, ourKey)
                 let tempK, s3 = hkdf (s2, ss)
-                decryptWithAD (0UL, tempK, s3.H, ReadOnlySpan(act.[34..]))
+                decryptWithAD (0UL, tempK, s3.H.ToBytes(), ReadOnlySpan(act.[34..]))
                 >>= fun _ ->
                     let s4 = { s3 with H = Hashes.SHA256(Array.concat [| s3.H.ToBytes(); act.[34..] |]) |> uint256 }
                     Good ((theirPub, tempK), s4)
@@ -324,7 +344,7 @@ module PeerChannelEncryptor =
                                      |> Optic.set (PeerChannelEncryptor.BState_)
                                                   newBState
                         res, newPce
-                | _ -> failwith "Wrong Directiona for Act"
+                | _ -> failwith "Wrong Direction for Act"
             | _ -> failwith "Cannot get act one after noise  handshake completes"
 
         let processActOneWithEphemeralKey(actOne: byte[], ourNodeSecret: Key, ourEphemeral: Key) (pce: PeerChannelEncryptor): RResult<byte[] * _> =
@@ -404,10 +424,8 @@ module PeerChannelEncryptor =
                     else if (actThree.[0] <> 0uy) then
                         RResult.rbad (RBad.Object({ HandleError.Error = "Unknown handshake version number"; Action = Some (DisconnectPeer(None))}))
                     else
-                        printfn "runnning decrypt with ad in act three"
-                        decryptWithAD (1UL, tempk2.Value, bState.H, ReadOnlySpan(actThree.[1..49]))
+                        decryptWithAD (1UL, tempk2.Value, bState.H.ToBytes(), ReadOnlySpan(actThree.[1..49]))
                         >>= fun theirNodeId ->
-                            printfn "successfully running actThree. theirNodeId %A\n and its length is %d" theirNodeId (theirNodeId.Length)
                             if not (PubKey.Check (theirNodeId, true)) then
                                 RResult.rbad(RBad.Object({ HandleError.Error = "Bad Nodeid from Peer"; Action = Some (DisconnectPeer(None))}))
                             else
@@ -420,10 +438,8 @@ module PeerChannelEncryptor =
                                     |> Optic.set (PeerChannelEncryptor.TheirNodeId_) (PubKey(theirNodeId) |> NodeId)
                                 let ss = SharedSecret.FromKeyPair(pce2.TheirNodeId.Value.Value, re.Value)
                                 let tempK, bState3 = hkdf(bState2, ss)
-                                printfn "Going to decrypt 2 in act three %A \n length is %A" actThree.[50..] (actThree.[50..].Length)
-                                decryptWithAD(0UL, tempK, bState3.H, ReadOnlySpan(actThree.[50..]))
+                                decryptWithAD(0UL, tempK, bState3.H.ToBytes(), ReadOnlySpan(actThree.[50..]))
                                 |>> fun _ ->
-                                    printfn "successfully running actThree 2"
                                     let (rk, sk) = hkdfExtractExpand(bState3.CK.ToBytes(), [||])
                                     let pce3 = Optic.set (PeerChannelEncryptor.NoiseState_)
                                                          (Finished({
@@ -440,20 +456,144 @@ module PeerChannelEncryptor =
             | _ -> failwith "Cannot get act one after noise handshake completes"
 
 
-    type PeerChannelEncryptor with
-        static member EncryptMessage (msg: Span<byte>): Span<byte> =
-            msg
+    module PeerChannelEncryptorMonad =
+        type PeerChannelEncryptorComputation<'a> =
+            PeerChannelEncryptorComputation of (PeerChannelEncryptor -> RResult<'a * PeerChannelEncryptor>)
 
-        static member DecryptLengthHeader (msg: Span<byte>): Span<byte> =
-            msg
+        let runP pcec initialState =
+            let (PeerChannelEncryptorComputation innerFn)= pcec
+            innerFn initialState
+
+        let returnP x =
+            let innerFn state = 
+                Good(x, state)
+            PeerChannelEncryptorComputation innerFn
+
+        let bindP (f: 'a -> PeerChannelEncryptorComputation<'b>) (xT: PeerChannelEncryptorComputation<'a>): PeerChannelEncryptorComputation<'b> =
+            let innerFn state =
+                runP xT state
+                >>= fun (res, state2) ->
+                    let h = runP (f res) state2
+                    h
+            PeerChannelEncryptorComputation innerFn
+
+        let mapP f =
+            bindP (f >> returnP)
+
+        let toComputation (f: PeerChannelEncryptor -> 'a * PeerChannelEncryptor) =
+            let innerFn state =
+                let (result, newState) = f state
+                Good(result, newState)
+            PeerChannelEncryptorComputation innerFn
+
+        let toUnitComputaiton f =
+            let f2 state =
+                (), f state
+            toComputation f2
+
+        type PeerChannelEncryptorComputationBuilder() =
+            member this.Return(x) = returnP x
+            member this.Bind(x, f) = bindP f x
+            member this.Zero(x) = returnP ()
+
+        let cipherchannel = PeerChannelEncryptorComputationBuilder()
+
+
+    type BitConverter with
+        static member GetBytesBE(data: uint16) =
+            let buf = Array.zeroCreate 2
+            buf.[0] <- (byte (data >>> 8))
+            buf.[1] <- byte data
+            buf
+        static member ToUint16BE(data: byte[]) =
+            ((uint16 data.[0]) <<< 8 ||| uint16 (data.[1]))
+
+
+    type PeerChannelEncryptor with
+        member this.EncryptMessage (msg: ReadOnlySpan<byte>): byte[] =
+            if msg.Length > 65535 then failwith "Attempted encrypt message longer thaan 65535 bytes"
+            match this.NoiseState with
+            | Finished { SK = sk; SN = sn; SCK = sck } ->
+                if sn >= 1000UL then
+                    let (newSCK, newSK) = PeerChannelEncryptor.hkdfExtractExpand(sck.ToBytes(false), sk.ToBytes(false))
+                    this.NoiseState <-
+                        this.NoiseState
+                        |> Optic.set (NoiseState.SCK_)
+                                     (uint256 newSCK)
+                        |> Optic.set (NoiseState.SK_)
+                                     (uint256 newSK)
+                        |> Optic.set (NoiseState.SN_)
+                                     (0UL)
+
+                let mutable newSN = (Optic.get (PeerChannelEncryptor.Finished_ >?> FinishedNoiseState.SN_) this).Value
+                let mutable newSK = (Optic.get (PeerChannelEncryptor.Finished_ >?> FinishedNoiseState.SK_) this).Value
+                let lengthBytes = BitConverter.GetBytesBE(uint16 msg.Length)
+                printfn "goint to encrypt msg of length: %A" lengthBytes
+                // 2 byte length + 16 bytes MAC
+                let cipherLength = PeerChannelEncryptor.encryptWithAD (newSN, newSK, ReadOnlySpan([||]) , ReadOnlySpan(lengthBytes))
+                newSN <- (newSN + 1UL)
+                this.NoiseState <-
+                    this.NoiseState
+                    |> Optic.set (NoiseState.SN_) newSN
+                let cipherText = PeerChannelEncryptor.encryptWithAD (newSN, newSK, ReadOnlySpan[||], msg)
+                this.NoiseState <-
+                    this.NoiseState
+                    |> Optic.set (NoiseState.SN_) (newSN + 1UL)
+                Array.concat (seq [ cipherLength; cipherText ])
+            | _ -> failwith "Tried to encrypt a message prior to noise handshake completion"
+
+        member this.EncryptMessage(msg: byte[]) =
+            this.EncryptMessage(ReadOnlySpan(msg))
+
+        member this.DecryptLengthHeader (msg: ReadOnlySpan<byte>): RResult<uint16> =
+            if (msg.Length <> 16 + 2) then raise <| ArgumentException(sprintf "Invalid length of message %d" msg.Length)
+            match this.NoiseState with
+            | Finished { RK = rk; RN = rn; RCK = rck } ->
+                if (rn >= 1000UL) then
+                    let (newRCK, newRK) = PeerChannelEncryptor.hkdfExtractExpand(rck.ToBytes(false), rk.ToBytes(false))
+                    this.NoiseState <-
+                        this.NoiseState
+                        |> Optic.set (NoiseState.RCK_)
+                                     (uint256 newRCK)
+                        |> Optic.set (NoiseState.RK_)
+                                     (uint256 newRK)
+                        |> Optic.set (NoiseState.RN_)
+                                     (0UL)
+
+                let mutable newRK = (Optic.get (PeerChannelEncryptor.Finished_ >?> FinishedNoiseState.RK_) this).Value
+                let mutable newRN = (Optic.get (PeerChannelEncryptor.Finished_ >?> FinishedNoiseState.RN_) this).Value
+                PeerChannelEncryptor.decryptWithAD(newRN, newRK, [||], msg)
+                |>> fun plainText ->
+                        this.NoiseState <-
+                            this.NoiseState
+                            |> Optic.set (NoiseState.RN_) (newRN + 1UL)
+                        BitConverter.ToUint16BE(plainText)
+
+            | _ -> failwith "Tried to encrypt a message prior to noies handshake completion"
+
+        member this.DecryptLengthHeader(msg: byte[]) =
+            this.DecryptLengthHeader(ReadOnlySpan(msg))
+
+        member this.DecryptMessage(msg: ReadOnlySpan<byte>) = 
+            if (msg.Length > 16 + 65535) then raise <| ArgumentException(sprintf "Invalid length of message %d" msg.Length)
+            match this.NoiseState with
+            | Finished { RK = rk; RN  = rn;} ->
+                PeerChannelEncryptor.decryptWithAD(rn, rk, [||], msg)
+                |>> fun plainText ->
+                    this.NoiseState <-
+                        this.NoiseState
+                        |> Optic.set (NoiseState.RN_) (rn + 1UL)
+                    plainText
+            | _ -> failwith "Tried to encyrpt a message prior to noise handshake completion"
+
+        member this.DecryptMessage(msg: byte[]) = 
+            this.DecryptMessage(ReadOnlySpan(msg))
 
         member this.IsReadyForEncryption(): bool =
             match this.NoiseState with
             | InProgress _ -> false
             | Finished _ -> true
 
-
-    type H = ByRefLike
 
 
 module PeerChannelEncryptorStruct =
