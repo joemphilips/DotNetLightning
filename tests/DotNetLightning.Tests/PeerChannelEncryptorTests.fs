@@ -1,5 +1,7 @@
 module PeerChannelEncryptorTests
 open Expecto
+open Expecto.Logging
+open Expecto.Logging.Message
 open NBitcoin
 open DotNetLightning.Utils.Aether
 open DotNetLightning.Utils.Aether.Operators
@@ -7,6 +9,8 @@ open DotNetLightning.Utils
 open DotNetLightning.LN
 
 let hex = NBitcoin.DataEncoders.HexEncoder()
+let logger = Log.create "PeerChannelEncryptor tests"
+
 let getOutBoundPeerForInitiatorTestVectors () =
     let theirNodeId = PubKey("028d7500dd4c12685d1f568b4c2b5048e8534b873319f3a8daa612b469132ec7f7")
 
@@ -32,7 +36,7 @@ let tests =
             let testCase1() =
                 let outboundPeer = getOutBoundPeerForInitiatorTestVectors()
                 let actTwo = hex.DecodeData("0002466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f276e2470b93aac583c9ef6eafca3f730ae")
-                let res = outboundPeer |> PeerChannelEncryptor.processActTwo (actTwo, ourNodeId)
+                let res = outboundPeer |> PeerChannelEncryptor.processActTwo actTwo ourNodeId
                 Expect.isOk (res |> RResult.rtoResult) ""
 
                 let (actual, nodeid), nextPCE = res |> RResult.rderef
@@ -55,13 +59,13 @@ let tests =
             let testCase2 () =
                 let outboundPeer = getOutBoundPeerForInitiatorTestVectors()
                 let actTwo = hex.DecodeData("0x0002466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f276e2470b93aac583c9ef6eafca3f730")
-                Expect.throws (fun _ -> outboundPeer |> PeerChannelEncryptor.processActTwo(actTwo, ourNodeId) |> ignore) ""
+                Expect.throws (fun _ -> outboundPeer |> PeerChannelEncryptor.processActTwo actTwo ourNodeId |> ignore) ""
 
             /// Trnsport-initiator act2 bad version test
             let testCase3() =
                 let outboundPeer = getOutBoundPeerForInitiatorTestVectors()
                 let actTwo = hex.DecodeData("0102466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f276e2470b93aac583c9ef6eafca3f730ae")
-                Expect.isError (outboundPeer |> PeerChannelEncryptor.processActTwo(actTwo, ourNodeId) |> RResult.rtoResult) ""
+                Expect.isError (outboundPeer |> PeerChannelEncryptor.processActTwo actTwo ourNodeId |> RResult.rtoResult) ""
 
             testCase3()
 
@@ -69,14 +73,14 @@ let tests =
             let testCase4() =
                 let outboundPeer = getOutBoundPeerForInitiatorTestVectors()
                 let actTwo = hex.DecodeData("0004466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f276e2470b93aac583c9ef6eafca3f730ae")
-                Expect.isError (outboundPeer |> PeerChannelEncryptor.processActTwo(actTwo, ourNodeId) |> RResult.rtoResult) ""
+                Expect.isError (outboundPeer |> PeerChannelEncryptor.processActTwo actTwo ourNodeId |> RResult.rtoResult) ""
             testCase4()
 
             /// transport-initiator act2 bad MAC test
             let testCase5() =
                 let outboundPeer = getOutBoundPeerForInitiatorTestVectors()
                 let actTwo = hex.DecodeData("0002466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f276e2470b93aac583c9ef6eafca3f730af")
-                Expect.isError(outboundPeer |> PeerChannelEncryptor.processActTwo(actTwo, ourNodeId) |> RResult.rtoResult) ""
+                Expect.isError(outboundPeer |> PeerChannelEncryptor.processActTwo actTwo ourNodeId |> RResult.rtoResult) ""
             testCase5()
 
         testCase "noise responder text vectors" <| fun _ ->
@@ -88,7 +92,7 @@ let tests =
                 let inboundPeer1 = ourNodeId |> PeerChannelEncryptor.newInBound
                 let actOne = hex.DecodeData("00036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6a")
                 let actOneExpected = hex.DecodeData("0002466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f276e2470b93aac583c9ef6eafca3f730ae")
-                let actualRR  = inboundPeer1 |> PeerChannelEncryptor.processActOneWithEphemeralKey (actOne, ourNodeId, ourEphemeral)
+                let actualRR  = inboundPeer1 |> PeerChannelEncryptor.processActOneWithEphemeralKey actOne ourNodeId ourEphemeral
                 Expect.isOk (actualRR |> RResult.rtoResult) ""
                 let actual, inboundPeer2  = actualRR |> RResult.rderef 
                 Expect.equal (actual) (actOneExpected) ""
@@ -113,34 +117,34 @@ let tests =
             let testCase2 =
                 let inboundPeer = PeerChannelEncryptor.newInBound(ourNodeId)
                 let actOne = hex.DecodeData("00036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c")
-                Expect.throwsT<System.Exception>(fun _ -> PeerChannelEncryptor.processActOneWithKey actOne ourNodeId inboundPeer |> ignore) "did not throw error"
+                Expect.throwsT<System.ArgumentException>(fun _ -> PeerChannelEncryptor.processActOneWithKey actOne ourNodeId inboundPeer |> ignore) "did not throw error"
 
             /// Transport-responder act1 bad version test
             let testCase3 =
                 let inboundPeer = PeerChannelEncryptor.newInBound(ourNodeId)
                 let actOne = "01036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6a" |> hex.DecodeData
-                let actualRR = inboundPeer |> PeerChannelEncryptor.processActOneWithEphemeralKey (actOne, ourNodeId, ourEphemeral)
+                let actualRR = inboundPeer |> PeerChannelEncryptor.processActOneWithEphemeralKey actOne ourNodeId ourEphemeral
                 Expect.isError (actualRR |> RResult.rtoResult) ""
 
             /// Transport responder act1 babd key serialization test
             let testCase4 =
                 let inboundPeer = ourNodeId |> PeerChannelEncryptor.newInBound
                 let actOne = hex.DecodeData("00046360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6a")
-                let actualRR = inboundPeer |> PeerChannelEncryptor.processActOneWithEphemeralKey (actOne, ourNodeId, ourEphemeral)
+                let actualRR = inboundPeer |> PeerChannelEncryptor.processActOneWithEphemeralKey actOne ourNodeId ourEphemeral
                 Expect.isError  (actualRR |> RResult.rtoResult) ""
 
             /// Transport-responder act1 bad MAC test
             let testCase5 =
                 let inboundPeer = ourNodeId |> PeerChannelEncryptor.newInBound
                 let actOne = hex.DecodeData("00036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6b")
-                let actualRR = inboundPeer |> PeerChannelEncryptor.processActOneWithEphemeralKey (actOne, ourNodeId, ourEphemeral)
+                let actualRR = inboundPeer |> PeerChannelEncryptor.processActOneWithEphemeralKey actOne ourNodeId ourEphemeral
                 Expect.isError (actualRR |> RResult.rtoResult) ""
 
             /// Transport responder act3 bad version test
             let testCase6 =
                 let inboundPeer = ourNodeId |> PeerChannelEncryptor.newInBound
                 let actOne = hex.DecodeData("00036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6a")
-                let actual1, inboundPeer2 = inboundPeer |> PeerChannelEncryptor.processActOneWithEphemeralKey (actOne, ourNodeId, ourEphemeral) |> RResult.rderef
+                let actual1, inboundPeer2 = inboundPeer |> PeerChannelEncryptor.processActOneWithEphemeralKey actOne ourNodeId ourEphemeral |> RResult.rderef
 
                 let actThree = hex.DecodeData("01b9e3a702e93e3a9948c2ed6e5fd7590a6e1c3a0344cfc9d5b57357049aa22355361aa02e55a8fc28fef5bd6d71ad0c38228dc68b1c466263b47fdf31e560e139ba")
                 let actualRR = inboundPeer2 |> PeerChannelEncryptor.processActThree actThree
@@ -150,9 +154,9 @@ let tests =
             let testCase7 =
                 let inboundPeer = PeerChannelEncryptor.newInBound(ourNodeId)
                 let actOne = hex.DecodeData("00036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6a")
-                let _, inboundPeer2 = inboundPeer |> PeerChannelEncryptor.processActOneWithEphemeralKey (actOne, ourNodeId, ourEphemeral) |> RResult.rderef
+                let _, inboundPeer2 = inboundPeer |> PeerChannelEncryptor.processActOneWithEphemeralKey actOne ourNodeId ourEphemeral |> RResult.rderef
                 let actThree = hex.DecodeData("00b9e3a702e93e3a9948c2ed6e5fd7590a6e1c3a0344cfc9d5b57357049aa22355361aa02e55a8fc28fef5bd6d71ad0c38228dc68b1c466263b47fdf31e560e139")
-                Expect.throwsT<System.Exception>(fun _ ->
+                Expect.throwsT<System.ArgumentException>(fun _ ->
                          inboundPeer2 |> PeerChannelEncryptor.processActThree actThree |> ignore
                      ) "did not throw error"
 
@@ -161,7 +165,7 @@ let tests =
                 let inboundPeer = PeerChannelEncryptor.newInBound ourNodeId
                 let actOne = hex.DecodeData("00036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6a")
                 let expectedActOneResult = hex.DecodeData("0002466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f276e2470b93aac583c9ef6eafca3f730ae")
-                let actualActOneResult, inboundPeer2 = inboundPeer |> PeerChannelEncryptor.processActOneWithEphemeralKey(actOne, ourNodeId, ourEphemeral) |> RResult.rderef
+                let actualActOneResult, inboundPeer2 = inboundPeer |> PeerChannelEncryptor.processActOneWithEphemeralKey actOne ourNodeId ourEphemeral |> RResult.rderef
                 Expect.equal actualActOneResult expectedActOneResult ""
                 let actThree = hex.DecodeData("00c9e3a702e93e3a9948c2ed6e5fd7590a6e1c3a0344cfc9d5b57357049aa22355361aa02e55a8fc28fef5bd6d71ad0c38228dc68b1c466263b47fdf31e560e139ba")
                 let r = PeerChannelEncryptor.processActThree actThree inboundPeer2 |> RResult.rtoResult
@@ -171,7 +175,7 @@ let tests =
             let testCase9 =
                 let inboundPeer = PeerChannelEncryptor.newInBound(ourNodeId)
                 let actOne = hex.DecodeData("00036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6a")
-                let actualActOneResult, inboundPeer2 = inboundPeer |> PeerChannelEncryptor.processActOneWithEphemeralKey(actOne, ourNodeId, ourEphemeral) |> RResult.rderef
+                let actualActOneResult, inboundPeer2 = inboundPeer |> PeerChannelEncryptor.processActOneWithEphemeralKey actOne ourNodeId ourEphemeral |> RResult.rderef
                 let expectedActOneResult = hex.DecodeData("0002466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f276e2470b93aac583c9ef6eafca3f730ae")
                 Expect.equal (actualActOneResult) (expectedActOneResult) ""
 
@@ -184,7 +188,7 @@ let tests =
                 let inboundPeer = PeerChannelEncryptor.newInBound(ourNodeId)
                 let actOne = hex.DecodeData("00036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6a")
                 let expectedActOneResult = hex.DecodeData("0002466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f276e2470b93aac583c9ef6eafca3f730ae")
-                let actualActOneResult, inboundPeer2 = inboundPeer |> PeerChannelEncryptor.processActOneWithEphemeralKey(actOne, ourNodeId, ourEphemeral) |> RResult.rderef
+                let actualActOneResult, inboundPeer2 = inboundPeer |> PeerChannelEncryptor.processActOneWithEphemeralKey actOne ourNodeId ourEphemeral |> RResult.rderef
                 Expect.equal (actualActOneResult) (expectedActOneResult) ""
 
                 let actThree = hex.DecodeData("00b9e3a702e93e3a9948c2ed6e5fd7590a6e1c3a0344cfc9d5b57357049aa22355361aa02e55a8fc28fef5bd6d71ad0c38228dc68b1c466263b47fdf31e560e139bb")
@@ -197,7 +201,7 @@ let tests =
             let testCase1 = 
                 let ourNodeId = "1111111111111111111111111111111111111111111111111111111111111111" |> hex.DecodeData |> Key
                 let actTwo = "0002466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f276e2470b93aac583c9ef6eafca3f730ae" |> hex.DecodeData
-                let (actualActTwoResult, _), outboundPeer2 = outboundPeer |> PeerChannelEncryptor.processActTwo (actTwo, ourNodeId) |> RResult.rderef
+                let (actualActTwoResult, _), outboundPeer2 = outboundPeer |> PeerChannelEncryptor.processActTwo actTwo ourNodeId |> RResult.rderef
                 let expectedActTwoResult = "00b9e3a702e93e3a9948c2ed6e5fd7590a6e1c3a0344cfc9d5b57357049aa22355361aa02e55a8fc28fef5bd6d71ad0c38228dc68b1c466263b47fdf31e560e139ba" |> hex.DecodeData
                 Expect.equal actualActTwoResult expectedActTwoResult ""
                 match outboundPeer2.NoiseState with
@@ -218,7 +222,7 @@ let tests =
                 let ourEphemeral = hex.DecodeData("2222222222222222222222222222222222222222222222222222222222222222") |> Key
                 let actOne = hex.DecodeData("00036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6a")
                 let expectedActOneResult = "0002466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f276e2470b93aac583c9ef6eafca3f730ae" |> hex.DecodeData
-                let actualActOneResult, inboundPeer2 = inboundPeer |> PeerChannelEncryptor.processActOneWithEphemeralKey( actOne, ourNodeId, ourEphemeral) |> RResult.rderef
+                let actualActOneResult, inboundPeer2 = inboundPeer |> PeerChannelEncryptor.processActOneWithEphemeralKey actOne ourNodeId ourEphemeral |> RResult.rderef
                 Expect.equal (actualActOneResult) (expectedActOneResult) ""
                 let actThree = "00b9e3a702e93e3a9948c2ed6e5fd7590a6e1c3a0344cfc9d5b57357049aa22355361aa02e55a8fc28fef5bd6d71ad0c38228dc68b1c466263b47fdf31e560e139ba" |> hex.DecodeData
                 let expectedActThreeResult = "034f355bdcb7cc0af728ef3cceb9615d90684bb5b2ca5f859ab0f0b704075871aa" |> hex.DecodeData  |> PubKey |> NodeId
@@ -236,29 +240,66 @@ let tests =
                     inboundPeer <- inboundPeer3
                 | _ -> failwith ""
 
-            for i in 0..1005 do
-                printfn "%d th  iteration ----- \n\n" i
-                let msg = [| 0x68uy; 0x65uy; 0x6cuy; 0x6cuy; 0x6fuy |]
-                printfn "outbound peer before encryption %A" outboundPeer
-                let res = outboundPeer.EncryptMessage msg
-                printfn "outbound peer after encryption %A" outboundPeer
-                Expect.equal (res.Length) (5 + 2 * 16 + 2) ""
-                let lengthHeader = res.[0..2+16 - 1]
-                printfn "length header is %A" lengthHeader
-                printfn "inbound peer before decryption is %A" inboundPeer
-                let actualLengthRR = inboundPeer.DecryptLengthHeader(lengthHeader)
-                Expect.isOk (actualLengthRR |> RResult.rtoResult) ""
-                let actualLength = actualLengthRR |> RResult.rderef
-                let expectedLength = uint16 msg.Length
-                Expect.equal actualLength (expectedLength) ""
+            let log = eventX >> logger.info 
+            let rec loop (i: int) (localOutBound) (localInbound) =
+                log (sprintf "%d th iteration ----\n\n" i)
+                log (sprintf "outbound is %A" localOutBound)
+                log (sprintf "inbound is %A" localInbound)
+                log (sprintf "----\n\n")
+                if i > 1005 then
+                    ()
+                else
+                    let msg = [| 0x68uy; 0x65uy; 0x6cuy; 0x6cuy; 0x6fuy |]
+                    let res, newOutBound =
+                        let instruction = cipherchannel {
+                                return! encryptMessage log msg;
+                            }
+                        runP instruction localOutBound |> RResult.rderef
 
-                let actual = inboundPeer.DecryptMessage(res.[2 + 16..]) |> RResult.rderef
-                printfn "inbound peer after decryption is %A" inboundPeer
-                Expect.equal (actual) (msg) ""
+                    Expect.equal (res.Length) (5 + 2 * 16 + 2) ""
+                    log(sprintf "new outbound is %A" newOutBound)
+                    let lengthHeader = res.[0..2+16 - 1]
+                    let actualLengthRR =
+                        let instruction = cipherchannel {
+                            let! header = decryptLengthHeader log (lengthHeader)
+                            return header
+                        }
+                        runP instruction localInbound
+                    Expect.isOk (actualLengthRR |> RResult.rtoResult) ""
+                    let actualLength, inbound2 = actualLengthRR |> RResult.rderef
+                    log (sprintf "new inbound is %A" inbound2)
+                    let expectedLength = uint16 msg.Length
+                    Expect.equal actualLength (expectedLength) ""
 
-                if i = 0 then
-                    let expected = hex.DecodeData("cf2b30ddf0cf3f80e7c35a6e6730b59fe802473180f396d88a8fb0db8cbcf25d2f214cf9ea1d95")
-                    Expect.equal res expected ""
-                ()
-            ()
+                    let actualRR =
+                        let instruction = cipherchannel {
+                            let! msg = decryptMessage log (res.[2 + 16..])
+                            return msg
+                        }
+                        runP instruction inbound2
+                    let actual, inbound3 = actualRR |> RResult.rderef
+                    Expect.equal (actual) (msg) ""
+
+                    if i = 0 then
+                        let expected = hex.DecodeData("cf2b30ddf0cf3f80e7c35a6e6730b59fe802473180f396d88a8fb0db8cbcf25d2f214cf9ea1d95")
+                        Expect.equal res expected ""
+                    if i = 1 then
+                        let expected = hex.DecodeData("72887022101f0b6753e0c7de21657d35a4cb2a1f5cde2650528bbc8f837d0f0d7ad833b1a256a1")
+                        Expect.equal res expected ""
+                    if i = 500 then
+                        let expected = hex.DecodeData("178cb9d7387190fa34db9c2d50027d21793c9bc2d40b1e14dcf30ebeeeb220f48364f7a4c68bf8")
+                        Expect.equal res expected ""
+                    if i = 501 then
+                        let expected = hex.DecodeData("1b186c57d44eb6de4c057c49940d79bb838a145cb528d6e8fd26dbe50a60ca2c104b56b60e45bd")
+                        Expect.equal res expected ""
+                    if i = 1000 then
+                        let expected = hex.DecodeData("4a2f3cc3b5e78ddb83dcb426d9863d9d9a723b0337c89dd0b005d89f8d3c05c52b76b29b740f09")
+                        Expect.equal res expected ""
+                    if i = 1001 then
+                        let expected = hex.DecodeData("2ecd8c8a5629d0d02ab457a0fdd0f7b90a192cd46be5ecb6ca570bfc5e268338b1a16cf4ef2d36")
+                        Expect.equal res expected ""
+
+                    loop (i + 1) newOutBound inbound3
+
+            loop 0 outboundPeer inboundPeer
     ]
