@@ -5,14 +5,14 @@ open NBitcoin
 
 [<Flags>]
 type LNMoneyUnit =
-    | BTC = 100000000000L
-    | MilliBTC = 10000000L
-    | Bit = 100000L
-    | Micro = 100000L
-    | Satoshi = 1000L
-    | Nano = 100L
-    | MilliSatoshi = 1L
-    | Pico = 1L
+    | BTC = 100000000000UL
+    | MilliBTC = 100000000UL
+    | Bit = 100000UL
+    | Micro = 100000UL
+    | Satoshi = 1000UL
+    | Nano = 100UL
+    | MilliSatoshi = 1UL
+    | Pico = 1UL
 
 /// Port from `LightMoney` class in BTCPayServer.Lightning 
 /// Represents millisatoshi amount of money
@@ -31,28 +31,29 @@ type LNMoney = LNMoney of int64
             if not (Enum.IsDefined(typeOfMoneyUnit, v)) then
                 raise (ArgumentException(sprintf "Invalid value for MoneyUnit %s" paramName))
 
-        static member FromUnit(amount: decimal, lnUnit: LNMoneyUnit) =
+        static member private FromUnit(amount: decimal, lnUnit: LNMoneyUnit) =
             LNMoney.CheckMoneyUnit(lnUnit, "unit") |> ignore
-            let satoshi = Checked.(*) (Checked.uint64 amount) (Checked.uint64 lnUnit)
+            let satoshi = Checked.(*) (amount) (decimal lnUnit)
             LNMoney(Checked.int64 satoshi)
 
+
         static member Coins(coins: decimal) =
-            LNMoney.FromUnit(coins * (decimal LNMoneyUnit.BTC), LNMoneyUnit.BTC)
+            LNMoney.FromUnit(coins * (decimal LNMoneyUnit.BTC), LNMoneyUnit.MilliSatoshi)
 
         static member Satoshis(satoshis: decimal) =
-            LNMoney.FromUnit(satoshis * (decimal LNMoneyUnit.Satoshi), LNMoneyUnit.Satoshi)
+            LNMoney.FromUnit(satoshis * (decimal LNMoneyUnit.Satoshi), LNMoneyUnit.MilliSatoshi)
 
         static member Satoshis(sats: int64) =
-            LNMoney.FromUnit(decimal (sats * int64 LNMoneyUnit.Satoshi), LNMoneyUnit.Satoshi)
+            LNMoney.MilliSatoshis(Checked.(*) 1000L sats)
 
         static member Satoshis(sats: uint64) =
-            LNMoney.FromUnit(decimal (sats * uint64 LNMoneyUnit.Satoshi), LNMoneyUnit.Satoshi)
+            LNMoney.MilliSatoshis(Checked.(*) 1000UL sats)
 
         static member MilliSatoshis(sats: int64) =
-            LNMoney.FromUnit(decimal sats, LNMoneyUnit.MilliSatoshi)
+            LNMoney(sats)
 
         static member MilliSatoshis(sats: uint64) =
-            LNMoney.FromUnit(decimal sats, LNMoneyUnit.MilliSatoshi)
+            LNMoney(Checked.int64 sats)
 
         static member Zero = LNMoney(0L)
         static member TryParse(bitcoin: string, result: outref<LNMoney>) =

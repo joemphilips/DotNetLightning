@@ -67,7 +67,7 @@ type DummyKeyRepository =
 
 [<Tests>]
 let tests =
-    testList "Channel tests" [
+    ftestList "Channel tests" [
         testCase "test_max_funding_satoshis" <| fun _ ->
             Expect.isLessThan MAX_FUNDING_SATOSHIS (Money.Satoshis(21_000_000L * 100_000_000L)) "MAX_FUNDING_SATOSHIS is greater than all satoshis in existance"
 
@@ -91,7 +91,7 @@ let tests =
             let l = UserConfig.ChannelOptions_ >-> ChannelConfig.AnnouncedChannel_
             let config = Optic.set l false UserConfig.Zero
             let channelR =
-                Channel.newOutBound(feeest, keysProvider, theirNodeId, Money.Satoshis(100000000L), LNMoney.MilliSatoshis(100000L), UserId(42UL), logger, config)
+                Channel.newOutBound(feeest, keysProvider, theirNodeId, Money.Satoshis(100000L), LNMoney.MilliSatoshis(100000L), UserId(42UL), logger, config)
                 |>> fun c -> { c with TheirToSelfDelay = (BlockHeightOffset 144us) }
                 |>> fun c -> { c with OurDustLimit = Money.Satoshis(546L) }
                 |>> fun c ->

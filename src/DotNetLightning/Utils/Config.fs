@@ -53,12 +53,12 @@ type ChannelHandshakeLimits = {
         static member Zero =
             {
                 MinFundingSatoshis = Money.Zero
-                MaxHTLCMinimumMSat = LNMoney.Coins(21_000_000_000m)
+                MaxHTLCMinimumMSat = LNMoney.Coins(21_000_000m)
                 MinMaxHTLCValueInFlightMSat = LNMoney.Zero
                 MaxChannelReserveSatoshis = Money.Zero
                 MinMaxAcceptedHTLCs = 0us
                 MinDustLimitSatoshis = Money.Satoshis(546m)
-                MaxDustLimitSatoshis = Money.Coins(21_000_000_000m)
+                MaxDustLimitSatoshis = Money.Coins(21_000_000m)
                 MaxMinimumDepth = 144u
                 ForceAnnouncedChannelPreference = true
             }

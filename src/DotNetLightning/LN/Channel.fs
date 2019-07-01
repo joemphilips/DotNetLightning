@@ -235,7 +235,7 @@ type Channel = internal {
     ChannelId: ChannelId
     ChannelState: ChannelState
     ChannelOutbound: bool
-    ChannelValueSatoshis: Money
+    ChannelValue: LNMoney
     LocalKeys: ChannelKeys
     ShutdownPubKey: PubKey
     CurrentLocalCommitmentTxNumber: uint64
@@ -347,7 +347,9 @@ module Channel =
 
     /// TODO:
     let deriveOurDustLimitSatoshis(FeeRatePerKw atOpenBackGroundFee): Money =
-        failwith "Not implemnted"
+        (Money.Satoshis((uint64 atOpenBackGroundFee) * B_OUTPUT_PLUS_SPENDING_INPUT_WEIGHT / 1000UL), Money.Satoshis(546UL))
+        |> Money.Max
+
 
     /// TODO:
     let deriveOurHTLCMinimum(FeeRatePerKw atOpenBackGroundFee): LNMoney =
@@ -438,20 +440,20 @@ module Channel =
         /// ------ Validators -----
         let checkSmallerThenMaxPossible(channelValue) =
             if (channelValue >= MAX_FUNDING_SATOSHIS) then
-                RResult.Bad(RBadTree.Leaf(RBad.Message("Funding value. 2^24")))
+                RResult.rmsg("Funding value. 2^24")
             else
                 Good(channelValue)
 
-        let checkPushValueLessThanChannelValue (pushMSat: LNMoney) (channelValue: Money) =
-            if pushMSat >= (!> channelValue) then
-                RResult.Bad(!> ("push value > channel value"))
+        let checkPushValueLessThanChannelValue (pushMSat: LNMoney) (channelValue: LNMoney) =
+            if pushMSat >= (channelValue) then
+                RResult.rmsg("push value > channel value")
             else
                 Good(pushMSat)
 
         let checkBackgroundFeeRate (estimator: IFeeEstimator) (channelValue) =
             let backgroundFeeRate = estimator.GetEstSatPer1000Weight(ConfirmationTarget.Background)
             if (getOurChannelReserve(channelValue).Satoshi < deriveOurDustLimitSatoshis(backgroundFeeRate).Satoshi * 1000L) then
-                RResult.Bad(!> (sprintf "Not eonugh reserve above dust limit can be found at current fee rate(%O)" backgroundFeeRate))
+                RResult.Bad(!> (sprintf "Not enough reserve above dust limit can be found at current fee rate(%O)" backgroundFeeRate))
             else
                 Good(backgroundFeeRate)
 

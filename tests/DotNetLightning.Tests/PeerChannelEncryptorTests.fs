@@ -29,7 +29,7 @@ let getOutBoundPeerForInitiatorTestVectors () =
 
 [<Tests>]
 let tests =
-    ftestList "PeerChannelEncryptorTests" [
+    testList "PeerChannelEncryptorTests" [
         testCase "noise initiator test vectors" <| fun _ ->
             let ourNodeId = Key(hex.DecodeData("1111111111111111111111111111111111111111111111111111111111111111"))
 
