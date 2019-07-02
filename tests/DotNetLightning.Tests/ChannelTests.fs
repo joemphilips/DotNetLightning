@@ -48,7 +48,7 @@ type DummyKeyRepository =
             member this.GetChannelId(): Utils.Primitives.ChannelId = 
                 uint256.Zero |> ChannelId
 
-            member this.GetChannelKeys(): ChannelKeys = 
+            member this.GetChannelKeys(_inbound): ChannelKeys = 
                 this.ChanKeys
 
             member this.GetDestinationScript(): Script = 
@@ -91,7 +91,7 @@ let tests =
             let l = UserConfig.ChannelOptions_ >-> ChannelConfig.AnnouncedChannel_
             let config = Optic.set l false UserConfig.Zero
             let channelR =
-                Channel.newOutBound(feeest, keysProvider, theirNodeId, Money.Satoshis(100000L), LNMoney.MilliSatoshis(100000L), UserId(42UL), logger, config)
+                Channel.newOutBound(feeest, keysProvider, theirNodeId, Money.Satoshis(10000000L), LNMoney.MilliSatoshis(100000L), UserId(42UL), logger, config)
                 |>> fun c -> { c with TheirToSelfDelay = (BlockHeightOffset 144us) }
                 |>> fun c -> { c with OurDustLimit = Money.Satoshis(546L) }
                 |>> fun c ->
@@ -144,7 +144,7 @@ let tests =
                 let redeem = chan |> Channel.getFundingRedeemScript
                 let theirPk = chan.TheirFundingPubKey.Value
                 let b =
-                    let coin  = ScriptCoin(coin = Coin(fromOutpoint = tx.Inputs.[0].PrevOut, fromTxOut = TxOut(chan.ChannelValueSatoshis, redeem.WitHash.ScriptPubKey)), redeem=redeem)
+                    let coin  = ScriptCoin(coin = Coin(fromOutpoint = tx.Inputs.[0].PrevOut, fromTxOut = TxOut(chan.ChannelValue, redeem.WitHash.ScriptPubKey)), redeem=redeem)
                     n.CreateTransactionBuilder().AddCoins(coin :> ICoin).AddKnownSignature(theirPk, theirSig, tx.Inputs.[0].PrevOut)
                 Expect.isEmpty (b.Check(fst unsignedTx)) "their signature is invalid"
 
@@ -164,7 +164,7 @@ let tests =
 
                 // check their sig 
                 let theirPk = chan.TheirFundingPubKey.Value
-                let coin = ScriptCoin(Coin(tx.Inputs.[0].PrevOut, TxOut(chan.ChannelValueSatoshis, htlcRedeemScript.WitHash.ScriptPubKey)), htlcRedeemScript)
+                let coin = ScriptCoin(Coin(tx.Inputs.[0].PrevOut, TxOut(chan.ChannelValue, htlcRedeemScript.WitHash.ScriptPubKey)), htlcRedeemScript)
                 let b = n.CreateTransactionBuilder().AddCoins(coin).AddKnownSignature(theirPk, remoteSig, (fst unsignedTx).Inputs.[0].PrevOut)
                 Expect.isEmpty (b.Check(fst unsignedTx)) "their signature is invalid"
                 let mutable preImage = None

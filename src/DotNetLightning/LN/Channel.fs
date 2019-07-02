@@ -235,7 +235,7 @@ type Channel = internal {
     ChannelId: ChannelId
     ChannelState: ChannelState
     ChannelOutbound: bool
-    ChannelValue: LNMoney
+    ChannelValue: Money
     LocalKeys: ChannelKeys
     ShutdownPubKey: PubKey
     CurrentLocalCommitmentTxNumber: uint64
@@ -338,6 +338,9 @@ module Channel =
     let private RREx(ex: ChannelError) =
         RResult.rexn(ChannelException(ex))
 
+    let private RRApiE(err: APIError) =
+        RResult.rbad(RBad.Object(err))
+
     let getOurMaxHTLCValueInFlight (channelValue: Money) =
         channelValue * 1000L / 10L
 
@@ -372,7 +375,7 @@ module Channel =
             ChannelId = keysProvider.GetChannelId()
             ChannelState = ChannelState.OurInitSent
             ChannelOutbound = true
-            ChannelValueSatoshis = channelValue
+            ChannelValue = channelValue
             LocalKeys = channKeys
             ShutdownPubKey = keysProvider.GetShutdownPubKey()
             CurrentLocalCommitmentTxNumber = INITIAL_COMMITMENT_NUMBER
@@ -440,27 +443,30 @@ module Channel =
         /// ------ Validators -----
         let checkSmallerThenMaxPossible(channelValue) =
             if (channelValue >= MAX_FUNDING_SATOSHIS) then
-                RResult.rmsg("Funding value. 2^24")
+                RRApiE(APIMisuseError "Funding value. 2^24")
             else
                 Good(channelValue)
 
-        let checkPushValueLessThanChannelValue (pushMSat: LNMoney) (channelValue: LNMoney) =
-            if pushMSat >= (channelValue) then
-                RResult.rmsg("push value > channel value")
+        let checkPushValueLessThanChannelValue (pushMSat: LNMoney) (channelValue: Money) =
+            if pushMSat.Satoshi >= (channelValue.Satoshi) then
+                RRApiE(APIMisuseError("push value > channel value"))
             else
                 Good(pushMSat)
 
         let checkBackgroundFeeRate (estimator: IFeeEstimator) (channelValue) =
             let backgroundFeeRate = estimator.GetEstSatPer1000Weight(ConfirmationTarget.Background)
-            if (getOurChannelReserve(channelValue).Satoshi < deriveOurDustLimitSatoshis(backgroundFeeRate).Satoshi * 1000L) then
-                RResult.Bad(!> (sprintf "Not enough reserve above dust limit can be found at current fee rate(%O)" backgroundFeeRate))
+            let cR = getOurChannelReserve(channelValue)
+            let dustLimit = deriveOurDustLimitSatoshis(backgroundFeeRate)
+            printfn "Comparing channelReserve %A vs dustLimit %A" cR dustLimit
+            if (cR < dustLimit) then
+                RRApiE(FeeRateTooHigh({ Msg = (sprintf "Not enough reserve above dust limit can be found at current fee rate(%O)" backgroundFeeRate); FeeRate = backgroundFeeRate }))
             else
                 Good(backgroundFeeRate)
 
         let feeRate =
             feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Normal)
 
-        let channelKeys = keyProvider.GetChannelKeys()
+        let channelKeys = keyProvider.GetChannelKeys(false)
         let channelMonitor = ChannelMonitor.create(channelKeys.RevocationBaseKey,
                                                    channelKeys.DelayedPaymentBaseKey,
                                                    channelKeys.HTLCBaseKey,
@@ -504,7 +510,7 @@ module Channel =
                           userId: UserId,
                           logger: ILogger,
                           config: UserConfig) =
-        let chanKeys = keysProvider.GetChannelKeys()
+        let chanKeys = keysProvider.GetChannelKeys(true)
         let localConfig = config.ChannelOptions
 
         let checkMsg1 msg =
@@ -636,7 +642,7 @@ module Channel =
                 FundingTxConfirmations = 0UL
 
                 FeeRatePerKw = msg.FeeRatePerKw
-                ChannelValueSatoshis = msg.FundingSatoshis
+                ChannelValue = msg.FundingSatoshis
                 TheirDustLimit = msg.DustLimitSatoshis
                 OurDustLimit = ourDustLimitSatoshis
                 TheirMaxHTLCValueInFlight = LNMoney(Math.Min(msg.MaxHTLCValueInFlightMsat.MilliSatoshi, msg.FundingSatoshis.Satoshi))
@@ -787,7 +793,7 @@ module Channel =
         let valueToSelfMSat = c.ValueToSelf - localHTLCTotalMSat + valueToSelfMSatOffset
         assert (valueToSelfMSat >= LNMoney.Zero)
 
-        let valueToRemoteMSat = LNMoney(c.ChannelValueSatoshis.Satoshi * 1000L - c.ValueToSelf.MilliSatoshi -
+        let valueToRemoteMSat = LNMoney(c.ChannelValue.Satoshi * 1000L - c.ValueToSelf.MilliSatoshi -
                                            remoteHTLCTotalMSat.MilliSatoshi - valueToSelfMSatOffset.MilliSatoshi)
         
         let totalFee = int64((uint64 feeRatePerKW.Value) * ((COMMITMENT_TX_BASE_WEIGHT + (uint64 txOuts.Length) * COMMITMENT_TX_WEIGHT_PER_HTLC) / 1000UL))
@@ -815,7 +821,7 @@ module Channel =
 
         let mutable totalFeeSatoshis = propsedTotalFeeSatoshis
         let valueToSelf = Money.Satoshis(c.ValueToSelf.MilliSatoshi / 1000L) - if c.ChannelOutbound then totalFeeSatoshis else Money.Zero
-        let valueToRemote = Money.Satoshis((c.ChannelValueSatoshis.Satoshi * 1000L - c.ValueToSelf.MilliSatoshi) / 1000L) -
+        let valueToRemote = Money.Satoshis((c.ChannelValue.Satoshi * 1000L - c.ValueToSelf.MilliSatoshi) / 1000L) -
                             if c.ChannelOutbound then Money.Zero else totalFeeSatoshis
         if valueToSelf < Money.Zero then
             assert (c.ChannelOutbound)
@@ -893,7 +899,7 @@ module Channel =
         else
             let fundingRedeemScript = getFundingRedeemScript c
             let coin = ScriptCoin(tx.Inputs.[0].PrevOut,
-                                  TxOut(c.ChannelValueSatoshis, fundingRedeemScript.WitHash.ScriptPubKey),
+                                  TxOut(c.ChannelValue, fundingRedeemScript.WitHash.ScriptPubKey),
                                   fundingRedeemScript)
             let b = n.CreateTransactionBuilder()
             b.UseLowR <- forceLowR

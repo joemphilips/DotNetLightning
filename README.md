@@ -6,4 +6,5 @@
 
 ## TODO
 
-* Refactor PeerChannelEncryptor with custom state monad
+* Refactor PeerChannelEncryptor to optimize performance (Probably by using byref-like-type and mutable state)
+* Update `Channel.deriveOurDustLimitSatoshis`

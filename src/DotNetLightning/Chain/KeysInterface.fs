@@ -61,7 +61,7 @@ type IKeysRepository =
     abstract member GetShutdownPubKey: unit -> PubKey
     /// Get a new set of ChannelKeys for per-channel secrets. These MUST be unique even if you
     /// restarted with some stale data.
-    abstract member GetChannelKeys: unit -> ChannelKeys
+    abstract member GetChannelKeys: inbound:bool -> ChannelKeys
     /// Get a secret for constructing onion packet
     abstract member GetSessionKey: unit -> Key
     /// Get a unique temporary channel id. Channel will be refered to by this until the funding TX is
@@ -88,7 +88,7 @@ type DefaultKeyRepository(seed: uint256, network: Network, logger: ILogger) =
             this.ChannelIdChildIndex <- this.ChannelIdChildIndex + 1u
             ChannelId (uint256(Hashes.SHA256(childPrivKey.ToBytes())))
         // TODO: Update
-        member this.GetChannelKeys(): ChannelKeys = 
+        member this.GetChannelKeys(_inbound): ChannelKeys = 
             let seed = uint256(RandomUtils.GetBytes(32))
             {
                 FundingKey = Key ()

@@ -1,6 +1,27 @@
 ﻿namespace DotNetLightning.Utils
 open System
 
+/// Indicates an error on the client's part ( usually some variant of attempting to use too-low or
+/// too high values)
+type APIError =
+    /// Indicates the API was wholly misused (see err for more). Cases where these can be returned
+    /// are documented, but generally indicates some precondition of a function was violated.
+    | APIMisuseError of string
+
+    /// Due to a high feerate, we were unable to complete the request.
+    /// For example, this may be returned if the feerate implies we cannot open a channel at the
+    /// requested value, but opening a larget channel would succeed.
+
+    | FeeRateTooHigh of FeeRateTooHighContent
+    /// a malformed Route was provided ( e.g. overfloed value, node id mismatch, overly-loope route,
+    /// too-many-hops, etc).
+    | RouteError of string
+    /// An attempt to call add_update_monitor returned Err ( ie you did this!), causing the
+    /// attempted action to fail.
+    | MonitorUpdateFailed
+and FeeRateTooHighContent =  {Msg: string; FeeRate: FeeRatePerKw}
+
+    
 
 module Error =
     [<Literal>]

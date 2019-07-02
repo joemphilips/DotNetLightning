@@ -70,6 +70,12 @@ module Primitives =
         static member Zero = HTLCId(0UL)
         member x.Value = let (HTLCId v) = x in v
 
+    [<Measure>]
+    type satoshi
+
+    [<Measure>]
+    type millisatoshi
+
     [<Struct>]
     type ShortChannelId = {
         BlockHeight: uint32
