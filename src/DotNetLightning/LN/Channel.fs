@@ -288,6 +288,7 @@ type Channel = internal {
     TheirShutdownScriptPubKey: PubKey option
     ChannelMonitor: ChannelMonitor
     Logger: ILogger
+    Network: Network
 }
     with
 
@@ -360,6 +361,7 @@ module Channel =
 
     let private getChannel (userId: UserId)
                            (config: UserConfig)
+                           (network: Network)
                            (channKeys)
                            (theirNodeId)
                            (keysProvider: IKeysRepository)
@@ -428,12 +430,14 @@ module Channel =
             TheirShutdownScriptPubKey = None
             ChannelMonitor = channelMonitor
             Logger = logger
+            Network = network
         }
 
     // ----- constructors -------
     let public newOutBound(feeEstimator: IFeeEstimator,
                            keyProvider: IKeysRepository,
                            NodeId theirNodeId,
+                           network: Network,
                            channelValue: Money,
                            pushMSat: LNMoney,
                            userId: UserId,
@@ -457,7 +461,6 @@ module Channel =
             let backgroundFeeRate = estimator.GetEstSatPer1000Weight(ConfirmationTarget.Background)
             let cR = getOurChannelReserve(channelValue)
             let dustLimit = deriveOurDustLimitSatoshis(backgroundFeeRate)
-            printfn "Comparing channelReserve %A vs dustLimit %A" cR dustLimit
             if (cR < dustLimit) then
                 RRApiE(FeeRateTooHigh({ Msg = (sprintf "Not enough reserve above dust limit can be found at current fee rate(%O)" backgroundFeeRate); FeeRate = backgroundFeeRate }))
             else
@@ -478,6 +481,7 @@ module Channel =
 
         let getChannelCurried = getChannel (userId)
                                            (config)
+                                           (network)
                                            (channelKeys)
                                            (theirNodeId)
                                            (keyProvider)
@@ -599,6 +603,7 @@ module Channel =
 
         let getChannel (userId)
                        (localConfig)
+                       (network: Network)
                        (channelValue: Money)
                        (pushMSat)
                        (ourDustLimitSatoshis)
@@ -664,6 +669,7 @@ module Channel =
 
                 ChannelMonitor = channelMonitor
                 Logger = logger
+                Network = network
             }
 
         checkMsg1 msg
@@ -704,7 +710,7 @@ module Channel =
         | Inbound h ->
             failwith "not impl"
 
-    /// Transaction nomencclature is somewhat confusing here as there are many different cases - a
+    /// Transaction nomenclature is somewhat confusing here as there are many different cases - a
     /// transaction is referred to as "a's transaction" implying that a will be able to broadcast the
     /// transaction. Thus, b will generally be spending a signature over such a trasnaction to a,
     /// and a can revoke the transaction by providing b the relevant per_commtment_secret. As
@@ -734,9 +740,11 @@ module Channel =
                                    (feeRatePerKW: FeeRatePerKw)
                                    (c: Channel): (Transaction * uint32 * (HTLCOutputInCommitment * HTLCSource option) list) =
         let obscuredCommitmentTxN = getCommitmentTxNumberObscureFactor(c) ^^^ (INITIAL_COMMITMENT_NUMBER - commitmentN)
-        let txin = TxIn()
-        txin.PrevOut <- c.ChannelMonitor.GetFundingTxo().Value
-        txin.Sequence <- Sequence(((0x80u <<< 8 * 3) ||| ((uint32 obscuredCommitmentTxN) >>> 3 * 8)))
+        let txins =
+            let txin = TxIn()
+            txin.PrevOut <- c.ChannelMonitor.GetFundingTxo().Value
+            txin.Sequence <- Sequence(((0x80u <<< 8 * 3) ||| ((uint32 obscuredCommitmentTxN) >>> 3 * 8)))
+            [txin]
         let mutable txOuts: (TxOut * (HTLCOutputInCommitment * HTLCSource option) option) list = List.empty
         let mutable includedDustHTLCs: (HTLCOutputInCommitment * HTLCSource option) list = List.empty
         let dustLimitSatoshis = if local then c.OurDustLimit else c.TheirDustLimit
@@ -802,9 +810,41 @@ module Channel =
                 (valueToSelfMSat.MilliSatoshi / 1000L - totalFee), (valueToRemoteMSat.MilliSatoshi / 1000L)
             else
                 (valueToSelfMSat.MilliSatoshi / 1000L), (valueToRemoteMSat.MilliSatoshi / 1000L - totalFee)
-        let valueToASat = if local then valueToSelfSat else valueToRemoteSat
-        let valueToBSat = if local then valueToRemoteSat else valueToSelfSat
-        failwith "Not implemented"
+        let valueToASat = (if local then valueToSelfSat else valueToRemoteSat) |> Money.Satoshis
+        let valueToBSat = (if local then valueToRemoteSat else valueToSelfSat) |> Money.Satoshis
+
+        if valueToASat >= dustLimitSatoshis then
+            txOuts <-
+                let redeem = ChannelUtils.getRevokableRedeemScript(keys.RevocationKey)
+                                                                   (if (local) then c.TheirToSelfDelay else BREAKDOWN_TIMEOUT)
+                                                                   (keys.ADelayedPaymentKey)
+                let txOut = TxOut(valueToASat, redeem.WitHash.ScriptPubKey)
+                txOuts @ [txOut, None]
+        if (valueToBSat >= dustLimitSatoshis) then
+            txOuts <-
+                let spk = keys.BPaymentKey.WitHash.ScriptPubKey
+                let txOut = TxOut(valueToBSat, spk)
+                txOuts @ [txOut, None]
+
+        let htlcsInclued = txOuts
+                           |> List.mapi(fun idx o ->
+                            let metadata = snd o
+                            if metadata.IsNone then
+                                None
+                            else
+                                let (htlc, sourceOption) = metadata.Value
+                                Some ({ htlc with TransactionOutputIndex = Some (uint32 idx) }, sourceOption)
+                            )
+                           |> List.choose id
+        let nonDustHTLCCount = htlcsInclued.Length |> uint32
+        let resultTx =
+            let tx = c.Network.CreateTransaction()
+            tx.Version <- 2u
+            tx.LockTime <- !> ((0x20u <<< 8*3) ||| (uint32 (obscuredCommitmentTxN &&& 0xffffffUL)))
+            tx.Inputs.AddRange(txins)
+            tx.Outputs.AddRange( txOuts |> Seq.map fst )
+            tx
+        resultTx, nonDustHTLCCount, htlcsInclued
 
     let getClosingScriptPubKey (c: Channel): Script =
         c.ShutdownPubKey.Hash.ScriptPubKey

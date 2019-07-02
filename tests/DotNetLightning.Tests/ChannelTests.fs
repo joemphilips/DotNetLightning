@@ -10,15 +10,13 @@ open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Utils.Aether.Operators
 open DotNetLightning.Utils.Aether
 open DotNetLightning.Tests.Utils
-open DotNetLightning.LN
-open NBitcoin
 open NBitcoin.Crypto
-open NBitcoin
-open System.Security.Cryptography
-open DotNetLightning.LN
-open DotNetLightning.LN
+open Expecto.Logging
+open Expecto.Logging.Message
 
 let hex = NBitcoin.DataEncoders.HexEncoder()
+let logger = Log.create "Channel tests"
+let log = eventX >> logger.info 
 
 type DummyFeeEstimator =
     {
@@ -71,7 +69,7 @@ let tests =
         testCase "test_max_funding_satoshis" <| fun _ ->
             Expect.isLessThan MAX_FUNDING_SATOSHIS (Money.Satoshis(21_000_000L * 100_000_000L)) "MAX_FUNDING_SATOSHIS is greater than all satoshis in existance"
 
-        /// Test vectors from BOLt3 Appendix C:
+        /// Test vectors from BOLT3 Appendix C:
         testCase "Outbound commitment test" <| fun _ ->
             let feeest = { DummyFeeEstimator.FeeEst = FeeRatePerKw 15000u }
             let logger = TestLogger.Zero
@@ -91,7 +89,7 @@ let tests =
             let l = UserConfig.ChannelOptions_ >-> ChannelConfig.AnnouncedChannel_
             let config = Optic.set l false UserConfig.Zero
             let channelR =
-                Channel.newOutBound(feeest, keysProvider, theirNodeId, Money.Satoshis(10000000L), LNMoney.MilliSatoshis(100000L), UserId(42UL), logger, config)
+                Channel.newOutBound(feeest, keysProvider, theirNodeId, (n), Money.Satoshis(10000000L), LNMoney.MilliSatoshis(100000L), UserId(42UL), logger, config)
                 |>> fun c -> { c with TheirToSelfDelay = (BlockHeightOffset 144us) }
                 |>> fun c -> { c with OurDustLimit = Money.Satoshis(546L) }
                 |>> fun c ->
@@ -131,9 +129,13 @@ let tests =
                                       baseChannel.TheirRevocationBasePoint.Value,
                                       baseChannel.TheirPaymentBasePoint.Value,
                                       baseChannel.TheirHTLCBasePoint.Value)
-            let getUnsignedTx chan =
+            let getUnsignedTx (chan: Channel) =
+                log (sprintf "Going to run build_commitment_tx with keys: %A \n feeRateperKw: %A" keys (chan.FeeRatePerKw))
                 let res = chan |> Channel.buildCommitmentTransaction (0xffffffffffffUL - 42UL) keys true false chan.FeeRatePerKw
+                log (sprintf "Ressult for build commitmnt transaction is %A" res)
                 let tx, _ , is = res
+                log (sprintf "And unsigned tx is %A" tx)
+                log (sprintf "input witscript is is  %O" (tx.Inputs.[0].WitScript))
                 let htlcs = is |> List.choose(fun (htlc, _) -> if htlc.TransactionOutputIndex.IsSome then Some htlc else None )
                 (tx, htlcs)
 
@@ -146,7 +148,10 @@ let tests =
                 let b =
                     let coin  = ScriptCoin(coin = Coin(fromOutpoint = tx.Inputs.[0].PrevOut, fromTxOut = TxOut(chan.ChannelValue, redeem.WitHash.ScriptPubKey)), redeem=redeem)
                     n.CreateTransactionBuilder().AddCoins(coin :> ICoin).AddKnownSignature(theirPk, theirSig, tx.Inputs.[0].PrevOut)
-                Expect.isEmpty (b.Check(fst unsignedTx)) "their signature is invalid"
+                
+                let _ =
+                    let p = b.Check(fst unsignedTx)
+                    Expect.isEmpty (p) (sprintf "their signature is invalid, Err message: %A" (p))
 
                 let signedTxRR = chan |> Channel.signCommitmentTransaction (tx, theirSig, n, Some true)
                 let signedTxR = RResult.rtoResult signedTxRR

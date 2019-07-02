@@ -15,8 +15,8 @@
     <Compile Include="Generators/Generators.fs" />
     <Compile Include="Serialization.fs" />
     <Compile Include="SerializationPropertyTests.fs" />
-    <Compile Include="PeerChannelEncryptorTests.fs" />
     <Compile Include="FunctionalTests.fs" />
+    <Compile Include="PeerChannelEncryptorTests.fs" />
     <Compile Include="ChannelTests.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
