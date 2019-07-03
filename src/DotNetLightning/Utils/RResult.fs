@@ -213,7 +213,6 @@ module RResult =
 
     let rresult = RResultBuilder ()
 
-
 type RResult<'T> with
     static member inline (>>=)  (x, uf) = RResult.rbind    uf x
     static member inline (<*>)  (x, t)  = RResult.rapply    t x

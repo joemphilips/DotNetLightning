@@ -1,8 +1,8 @@
-namespace DotNetLightning
+namespace DotNetLightning.Chain
 open Microsoft.Extensions.Logging
 open NBitcoin
 open NBitcoin.Crypto
-open Utils.Primitives
+open DotNetLightning.Utils.Primitives
 
 /// OutPoint
 type StaticOutput = {

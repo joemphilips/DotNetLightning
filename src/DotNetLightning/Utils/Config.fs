@@ -29,7 +29,7 @@ type ChannelHandshakeLimits = {
     /// The remote node sets a limit on the maximum number of pending HTLCs to them at any given
     /// time. This allows you to set a minimum such value.
     MinMaxAcceptedHTLCs: uint16
-    /// HTLCs below tthis amount plus HTLC transaction fees are not enforceable on-chain.
+    /// HTLCs below this amount plus HTLC transaction fees are not enforceable on-chain.
     /// This settings allows you to set a minimum dust limit for their commitment TXs,
     /// Defaults to 546 , or the current dust limit on the Bitcoin network.
     MinDustLimitSatoshis: Money
@@ -48,11 +48,14 @@ type ChannelHandshakeLimits = {
     /// Defaults to true to make the default that no announced channels are possible (which is
     /// appropriate for any nodes which are not online very reliably)
     ForceAnnouncedChannelPreference: bool
+
+    /// We don't exchange more than this many signatures when negotiating the closing fee
+    MaxNegotiationIterations: int32
 }
     with
         static member Zero =
             {
-                MinFundingSatoshis = Money.Zero
+                MinFundingSatoshis = Money.Satoshis(1000m)
                 MaxHTLCMinimumMSat = LNMoney.Coins(21_000_000m)
                 MinMaxHTLCValueInFlightMSat = LNMoney.Zero
                 MaxChannelReserveSatoshis = Money.Zero
@@ -61,6 +64,7 @@ type ChannelHandshakeLimits = {
                 MaxDustLimitSatoshis = Money.Coins(21_000_000m)
                 MaxMinimumDepth = 144u
                 ForceAnnouncedChannelPreference = true
+                MaxNegotiationIterations = 20
             }
 
 

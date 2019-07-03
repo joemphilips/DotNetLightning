@@ -69,6 +69,14 @@ module Async =
 
         member x.Bind(t: Task, f: unit -> Async<'R>): Async<'R> =
             async.Bind(Async.AwaitTask t, f)
+module Set = 
+    let first (predicate: 'a -> bool) (items: Set<'a>) =
+        let res = items |> Set.filter predicate
+        if (Seq.isEmpty res) then
+            None
+        else
+            Some(res |> Set.toList |> fun x -> x.[0])
+
 
 module List =
     /// Map a Async producing function over a list to get a new Async using
@@ -84,3 +92,12 @@ module List =
     /// Transform a "list<Async>" into a "Async<list>" and collect the results
     /// using apply.
     let sequenceAsyncA x = traverseAsyncA id x
+
+    let rec traverseRResult f list =
+        let cons head tail = head :: tail
+        let initState = RResult.Good []
+        let folder h t =
+            RResult.Good cons <*> (f h) <*> t
+        List.foldBack folder list initState
+
+    let sequenceRResult x = traverseRResult id x

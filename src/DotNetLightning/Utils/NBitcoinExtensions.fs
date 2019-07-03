@@ -12,6 +12,9 @@ module NBitcoinExtensions =
     type NBitcoin.Transaction with
         member this.GetTxId() = TxId (this.GetHash())
 
+    type Money with
+        member this.ToLNMoney() = LNMoney.Satoshis(this.Satoshi)
+
     type ECDSASignature with
 
         /// ** Description **

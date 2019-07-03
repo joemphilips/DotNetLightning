@@ -10,6 +10,7 @@ open DotNetLightning.Chain
 open DotNetLightning.Utils.RResult
 open DotNetLightning.Utils.Aether
 open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Transactions
 open DotNetLightning.Utils.NBitcoinExtensions
 open NBitcoin.Crypto
 
@@ -204,15 +205,24 @@ module ChannelConstants =
     let OUR_MAX_HTLCs = 50us
 
     [<Literal>]
+    /// see refs: https://github.com/lightningnetwork/lightning-rfc/blob/master/07-routing-gossip.md#requirements
     let UNCONF_THRESHOLD = 6u
 
-    let BREAKDOWN_TIMEOUT = BlockHeightOffset(6us * 24us * 7us)
-    let MAX_LOCAL_BREAKDOWN_TIMEOUT = BlockHeightOffset(6us * 24us * 14us)
+    /// The amount of time we require our counterparty wait to claim their money (i.e. time between when
+    /// we, or our watchtower, mush check for them having a broadcast a theft transaction).
+    let BREAKDOWN_TIMEOUT = BlockHeightOffset(6us * 24us * 7us) // one week
+    let MAX_LOCAL_BREAKDOWN_TIMEOUT = BlockHeightOffset(6us * 24us * 14us) // two weeks
+
+    /// Specified in BOLT 11
+    let MIN_CLTV_EXPIRY = 9us |> BlockHeightOffset
+
+    let MAX_CLTV_EXPIRY = BREAKDOWN_TIMEOUT
 
     [<Literal>]
     let COMMITMENT_TX_BASE_WEIGHT = 724UL
     [<Literal>]
     let COMMITMENT_TX_WEIGHT_PER_HTLC = 172UL
+
 
     // prevout: 36, nSequence: 4, script len: 1, witness lengths: (3+1)/4, sig: 73/4, if-selector: 1, redeemScript: (6 ops + 2*33 pubkeys + 1*2 delay)/4
     [<Literal>]
@@ -221,8 +231,9 @@ module ChannelConstants =
     [<Literal>]
     let B_OUTPUT_PLUS_SPENDING_INPUT_WEIGHT = 104UL
 
-    // Specified in BOLT #2
+    /// Specified in BOLT #2
     let MAX_FUNDING_SATOSHIS = Money.Satoshis(16777216m) // (1 << 24)
+
 
     [<Literal>]
     let ACCEPTED_HTLC_SCRIPT_WEIGHT = 139uy
@@ -679,19 +690,6 @@ module Channel =
         let res = ChannelUtils.buildCommitmentSecret(c.LocalKeys.CommitmentSeed, index)
         Key(res.ToBytes())
 
-    let getCommitmentTxNumberObscureFactor(c: Channel) =
-        let ourPaymentBasepoint = c.LocalKeys.PaymentBaseKey.PubKey
-        let mutable res: byte[] = null
-        if (c.ChannelOutbound) then
-            res <- Hashes.SHA256(Array.concat[| ourPaymentBasepoint.ToBytes(); c.TheirPaymentBasePoint.Value.ToBytes() |])
-        else
-            res <- Hashes.SHA256(Array.concat[| c.TheirPaymentBasePoint.Value.ToBytes(); ourPaymentBasepoint.ToBytes() |])
-        (uint64 (res.[26]) <<< 5*8 |||
-         uint64 (res.[27]) <<< 4*8 |||
-         uint64 (res.[28]) <<< 3*8 |||
-         uint64 (res.[29]) <<< 2*8 |||
-         uint64 (res.[30]) <<< 1*8 |||
-         uint64 (res.[31]) <<< 0*8)
 
     let private getHTLCInCommitment h o =
         {
@@ -735,11 +733,28 @@ module Channel =
 
     let buildCommitmentTransaction (commitmentN: uint64)
                                    (keys: TxCreationKeys)
-                                   (local: bool)
+                                   (localIsFunder: bool)
                                    (generatedByLocal: bool)
                                    (feeRatePerKW: FeeRatePerKw)
-                                   (c: Channel): (Transaction * uint32 * (HTLCOutputInCommitment * HTLCSource option) list) =
-        let obscuredCommitmentTxN = getCommitmentTxNumberObscureFactor(c) ^^^ (INITIAL_COMMITMENT_NUMBER - commitmentN)
+                                   (c: Channel) = //(Transaction * uint32 * (HTLCOutputInCommitment * HTLCSource option) list) =
+        let fundingTxCoin = c.ChannelMonitor.GetFundingCoin().Value
+        Transactions.makeCommitTx
+            fundingTxCoin
+            commitmentN
+            (c.LocalKeys.PaymentBaseKey.PubKey)
+            (c.TheirPaymentBasePoint.Value)
+            (localIsFunder)
+            (c.OurDustLimit)
+            (c.LocalKeys.RevocationBaseKey.PubKey)
+            (c.TheirToSelfDelay)
+            (c.TheirDelayedPaymentBasePoint.Value)
+            (c.TheirPaymentBasePoint.Value)
+            (c.LocalKeys.HTLCBaseKey.PubKey)
+            (c.TheirHTLCBasePoint.Value)
+        (*
+        let obscuredCommitmentTxN =
+            let factor = (Transactions.getCommitmentTxNumberObscureFactor(c.ChannelOutbound) (c.LocalKeys.PaymentBaseKey.PubKey) (c.TheirPaymentBasePoint.Value))
+            factor ^^^ (INITIAL_COMMITMENT_NUMBER - commitmentN)
         let txins =
             let txin = TxIn()
             txin.PrevOut <- c.ChannelMonitor.GetFundingTxo().Value
@@ -845,6 +860,7 @@ module Channel =
             tx.Outputs.AddRange( txOuts |> Seq.map fst )
             tx
         resultTx, nonDustHTLCCount, htlcsInclued
+        *)
 
     let getClosingScriptPubKey (c: Channel): Script =
         c.ShutdownPubKey.Hash.ScriptPubKey
