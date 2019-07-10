@@ -3,6 +3,7 @@ open NBitcoin
 open NBitcoin.Crypto
 open DotNetLightning.Utils
 
+
 module Scripts =
     let multiSig (sort) (pks) =
         PayToMultiSigTemplate.Instance.GenerateScriptPubKey(2, sort, pks)

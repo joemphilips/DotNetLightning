@@ -26,8 +26,8 @@ type Changes =
     | Remote of RemoteChanges
 
 type PublishableTxs = {
-    CommitTx: CommitTx
-    HTLCTxsAndSigs: ILightningTx
+    CommitTx: FinalizedTx
+    HTLCTxs: FinalizedTx list
 }
 
 type LocalCommit = {
@@ -36,9 +36,9 @@ type LocalCommit = {
     PublishableTxs: PublishableTxs
 }
 type RemoteCommit = {
-    Index: uint32
+    Index: TxOutIndex
     Spec: CommitmentSpec
-    TxId: TxId
+    Tx: CommitTx
     RemotePerCommitmentPoint: PubKey
 }
 
@@ -52,7 +52,7 @@ type WaitingForRevocation = {
 type Commitments = {
     LocalParams: LocalParams
     RemoteParams: RemoteParams
-    ChannelFlags: byte
+    ChannelFlags: LocalFeatures
     LocalCommit: LocalCommit
     RemoteCommit: RemoteCommit
     LocalChanges: LocalChanges
@@ -61,7 +61,6 @@ type Commitments = {
     RemoteNextHTLCId: uint64
     OriginChannels: Map<uint64, HTLCSource>
     RemoteNextCommitInfo: Choice<WaitingForRevocation, PubKey>
-    CommitInput: InputInfo
     RemotePerCommitmentSecrets: ShaChain
     ChannelId: ChannelId
 }

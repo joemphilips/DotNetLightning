@@ -6,6 +6,30 @@ open System.Threading.Tasks
 module Utils =
     let inline (!>) (x:^a) : ^b = ((^a or ^b) : (static member op_Implicit : ^a -> ^b )x )
 
+    let inline curry2 f a b = f (a, b)
+    let inline uncurry2 f t = let (a, b) = t in  f a b
+
+    let inline curry3 f a b c = f (a, b, c)
+    let inline uncurry3 f t = let (a, b, c) = t in  f a b c
+
+    let inline curry4 f a b c d = f (a, b, c, d)
+    let inline uncurry4 f t = let (a, b, c, d) = t in  f a b c d
+
+    let inline curry5 f a b c d e = f (a, b, c, d, e)
+    let inline uncurry5 f t = let (a, b, c, d, e) = t in  f a b c d e
+
+    let inline curry6 f a b c d e g = f (a, b, c, d, e, g)
+    let inline uncurry6 f t = let (a, b, c, d, e, g) = t in  f a b c d e g
+
+    let inline curry7 f a b c d e g h = f (a, b, c, d, e, g, h)
+    let inline uncurry7 f t = let (a, b, c, d, e, g, h) = t in  f a b c d e g h
+
+    let inline curry8 f a b c d e g h i = f (a, b, c, d, e, g, h, i)
+    let inline uncurry8 f t = let (a, b, c, d, e, g, h, i) = t in  f a b c d e g h i
+
+    let inline curry9 f a b c d e g h i j = f (a, b, c, d, e, g, h, i, j)
+    let inline uncurry9 f t = let (a, b, c, d, e, g, h, i, j) = t in  f a b c d e g h i j
+
 module Async =
     let result = async.Return
 

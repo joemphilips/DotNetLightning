@@ -1,5 +1,6 @@
 namespace DotNetLightning.LN
 open DotNetLightning.Utils
+open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Utils.Error
 open DotNetLightning.Chain
 open DotNetLightning.DomainUtils.Types
@@ -35,6 +36,7 @@ type RemoteParams = {
     HTLCMinimumMSat: LNMoney
     ToSelfDelay: BlockHeightOffset
     MaxAcceptedHTLCs: uint16
+    PaymentBasePoint: PubKey
     FundingPubKey: PubKey
     RevocationBasePoint: PubKey
     DelayedPaymentBasePoint: PubKey
@@ -42,6 +44,42 @@ type RemoteParams = {
     GlobalFeatures: GlobalFeatures
     LocalFeatures: LocalFeatures
 }
+    with
+        static member FromAcceptChannel nodeId (remoteInit: Init) (msg: AcceptChannel) =
+            {
+                NodeId = nodeId
+                DustLimitSatoshis = msg.DustLimitSatoshis
+                MaxHTLCValueInFlightMSat = msg.MaxHTLCValueInFlightMsat
+                ChannelReserveSatoshis = msg.ChannelReserveSatoshis
+                HTLCMinimumMSat = msg.HTLCMinimumMSat
+                ToSelfDelay = msg.ToSelfDelay
+                MaxAcceptedHTLCs = msg.MaxAcceptedHTLCs
+                PaymentBasePoint = msg.PaymentBasepoint
+                FundingPubKey = msg.FundingPubKey
+                RevocationBasePoint = msg.RevocationBasepoint
+                DelayedPaymentBasePoint = msg.DelayedPaymentBasepoint
+                HTLCBasePoint = msg.HTLCBasepoint
+                GlobalFeatures = remoteInit.GlobalFeatures
+                LocalFeatures = remoteInit.LocalFeatures
+            }
+
+        static member FromOpenChannel (nodeId) (remoteInit: Init) (msg: OpenChannel) =
+            {
+                NodeId = nodeId
+                DustLimitSatoshis = msg.DustLimitSatoshis
+                MaxHTLCValueInFlightMSat = msg.MaxHTLCValueInFlightMsat
+                ChannelReserveSatoshis = msg.ChannelReserveSatoshis
+                HTLCMinimumMSat = msg.HTLCMinimumMsat
+                ToSelfDelay = msg.ToSelfDelay
+                MaxAcceptedHTLCs = msg.MaxAcceptedHTLCs
+                PaymentBasePoint = msg.PaymentBasepoint
+                FundingPubKey = msg.FundingPubKey
+                RevocationBasePoint = msg.RevocationBasepoint
+                DelayedPaymentBasePoint = msg.DelayedPaymentBasepoint
+                HTLCBasePoint = msg.HTLCBasepoint
+                GlobalFeatures = remoteInit.GlobalFeatures
+                LocalFeatures = remoteInit.LocalFeatures
+            }
 type InputInitFunder = {
     TemporaryChannelId: ChannelId
     FundingSatoshis: Money
@@ -64,11 +102,18 @@ type InputInitFunder = {
                 RemoteInit = remoteInit
                 ChannelFlags = localParams.LocalFeatures
             }
+
+        member this.DeriveCommitmentSpec() =
+            CommitmentSpec.Create this.ToLocal this.PushMSat this.FundingTxFeeRatePerKw
+
+        member this.ToLocal =
+            this.FundingSatoshis.ToLNMoney() - this.PushMSat
+
 and InputInitFundee = {
     TemporaryChannelId: ChannelId
     LocalParams: LocalParams
-    Remote: MailboxProcessor<ILightningMsg>
     RemoteInit: Init
+    ToLocal: LNMoney
 }
 
 
@@ -81,6 +126,7 @@ and InputInitFundee = {
 //    888  .d88P d8888888888     888   d8888888888
 //    8888888P" d88P     888     888  d88P     888
 
+[<AutoOpen>]
 module Data =
     type ClosingTxProposed = {
         unsignedTx: Transaction 
@@ -163,11 +209,11 @@ module Data =
                                             ChannelId: ChannelId
                                             LocalParams: LocalParams
                                             RemoteParams: RemoteParams
-                                            FundingTx: Transaction
+                                            FundingTx: FinalizedTx
                                             LocalSpec: CommitmentSpec
                                             LocalCommitTx: CommitTx
                                             RemoteCommit: RemoteCommit
-                                            ChannelFlags: byte
+                                            ChannelFlags: LocalFeatures
                                             LastSent: FundingCreated
                                        }
         with interface IChannelStateData
@@ -231,9 +277,15 @@ module Events =
 
     type ChannelEvent =
         /// --- ln events ---
-        | WeAcceptedOpenChannel of AcceptChannel * Data.WaitForFundingCreatedData
+        | WeAcceptedOpenChannel of nextMsg: AcceptChannel * nextState: Data.WaitForFundingCreatedData
+        | WeAcceptedAcceptChannel of nextMsg: FundingCreated * nextState: Data.WaitForFundingSignedData
+        | WeAcceptedFundingSigned of txToPublish: FinalizedTx * nextState: Data.WaitForFundingConfirmedData
         | OpenChannelFromSelf of InputInitFunder
+        | WeAcceptedFundingLockedMsgWhenNotReady of msg: FundingLocked
         | Closed
+
+        | Disconnected
+
         /// Wen requesting a mutual close, we wait for as much as this timeout, then unilateral close
         | InputCloseCompleteTimeout
         | InputDisconnected
@@ -271,7 +323,6 @@ type ChannelState =
     | WaitForInitInternal
     | WaitForOpenChannel of WaitForOpenChannelData
     | WaitForAcceptChannel of WaitForAcceptChannelData
-    | WaitForFundingInternal of WaitForFundingInternalData
     | WaitForFundingCreated of WaitForFundingCreatedData
     | WaitForFundingSigned of WaitForFundingSignedData
     | WaitForFundingConfirmed of WaitForFundingConfirmedData
@@ -361,15 +412,26 @@ type ResGetInfo = {
 }
 
 type ChannelCommand =
-    | OpenChannel of OpenChannel
+    // open: funder
     | InputInitFunder of InputInitFunder
+    | ApplyAcceptChannel of AcceptChannel
+    | ApplyFundingSigned of FundingSigned
+    | ApplyFundingLocked of FundingLocked
+    | ApplyFundingConfirmedEvent of depth: BlockHeightOffset
+
+    // open: fundee
     | InputInitFundee of InputInitFundee
+    | ApplyOpenChannel of OpenChannel
+
+    // normal
     | AddHTLC of AddHTLC
     | FulfillHTLC of FulfillHTLC
     | FailHTLC of FailHTLC
     | FailMalformedHTLC of FailMalformedHTLC
     | UpdateFee of UpdateFee
     | Sign
+
+    // close
     | Close of Close
     | ForceClose
     | GetState

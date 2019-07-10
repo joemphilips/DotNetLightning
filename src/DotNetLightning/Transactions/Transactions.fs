@@ -34,6 +34,12 @@ type HTLCPenaltyTx = HTLCPenaltyTx of PSBT
 type ClosingTx = ClosingTx of PSBT
     with interface ILightningTx
 
+/// Tx already verified and it can be published anytime
+type FinalizedTx =
+    FinalizedTx of Transaction
+    with
+        member this.Value = let (FinalizedTx v) = this in v
+
 type InputInfo = {
     OutPoint: OutPoint
     RedeemScript: Script
@@ -154,7 +160,7 @@ module Transactions =
             |> List.filter(fun v -> v.Direction = In)
             |> List.filter(fun v -> (v.Add.AmountMSat.ToMoney()) >= (dustLimit + htlcSuccessFee))
 
-    let private commitTxFee (dustLimit: Money) (spec: CommitmentSpec): Money =
+    let internal commitTxFee (dustLimit: Money) (spec: CommitmentSpec): Money =
         let trimmedOfferedHTLCs = trimOfferedHTLCs (dustLimit) (spec)
         let trimmedReceivedHTLCs = trimReceivedHTLCs dustLimit spec
         let weight = COMMIT_WEIGHT + 172UL * (uint64 trimmedOfferedHTLCs.Length + uint64 trimmedReceivedHTLCs.Length)
@@ -260,8 +266,41 @@ module Transactions =
             p.AddCoins(inputInfo)
         psbt |> CommitTx
 
+
     let private findScriptPubKeyIndex(tx: Transaction) (spk: Script) =
         tx.Outputs |> List.ofSeq |> List.findIndex(fun o -> o.ScriptPubKey = spk)
+
+    let checkTxFinalized (tx: ILightningTx) (prevOutIndex: TxOutIndex) (partialSignatures: (PubKey * TransactionSignature) seq) (redeem: Script): RResult<FinalizedTx> =
+        let checkTxFinalizedCore (psbt: PSBT): RResult<_> =
+            match psbt.TryFinalize() with
+            | false, e -> RResult.rmsg (sprintf "failed to finalize psbt Errors: %A" e)
+            | true, _ ->
+                psbt.ExtractTransaction() |> FinalizedTx |> Good
+        try
+            match tx with
+            | :? CommitTx as tx ->
+                let (CommitTx commitTx) = tx
+                match commitTx.Inputs.[int prevOutIndex.Value].GetTxOut() with
+                | null -> RResult.rmsg ("Unknown prevout")
+                | _ ->
+                    partialSignatures |> Seq.iter (fun kv ->
+                        commitTx.Inputs.[int prevOutIndex.Value].PartialSigs.AddOrReplace(kv)
+                    )
+
+                    match commitTx.Inputs.[int prevOutIndex.Value].WitnessScript with
+                    | null ->
+                        commitTx.AddScripts(redeem) |> ignore
+                        checkTxFinalizedCore commitTx
+                    | sc ->
+                        if sc <> redeem then
+                            RResult.rmsg (sprintf "commitment tx has unexpected script %A. must be: %A" sc redeem)
+                        else
+                            checkTxFinalizedCore commitTx
+
+            | t -> RResult.rmsg (sprintf "Checking signature for type %A is not supported" t)
+        with
+        | e -> RResult.rexn e
+
 
     let makeHTLCTimeoutTx (commitTx: Transaction)
                           (localDustLimit: Money)

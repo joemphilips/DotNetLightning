@@ -10,6 +10,8 @@ type ShaChain = {
     KnownHashes: Map<bool[], byte[]>
     LastIndex: int32 option
 }
+    with    
+        static member Zero = { KnownHashes = Map.empty; LastIndex = None }
 module ShaChain =
     let flip (input: byte[]) (index: int32): byte[] =
         failwith ""

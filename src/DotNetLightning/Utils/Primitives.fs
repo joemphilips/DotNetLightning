@@ -77,6 +77,9 @@ module Primitives =
         static member Zero = HTLCId(0UL)
         member x.Value = let (HTLCId v) = x in v
 
+    type TxOutIndex = TxOutIndex of uint16 with
+        member x.Value = let (TxOutIndex v) = x in v
+
     [<Measure>]
     type satoshi
 

@@ -17,6 +17,7 @@
     <Compile Include="Utils/Config.fs" />
     <Compile Include="Utils/TransactionUtils.fs" />
     <Compile Include="Utils/Errors.fs" />
+    <Compile Include="Utils/Logger.fs" />
     <Compile Include="Serialize/LightningStream.fs" />
     <Compile Include="Serialize/Msgs.fs" />
     <Compile Include="DomainUtils/Types.fs" />

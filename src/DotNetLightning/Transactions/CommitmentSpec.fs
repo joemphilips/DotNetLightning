@@ -27,6 +27,13 @@ type CommitmentSpec = internal {
     ToRemote: LNMoney
 }
     with
+        static member Create (toLocal) (toRemote) (feeRate) =
+            {
+                HTLCs = Map.empty
+                FeeRatePerKw = feeRate
+                ToLocal = toLocal
+                ToRemote = toRemote
+            }
         static member internal HTLCs_: Lens<_, _> =
             (fun cs -> cs.HTLCs),
             (fun v cs -> { cs with HTLCs = v })
