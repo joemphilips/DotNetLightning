@@ -15,6 +15,13 @@ module NBitcoinExtensions =
     type Money with
         member this.ToLNMoney() = LNMoney.Satoshis(this.Satoshi)
 
+    type OutPoint with
+        member this.ToChannelId(): ChannelId =
+            let mutable res = this.Clone().Hash.ToBytes()
+            res.[30] <- res.[30] ^^^ (uint8 (this.N >>> 8) &&& 0xffuy)
+            res.[31] <- res.[31] ^^^ (uint8 (this.N >>> 0) &&& 0xffuy)
+            res  |> uint256 |> ChannelId
+
     type ECDSASignature with
 
         /// ** Description **

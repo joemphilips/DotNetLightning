@@ -11,7 +11,7 @@ type ChainError =
 
 
 type IChainListener =
-    abstract member BlockConnected: (BlockHeader * Blockheight * (uint32 * Transaction) list) -> unit
+    abstract member BlockConnected: (BlockHeader * BlockHeight * (uint32 * Transaction) list) -> unit
     abstract member BlockDisconnected: BlockHeader -> bool
 
 type IChainWatcher =
@@ -108,12 +108,12 @@ with
             this.Watched <- this.Watched |> ChainWatchedUtil.watchAll
             true
 
-    member private this.BlockConnectedChecked(header: BlockHeader, height: Blockheight, txMatched: (uint32 * Transaction) list): bool =
+    member private this.BlockConnectedChecked(header: BlockHeader, height: BlockHeight, txMatched: (uint32 * Transaction) list): bool =
         let lastSeen = this.reentered
         this.Listeners |> Array.iter(fun l -> l.BlockConnected(header, height, txMatched))
         lastSeen = this.reentered
 
-    member this.BlockConnectedWithFiltering(block: Block, height: Blockheight) =
+    member this.BlockConnectedWithFiltering(block: Block, height: BlockHeight) =
         let mutable reentered = true
         while reentered do
             let matched = block.Transactions

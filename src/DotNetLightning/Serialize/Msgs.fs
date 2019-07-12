@@ -340,7 +340,7 @@ module Msgs =
     type FundingCreated = {
         mutable TemporaryChannelId: ChannelId
         mutable FundingTxId: TxId
-        mutable FundingOutputIndex: uint16
+        mutable FundingOutputIndex: TxOutIndex
         mutable Signature: ECDSASignature
     }
     with
@@ -351,7 +351,7 @@ module Msgs =
             member this.Serialize(ls) =
                 ls.Write(this.TemporaryChannelId.Value.ToBytes())
                 ls.Write(this.FundingTxId.Value.ToBytes())
-                ls.Write(this.FundingOutputIndex, false)
+                ls.Write(this.FundingOutputIndex.Value, false)
                 ls.Write(this.Signature)
 
     [<CLIMutable>]
@@ -423,7 +423,7 @@ module Msgs =
         mutable HTLCId: HTLCId
         mutable AmountMSat: LNMoney
         mutable PaymentHash: PaymentHash
-        mutable CLTVExpiry: uint32
+        mutable CLTVExpiry: BlockHeight
         mutable OnionRoutingPacket: OnionPacket
     }
     with
@@ -435,14 +435,14 @@ module Msgs =
                 this.HTLCId <- ls.ReadUInt64(false) |> HTLCId
                 this.AmountMSat <- ls.ReadUInt64(false) |> LNMoney.MilliSatoshis
                 this.PaymentHash <- ls.ReadUInt256(false) |> PaymentHash
-                this.CLTVExpiry <- ls.ReadUInt32(false)
+                this.CLTVExpiry <- ls.ReadUInt32(false) |> BlockHeight
                 (this.OnionRoutingPacket :> ILightningSerializable<OnionPacket>).Deserialize(ls)
             member this.Serialize(ls) =
                 ls.Write(this.ChannelId.Value.ToBytes())
                 ls.Write(this.HTLCId.Value, false)
                 ls.Write(this.AmountMSat.MilliSatoshi, false)
                 ls.Write(this.PaymentHash.Value.ToBytes())
-                ls.Write(this.CLTVExpiry, false)
+                ls.Write(this.CLTVExpiry.Value, false)
                 (this.OnionRoutingPacket :> ILightningSerializable<OnionPacket>).Serialize(ls)
 
     [<CLIMutable>]
@@ -784,6 +784,15 @@ module Msgs =
         mutable FeeProportionalMillionths: uint32
         mutable ExcessData: byte[]
     }
+        with
+            interface IRoutingMsg
+            interface  ILightningSerializable<ChannelAnnouncement> with
+                member this.Serialize(arg1: LightningWriterStream): unit = 
+                    failwith "Not Implemented"
+
+                member this.Deserialize(arg1: LightningReaderStream): unit = 
+                    failwith "Not Implemented"
+
 
     [<CLIMutable>]
     type ChannelUpdate = {

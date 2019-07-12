@@ -24,17 +24,30 @@ module Primitives =
             output
 
     /// Absolute block height
-    type Blockheight = BlockHeight of uint32
+    [<Struct>]
+    type BlockHeight = BlockHeight of uint32
+        with
+            static member Zero = 0u |> BlockHeight
+            member x.Value = let (BlockHeight v) = x in v
+            static member (+) (a: BlockHeight, b: BlockHeightOffset) =
+                a.Value + (uint32 b.Value) |> BlockHeight
+
+            static member (-) (a: BlockHeight, b: BlockHeightOffset) =
+                a.Value - (uint32 b.Value) |> BlockHeight
 
     /// **Description**
     ///
     /// Relative block height used for `OP_CSV` locks,
     /// Since OP_CSV allow only blocknumber of 0 ~ 65535, it is safe
     /// to restrict into the range smaller than BlockHeight
-    type BlockHeightOffset = BlockHeightOffset of uint16 with
+    and [<Struct>] BlockHeightOffset = BlockHeightOffset of uint16 with
         member x.Value = let (BlockHeightOffset v) = x in v
         static member op_Implicit(v: uint16) =
             BlockHeightOffset v
+        static member (+) (a: BlockHeightOffset, b: BlockHeightOffset) =
+            a.Value + b.Value |> BlockHeightOffset
+        static member (-) (a: BlockHeightOffset, b: BlockHeightOffset) =
+            a.Value - b.Value |> BlockHeightOffset
 
 
     type PaymentPreimage = PaymentPreimage of uint256 with
@@ -73,12 +86,22 @@ module Primitives =
     /// Block Hash
     type BlockId = BlockId of uint256 with
         member x.Value = let (BlockId v) = x in v
+
+    [<Struct>]
     type HTLCId = HTLCId of uint64 with
         static member Zero = HTLCId(0UL)
         member x.Value = let (HTLCId v) = x in v
 
+        static member (+) (a: HTLCId, b: uint64) = (a.Value + b) |> HTLCId
+
+    [<Struct>]
     type TxOutIndex = TxOutIndex of uint16 with
         member x.Value = let (TxOutIndex v) = x in v
+
+    [<Struct>]
+    type TxIndexInBlock = TxIndexInBlock of uint32 with
+        member x.Value = let (TxIndexInBlock v) = x in v
+
 
     [<Measure>]
     type satoshi
@@ -88,31 +111,30 @@ module Primitives =
 
     [<Struct>]
     type ShortChannelId = {
-        BlockHeight: uint32
-        BlockIndex: uint32
-        TxOutIndex: uint16
+        BlockHeight: BlockHeight
+        BlockIndex: TxIndexInBlock
+        TxOutIndex: TxOutIndex
     }
     with
         static member FromUInt64(rawData: uint64): ShortChannelId =
             let b = NBitcoin.Utils.ToBytes(rawData, false)
-            // TODO: do not use Array.concat
             let bh = NBitcoin.Utils.ToUInt32(Array.concat[| b.[0..2]; [|0uy|] |], false)
             let bi = NBitcoin.Utils.ToUInt32(Array.concat[| b.[3..5]; [|0uy |] |], false)
             let txOutIndex = NBitcoin.Utils.ToUInt16(b.[6..7], false)
             
             {
-                BlockHeight = bh
-                BlockIndex = bi
-                TxOutIndex = txOutIndex
+                BlockHeight = bh |> BlockHeight
+                BlockIndex = bi |> TxIndexInBlock
+                TxOutIndex = txOutIndex |> TxOutIndex
             }
         member this.ToBytes(): byte[] =
             Array.concat[|
-                        NBitcoin.Utils.ToBytes(this.BlockHeight, false).[0..2]
-                        NBitcoin.Utils.ToBytes(this.BlockIndex, false).[0..2]
-                        NBitcoin.Utils.ToBytes(this.TxOutIndex, false)
+                        NBitcoin.Utils.ToBytes(this.BlockHeight.Value, false).[0..2]
+                        NBitcoin.Utils.ToBytes(this.BlockIndex.Value, false).[0..2]
+                        NBitcoin.Utils.ToBytes(this.TxOutIndex.Value, false)
                     |]
         override this.ToString() =
-            sprintf "%dx%dx%d" this.BlockHeight this.BlockIndex this.TxOutIndex
+            sprintf "%dx%dx%d" this.BlockHeight.Value this.BlockIndex.Value this.TxOutIndex.Value
 
     type UserId = UserId of uint64
     type Delimiter = 

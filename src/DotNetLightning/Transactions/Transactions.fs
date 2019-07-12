@@ -270,7 +270,7 @@ module Transactions =
     let private findScriptPubKeyIndex(tx: Transaction) (spk: Script) =
         tx.Outputs |> List.ofSeq |> List.findIndex(fun o -> o.ScriptPubKey = spk)
 
-    let checkTxFinalized (tx: ILightningTx) (prevOutIndex: TxOutIndex) (partialSignatures: (PubKey * TransactionSignature) seq) (redeem: Script): RResult<FinalizedTx> =
+    let checkTxFinalized (tx: ILightningTx) (prevOutIndex: TxOutIndex) (additionalKnownSigs: (PubKey * TransactionSignature) seq) (redeem: Script): RResult<FinalizedTx> =
         let checkTxFinalizedCore (psbt: PSBT): RResult<_> =
             match psbt.TryFinalize() with
             | false, e -> RResult.rmsg (sprintf "failed to finalize psbt Errors: %A" e)
@@ -283,7 +283,7 @@ module Transactions =
                 match commitTx.Inputs.[int prevOutIndex.Value].GetTxOut() with
                 | null -> RResult.rmsg ("Unknown prevout")
                 | _ ->
-                    partialSignatures |> Seq.iter (fun kv ->
+                    additionalKnownSigs |> Seq.iter (fun kv ->
                         commitTx.Inputs.[int prevOutIndex.Value].PartialSigs.AddOrReplace(kv)
                     )
 

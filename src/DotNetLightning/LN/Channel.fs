@@ -204,6 +204,9 @@ module ChannelConstants =
     [<Literal>]
     let OUR_MAX_HTLCs = 50us
 
+    /// Specified in BOLT #2
+    let MAX_FUNDING_SATOSHIS = Money.Satoshis(16777216m) // (1 << 24)
+
     [<Literal>]
     /// see refs: https://github.com/lightningnetwork/lightning-rfc/blob/master/07-routing-gossip.md#requirements
     let UNCONF_THRESHOLD = 6u
@@ -218,6 +221,8 @@ module ChannelConstants =
 
     let MAX_CLTV_EXPIRY = BREAKDOWN_TIMEOUT
 
+    // ------------ weights ----------
+
     [<Literal>]
     let COMMITMENT_TX_BASE_WEIGHT = 724UL
     [<Literal>]
@@ -231,14 +236,17 @@ module ChannelConstants =
     [<Literal>]
     let B_OUTPUT_PLUS_SPENDING_INPUT_WEIGHT = 104UL
 
-    /// Specified in BOLT #2
-    let MAX_FUNDING_SATOSHIS = Money.Satoshis(16777216m) // (1 << 24)
-
 
     [<Literal>]
     let ACCEPTED_HTLC_SCRIPT_WEIGHT = 139uy
     [<Literal>]
     let OFFERED_HTLC_SCRIPT_WEIGHT = 133uy
+
+    [<Literal>]
+    let HTLC_SUCCESS_TX_WEIGHT = 703UL
+
+    [<Literal>]
+    let HTLC_TIMEOUT_TX_WEIGHT = 663UL
 
 type Channel = internal {
     Config: ChannelConfig
@@ -933,18 +941,6 @@ module Channel =
         }
 
     /// Gets the redeem script for the funding transaction output
-    let getFundingRedeemScript (c: Channel): Script =
-        let ourFundingKey = c.LocalKeys.FundingKey.PubKey
-        let theirFundingKey = match c.TheirFundingPubKey with
-                              | Some pk -> pk
-                              | None -> failwith "getFundingRedeemScript only allowed after accept_channel"
-        let pks = if ourFundingKey.ToBytes() < theirFundingKey.ToBytes() then
-                      [| ourFundingKey; theirFundingKey |]
-                  else
-                      [| theirFundingKey; ourFundingKey |]
-
-        PayToMultiSigTemplate.Instance.GenerateScriptPubKey(2, pks)
-
 
     let signCommitmentTransaction (tx: Transaction, theirSig: ECDSASignature, n: Network, forceLowR: bool option) (c: Channel) =
         let forceLowR = defaultArg forceLowR true

@@ -30,6 +30,13 @@ module Utils =
     let inline curry9 f a b c d e g h i j = f (a, b, c, d, e, g, h, i, j)
     let inline uncurry9 f t = let (a, b, c, d, e, g, h, i, j) = t in  f a b c d e g h i j
 
+    let inline curry10 f a b c d e g h i j k = f (a, b, c, d, e, g, h, i, j, k)
+    let inline uncurry10 f t = let (a, b, c, d, e, g, h, i, j, k) = t in  f a b c d e g h i j k
+
+
+    let inline max a b = if b > a then b else a
+    let inline min a b = if a > b then b else a
+
 module Async =
     let result = async.Return
 

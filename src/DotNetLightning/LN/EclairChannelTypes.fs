@@ -12,74 +12,6 @@ open NBitcoin
     based on eclair's channel state management
 *)
 
-
-type LocalParams = {
-    NodeId: NodeId
-    ChannelKeys: ChannelKeys
-    DustLimitSatoshis: Money
-    MaxHtlcValueInFlightMSat: LNMoney
-    ChannelReserveSatoshis: Money
-    HTLCMinimumMSat: LNMoney
-    ToSelfDelay: BlockHeightOffset
-    MaxAcceptedHTLCs: uint16
-    IsFunder: bool
-    DefaultFinalScriptPubKey: Script
-    GlobalFeatuers: GlobalFeatures
-    LocalFeatures: LocalFeatures
-}
-
-type RemoteParams = {
-    NodeId: NodeId
-    DustLimitSatoshis: Money
-    MaxHTLCValueInFlightMSat: LNMoney
-    ChannelReserveSatoshis: Money
-    HTLCMinimumMSat: LNMoney
-    ToSelfDelay: BlockHeightOffset
-    MaxAcceptedHTLCs: uint16
-    PaymentBasePoint: PubKey
-    FundingPubKey: PubKey
-    RevocationBasePoint: PubKey
-    DelayedPaymentBasePoint: PubKey
-    HTLCBasePoint: PubKey
-    GlobalFeatures: GlobalFeatures
-    LocalFeatures: LocalFeatures
-}
-    with
-        static member FromAcceptChannel nodeId (remoteInit: Init) (msg: AcceptChannel) =
-            {
-                NodeId = nodeId
-                DustLimitSatoshis = msg.DustLimitSatoshis
-                MaxHTLCValueInFlightMSat = msg.MaxHTLCValueInFlightMsat
-                ChannelReserveSatoshis = msg.ChannelReserveSatoshis
-                HTLCMinimumMSat = msg.HTLCMinimumMSat
-                ToSelfDelay = msg.ToSelfDelay
-                MaxAcceptedHTLCs = msg.MaxAcceptedHTLCs
-                PaymentBasePoint = msg.PaymentBasepoint
-                FundingPubKey = msg.FundingPubKey
-                RevocationBasePoint = msg.RevocationBasepoint
-                DelayedPaymentBasePoint = msg.DelayedPaymentBasepoint
-                HTLCBasePoint = msg.HTLCBasepoint
-                GlobalFeatures = remoteInit.GlobalFeatures
-                LocalFeatures = remoteInit.LocalFeatures
-            }
-
-        static member FromOpenChannel (nodeId) (remoteInit: Init) (msg: OpenChannel) =
-            {
-                NodeId = nodeId
-                DustLimitSatoshis = msg.DustLimitSatoshis
-                MaxHTLCValueInFlightMSat = msg.MaxHTLCValueInFlightMsat
-                ChannelReserveSatoshis = msg.ChannelReserveSatoshis
-                HTLCMinimumMSat = msg.HTLCMinimumMsat
-                ToSelfDelay = msg.ToSelfDelay
-                MaxAcceptedHTLCs = msg.MaxAcceptedHTLCs
-                PaymentBasePoint = msg.PaymentBasepoint
-                FundingPubKey = msg.FundingPubKey
-                RevocationBasePoint = msg.RevocationBasepoint
-                DelayedPaymentBasePoint = msg.DelayedPaymentBasepoint
-                HTLCBasePoint = msg.HTLCBasepoint
-                GlobalFeatures = remoteInit.GlobalFeatures
-                LocalFeatures = remoteInit.LocalFeatures
-            }
 type InputInitFunder = {
     TemporaryChannelId: ChannelId
     FundingSatoshis: Money
@@ -88,7 +20,7 @@ type InputInitFunder = {
     FundingTxFeeRatePerKw: FeeRatePerKw
     LocalParams: LocalParams
     RemoteInit: Init
-    ChannelFlags: LocalFeatures
+    ChannelFlags: uint8
 }
     with
         static member FromOpenChannel (localParams) (remoteInit) (o: OpenChannel) =
@@ -100,7 +32,7 @@ type InputInitFunder = {
                 FundingTxFeeRatePerKw = o.FeeRatePerKw
                 LocalParams = localParams
                 RemoteInit = remoteInit
-                ChannelFlags = localParams.LocalFeatures
+                ChannelFlags = o.ChannelFlags
             }
 
         member this.DeriveCommitmentSpec() =
@@ -213,8 +145,9 @@ module Data =
                                             LocalSpec: CommitmentSpec
                                             LocalCommitTx: CommitTx
                                             RemoteCommit: RemoteCommit
-                                            ChannelFlags: LocalFeatures
+                                            ChannelFlags: uint8
                                             LastSent: FundingCreated
+                                            InitialFeeRatePerKw: FeeRatePerKw
                                        }
         with interface IChannelStateData
 
@@ -222,17 +155,24 @@ module Data =
                                             Commitments: Commitments
                                             Deferred: FundingLocked option
                                             LastSent: Choice<FundingCreated, FundingSigned>
+                                            InitialFeeRatePerKw: FeeRatePerKw
                                           }
         with interface IChannelStateData
 
-    type WaitForFundingLockedData = { Commitments: Commitments; ShortChannelId: ShortChannelId; LastSent: FundingLocked }
+    type WaitForFundingLockedData = { Commitments: Commitments;
+                                      ShortChannelId: ShortChannelId;
+                                      OurMessage: FundingLocked
+                                      TheirMessage: FundingLocked option
+                                      InitialFeeRatePerKw: FeeRatePerKw
+                                      HaveWeSentFundingLocked:bool }
         with interface IChannelStateData
 
-    type WaitNormalData = {
+    type NormalData =   {
                             Commitments: Commitments;
                             ShortChannelId: ShortChannelId;
                             Buried: bool;
                             ChannelAnnouncement: ChannelAnnouncement option
+                            ChannelUpdate: ChannelUpdate
                             LocalShutdown: Shutdown option
                             RemoteShutdown: Shutdown option
                         }
@@ -273,38 +213,33 @@ module Data =
 //     888           Y888P    888        888   Y8888     888    Y88b  d88P
 //     8888888888     Y8P     8888888888 888    Y888     888     "Y8888P"
 
-module Events =
 
-    type ChannelEvent =
-        /// --- ln events ---
-        | WeAcceptedOpenChannel of nextMsg: AcceptChannel * nextState: Data.WaitForFundingCreatedData
-        | WeAcceptedAcceptChannel of nextMsg: FundingCreated * nextState: Data.WaitForFundingSignedData
-        | WeAcceptedFundingSigned of txToPublish: FinalizedTx * nextState: Data.WaitForFundingConfirmedData
-        | OpenChannelFromSelf of InputInitFunder
-        | WeAcceptedFundingLockedMsgWhenNotReady of msg: FundingLocked
-        | Closed
+type ChannelEvent =
+    // --- ln events ---
+    // --------- init fundee --------
+    | WeAcceptedOpenChannel of nextMsg: AcceptChannel * nextState: Data.WaitForFundingCreatedData
+    | WeAcceptedFundingCreated of nextMsg: FundingSigned * nextState: Data.WaitForFundingConfirmedData
 
-        | Disconnected
-
-        /// Wen requesting a mutual close, we wait for as much as this timeout, then unilateral close
-        | InputCloseCompleteTimeout
-        | InputDisconnected
-        | InputReconnected of Remote: MailboxProcessor<ILightningMsg>
-
-        /// ---- onchain events -----
-        | BitcoinFundingPublishFailed
-        | BitcoinFundingDepthOk
-        | BitcoinFundingDeployBuried
-        | BitcoinFundingLost
-        | BitcoinFundingTimeout
-        | BitcoinFundingSpent
-        | BitcoinOutputSpent
-        | BitcoinTxConfirmed of Transaction
-        | BitcoinFundingExternalChannelSpent of ShortChannelId: ShortChannelId
-        | BitcoinParentTxConfirmed of ChildTx: Transaction
-        with interface IEvent
+    // --------- init fender --------
+    | WeAcceptedAcceptChannel of nextMsg: FundingCreated * nextState: Data.WaitForFundingSignedData
+    | WeAcceptedFundingSigned of txToPublish: FinalizedTx * nextState: Data.WaitForFundingConfirmedData
+    | OpenChannelFromSelf of InputInitFunder
 
 
+    /// -------- init both -----
+    | FundingConfirmed of nextState: Data.WaitForFundingLockedData
+    | TheySentFundingLockedMsgBeforeUs of msg: FundingLocked
+    | WeSentFundingLockedMsgBeforeThem of msg: FundingLocked
+    | BothFundingLocked of nextState: Data.NormalData
+
+    // -------- normal operation ------
+    | WeAcceptedCMDAddHTLC of msg: UpdateAddHTLC * newCommitments: Commitments
+    | WeAcceptedUpdateAddHTLC of newCommitments: Commitments
+
+    // -------- else ---------
+    | Closed
+    | Disconnected
+    | NewBlockVerified of height: BlockHeight
 
 
 //      .d8888b. 88888888888     d8888 88888888888 8888888888 .d8888b.
@@ -329,7 +264,7 @@ type ChannelState =
     | WaitForFundingLocked of WaitForFundingLockedData
 
     /// normal
-    | Normal of WaitNormalData
+    | Normal of NormalData
 
     /// Closing
     | Shutdown of ShutdownData
@@ -359,81 +294,95 @@ type ChannelState =
 //      Y88b  d88P Y88b. .d88P 888   "   888 888   "   888  d8888888888 888   Y8888 888  .d88P Y88b  d88P
 //       "Y8888P"   "Y88888P"  888       888 888       888 d88P     888 888    Y888 8888888P"   "Y8888P"
 
-type AddHTLC = {
+type CMDAddHTLC = {
     AmountMSat: LNMoney
     PaymentHash: PaymentHash
-    Expiry: BlockHeightOffset
-    Onion: byte[]
-    Upstream:UpdateAddHTLC option
-    Commit: bool
+    Expiry: BlockHeight
+    Onion: OnionPacket
+    Upstream: UpdateAddHTLC option
+    Origin: HTLCSource option
 }
     with
-        static member Create amountMSat paymentHash expiry onion upstream commit =
+        static member Create amountMSat paymentHash expiry onion upstream commit origin =
             {
                 AmountMSat = amountMSat
                 PaymentHash = paymentHash
                 Expiry = expiry
-                Onion = defaultArg onion [||]
+                Onion = onion
                 Upstream = upstream
-                Commit = defaultArg commit false
+                Origin = origin
             }
 
-type FulfillHTLC = {
+
+type CMDFulfillHTLC = {
     Id: HTLCId
     PaymentPreimage: PaymentPreimage
     Commit: bool
 }
 
-type FailHTLC = {
+type CMDFailHTLC = {
     Id: HTLCId
     Reason: OnionErrorPacket
     Commit: bool
 }
 
-type FailMalformedHTLC = {
+type CMDFailMalformedHTLC = {
     Id: HTLCId
     Sha256OfOnion: uint256
     FailureCode: ErrorCode
     Commit: bool
 }
 
-type UpdateFee = {
+type CMDUpdateFee = {
     FeeRatePerKw: FeeRatePerKw
     Commit: bool
 }
 
-type Close = { ScriptPubKey: Script option }
+type CMDClose = { ScriptPubKey: Script option }
 
-type ResGetInfo = {
+type CMDResGetInfo = {
     NodeId: NodeId
     ChannelId: ChannelId
     State: IState
     Data: IChannelStateData
 }
 
+
+/// possible input to the channel. Command prefixed from `Apply` is passive. i.e.
+/// it has caused by the outside world and not by the user. Mostly this is a message sent
+/// from this channel's remote peer.
+/// others are active commands which is caused by the user.
+/// However, hese two kinds of command has no difference from architectural viewpoint.
+/// It is just an input to the state.
 type ChannelCommand =
     // open: funder
     | InputInitFunder of InputInitFunder
     | ApplyAcceptChannel of AcceptChannel
     | ApplyFundingSigned of FundingSigned
     | ApplyFundingLocked of FundingLocked
-    | ApplyFundingConfirmedEvent of depth: BlockHeightOffset
+    | ApplyFundingConfirmedOnBC of height: BlockHeight * txIndex: TxIndexInBlock * depth: uint32
 
     // open: fundee
     | InputInitFundee of InputInitFundee
     | ApplyOpenChannel of OpenChannel
+    | ApplyFundingCreated of FundingCreated
 
     // normal
-    | AddHTLC of AddHTLC
-    | FulfillHTLC of FulfillHTLC
-    | FailHTLC of FailHTLC
-    | FailMalformedHTLC of FailMalformedHTLC
-    | UpdateFee of UpdateFee
-    | Sign
+    | AddHTLC of CMDAddHTLC
+    | ApplyUpdateAddHTLC of UpdateAddHTLC
+    | FulfillHTLC of CMDFulfillHTLC
+    | ApplyUpdateFulfillHLTC of UpdateFulfillHTLC
+    | FailHTLC of CMDFailHTLC
+    | ApplyUpdateFailHTLC of UpdateFailHTLC
+    | FailMalformedHTLC of CMDFailMalformedHTLC
+    | ApplyUpdateFailMalformedHTLC of UpdateFailMalformedHTLC
+    | UpdateFee of CMDUpdateFee
+    | ApplyUpdateFee of UpdateFee
+    | SignCommitment
 
     // close
-    | Close of Close
+    | Close of CMDClose
     | ForceClose
     | GetState
     | GetStateData
-    | ResGetInfo of ResGetInfo
+    | ResGetInfo of CMDResGetInfo
