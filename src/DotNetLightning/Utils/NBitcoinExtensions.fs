@@ -36,7 +36,7 @@ module NBitcoinExtensions =
         ///
         /// (serialized R value + S value) in byte array.
         member this.ToBytesCompact() =
-            Array.append (NBitcoin.Utils.BigIntegerToBytes(this.R, 32)) (NBitcoin.Utils.BigIntegerToBytes(this.S, 32))
+            Array.append (NBitcoin.Utils.BigIntegerToBytes(this.R)) (NBitcoin.Utils.BigIntegerToBytes(this.S))
 
         static member FromBytesCompact(bytes: byte[], ?withRecId: bool) =
             let withRecId = defaultArg withRecId false
