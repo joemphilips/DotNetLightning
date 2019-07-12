@@ -41,6 +41,12 @@ type Channel = internal {
             }
         static member CreateCurried  = curry10 (Channel.Create)
 
+type ChannelError =
+    | Ignore of string
+    | Close of string
+
+exception ChannelException of ChannelError
+
 module Channel =
     /// represents the user has than something wrong with this library
     let private RRApiE(e: APIError) =
@@ -468,7 +474,7 @@ module Channel =
                 let remoteParams = RemoteParams.FromOpenChannel cs.RemoteNodeId state.InitFundee.RemoteInit msg
                 let data = Data.WaitForFundingCreatedData.Create localParams remoteParams msg acceptChannel
                 [ WeAcceptedOpenChannel (acceptChannel, data) ]
-        | WaitForOpenChannel state, Close spk ->  [ChannelEvent.Closed] |> Good
+        | WaitForOpenChannel state, ChannelCommand.Close spk ->  [ChannelEvent.Closed] |> Good
 
         | WaitForFundingCreated state, ApplyFundingCreated msg ->
             Helpers.makeFirstCommitTxs state.LocalParams

@@ -107,3 +107,4 @@ type DefaultKeyRepository(seed: uint256, network: Network, logger: ILogger) =
             this.ShutDownPubKey
         member this.GetNodeSecret() =
             this.NodeSecret.PrivateKey
+        member this.GetSignature(psbt) = failwith ""

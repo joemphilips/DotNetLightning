@@ -84,7 +84,7 @@ type LocalParams = {
     NodeId: NodeId
     ChannelKeys: ChannelKeys
     DustLimitSatoshis: Money
-    MaxHtlcValueInFlightMSat: LNMoney
+    MaxHTLCValueInFlightMSat: LNMoney
     ChannelReserveSatoshis: Money
     HTLCMinimumMSat: LNMoney
     ToSelfDelay: BlockHeightOffset

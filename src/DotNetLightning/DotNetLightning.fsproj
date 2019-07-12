@@ -37,7 +37,6 @@
     <Compile Include="LN/Channel.fs" />
     <Compile Include="LN/EclairCommitments.fs" />
     <Compile Include="LN/EclairChannelTypes.fs" />
-    <Compile Include="LN/EclairCommitmentModule.fs" />
     <Compile Include="LN/EclairChannel.fs" />
     <Compile Include="LN/PeerHandler.fs" />
     <Compile Include="Server/TCP.fs" />
