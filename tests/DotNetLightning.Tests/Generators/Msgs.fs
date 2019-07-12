@@ -129,7 +129,7 @@ let fundingCreatedGen =
     constructor
         <!> temporaryChannelGen
         <*> (TxId <!> uint256Gen)
-        <*> Arb.generate<uint16>
+        <*> (TxOutIndex <!> Arb.generate<uint16>)
         <*> signatureGen
 
 let fundingSignedGen = gen {
@@ -180,7 +180,7 @@ let updateAddHTLCGen = gen {
         HTLCId = htlc
         AmountMSat = amount
         PaymentHash = paymentHash
-        CLTVExpiry = cltvE
+        CLTVExpiry = cltvE |> BlockHeight
         OnionRoutingPacket = onionRoutingPacket
     }
 }
@@ -243,7 +243,7 @@ let updateFeeGen = gen {
     let! fr = FeeRatePerKw <!> Arb.generate<uint32>
     return {
         ChannelId = c
-        FeeratePerKW = fr
+        FeeRatePerKw = fr
     }
 }
 

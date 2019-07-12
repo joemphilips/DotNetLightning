@@ -63,6 +63,8 @@ type DummyKeyRepository =
             member this.GetNodeSecret() =
                 failwith "Not implemented"
 
+            member this.GetSignature(psbt) = failwith ""
+
 [<Tests>]
 let tests =
     ftestList "Channel tests" [
