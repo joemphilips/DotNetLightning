@@ -1,8 +1,8 @@
-namespace DotNetLightning
+namespace DotNetLightning.Chain
 open Microsoft.Extensions.Logging
 open NBitcoin
 open NBitcoin.Crypto
-open Utils.Primitives
+open DotNetLightning.Utils.Primitives
 
 /// OutPoint
 type StaticOutput = {
@@ -67,6 +67,7 @@ type IKeysRepository =
     /// Get a unique temporary channel id. Channel will be refered to by this until the funding TX is
     /// created, at which point they will use the outpoint in the funding TX.
     abstract member GetChannelId: unit -> ChannelId
+    abstract member GetSignature: PSBT -> TransactionSignature
 
 
 /// `KeyManager` in rust-lightning
@@ -106,3 +107,4 @@ type DefaultKeyRepository(seed: uint256, network: Network, logger: ILogger) =
             this.ShutDownPubKey
         member this.GetNodeSecret() =
             this.NodeSecret.PrivateKey
+        member this.GetSignature(psbt) = failwith ""
