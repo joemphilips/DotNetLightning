@@ -2,17 +2,6 @@ namespace DotNetLightning.Utils
 open NBitcoin
 open NBitcoin.Crypto
 
-type TxState =
-    | PSBT of PSBT
-    | TransactionBuilder of TransactionBuilder
-    | Transaction of Transaction * TxMetaData
-and TxMetaData = {
-    SignaturesWithIndex: ((ECDSASignature * PubKey option) list * int32) list
-    ScriptWithIndex: (Script * int32) list
-    /// lets only consider case of witness output, so not holding entire previous tx
-    /// (like PSBT does in case of non-witness output)
-    PrevOut: (TxOut * int32) list
-}
 type TxBuildingComputation<'a> =
     TxBuildingComputation of (TransactionBuilder -> 'a * TransactionBuilder)
 
@@ -62,9 +51,9 @@ module TxBuilderClient =
         TxBuildingComputation.toComputation(fun state ->
             state.AddKeys(key) |> ignore
             let tx = state.BuildTransaction(true)
-            let signa = tx.Inputs
-                        |> Seq.collect(fun i -> i.WitScript.Pushes)
-                        |> Seq.choose(fun bs -> if TransactionSignature.IsValid(bs) then Some (TransactionSignature(bs)) else None)
-            signa, state.ContinueToBuild tx
+            let signature = tx.Inputs
+                            |> Seq.collect(fun i -> i.WitScript.Pushes)
+                            |> Seq.choose(fun bs -> if TransactionSignature.IsValid(bs) then Some (TransactionSignature(bs)) else None)
+            signature, state.ContinueToBuild tx
         )
     ()

@@ -66,7 +66,6 @@ module ChannelUtils =
 
     /// Various funcitons for key derivation and tx creation for use within channels. Primarily used in Channel
     /// and ChannelMonitor
-    /// refs: https://github.com/rustyrussell/ccan/blob/master/ccan/crypto/shachain/design.txt
     let buildCommitmentSecret (commitmentSeed: uint256, index: uint64): uint256 =
         let mutable res = commitmentSeed.ToBytes()
         for i in 0..47 do

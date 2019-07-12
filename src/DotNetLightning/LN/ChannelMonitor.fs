@@ -67,7 +67,7 @@ type LocalStorage = {
     ShutDownPubKey: PubKey
     PreviousLatestPerCommitmentPoint: PubKey option
     LatestPerCommitmentPoint: PubKey option
-    FundingInfo: (OutPoint * Script) option
+    FundingInfo: (ScriptCoin) option
     CurrentRemoteCommitmentTxId: TxId option
     PreviousRemoteCommitmentTxId: TxId option
 }
@@ -157,11 +157,11 @@ type ChannelMonitor = {
             (fun cm -> cm.KeyStorage),
             (fun v cm -> { cm with KeyStorage = v})
 
-        member this.GetFundingTxo(): OutPoint option =
+        member this.GetFundingCoin(): ScriptCoin option =
             match this.KeyStorage with
             | Local { FundingInfo = fi } ->
                 match fi with
-                | Some (outpoint, _) -> Some outpoint
+                | Some (scoin) -> Some scoin
                 | None -> None
             | WatchTower _ -> None
 

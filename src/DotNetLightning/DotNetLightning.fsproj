@@ -7,28 +7,37 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Utils/Utils.fs" />
     <Compile Include="Utils/Primitives.fs" />
     <Compile Include="Utils/LNMoney.fs" />
     <Compile Include="Utils/NBitcoinExtensions.fs" />
     <Compile Include="Utils/RResult.fs" />
+    <Compile Include="Utils/Utils.fs" />
     <Compile Include="Utils/Aether.fs" />
     <Compile Include="Utils/TxBuilderMonad.fs" />
     <Compile Include="Utils/Config.fs" />
     <Compile Include="Utils/TransactionUtils.fs" />
     <Compile Include="Utils/Errors.fs" />
+    <Compile Include="Utils/Logger.fs" />
     <Compile Include="Serialize/LightningStream.fs" />
     <Compile Include="Serialize/Msgs.fs" />
+    <Compile Include="DomainUtils/Types.fs" />
     <Compile Include="DomainUtils/LNEvents.fs" />
     <Compile Include="Chain/ChainInterface.fs" />
     <Compile Include="Chain/KeysInterface.fs" />
     <Compile Include="Crypto/ChaCha20Poly1305.fs" />
+    <Compile Include="Crypto/ShaChain.fs" />
+    <Compile Include="Transactions/CommitmentSpec.fs" />
+    <Compile Include="Transactions/Scripts.fs" />
+    <Compile Include="Transactions/Transactions.fs" />
     <Compile Include="LN/PeerChannelEncryptor.fs" />
     <Compile Include="LN/ChannelUtils.fs" />
     <Compile Include="LN/Router.fs" />
     <Compile Include="LN/ChannelManager.fs" />
     <Compile Include="LN/ChannelMonitor.fs" />
     <Compile Include="LN/Channel.fs" />
+    <Compile Include="LN/EclairCommitments.fs" />
+    <Compile Include="LN/EclairChannelTypes.fs" />
+    <Compile Include="LN/EclairChannel.fs" />
     <Compile Include="LN/PeerHandler.fs" />
     <Compile Include="Server/TCP.fs" />
     <Compile Include="Library.fs" />
@@ -38,7 +47,7 @@
     <PackageReference Include="System.Net.Sockets" Version="4.3.0" />
     <PackageReference Include="FSharp.Control.AsyncSeq" Version="2.0.21" />
     <PackageReference Include="FSharp.Core" Version="4.5.4" />
-    <PackageReference Include="NBitcoin" Version="4.1.2.33-joemphilips011" />
+    <PackageReference Include="NBitcoin" Version="4.1.2.33-joemphilips012" />
     <PackageReference Include="System.IO.Pipelines" Version="4.5.3" />
     <PackageReference Include="System.Memory" Version="4.5.2" />
     <PackageReference Include="System.Reactive" Version="4.1.5" />

@@ -213,11 +213,12 @@ module RResult =
 
     let rresult = RResultBuilder ()
 
-
 type RResult<'T> with
     static member inline (>>=)  (x, uf) = RResult.rbind    uf x
+    static member inline (>>>=) (x, uf) = RResult.rbadBind uf x
     static member inline (<*>)  (x, t)  = RResult.rapply    t x
     static member inline (|>>)  (x, m)  = RResult.rmap      m x
+    static member inline (|>>>) (x, m)  = RResult.rbadMap   m x
     static member inline (<|>)  (x, s)  = RResult.rorElse   s x
     static member inline (~%%)  x       = RResult.rderef    x
     static member inline (%%)   (x, bf) = RResult.rderefOr bf x

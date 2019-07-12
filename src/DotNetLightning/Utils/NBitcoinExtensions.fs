@@ -12,6 +12,16 @@ module NBitcoinExtensions =
     type NBitcoin.Transaction with
         member this.GetTxId() = TxId (this.GetHash())
 
+    type Money with
+        member this.ToLNMoney() = LNMoney.Satoshis(this.Satoshi)
+
+    type OutPoint with
+        member this.ToChannelId(): ChannelId =
+            let mutable res = this.Clone().Hash.ToBytes()
+            res.[30] <- res.[30] ^^^ (uint8 (this.N >>> 8) &&& 0xffuy)
+            res.[31] <- res.[31] ^^^ (uint8 (this.N >>> 0) &&& 0xffuy)
+            res  |> uint256 |> ChannelId
+
     type ECDSASignature with
 
         /// ** Description **
@@ -26,7 +36,7 @@ module NBitcoinExtensions =
         ///
         /// (serialized R value + S value) in byte array.
         member this.ToBytesCompact() =
-            Array.append (NBitcoin.Utils.BigIntegerToBytes(this.R, 32)) (NBitcoin.Utils.BigIntegerToBytes(this.S, 32))
+            Array.append (NBitcoin.Utils.BigIntegerToBytes(this.R)) (NBitcoin.Utils.BigIntegerToBytes(this.S))
 
         static member FromBytesCompact(bytes: byte[], ?withRecId: bool) =
             let withRecId = defaultArg withRecId false

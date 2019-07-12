@@ -87,6 +87,7 @@ type LNMoney = LNMoney of int64
         member this.MilliSatoshi = let (LNMoney v) = this in v
         member this.Satoshi = this.MilliSatoshi / 1000L
         member this.Value = this.MilliSatoshi
+        member this.ToMoney() = this.Satoshi |> Money
 
         member this.Split(parts: int): LNMoney seq =
             if parts <= 0 then
