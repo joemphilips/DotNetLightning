@@ -186,6 +186,14 @@ module Channel =
             else
                 makeFirstCommitTxCore()
 
+        let isAlreadySent (htlc: UpdateAddHTLC) (proposed: IUpdateMsg list) =
+            proposed
+            |> List.exists(fun p -> match p with
+                                    | :? UpdateFulfillHTLC as u -> u.HTLCId = htlc.HTLCId
+                                    | :? UpdateFailHTLC as u -> u.HTLCId = htlc.HTLCId
+                                    | :? UpdateFailMalformedHTLC as u -> u.HTLCId = htlc.HTLCId
+                                    | _ -> false)
+
     module internal Validation =
         let internal checkSigHash (expected: SigHash) (txSig: TransactionSignature) =
             if txSig.SigHash <> expected then
@@ -698,13 +706,47 @@ module Channel =
                     Validation.checkTheirUpdateAddHTLCIsAcceptableWithCurrentSpec reduced commitments1 msg
                     *> Good [ WeAcceptedUpdateAddHTLC commitments1 ]
         | ChannelState.Normal state, FulfillHTLC cmd ->
-            failwith ""
+            match state.Commitments.GetHTLCCrossSigned(Direction.In, cmd.Id) with
+            | Some htlc when (state.Commitments.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
+                sprintf "We have already sent a fail/fulfill for this htlc: %A" htlc
+                |> RRClose
+            | Some htlc when (htlc.PaymentHash = cmd.PaymentPreimage.GetHash()) ->
+                let msgToSend: UpdateFulfillHTLC = { ChannelId = state.Commitments.ChannelId; HTLCId = cmd.Id; PaymentPreimage = cmd.PaymentPreimage }
+                let newCommitments = state.Commitments.AddLocalProposal(msgToSend)
+                [ WeAcceptedCMDFulfillHTLC (msgToSend, newCommitments)] |> Good
+            | Some htlc ->
+                sprintf "Invalid HTLC PreImage %A. Hash (%A) does not match the one expected %A"
+                        cmd.PaymentPreimage
+                        (cmd.PaymentPreimage.GetHash())
+                        (htlc.PaymentHash)
+                |> RRClose
+            | None ->
+                sprintf "Unknown HTLCId (%A)" cmd.Id
+                |> RRClose
         | ChannelState.Normal state, ApplyUpdateFulfillHLTC msg ->
-            failwith ""
-        | ChannelState.Normal state, ApplyUpdateFulfillHLTC msg ->
-            failwith ""
+            match state.Commitments.GetHTLCCrossSigned(Direction.Out, msg.HTLCId) with
+            | Some htlc when htlc.PaymentHash = msg.PaymentPreimage.GetHash() ->
+                let commitments = state.Commitments.AddRemoteProposal(msg)
+                let origin = state.Commitments.OriginChannels |> Map.find(msg.HTLCId)
+                [WeAcceptedFulfillHTLC(msg, origin, htlc, commitments)] |> Good
+            | Some htlc ->
+                sprintf "Invalid HTLC PreImage %A. Hash (%A) does not match the one expected %A"
+                        msg.PaymentPreimage
+                        (msg.PaymentPreimage.GetHash())
+                        (htlc.PaymentHash)
+                |> RRClose
+            | None ->
+                sprintf "Unknown HTLCId (%A)" msg.HTLCId
+                |> RRClose
         | ChannelState.Normal state, FailHTLC cmd ->
-            failwith ""
+            match state.Commitments.GetHTLCCrossSigned(Direction.In, cmd.Id) with
+            | Some htlc when  (state.Commitments.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
+                sprintf "We have already sent a fail/fulfill for this htlc: %A" htlc
+                |> RRClose
+            | Some htlc ->
+                failwith ""
+            | _ ->
+                failwith ""
         | ChannelState.Normal state, ApplyUpdateFailHTLC msg ->
             failwith ""
         | ChannelState.Normal state, FailMalformedHTLC cmd ->
@@ -719,70 +761,62 @@ module Channel =
             failwith ""
 
     let applyEvent c (e: ChannelEvent): Channel =
-        match e with
+        match e, c.State with
         // --------- init fundee -----
-        | WeAcceptedOpenChannel (nextMsg, data) ->
+        | WeAcceptedOpenChannel (nextMsg, data), WaitForOpenChannel _ ->
             let state = WaitForFundingCreated data
             { c with State = state }
-        | WeAcceptedFundingCreated(nextMsg, data) ->
+        | WeAcceptedFundingCreated(nextMsg, data), WaitForFundingCreated _ ->
             let state = WaitForFundingConfirmed data
             { c with State = state}
 
         // --------- init funder -----
-        | WeAcceptedAcceptChannel (nextMsg, data) ->
+        | WeAcceptedAcceptChannel (nextMsg, data), WaitForAcceptChannel _ ->
             {c with State = WaitForFundingSigned data}
-        | WeAcceptedFundingSigned (txToPublish, data) ->
+        | WeAcceptedFundingSigned (txToPublish, data), WaitForFundingSigned _ ->
             { c with State = WaitForFundingConfirmed data}
 
         // --------- init both ------
-        | FundingConfirmed data ->
+        | FundingConfirmed data, WaitForFundingConfirmed _ ->
             { c with State = WaitForFundingLocked data}
-        | TheySentFundingLockedMsgBeforeUs msg ->
-            match c.State with
-            | WaitForFundingConfirmed s -> { c with State = WaitForFundingConfirmed( { s with Deferred = Some(msg)} ) }
-            | WaitForFundingLocked s ->
-                let feeBase = Helpers.getOurFeeBaseMSat c.FeeEstimator s.InitialFeeRatePerKw s.Commitments.LocalParams.IsFunder
-                let channelUpdate = Helpers.makeChannelUpdate (c.Network.GenesisHash,
-                                                               c.LocalNodeSecret,
-                                                               c.RemoteNodeId,
-                                                               s.ShortChannelId,
-                                                               s.Commitments.LocalParams.ToSelfDelay,
-                                                               s.Commitments.RemoteParams.HTLCMinimumMSat,
-                                                               feeBase,
-                                                               c.Config.ChannelOptions.FeeProportionalMillionths,
-                                                               true,
-                                                               None)
-                let nextState = { NormalData.Buried = false;
-                                  Commitments = s.Commitments
-                                  ShortChannelId = s.ShortChannelId
-                                  ChannelAnnouncement = None
-                                  ChannelUpdate = channelUpdate
-                                  LocalShutdown = None
-                                  RemoteShutdown = None }
-                { c with State = ChannelState.Normal nextState }
-            | _ -> failwith "Unreachable! "
-        | WeSentFundingLockedMsgBeforeThem msg ->
-            match c.State with
-            | WaitForFundingLocked prevState ->
-                { c with State = WaitForFundingLocked { prevState with OurMessage = msg; HaveWeSentFundingLocked = true } }
-            | _ -> failwith "unreachabble!"
-        | BothFundingLocked data ->
-            match c.State with
-            | WaitForFundingSigned s ->
-                { c with State = ChannelState.Normal data }
-            | _ -> failwith "unreachale!"
-
+        | TheySentFundingLockedMsgBeforeUs msg, WaitForFundingConfirmed s ->
+            { c with State = WaitForFundingConfirmed( { s with Deferred = Some(msg)} ) }
+        | TheySentFundingLockedMsgBeforeUs msg, WaitForFundingLocked s ->
+            let feeBase = Helpers.getOurFeeBaseMSat c.FeeEstimator s.InitialFeeRatePerKw s.Commitments.LocalParams.IsFunder
+            let channelUpdate = Helpers.makeChannelUpdate (c.Network.GenesisHash,
+                                                           c.LocalNodeSecret,
+                                                           c.RemoteNodeId,
+                                                           s.ShortChannelId,
+                                                           s.Commitments.LocalParams.ToSelfDelay,
+                                                           s.Commitments.RemoteParams.HTLCMinimumMSat,
+                                                           feeBase,
+                                                           c.Config.ChannelOptions.FeeProportionalMillionths,
+                                                           true,
+                                                           None)
+            let nextState = { NormalData.Buried = false;
+                              Commitments = s.Commitments
+                              ShortChannelId = s.ShortChannelId
+                              ChannelAnnouncement = None
+                              ChannelUpdate = channelUpdate
+                              LocalShutdown = None
+                              RemoteShutdown = None }
+            { c with State = ChannelState.Normal nextState }
+        | WeSentFundingLockedMsgBeforeThem msg, WaitForFundingLocked prevState ->
+            { c with State = WaitForFundingLocked { prevState with OurMessage = msg; HaveWeSentFundingLocked = true } }
+        | BothFundingLocked data, WaitForFundingSigned s ->
+            { c with State = ChannelState.Normal data }
 
         // ----- normal operation --------
-        | WeAcceptedCMDAddHTLC(msg, newCommitments) ->
-            match c.State with
-            | ChannelState.Normal d -> { c with State = ChannelState.Normal ({ d with Commitments = newCommitments})  }
-            | _ -> failwith "Unreachable!"
-        | WeAcceptedUpdateAddHTLC(newCommitments) ->
-            match c.State with
-            | ChannelState.Normal d -> { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
-            | _ -> failwith "Unreachable!"
+        | WeAcceptedCMDAddHTLC(msg, newCommitments), ChannelState.Normal d ->
+            { c with State = ChannelState.Normal ({ d with Commitments = newCommitments})  }
+        | WeAcceptedUpdateAddHTLC(newCommitments), ChannelState.Normal d ->
+            { c with State = ChannelState.Normal ({ d with Commitments = newCommitments})  }
+
+        | WeAcceptedCMDFulfillHTLC (msg, newCommitments), ChannelState.Normal d ->
+            { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
+        | WeAcceptedFulfillHTLC (msg, origin, htlc, newCommitments), ChannelState.Normal d ->
+            { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
 
         // ----- else -----
-        | NewBlockVerified height ->
+        | NewBlockVerified height, _ ->
             { c with CurrentBlockHeight = height }

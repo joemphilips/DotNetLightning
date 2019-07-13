@@ -78,6 +78,10 @@ type WaitingForRevocation = {
     SentAfterLocalCommitmentIndex: uint32
     ReAsignASAP: bool
 }
+    with
+        static member NextRemoteCommit_: Lens<_,_> =
+            (fun w -> w.NextRemoteCommit),
+            (fun v w -> { w with NextRemoteCommit = v})
 
 
 type LocalParams = {
@@ -170,6 +174,9 @@ type Commitments = {
         static member RemoteChanges_: Lens<_, _> =
             (fun c -> c.RemoteChanges),
             (fun v c -> { c with RemoteChanges = v })
+        static member RemoteNextCommitInfo_: Lens<_, _> =
+            (fun c -> c.RemoteNextCommitInfo),
+            (fun v c -> { c with RemoteNextCommitInfo = v })
 
         member this.AddLocalProposal(proposal: IUpdateMsg) =
             let lens = Commitments.LocalChanges_ >-> LocalChanges.Proposed_
@@ -181,3 +188,18 @@ type Commitments = {
 
         member this.IncrLocalHTLCId = { this with LocalNextHTLCId = this.LocalNextHTLCId + 1UL }
         member this.IncrRemoteHTLCId = { this with RemoteNextHTLCId = this.RemoteNextHTLCId + 1UL }
+
+        member internal this.GetHTLCCrossSigned(directionRelativeToLocal: Direction, htlcId: HTLCId): UpdateAddHTLC option =
+            let remoteSigned =
+                this.LocalCommit.Spec.HTLCs
+                |> Map.tryPick (fun k v -> if v.Direction = directionRelativeToLocal && v.Add.HTLCId = htlcId then Some v else None)
+
+            let localSigned =
+                let lens = Commitments.RemoteNextCommitInfo_ >-> Choice.choice1Of2_ >?> WaitingForRevocation.NextRemoteCommit_
+                match Optic.get lens this with
+                | Some v -> v
+                | None -> this.RemoteCommit
+                |> fun v -> v.Spec.HTLCs |> Map.tryPick(fun k v -> if v.Direction = directionRelativeToLocal.Opposite && v.Add.HTLCId = htlcId then Some v else None)
+            match remoteSigned, localSigned with
+            | Some _, Some htlcIn -> htlcIn.Add |> Some
+            | _ -> None

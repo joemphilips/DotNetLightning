@@ -26,6 +26,7 @@
     <Compile Include="Chain/KeysInterface.fs" />
     <Compile Include="Crypto/ChaCha20Poly1305.fs" />
     <Compile Include="Crypto/ShaChain.fs" />
+    <Compile Include="Crypto/Sphinx.fs" />
     <Compile Include="Transactions/CommitmentSpec.fs" />
     <Compile Include="Transactions/Scripts.fs" />
     <Compile Include="Transactions/Transactions.fs" />

@@ -236,6 +236,9 @@ type ChannelEvent =
     | WeAcceptedCMDAddHTLC of msg: UpdateAddHTLC * newCommitments: Commitments
     | WeAcceptedUpdateAddHTLC of newCommitments: Commitments
 
+    | WeAcceptedCMDFulfillHTLC of msg: UpdateFulfillHTLC * newCommitments: Commitments
+    | WeAcceptedFulfillHTLC of msg: UpdateFulfillHTLC * origin: HTLCSource * htlc: UpdateAddHTLC * newCommitments: Commitments
+
     // -------- else ---------
     | Closed
     | Disconnected
