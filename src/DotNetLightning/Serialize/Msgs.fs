@@ -1,7 +1,7 @@
 namespace DotNetLightning.Serialize
 open NBitcoin
 open DotNetLightning.Utils
-open DotNetLightning.Utils.RResult
+open DotNetLightning.Utils.NBitcoinExtensions
 open System
 open System.Runtime.CompilerServices
 open System.IO
@@ -116,21 +116,34 @@ module Msgs =
     type OnionPacket =
         {
             mutable Version: uint8
-            mutable PublicKey: PubKey
+            /// This might be 33 bytes of 0uy in case of last packet
+            /// So we are not using `PubKey` to represent pubkey
+            mutable PublicKey: byte[]
             mutable HopData: byte[]
             mutable HMAC: uint256
         }
         with
+            static member Init() =
+                {
+                    Version = 0uy
+                    PublicKey = Array.zeroCreate 33
+                    HopData = Array.zeroCreate (1300)
+                    HMAC = uint256.Zero
+                }
+
+
+            static member LastPacket = OnionPacket.Init()
+
             interface ILightningSerializable<OnionPacket> with
                 member this.Deserialize(ls: LightningReaderStream) =
                     this.Version <- ls.ReadUInt8()
-                    this.PublicKey <- ls.ReadPubKey()
+                    this.PublicKey <- ls.ReadBytes(33)
                     this.HopData <- ls.ReadBytes(1366) 
                     this.HMAC <- ls.ReadUInt256(false)
 
                 member this.Serialize(ls) =
                     ls.Write(this.Version)
-                    ls.Write(this.PublicKey.ToBytes())
+                    ls.Write(this.PublicKey)
                     ls.Write(this.HopData)
                     ls.Write(this.HMAC, false)
 

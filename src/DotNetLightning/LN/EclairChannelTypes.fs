@@ -326,19 +326,16 @@ type CMDFulfillHTLC = {
 type CMDFailHTLC = {
     Id: HTLCId
     Reason: OnionErrorPacket
-    Commit: bool
 }
 
 type CMDFailMalformedHTLC = {
     Id: HTLCId
     Sha256OfOnion: uint256
     FailureCode: ErrorCode
-    Commit: bool
 }
 
 type CMDUpdateFee = {
     FeeRatePerKw: FeeRatePerKw
-    Commit: bool
 }
 
 type CMDClose = { ScriptPubKey: Script option }

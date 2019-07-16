@@ -162,7 +162,7 @@ let closingSignedGen = gen {
 
 let onionPacketGen = gen {
     let! v = Arb.generate<uint8>
-    let! pk = pubKeyGen
+    let! pk = pubKeyGen |> Gen.map(fun pk -> pk.ToBytes())
     let! hopData = bytesOfNGen(1366)
     let! hmac = uint256Gen
     return { Version = v; PublicKey=pk; HopData=hopData; HMAC=hmac }

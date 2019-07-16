@@ -67,7 +67,7 @@ type DummyKeyRepository =
 
 [<Tests>]
 let tests =
-    ftestList "Channel tests" [
+    testList "Channel tests" [
         testCase "test_max_funding_satoshis" <| fun _ ->
             Expect.isLessThan MAX_FUNDING_SATOSHIS (Money.Satoshis(21_000_000L * 100_000_000L)) "MAX_FUNDING_SATOSHIS is greater than all satoshis in existance"
 

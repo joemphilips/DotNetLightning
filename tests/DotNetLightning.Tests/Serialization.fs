@@ -581,7 +581,7 @@ module SerializationTest =
             testCase "update_add_htlc" <| fun _ ->
                 let onionRoutingPacket = {
                     Version = 255uy
-                    PublicKey = pubkey1
+                    PublicKey = pubkey1.ToBytes()
                     HopData = [| for _ in 1..(20*65) -> 1uy |]
                     HMAC = uint256([| for _ in 0..31 -> 2uy |])
                 }

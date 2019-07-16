@@ -606,7 +606,7 @@ module Channel =
                                     RemoteNextCommitInfo = DataEncoders.HexEncoder().DecodeData("0101010101010101010101010101010101010101010101010101010101010101") |> Key |> fun k -> k.PubKey |> Choice2Of2
                                     RemotePerCommitmentSecrets = ShaChain.Zero
                                     ChannelId =
-                                        cs.Logger(sprintf "Channel id has been set to %A" msg.ChannelId, LogLevel.Info)
+                                        cs.Logger (LogLevel.Debug) (sprintf "Channel id has been set to %A" msg.ChannelId)
                                         msg.ChannelId }
                 let nextState = { WaitForFundingConfirmedData.Commitments = commitments
                                   Deferred = None
@@ -616,7 +616,7 @@ module Channel =
         | WaitForFundingConfirmed state, ApplyFundingLocked msg ->
             [ TheySentFundingLockedMsgBeforeUs msg ] |> Good
         | WaitForFundingConfirmed state, ApplyFundingConfirmedOnBC (height, txindex, depth) ->
-            cs.Logger(sprintf "ChannelId %A was confirmed at blockheight %A; depth: %A" state.Commitments.ChannelId height.Value depth, LogLevel.Info)
+            cs.Logger (LogLevel.Info) (sprintf "ChannelId %A was confirmed at blockheight %A; depth: %A" state.Commitments.ChannelId height.Value depth)
             let nextPerCommitmentPoint =
                 ChannelUtils.buildCommitmentSecret (state.Commitments.LocalParams.ChannelKeys.CommitmentSeed, 1UL)
                 |> fun seed -> Key(seed.ToBytes()).PubKey
@@ -642,7 +642,7 @@ module Channel =
                     [] |> Good 
                 else
                     let msg = sprintf "once confirmed funding tx has become less confirmed than threashold %A! This is probably caused by reorg. current depth is: %A " height depth
-                    cs.Logger(msg, LogLevel.Error)
+                    cs.Logger (LogLevel.Error) (msg)
                     RRClose(msg)
             else
                 if (cs.Config.OwnChannelConfig.MinimumDepth <= depth) then
