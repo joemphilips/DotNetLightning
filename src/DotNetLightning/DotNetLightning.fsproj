@@ -3,7 +3,7 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\nsec\src\Cryptography\NSec.Cryptography.csproj" />
+    <ProjectReference Include="..\NSec.Cryptography\NSec.Cryptography.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
