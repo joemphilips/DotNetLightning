@@ -138,14 +138,14 @@ module Msgs =
                 member this.Deserialize(ls: LightningReaderStream) =
                     this.Version <- ls.ReadUInt8()
                     this.PublicKey <- ls.ReadBytes(33)
-                    this.HopData <- ls.ReadBytes(1366) 
-                    this.HMAC <- ls.ReadUInt256(false)
+                    this.HopData <- ls.ReadBytes(1300) 
+                    this.HMAC <- ls.ReadUInt256(true)
 
                 member this.Serialize(ls) =
                     ls.Write(this.Version)
                     ls.Write(this.PublicKey)
                     ls.Write(this.HopData)
-                    ls.Write(this.HMAC, false)
+                    ls.Write(this.HMAC, true)
 
     type OnionErrorPacket = {
         Data: byte[]

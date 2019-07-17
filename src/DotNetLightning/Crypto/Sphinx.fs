@@ -25,11 +25,10 @@ module internal Sphinx =
     [<Literal>]
     let PACKET_LENGTH =  1366 // 1 + 33 + MacLength + MaxHops * (PayloadLength + MacLength)
 
-    let chacha20 = NSec.Cryptography.ChaCha20Poly1305.ChaCha20Poly1305
     let hex = NBitcoin.DataEncoders.HexEncoder()
     let ascii = NBitcoin.DataEncoders.ASCIIEncoder()
 
-    let mac (key, msg) = Hashes.HMACSHA256(key, msg).[0..MacLength - 1] |> uint256
+    let mac (key, msg) = Hashes.HMACSHA256(key, msg) |> uint256
 
     let xor (a: byte[], b: byte[]) =
         Array.zip a b
@@ -42,7 +41,7 @@ module internal Sphinx =
     let zeros (l) = Array.zeroCreate l
 
     let generateStream (key, l) =
-        CryptoUtils.encryptWithoutADAndMac(0UL, key, ReadOnlySpan(Array.zeroCreate l))
+        CryptoUtils.encryptWithoutAD(0UL, key, ReadOnlySpan(Array.zeroCreate l))
 
     let computeSharedSecret = CryptoUtils.SharedSecret.FromKeyPair
 
@@ -68,14 +67,9 @@ module internal Sphinx =
         if (pubKeys.Length = 0) then
             (ephemeralPubKeys, sharedSecrets)
         else
-            // printfn "inside loop ----------\n\n"
             let ephemeralPubKey = blind (ephemeralPubKeys |> List.last) (blindingFactors |> List.last)
             let secret = computeSharedSecret (blindMulti (pubKeys.[0]) (blindingFactors), sessionKey) |> Key
             let blindingFactor = computeBlindingFactor(ephemeralPubKey) (secret)
-            // printfn "ephemeral pubkey is %A" (ephemeralPubKey)
-            // printfn "secret is %O" (secret.ToBytes() |> hex.EncodeData)
-            // printfn "blinding factor is %O" (blindingFactor.ToBytes() |> hex.EncodeData)
-            // printfn "finish ----------\n\n"
             computeEphemeralPublicKeysAndSharedSecretsCore
                 sessionKey (pubKeys |> List.tail)
                            (ephemeralPubKeys @ [ephemeralPubKey])
@@ -86,9 +80,6 @@ module internal Sphinx =
         let ephemeralPK0 = sessionKey.PubKey
         let secret0 = computeSharedSecret(pubKeys.[0], sessionKey) |> Key
         let blindingFactor0 = computeBlindingFactor(ephemeralPK0) (secret0)
-        // printfn "first ephemeral pubkey is %A" (ephemeralPK0)
-        // printfn "first secret is %O" (secret0.ToBytes() |> hex.EncodeData)
-        // printfn "first blinding factor is %O" (blindingFactor0.ToBytes() |> hex.EncodeData)
         computeEphemeralPublicKeysAndSharedSecretsCore
             (sessionKey) (pubKeys |> List.tail) ([ephemeralPK0]) ([blindingFactor0]) ([secret0])
 
@@ -159,7 +150,6 @@ module internal Sphinx =
             failwithf "Payload length is not %A" PayloadLength
         else
             let filler = defaultArg routingInfoFiller ([||])
-            // printfn "makeNextPacket----\n\n"
             let nextRoutingInfo =
                 let routingInfo1 = seq [ payload; packet.HMAC.ToBytes(); (packet.HopData |> Array.skipBack(PayloadLength + MacLength)) ]
                                    |> Array.concat
@@ -168,15 +158,12 @@ module internal Sphinx =
                     let numHops = MaxHops * (PayloadLength + MacLength)
                     xor(routingInfo1, generateStream(rho, numHops))
 
-                // printfn "extRoutig ifo 1 is %A" routingInfo1 
-                // printfn "extRoutig ifo 2 is %A" routingInfo2 
-
                 Array.append (routingInfo2 |> Array.skipBack filler.Length) filler
             
-            let nextHmac = mac(generateKey("mu", sharedSecret), (Array.append nextRoutingInfo ad))
-            // printfn "nextRoutingInfo is %A" nextRoutingInfo
-            // printfn "nextHMAC is is %A" nextHmac
-            // printfn "end----\n\n"
+            let nextHmac = 
+                let macKey = generateKey("mu", sharedSecret)
+                let macMsg = (Array.append nextRoutingInfo ad)
+                mac(macKey, macMsg)
             let nextPacket ={ OnionPacket.Version = VERSION
                               PublicKey = ephemeralPubKey.ToBytes()
                               HopData = nextRoutingInfo
@@ -190,13 +177,9 @@ module internal Sphinx =
         SharedSecrets: (Key * PubKey) list
     }
         with
-            static member Create (log: Logger) (sessionKey: Key, pubKeys: PubKey list, payloads: byte[] list, ad: byte[]) =
+            static member Create (sessionKey: Key, pubKeys: PubKey list, payloads: byte[] list, ad: byte[]) =
                 let (ephemeralPubKeys, sharedSecrets) = computeEphemeralPublicKeysAndSharedSecrets (sessionKey) (pubKeys)
-                let debug = log LogLevel.Debug
-                (sprintf "ephemeral Pubkeys are %A" ephemeralPubKeys) |> debug
-                (sprintf "shared secrets are %A"  (sharedSecrets |> Seq.map(fun s -> s.ToBytes() |> hex.EncodeData))) |> debug
                 let filler = generateFiller "rho" sharedSecrets.[0..sharedSecrets.Length - 2] (PayloadLength + MacLength) (Some MaxHops)
-                (sprintf "filler is %A" filler) |> debug
 
                 let lastPacket = makeNextPacket(payloads |> List.last,
                                                 ad,
@@ -205,8 +188,6 @@ module internal Sphinx =
                                                 OnionPacket.LastPacket,
                                                 Some(filler))
                 let rec loop (hopPayloads: byte[] list, ephKeys: PubKey list, ss: Key list, packet: OnionPacket) =
-                    // printfn "loop: packet is %A" packet
-                    // printfn "loop: hoppayloads are is %A" hopPayloads
                     if (hopPayloads.IsEmpty) then
                         packet
                     else
