@@ -92,6 +92,19 @@ module Msgs =
             ms.ToArray()
 
         [<Extension>]
+        static member SerializeWithLen(this: ILightningSerializable<'T>, w: LightningWriterStream) =
+            let d = this.ToBytes()
+            w.WriteWithLen(d)
+
+        [<Extension>]
+        static member ToBytesWithLen(this: ILightningSerializable<'T>) =
+            let d = this.ToBytes()
+            use ms = new MemoryStream()
+            use ls = new LightningWriterStream(ms)
+            ls.WriteWithLen(d)
+            ms.ToArray()
+
+        [<Extension>]
         static member FromBytes(this: ILightningSerializable<'T>, data: byte[]) =
             use ms = new MemoryStream(data)
             use ls = new LightningReaderStream(ms)
@@ -173,31 +186,6 @@ module Msgs =
                     ls.WriteWithLen(g)
                     ls.WriteWithLen(l)
 
-    [<CLIMutable>]
-    type ErrorMessage = 
-        {
-            mutable ChannelId: WhichChannel
-            mutable Data: byte[]
-        }
-        with
-            interface ISetupMsg
-            interface ILightningSerializable<ErrorMessage> with
-                member this.Deserialize(ls) =
-                    match ls.ReadUInt256(false) with
-                    | id when id = uint256.Zero ->
-                        this.ChannelId <- All
-                    | id ->
-                        this.ChannelId <- SpecificChannel(Primitives.ChannelId(id))
-                    this.Data <- ls.ReadWithLen()
-                member this.Serialize(ls) =
-                    match this.ChannelId with
-                    | SpecificChannel (Primitives.ChannelId id) -> ls.Write(id.ToBytes())
-                    | All -> ls.Write(Array.zeroCreate 32)
-                    ls.WriteWithLen(this.Data)
-
-    and WhichChannel =
-        | SpecificChannel of ChannelId
-        | All
 
     [<CLIMutable>]
     type Ping = {
@@ -802,6 +790,18 @@ module Msgs =
     }
         with
             interface IRoutingMsg
+            static member Init() =
+                {
+                    UnsignedChannelUpdate.ChainHash = uint256.Zero
+                    ShortChannelId = failwith "not impl"
+                    Timestamp = failwith "Not Implemented"
+                    Flags = failwith "Not Implemented"
+                    CLTVExpiryDelta = failwith "Not Implemented"
+                    HTLCMinimumMSat = failwith "Not Implemented"
+                    FeeBaseMSat = failwith "Not Implemented"
+                    FeeProportionalMillionths = failwith "Not Implemented"
+                    ExcessData = failwith "Not Implemented"
+                }
             interface  ILightningSerializable<ChannelAnnouncement> with
                 member this.Serialize(arg1: LightningWriterStream): unit = 
                     failwith "Not Implemented"
@@ -817,6 +817,11 @@ module Msgs =
     }
     with
         interface IRoutingMsg
+        static member Init() =
+            {
+                Signature = null
+                Contents = UnsignedChannelUpdate.Init()
+            }
         interface ILightningSerializable<ChannelUpdate> with
             member this.Deserialize(ls) =
                 this.Signature <- ls.ReadECDSACompact()
@@ -851,6 +856,172 @@ module Msgs =
                 ls.Write((uint32) this.Contents.FeeBaseMSat.MilliSatoshi, false)
                 ls.Write((uint32) this.Contents.FeeProportionalMillionths, false)
                 ls.Write(this.Contents.ExcessData)
+
+    type FailureMsgData =
+        | InvalidRealm
+        | TemporaryNodeFailure
+        | PermanentNodeFailure
+        | RequiredNodeFeatureMissing
+        | InvalidOnionVersion of onionHash: uint256
+        | InvalidOnionHmac of onionHash: uint256
+        | InvalidOnionKey of onionHash: uint256
+        | TemporaryChannelFailure of update: ChannelUpdate
+        | PermanentChannelFailure
+        | RequiredChannelFeatureMissing
+        | UnknownNextPeer
+        | AmountBelowMinimum of amount: LNMoney * update: ChannelUpdate
+        | FeeInsufficient of amount: LNMoney * update: ChannelUpdate
+        | ChannelDisabled of Flags: uint16 * update: ChannelUpdate
+        | IncorrectCLTVExpiry of expiry: BlockHeight  * update: ChannelUpdate
+        | UnknownPaymentHash
+        | IncorrectPaymentAmount
+        | ExpiryTooSoon of update: ChannelUpdate
+        | FinalExpiryTooSoon
+        | FinalIncorrectCLTVExpiry of expiry: BlockHeight
+        | FinalIncorrectCLTVAmount of amountMSat: LNMoney
+        | ExpiryTooFar
+        | Unknown of byte[]
+
+    [<CLIMutable>]
+    type FailureMsg = {
+        mutable Data: FailureMsgData
+        mutable Code: ErrorCode
+    }
+        with
+            static member Init() =
+                {
+                    Data = Unknown [||]
+                    Code = ErrorCode 0us
+                }
+            interface ILightningSerializable<FailureMsg> with
+                member this.Deserialize(r: LightningReaderStream): unit =
+                    let t = r.ReadUInt16(false)
+                    this.Code <- t |> ErrorCode
+                    match t with
+                    | (INVALID_REALM) ->
+                        this.Data <- InvalidRealm
+                    | (TEMPORARY_NODE_FAILURE) -> this.Data <- TemporaryNodeFailure
+                    | (PERMANENT_NODE_FAILURE) -> this.Data <- PermanentNodeFailure
+                    | (REQUIRED_NODE_FEATURE_MISSING) -> this.Data <- RequiredNodeFeatureMissing
+                    | (INVALID_ONION_VERSION) ->
+                        let v = r.ReadUInt256(false)
+                        this.Data <- InvalidOnionVersion(v)
+                    | (INVALID_ONION_HMAC) ->
+                        this.Data <- r.ReadUInt256(false) |> InvalidOnionHmac
+                    | (INVALID_ONION_KEY) ->
+                        this.Data <- r.ReadUInt256(false) |> InvalidOnionKey
+                    | (TEMPORARY_CHANNEL_FAILURE) ->
+                        let d = ChannelUpdate.Init()
+                        (d :> ILightningSerializable<ChannelUpdate>).Deserialize(r)
+                        this.Data <- d |> TemporaryChannelFailure
+                    | (PERMANENT_CHANNEL_FAILURE) ->
+                        this.Data <- PermanentChannelFailure
+                    | (REQUIRED_CHANNEL_FEATURE_MISSING) ->
+                        this.Data <- RequiredChannelFeatureMissing
+                    | (UNKNOWN_NEXT_PEER) ->
+                        this.Data <- UnknownNextPeer
+                    | (AMOUNT_BELOW_MINIMUM) ->
+                        let amountMSat = r.ReadUInt64(false) |> LNMoney.MilliSatoshis
+                        let d = ChannelUpdate.Init()
+                        (d :> ILightningSerializable<ChannelUpdate>).Deserialize(r)
+                        this.Data <- (amountMSat, d) |> AmountBelowMinimum
+                    | (FEE_INSUFFICIENT) ->
+                        let amountMSat = r.ReadUInt64(false) |> LNMoney.MilliSatoshis
+                        let d = ChannelUpdate.Init()
+                        (d :> ILightningSerializable<ChannelUpdate>).Deserialize(r)
+                        this.Data <- (amountMSat, d) |> FeeInsufficient
+                    | (CHANNEL_DISABLED) ->
+                        let flags = r.ReadUInt16(false)
+                        let d = ChannelUpdate.Init()
+                        (d :> ILightningSerializable<ChannelUpdate>).Deserialize(r)
+                        this.Data <- (flags, d ) |> ChannelDisabled
+                    | (INOCCORRECT_CLTV_EXPIRY) ->
+                        let expiry = r.ReadUInt32(false) |> BlockHeight
+                        let d = ChannelUpdate.Init()
+                        (d :> ILightningSerializable<ChannelUpdate>).Deserialize(r)
+                        this.Data <- (expiry, d) |> IncorrectCLTVExpiry
+                    | (UNKNOWN_PAYMENT_HASH) ->
+                        this.Data <- UnknownPaymentHash
+                    | (INCORRECT_PAYMENT_AMOUNT) ->
+                        this.Data <- IncorrectPaymentAmount
+                    | (EXPIRY_TOO_SOON) ->
+                        let d = ChannelUpdate.Init()
+                        (d :> ILightningSerializable<ChannelUpdate>).Deserialize(r)
+                        this.Data <- d |> ExpiryTooSoon
+                    | FINAL_EXPIRY_TOO_SOON ->
+                        this.Data <- FinalExpiryTooSoon
+                    | (FINAL_INCORRECT_CLTV_EXPIRY) ->
+                        let expiry = r.ReadUInt32(false) |> BlockHeight
+                        this.Data <- expiry |> FinalIncorrectCLTVExpiry
+                    | (FINAL_INCORRECT_HTLC_AMOUNT) ->
+                        let expiry = r.ReadUInt64(false) |> LNMoney.MilliSatoshis
+                        this.Data <- expiry |> FinalIncorrectCLTVAmount
+                    | (EXPIRY_TOO_FAR) ->
+                        this.Data <- ExpiryTooFar
+                    | d ->
+                        this.Data <- failwith "handle unknown case" // Unknown [||]
+                member this.Serialize(w: LightningWriterStream): unit =
+                    w.Write(this.Code.Value, false)
+                    match this.Data with
+                    | InvalidOnionVersion onionHash ->
+                        w.Write(onionHash, false)
+                    | InvalidOnionHmac onionHash ->
+                        w.Write(onionHash, false)
+                    | InvalidOnionKey onionHash ->
+                        w.Write(onionHash, false)
+                    | TemporaryChannelFailure update ->
+                        (update :> ILightningSerializable<ChannelUpdate>).SerializeWithLen(w)
+                    | AmountBelowMinimum (amount, update) ->
+                        w.Write(uint64 amount.Value, false)
+                        (update :> ILightningSerializable<ChannelUpdate>).SerializeWithLen(w)
+                    | FeeInsufficient (amount, update) ->
+                        w.Write(uint64 amount.Value, false)
+                        (update :> ILightningSerializable<ChannelUpdate>).SerializeWithLen(w)
+                    | ChannelDisabled (flags, update) ->
+                        w.Write(flags, false)
+                        (update :> ILightningSerializable<ChannelUpdate>).SerializeWithLen(w)
+                    | IncorrectCLTVExpiry (expiry, update) ->
+                        w.Write(expiry.Value, false)
+                        (update :> ILightningSerializable<ChannelUpdate>).SerializeWithLen(w)
+                    | ExpiryTooSoon (update) ->
+                        (update :> ILightningSerializable<ChannelUpdate>).SerializeWithLen(w)
+                    | FinalIncorrectCLTVExpiry (expiry) ->
+                        w.Write(expiry.Value, false)
+                    | FinalIncorrectCLTVAmount (amountMSat) ->
+                        w.Write(amountMSat.Value, false)
+                    | Unknown b -> ()
+                    | _ -> ()
+
+
+
+    [<CLIMutable>]
+    type ErrorMessage =
+        {
+            mutable ChannelId: WhichChannel
+            mutable Data: byte[]
+        }
+        with
+            interface ISetupMsg
+            interface ILightningSerializable<ErrorMessage> with
+                member this.Deserialize(ls) =
+                    match ls.ReadUInt256(false) with
+                    | id when id = uint256.Zero ->
+                        this.ChannelId <- All
+                    | id ->
+                        this.ChannelId <- SpecificChannel(Primitives.ChannelId(id))
+                    this.Data <- ls.ReadWithLen()
+                member this.Serialize(ls) =
+                    match this.ChannelId with
+                    | SpecificChannel (Primitives.ChannelId id) -> ls.Write(id.ToBytes())
+                    | All -> ls.Write(Array.zeroCreate 32)
+                    ls.WriteWithLen(this.Data)
+
+            member this.GetFailureMsgData() =
+                failwith ""
+
+    and WhichChannel =
+        | SpecificChannel of ChannelId
+        | All
 
     type ErrorAction = 
         | DisconnectPeer of ErrorMessage option

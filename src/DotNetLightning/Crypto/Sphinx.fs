@@ -201,8 +201,74 @@ module internal Sphinx =
                 let p = loop (payloads.[0..payloads.Length - 2], ephemeralPubKeys.[0..ephemeralPubKeys.Length - 2], sharedSecrets.[0..sharedSecrets.Length - 2], lastPacket)
                 { PacketAndSecrets.Packet = p; SharedSecrets = List.zip sharedSecrets pubKeys }
 
+    let [<Literal>] MAX_ERROR_PAYLOAD_LENGTH = 256
+    let [<Literal>] ERROR_PACKET_LENGTH = 292 // MacLength + MAX_ERROR_PAYLOAD_LENGTH + 2 + 2
 
-type ErrorPacket = {
-    OriginNode: NodeId
-    FailureMsg: string
-}
+    let forwardErrorPacket (packet: byte[], ss: byte[]) =
+        assert(packet.Length = ERROR_PACKET_LENGTH)
+        let k = generateKey("ammag", ss)
+        let s = generateStream(k, ERROR_PACKET_LENGTH)
+        xor(packet, s)
+
+    let private checkMac(ss: byte[], packet: byte[]): bool =
+        let (macV, payload) = packet |> Array.splitAt(MacLength)
+        let um = generateKey("um", ss)
+        (macV |> uint256) = mac(um, payload)
+
+    let private extractFailureMessage (packet: byte[]) =
+        if (packet.Length <> ERROR_PACKET_LENGTH) then
+            sprintf "Invalid Error packet length %d. must be %d" (packet.Length) (ERROR_PACKET_LENGTH)
+            |> RResult.rmsg
+        else
+            let (mac, payload) = packet |> Array.splitAt(MacLength)
+            let len = Utils.ToUInt16(payload.[0..1], false) |> int
+            if (len < 0 || (len > MAX_ERROR_PAYLOAD_LENGTH)) then
+                sprintf "message length must be smaller than %d. it was %d" MAX_ERROR_PAYLOAD_LENGTH len
+                |> RResult.rmsg
+            else
+                let msg = payload.[2..2 + len - 1]
+                FailureMsg.Init().FromBytes(msg) |> Good
+    type ErrorPacket = {
+        OriginNode: NodeId
+        FailureMsg: FailureMsg
+    }
+        with
+            static member Create (ss: byte[], msg: FailureMsg) =
+                let msgB = msg.ToBytes()
+                printfn "msg to encode is %A" msgB
+                assert (msgB.Length <= MAX_ERROR_PAYLOAD_LENGTH)
+                let um = generateKey("um", ss)
+                let padLen = MAX_ERROR_PAYLOAD_LENGTH - msgB.Length
+                let payload =
+                    use ms = new System.IO.MemoryStream()
+                    use st = new LightningWriterStream(ms)
+                    st.Write(uint16 msgB.Length, false)
+                    st.Write(msgB)
+                    st.Write(uint16 padLen, false)
+                    st.Write(zeros padLen)
+                    ms.ToArray()
+                forwardErrorPacket(Array.append (mac(um, payload).ToBytes()) payload, ss)
+
+            static member Parse(packet: byte[], ss: (Key * PubKey) list) =
+                let ssB = ss |> List.map(fun (k, pk) -> (k.ToBytes(), pk))
+                ErrorPacket.Parse(packet, ssB)
+
+            static member Parse(packet: byte[], ss: (byte[] * PubKey) list): RResult<ErrorPacket> =
+                if (packet.Length <> ERROR_PACKET_LENGTH) then
+                    RResult.rmsg "Invalid error packet length"
+                else
+                    let rec loop (packet: byte[], ss: (byte[] * PubKey) list) =
+                        match ss with
+                        | [] -> sprintf "Couldn't parse error packet: %A with shared secrets %A" packet ss
+                                |> RResult.rmsg
+                        | (secret, pk)::tail ->
+                            let packet1 = forwardErrorPacket(packet, secret)
+                            if ((checkMac(secret, packet1))) then
+                                extractFailureMessage packet1
+                                >>= fun msg ->
+                                        { OriginNode = pk |> NodeId
+                                          FailureMsg = msg }
+                                        |> Good
+                            else
+                                loop (packet1, tail)
+                    loop(packet, ss)

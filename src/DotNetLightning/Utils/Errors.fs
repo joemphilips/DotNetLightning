@@ -22,7 +22,6 @@ type APIError =
     | MonitorUpdateFailed
 and FeeRateTooHighContent =  {Msg: string; FeeRate: FeeRatePerKw}
 
-    
 
 module Error =
     [<Literal>]
@@ -34,32 +33,98 @@ module Error =
     [<Literal>]
     let UPDATE = 0x1000us
 
+    [<Literal>]
+    let INVALID_REALM = PERM|||1us
+
+    [<Literal>]
+    let TEMPORARY_NODE_FAILURE = NODE|||2us
+
+    [<Literal>]
+    let PERMANENT_NODE_FAILURE = PERM|||NODE|||2us
+
+    [<Literal>]
+    let REQUIRED_NODE_FEATURE_MISSING = PERM|||NODE|||3us
+
+    [<Literal>]
+    let INVALID_ONION_VERSION = BADONION|||PERM|||4us
+
+    [<Literal>]
+    let INVALID_ONION_HMAC = BADONION|||PERM|||5us
+
+    [<Literal>]
+    let INVALID_ONION_KEY = BADONION|||PERM|||6us
+
+    [<Literal>]
+    let TEMPORARY_CHANNEL_FAILURE = UPDATE|||7us
+
+    [<Literal>]
+    let PERMANENT_CHANNEL_FAILURE = PERM|||8us
+
+    [<Literal>]
+    let REQUIRED_CHANNEL_FEATURE_MISSING = PERM|||9us
+
+    [<Literal>]
+    let UNKNOWN_NEXT_PEER = PERM|||10us
+
+    [<Literal>]
+    let AMOUNT_BELOW_MINIMUM = UPDATE|||11us
+
+    [<Literal>]
+    let FEE_INSUFFICIENT = UPDATE|||12us
+
+    [<Literal>]
+    let INOCCORRECT_CLTV_EXPIRY = UPDATE|||13us
+
+    [<Literal>]
+    let EXPIRY_TOO_SOON = UPDATE|||14us
+
+    [<Literal>]
+    let UNKNOWN_PAYMENT_HASH = PERM|||15us
+
+    [<Literal>]
+    let INCORRECT_PAYMENT_AMOUNT = PERM|||16us
+
+    [<Literal>]
+    let FINAL_EXPIRY_TOO_SOON = 17us
+
+    [<Literal>]
+    let FINAL_INCORRECT_CLTV_EXPIRY = 18us
+
+    [<Literal>]
+    let FINAL_INCORRECT_HTLC_AMOUNT = 19us
+
+    [<Literal>]
+    let EXPIRY_TOO_FAR = 21us
+
+    [<Literal>]
+    let CHANNEL_DISABLED = UPDATE|||20us
+    
     [<Flags>]
     type ErrorCode = ErrorCode of uint16
         with 
             member this.Value = let (ErrorCode v) = this in v
             member this.GetOnionErrorDescription() =
                 match this.Value with
-                | _c when _c = (PERM|||1us) -> ("The realm byte was not understood by the processing node", "invalid_realm")
-                | _c when _c = (NODE|||2us) -> ("Node indicated temporary node failure", "temporary_node_failure")
-                | _c when _c = (PERM|||NODE|||2us) -> ("Node indicated permanent node failure", "permanent_node_failure")
-                | _c when _c = (PERM|||NODE|||3us) -> ("Node indicated the required node feature is missing in the onion", "required_node_feature_missing")
-                | _c when _c = (BADONION|||PERM|||4us) -> ("Node indicated the version by is not understood", "invalid_onion_version")
-                | _c when _c = (BADONION|||PERM|||5us)  -> ("Node indicated the HMAC of the onion is incorrect", "invalid_onion_hmac")
-                | _c when _c = (BADONION|||PERM|||6us) -> ("Node indicated the ephemeral public keys is not parseable", "invalid_onion_key")
-                | _c when _c = (UPDATE|||7us) -> ("Node indicated the outgoing channel is unable to handle the HTLC temporarily", "temporary_channel_failure")
-                | _c when _c = (PERM|||8us) -> ("Node indicated the outgoing channel is unable to handle the HTLC peramanently", "permanent_channel_failure")
-                | _c when _c = (PERM|||9us) -> ("Node indicated the required feature for the outgoing channel is not satisfied", "required_channel_feature_missing")
-                | _c when _c = (PERM|||10us) -> ("Node indicated the outbound channel is not found for the specwhenied short_channel_id in the onion packet", "unknown_next_peer")
-                | _c when _c = (UPDATE|||11us) -> ("Node indicated the HTLC amount was below the required minmum for the outbound channel", "amount_below_minimum")
-                | _c when _c = (UPDATE|||12us) -> ("Node indicated the fee amount does not meet the required level", "fee_insufficient")
-                | _c when _c = (UPDATE|||13us) -> ("Node indicated the cltv_expiry does not comply with the cltv_expiry_delta required by the outgoing channel", "incorrect_cltv_expiry")
-                | _c when _c = (UPDATE|||14us) -> ("Node indicated the CLTV expiry too close to the current block height for safe handling", "expiry_too_soon")
-                | _c when _c = (PERM|||15us) -> ("The final node indicated the payment hash is unknown or amount is incorrect", "incorrect_or_unknown_payment_details")
-                | _c when _c = (PERM|||16us) -> ("The final node indicated the payment amount is incorrect", "incorrect_payment_amount")
-                | _c when _c = (17us) -> ("The final node indicated the CLTV expiry is too close to the current block height for safe handling", "final_expiry_too_soon")
-                | _c when _c = (18us) -> ("The final node indicated the CLTV expiry in the HTLC does not match the value in the onion", "final_incorrect_cltv_expiry")
-                | _c when _c = (19us) -> ("The final node indicated the amount in the HTLC does not match the value in the onion", "final_incorrect_htlc_amount")
-                | _c when _c = (UPDATE|||20us) -> ("Node indicated the outbound channel has been disabled", "channel_disabled")
-                | _c when _c = (21us) -> ("Node indicated the CLTV expiry in the HTLC is too far in the future", "expiry_too_far")
+                | (INVALID_REALM) -> ("The realm byte was not understood by the processing node", "invalid_realm")
+                | (TEMPORARY_NODE_FAILURE) -> ("Node indicated temporary node failure", "temporary_node_failure")
+                | (PERMANENT_NODE_FAILURE) -> ("Node indicated permanent node failure", "permanent_node_failure")
+                | (REQUIRED_NODE_FEATURE_MISSING) -> ("Node indicated the required node feature is missing in the onion", "required_node_feature_missing")
+                | (INVALID_ONION_VERSION) -> ("Node indicated the version by is not understood", "invalid_onion_version")
+                | (INVALID_ONION_HMAC)  -> ("Node indicated the HMAC of the onion is incorrect", "invalid_onion_hmac")
+                | (INVALID_ONION_KEY) -> ("Node indicated the ephemeral public keys is not parseable", "invalid_onion_key")
+                | (TEMPORARY_CHANNEL_FAILURE) -> ("Node indicated the outgoing channel is unable to handle the HTLC temporarily", "temporary_channel_failure")
+                | (PERMANENT_CHANNEL_FAILURE) -> ("Node indicated the outgoing channel is unable to handle the HTLC peramanently", "permanent_channel_failure")
+                | (REQUIRED_CHANNEL_FEATURE_MISSING) -> ("Node indicated the required feature for the outgoing channel is not satisfied", "required_channel_feature_missing")
+                | (UNKNOWN_NEXT_PEER) -> ("Node indicated the outbound channel is not found for the specwhenied short_channel_id in the onion packet", "unknown_next_peer")
+                | (AMOUNT_BELOW_MINIMUM) -> ("Node indicated the HTLC amount was below the required minmum for the outbound channel", "amount_below_minimum")
+                | (FEE_INSUFFICIENT) -> ("Node indicated the fee amount does not meet the required level", "fee_insufficient")
+                | (INOCCORRECT_CLTV_EXPIRY) -> ("Node indicated the cltv_expiry does not comply with the cltv_expiry_delta required by the outgoing channel", "incorrect_cltv_expiry")
+                | (EXPIRY_TOO_SOON) -> ("Node indicated the CLTV expiry too close to the current block height for safe handling", "expiry_too_soon")
+                | (UNKNOWN_PAYMENT_HASH) -> ("The final node indicated the payment hash is unknown or amount is incorrect", "incorrect_or_unknown_payment_details")
+                | (INCORRECT_PAYMENT_AMOUNT) -> ("The final node indicated the payment amount is incorrect", "incorrect_payment_amount")
+                | FINAL_EXPIRY_TOO_SOON -> ("The final node indicated the CLTV expiry is too close to the current block height for safe handling", "final_expiry_too_soon")
+                | (FINAL_INCORRECT_CLTV_EXPIRY) -> ("The final node indicated the CLTV expiry in the HTLC does not match the value in the onion", "final_incorrect_cltv_expiry")
+                | (FINAL_INCORRECT_HTLC_AMOUNT) -> ("The final node indicated the amount in the HTLC does not match the value in the onion", "final_incorrect_htlc_amount")
+                | (EXPIRY_TOO_FAR) -> ("Node indicated the CLTV expiry in the HTLC is too far in the future", "expiry_too_far")
+                | (CHANNEL_DISABLED) -> ("Node indicated the outbound channel has been disabled", "channel_disabled")
                 | _ -> ("Unknown", "")
