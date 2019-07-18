@@ -153,4 +153,23 @@ let tests =
             Expect.equal (pubKeys.[4]) (pubkey.Value) ""
             Expect.equal (TemporaryNodeFailure) (failure.Data) ""
             ()
+
+        testCase "Intermediate node replies with an error message" <| fun _ ->
+            let { Packet = packet; SharedSecrets = ss } =
+                Sphinx.PacketAndSecrets.Create(sessionKey, pubKeys, payloads, associatedData)
+            let { Payload = payload0; NextPacket = packet1; SharedSecret = ss0 } =
+                Sphinx.parsePacket(privKeys.[0]) (associatedData) (packet.ToBytes()) |> RResult.rderef
+            let { Payload = payload1; NextPacket = packet2; SharedSecret = ss1 } =
+                Sphinx.parsePacket(privKeys.[1]) (associatedData) (packet1.ToBytes()) |> RResult.rderef
+            let { Payload = payload2; NextPacket = packet3; SharedSecret = ss2 } =
+                Sphinx.parsePacket(privKeys.[2]) (associatedData) (packet2.ToBytes()) |> RResult.rderef
+            
+            let error = ErrorPacket.Create(ss2, { Code = ErrorCode INVALID_REALM; Data = InvalidRealm })
+            let error1 = forwardErrorPacket(error, ss1)
+            let error2 = forwardErrorPacket(error1, ss0)
+            let { OriginNode = pubkey; FailureMsg = failure } =
+                ErrorPacket.Parse(error2, ss) |> RResult.rderef
+            Expect.equal (pubkey.Value) (pubKeys.[2]) ""
+            Expect.equal (InvalidRealm) (failure.Data) ""
+            ()
     ]
