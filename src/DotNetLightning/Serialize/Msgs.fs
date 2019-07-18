@@ -134,6 +134,9 @@ module Msgs =
 
             static member LastPacket = OnionPacket.Init()
 
+            member this.IsLastPacket =
+                this.HMAC = uint256.Zero
+
             interface ILightningSerializable<OnionPacket> with
                 member this.Deserialize(ls: LightningReaderStream) =
                     this.Version <- ls.ReadUInt8()

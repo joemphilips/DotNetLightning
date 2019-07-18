@@ -5,6 +5,7 @@ open Expecto.Logging
 open Expecto.Logging.Message
 open NBitcoin
 open DotNetLightning.Utils
+open DotNetLightning.Utils.Error
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Crypto
 open DotNetLightning.Crypto.Sphinx

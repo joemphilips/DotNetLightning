@@ -2,7 +2,7 @@ namespace DotNetLightning.Crypto
 open System
 open NBitcoin
 open DotNetLightning.Utils
-open DotNetLightning.Utils.NBitcoinExtensions
+open DotNetLightning.Serialize
 open DotNetLightning.Serialize.Msgs
 
 type SharedSecret = uint256
