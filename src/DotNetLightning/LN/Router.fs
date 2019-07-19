@@ -1,3 +1,0 @@
-namespace DotNetLightning.LN
-open NBitcoin
-open DotNetLightning.Utils

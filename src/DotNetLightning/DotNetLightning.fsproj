@@ -35,13 +35,12 @@
     <Compile Include="Transactions/Transactions.fs" />
     <Compile Include="LN/PeerChannelEncryptor.fs" />
     <Compile Include="LN/ChannelUtils.fs" />
-    <Compile Include="LN/Router.fs" />
     <Compile Include="LN/ChannelManager.fs" />
     <Compile Include="LN/ChannelMonitor.fs" />
-    <Compile Include="LN/Channel.fs" />
+    <Compile Include="LN/ChannelConstants.fs" />
     <Compile Include="LN/EclairCommitments.fs" />
     <Compile Include="LN/EclairChannelTypes.fs" />
-    <Compile Include="LN/EclairChannel.fs" />
+    <Compile Include="LN/Channel.fs" />
     <Compile Include="LN/PeerHandler.fs" />
     <Compile Include="Library.fs" />
   </ItemGroup>
