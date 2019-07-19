@@ -61,12 +61,12 @@ type PublishableTxs = {
 }
 
 type LocalCommit = {
-    Index: uint32
+    Index: uint64
     Spec: CommitmentSpec
     PublishableTxs: PublishableTxs
 }
 type RemoteCommit = {
-    Index: uint32
+    Index: uint64
     Spec: CommitmentSpec
     TxId: TxId
     RemotePerCommitmentPoint: PubKey
@@ -75,7 +75,7 @@ type RemoteCommit = {
 type WaitingForRevocation = {
     NextRemoteCommit: RemoteCommit
     Sent: CommitmentSigned
-    SentAfterLocalCommitmentIndex: uint32
+    SentAfterLocalCommitmentIndex: uint64
     ReAsignASAP: bool
 }
     with
@@ -155,7 +155,7 @@ type Commitments = {
     LocalParams: LocalParams
     RemoteParams: RemoteParams
     ChannelFlags: uint8
-    FundingTxOutIndex: TxOutIndex
+    FundingSCoin: ScriptCoin
     LocalCommit: LocalCommit
     RemoteCommit: RemoteCommit
     LocalChanges: LocalChanges
@@ -188,6 +188,12 @@ type Commitments = {
 
         member this.IncrLocalHTLCId = { this with LocalNextHTLCId = this.LocalNextHTLCId + 1UL }
         member this.IncrRemoteHTLCId = { this with RemoteNextHTLCId = this.RemoteNextHTLCId + 1UL }
+
+        member this.LocalHasChanges() =
+            (not this.RemoteChanges.ACKed.IsEmpty) || (not this.LocalChanges.Proposed.IsEmpty)
+
+        member this.RemoteHasChanges() =
+            (not this.LocalChanges.ACKed.IsEmpty) || (not this.RemoteChanges.Proposed.IsEmpty)
 
         member internal this.GetHTLCCrossSigned(directionRelativeToLocal: Direction, htlcId: HTLCId): UpdateAddHTLC option =
             let remoteSigned =

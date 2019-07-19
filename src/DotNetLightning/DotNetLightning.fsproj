@@ -23,12 +23,13 @@
     <Compile Include="Serialize/Msgs.fs" />
     <Compile Include="DomainUtils/Types.fs" />
     <Compile Include="DomainUtils/LNEvents.fs" />
-    <Compile Include="Chain/ChainInterface.fs" />
-    <Compile Include="Chain/KeysInterface.fs" />
     <Compile Include="Crypto/CryptoUtils.fs" />
     <Compile Include="Crypto/ShaChain.fs" />
     <Compile Include="Crypto/Sphinx.fs" />
     <Compile Include="Crypto/OnionUtils.fs" />
+    <Compile Include="Crypto/Generators.fs" />
+    <Compile Include="Chain/ChainInterface.fs" />
+    <Compile Include="Chain/KeysInterface.fs" />
     <Compile Include="Transactions/CommitmentSpec.fs" />
     <Compile Include="Transactions/Scripts.fs" />
     <Compile Include="Transactions/Transactions.fs" />

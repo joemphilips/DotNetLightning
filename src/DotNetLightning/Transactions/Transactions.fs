@@ -6,7 +6,10 @@ open NBitcoin
 open NBitcoin.Crypto
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils
+open DotNetLightning.Utils.NBitcoinExtensions
+open DotNetLightning.Utils.Aether
 open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Chain
 
 /// We define all possible txs here.
 /// For internal representation is psbt. But this is just for convenience since
@@ -14,11 +17,25 @@ open DotNetLightning.Serialize.Msgs
 type ILightningTx = interface end
 
 type CommitTx = CommitTx of PSBT
-    with interface ILightningTx
-type HTLCSuccessTx = HTLCSuccessTx of PSBT
-    with interface ILightningTx
-type HTLCTimeoutTx = HTLCTimeoutTx of PSBT
-    with interface ILightningTx
+    with    
+        interface ILightningTx
+        member this.Value = let (CommitTx v) = this in v
+        member this.GetTxId() =
+            this.Value.GetGlobalTransaction().GetTxId()
+
+type HTLCSuccessTx = {
+    Value: PSBT
+    WhichInput: int
+}
+    with
+        interface ILightningTx
+
+type HTLCTimeoutTx = {
+    Value: PSBT
+    WhichInput: int
+}
+    with
+        interface ILightningTx
 type ClaimHTLCSuccessTx = ClaimHTLCSuccessTx of PSBT
     with interface ILightningTx
 type ClaimHTLCTimeoutTx = ClaimHTLCTimeoutTx of PSBT
@@ -322,7 +339,8 @@ module Transactions =
         else
             let psbt = 
                 let txb = n.CreateTransactionBuilder()
-                let scoin = ScriptCoin(commitTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex), redeem)
+                let indexedTxOut = commitTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex)
+                let scoin = ScriptCoin(indexedTxOut, redeem)
                 let dest = Scripts.toLocalDelayed localRevocationPubKey toLocalDelay localDelayedPaymentPubKey
                 let tx = txb.AddCoins(scoin)
                             .Send(dest.WitHash, amount)
@@ -331,7 +349,8 @@ module Transactions =
                 tx.Version <- 2u
                 PSBT.FromTransaction(tx)
                     .AddCoins(scoin)
-            psbt |> HTLCTimeoutTx |> Good
+            let whichInput = psbt.Inputs |> Seq.findIndex(fun i -> not (isNull i.WitnessScript))
+            { HTLCTimeoutTx.Value = psbt; WhichInput = whichInput } |> Good
 
     let makeHTLCSuccessTx (commitTx: Transaction)
                           (localDustLimit: Money)
@@ -362,7 +381,8 @@ module Transactions =
                 tx.Version <- 2u
                 PSBT.FromTransaction(tx)
                     .AddCoins(scoin)
-            psbt |> HTLCSuccessTx |> Good
+            let whichInput = psbt.Inputs |> Seq.findIndex(fun i -> not (isNull i.WitnessScript))
+            { HTLCSuccessTx.Value = psbt; WhichInput = whichInput } |> Good
 
     let makeHTLCTxs (commitTx: Transaction)
                     (localDustLimit: Money)
@@ -534,3 +554,4 @@ module Transactions =
                 PSBT.FromTransaction(tx)
                     .AddCoins(commitTxInput)
             psbt |> ClosingTx |> Good
+

@@ -239,6 +239,17 @@ type ChannelEvent =
     | WeAcceptedCMDFulfillHTLC of msg: UpdateFulfillHTLC * newCommitments: Commitments
     | WeAcceptedFulfillHTLC of msg: UpdateFulfillHTLC * origin: HTLCSource * htlc: UpdateAddHTLC * newCommitments: Commitments
 
+    | WeAcceptedCMDFailHTLC of msg: UpdateFailHTLC * newCommitments: Commitments
+    | WeAcceptedFailHTLC of origin: HTLCSource * msg: UpdateAddHTLC * nextCommitments: Commitments
+
+    | WeAcceptedCMDFailMalformedHTLC of msg: UpdateFailMalformedHTLC * newCommitments: Commitments
+    | WeAcceptedFailMalformedHTLC of origin: HTLCSource * msg: UpdateAddHTLC * newCommitments: Commitments
+
+    | WeAcceptedCMDUpdateFee of msg: UpdateFee  * nextCommitments: Commitments
+    | WeAcceptedUpdateFee of msg: UpdateFee
+
+    | WeAcceptedCMDSign of msg: CommitmentSigned * nextCommitments: Commitments
+
     // -------- else ---------
     | Closed
     | Disconnected
@@ -325,7 +336,7 @@ type CMDFulfillHTLC = {
 
 type CMDFailHTLC = {
     Id: HTLCId
-    Reason: OnionErrorPacket
+    Reason: Choice<byte[], FailureMsg>
 }
 
 type CMDFailMalformedHTLC = {
@@ -378,7 +389,9 @@ type ChannelCommand =
     | ApplyUpdateFailMalformedHTLC of UpdateFailMalformedHTLC
     | UpdateFee of CMDUpdateFee
     | ApplyUpdateFee of UpdateFee
+
     | SignCommitment
+    | ApplyCommitmentSigned of CommitmentSigned
 
     // close
     | Close of CMDClose

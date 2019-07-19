@@ -22,6 +22,13 @@ module NBitcoinExtensions =
             res.[31] <- res.[31] ^^^ (uint8 (this.N >>> 0) &&& 0xffuy)
             res  |> uint256 |> ChannelId
 
+    type PSBT with
+        member this.GetMatchingSig(pubkey: PubKey) =
+            this.Inputs
+            |> Seq.collect (fun i -> i.PartialSigs)
+            |> Seq.choose(fun kv -> if kv.Key = pubkey then Some kv.Value else None)
+            |> Seq.exactlyOne
+
     type ECDSASignature with
 
         /// ** Description **

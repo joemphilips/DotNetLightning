@@ -3,6 +3,8 @@ open Microsoft.Extensions.Logging
 open NBitcoin
 open NBitcoin.Crypto
 open DotNetLightning.Utils.Primitives
+open DotNetLightning.Utils.NBitcoinExtensions
+open DotNetLightning.Crypto
 
 /// OutPoint
 type StaticOutput = {
@@ -67,7 +69,11 @@ type IKeysRepository =
     /// Get a unique temporary channel id. Channel will be refered to by this until the funding TX is
     /// created, at which point they will use the outpoint in the funding TX.
     abstract member GetChannelId: unit -> ChannelId
-    abstract member GetSignature: PSBT -> TransactionSignature
+    abstract member GetSignature: PSBT -> TransactionSignature * PSBT
+
+    /// This method is sued to spend funds send to htlc keys/delayed keys
+    abstract member GenerateKeyAndGetSignature: htlc: PSBT * remotePoint: PubKey -> TransactionSignature * PSBT
+    abstract member CommitmentPoint: uint64 -> PubKey
 
 
 /// `KeyManager` in rust-lightning
@@ -108,3 +114,10 @@ type DefaultKeyRepository(seed: uint256, network: Network, logger: ILogger) =
         member this.GetNodeSecret() =
             this.NodeSecret.PrivateKey
         member this.GetSignature(psbt) = failwith ""
+        member this.GenerateKeyAndGetSignature(psbt, remotePoint) =
+            let priv = Key()
+            let priv2 = Generators.derivePrivKey remotePoint (priv.ToBytes())
+            psbt.SignWithKeys(priv2) |> ignore
+            (psbt.GetMatchingSig(priv2.PubKey), psbt)
+
+        member this.CommitmentPoint(i) = failwith "not impl"
