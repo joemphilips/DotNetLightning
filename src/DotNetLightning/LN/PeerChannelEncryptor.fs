@@ -642,4 +642,4 @@ module PeerChannelEncryptorMonad =
         member this.Bind(x, f) = bindP f x
         member this.Zero(x) = returnP ()
 
-    let cipherchannel = PeerChannelEncryptorComputationBuilder()
+    let noise = PeerChannelEncryptorComputationBuilder()
