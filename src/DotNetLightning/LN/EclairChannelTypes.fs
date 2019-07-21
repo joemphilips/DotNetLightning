@@ -254,6 +254,8 @@ type ChannelEvent =
     | WeAcceptedCMDSign of msg: CommitmentSigned * nextCommitments: Commitments
     | WeAcceptedCommitmentSigned of msg: RevokeAndACK * nextCommitments: Commitments
 
+    | WeAcceptedRevokeAndACK of nextCommitments: Commitments
+
     // -------- else ---------
     | Closed
     | Disconnected
@@ -396,6 +398,8 @@ type ChannelCommand =
 
     | SignCommitment
     | ApplyCommitmentSigned of CommitmentSigned
+
+    | ApplyRevokeAndACK of RevokeAndACK
 
     // close
     | Close of CMDClose

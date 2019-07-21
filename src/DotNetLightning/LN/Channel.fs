@@ -1097,7 +1097,22 @@ module Channel =
                                     Good ([ WeAcceptedCommitmentSigned(nextMsg, nextCommitments) ;])
                             >>>= fun e -> RRClose("Something unexpected happend while handling commitment_signed from remote" + e.Describe())
 
-
+        | ChannelState.Normal state, ApplyRevokeAndACK msg ->
+            let cm = state.Commitments
+            match cm.RemoteNextCommitInfo with
+            | Choice1Of2 _ when (msg.PerCommitmentSecret.ToPubKey() <> cm.RemoteCommit.RemotePerCommitmentPoint) ->
+                sprintf "Invalid revoke_and_ack %A; must be %A" msg.PerCommitmentSecret cm.RemoteCommit.RemotePerCommitmentPoint
+                |> RRClose
+            | Choice1Of2 ({ NextRemoteCommit = theirNextCommit }) ->
+                let commitments1 = { cm  with LocalChanges = { cm.LocalChanges with Signed = []; ACKed = cm.LocalChanges.ACKed @ cm.LocalChanges.Signed }
+                                              RemoteChanges = { cm.RemoteChanges with Signed = [] }
+                                              RemoteCommit = theirNextCommit
+                                              RemoteNextCommitInfo = Choice2Of2(msg.NextPerCommitmentPoint)
+                                              RemotePerCommitmentSecrets = cm.RemotePerCommitmentSecrets.AddHash(msg.PerCommitmentSecret.ToBytes(), 0xffffffffffffUL - cm.RemoteCommit.Index )}
+                [ WeAcceptedRevokeAndACK (commitments1) ] |> Good
+            | Choice2Of2 _ ->
+                sprintf "Unexpected revocation"
+                |> RRClose
 
 
 
@@ -1161,6 +1176,9 @@ module Channel =
         | WeAcceptedCMDFulfillHTLC (msg, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
         | WeAcceptedFulfillHTLC (msg, origin, htlc, newCommitments), ChannelState.Normal d ->
+            { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
+
+        | WeAcceptedCMDFailHTLC (msg, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
 
         // ----- else -----
