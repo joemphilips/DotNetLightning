@@ -54,6 +54,27 @@ type ChannelKeys = {
     CommitmentSeed: uint256
 }
 
+    with
+        member this.ToChannelPubKeys() =
+            {
+                FundingPubKey = this.FundingKey.PubKey
+                RevocationBasePubKey = this.RevocationBaseKey.PubKey
+                PaymentBasePubKey = this.PaymentBaseKey.PubKey
+                DelayedPaymentBasePubKey = this.DelayedPaymentBaseKey.PubKey
+                HTLCBasePubKey = this.HTLCBaseKey.PubKey
+                CommitmentSeed = this.CommitmentSeed
+            }
+
+/// In usual operation we should not hold secrets on memory. So only hold pubkey
+and ChannelPubKeys =  {
+    FundingPubKey: PubKey
+    RevocationBasePubKey: PubKey
+    PaymentBasePubKey: PubKey
+    DelayedPaymentBasePubKey: PubKey
+    HTLCBasePubKey: PubKey
+    CommitmentSeed: uint256
+}
+
 
 /// Interface to describe an object which can get user secrets and key material.
 type IKeysRepository =
@@ -69,11 +90,13 @@ type IKeysRepository =
     /// Get a unique temporary channel id. Channel will be refered to by this until the funding TX is
     /// created, at which point they will use the outpoint in the funding TX.
     abstract member GetChannelId: unit -> ChannelId
-    abstract member GetSignature: PSBT -> TransactionSignature * PSBT
 
-    /// This method is sued to spend funds send to htlc keys/delayed keys
-    abstract member GenerateKeyAndGetSignature: htlc: PSBT * remotePoint: PubKey -> TransactionSignature * PSBT
-    abstract member CommitmentPoint: uint64 -> PubKey
+    /// Must add signature to the PSBT *And* return the signature
+    abstract member GetSignatureFor: psbt: PSBT * pubKey: PubKey -> TransactionSignature * PSBT
+    /// Must add signature to the PSBT *And* return the signature
+    abstract member GenerateKeyFromBasePointAndSign: psbt: PSBT * pubkey: PubKey * basePoint: PubKey -> TransactionSignature * PSBT
+    /// Must add signature to the PSBT *And* return the signature
+    abstract member GenerateKeyFromRemoteSecretAndSign: psbt: PSBT * pubKey: PubKey * remoteSecret : Key -> TransactionSignature * PSBT
 
 
 /// `KeyManager` in rust-lightning
@@ -88,6 +111,7 @@ type DefaultKeyRepository(seed: uint256, network: Network, logger: ILogger) =
     member this.ChannelIdMasterKey = masterKey.Derive(5, true)
     member val ChannelIdChildIndex = 0u with get, set
     member val SessionChildIndex = 0u with get, set
+    member val BasepointToSecretMap = Map.empty with get, set
     interface IKeysRepository with
         member this.GetChannelId(): ChannelId = 
             let idx = this.ChannelIdChildIndex
@@ -97,12 +121,15 @@ type DefaultKeyRepository(seed: uint256, network: Network, logger: ILogger) =
         // TODO: Update
         member this.GetChannelKeys(_inbound): ChannelKeys = 
             let seed = uint256(RandomUtils.GetBytes(32))
+            let keys = [ for _ in 0..4 -> Key() ]
+            let basepointAndSecrets = keys |> List.map(fun k -> k.PubKey, k)
+            this.BasepointToSecretMap <- basepointAndSecrets |> Map.ofList
             {
-                FundingKey = Key ()
-                RevocationBaseKey = Key()
-                PaymentBaseKey = Key()
-                DelayedPaymentBaseKey = Key()
-                HTLCBaseKey = Key()
+                FundingKey = keys.[0]
+                RevocationBaseKey = keys.[1]
+                PaymentBaseKey = keys.[2]
+                DelayedPaymentBaseKey = keys.[3]
+                HTLCBaseKey = keys.[4]
                 CommitmentSeed = seed
             }
         member this.GetDestinationScript() =
@@ -113,11 +140,17 @@ type DefaultKeyRepository(seed: uint256, network: Network, logger: ILogger) =
             this.ShutDownPubKey
         member this.GetNodeSecret() =
             this.NodeSecret.PrivateKey
-        member this.GetSignature(psbt) = failwith ""
-        member this.GenerateKeyAndGetSignature(psbt, remotePoint) =
-            let priv = Key()
-            let priv2 = Generators.derivePrivKey remotePoint (priv.ToBytes())
+
+        member this.GetSignatureFor(psbt, pubkey) =
+            let priv = this.BasepointToSecretMap |> Map.find pubkey
+            psbt.SignWithKeys(priv) |> ignore
+            (psbt.GetMatchingSig(priv.PubKey), psbt)
+
+        member this.GenerateKeyFromBasePointAndSign(psbt, pubkey, basePoint) =
+            let basepointSecret: Key = this.BasepointToSecretMap |> Map.find pubkey
+            let priv2 = Generators.derivePrivKey basePoint (basepointSecret.ToBytes())
             psbt.SignWithKeys(priv2) |> ignore
             (psbt.GetMatchingSig(priv2.PubKey), psbt)
 
-        member this.CommitmentPoint(i) = failwith "not impl"
+        member this.GenerateKeyFromRemoteSecretAndSign(psbt, pubkey, remoteSecret) =
+            failwith ""

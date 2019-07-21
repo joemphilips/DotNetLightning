@@ -21,9 +21,10 @@ type InputInitFunder = {
     LocalParams: LocalParams
     RemoteInit: Init
     ChannelFlags: uint8
+    ChannelKeys: ChannelKeys
 }
     with
-        static member FromOpenChannel (localParams) (remoteInit) (o: OpenChannel) =
+        static member FromOpenChannel (localParams) (remoteInit) (channelKeys) (o: OpenChannel) =
             {
                 InputInitFunder.TemporaryChannelId = o.TemporaryChannelId
                 FundingSatoshis = o.FundingSatoshis
@@ -33,6 +34,7 @@ type InputInitFunder = {
                 LocalParams = localParams
                 RemoteInit = remoteInit
                 ChannelFlags = o.ChannelFlags
+                ChannelKeys = channelKeys
             }
 
         member this.DeriveCommitmentSpec() =
@@ -46,6 +48,7 @@ and InputInitFundee = {
     LocalParams: LocalParams
     RemoteInit: Init
     ToLocal: LNMoney
+    ChannelKeys: ChannelKeys
 }
 
 
@@ -249,6 +252,7 @@ type ChannelEvent =
     | WeAcceptedUpdateFee of msg: UpdateFee
 
     | WeAcceptedCMDSign of msg: CommitmentSigned * nextCommitments: Commitments
+    | WeAcceptedCommitmentSigned of msg: RevokeAndACK * nextCommitments: Commitments
 
     // -------- else ---------
     | Closed

@@ -16,10 +16,18 @@ open DotNetLightning.Chain
 /// in current spec we don't have to send PSBT with each other in case of Lightning.
 type ILightningTx = interface end
 
-type CommitTx = CommitTx of PSBT
+type IHTLCTx =
+    inherit ILightningTx
+    abstract member Value: PSBT
+    abstract member WhichInput: int
+
+
+type CommitTx = {
+    Value: PSBT
+    WhichInput: int
+}
     with    
         interface ILightningTx
-        member this.Value = let (CommitTx v) = this in v
         member this.GetTxId() =
             this.Value.GetGlobalTransaction().GetTxId()
 
@@ -28,14 +36,22 @@ type HTLCSuccessTx = {
     WhichInput: int
 }
     with
-        interface ILightningTx
+        interface IHTLCTx
+            with
+                member this.Value = this.Value
+                member this.WhichInput = this.WhichInput
 
 type HTLCTimeoutTx = {
     Value: PSBT
     WhichInput: int
 }
     with
-        interface ILightningTx
+        interface IHTLCTx
+            with
+                member this.Value = this.Value
+                member this.WhichInput = this.WhichInput
+
+
 type ClaimHTLCSuccessTx = ClaimHTLCSuccessTx of PSBT
     with interface ILightningTx
 type ClaimHTLCTimeoutTx = ClaimHTLCTimeoutTx of PSBT
@@ -281,43 +297,44 @@ module Transactions =
         let psbt =
             let p = PSBT.FromTransaction(tx)
             p.AddCoins(inputInfo)
-        psbt |> CommitTx
+        { CommitTx.Value = psbt; WhichInput = 0 }
 
 
     let private findScriptPubKeyIndex(tx: Transaction) (spk: Script) =
         tx.Outputs |> List.ofSeq |> List.findIndex(fun o -> o.ScriptPubKey = spk)
 
-    let checkTxFinalized (tx: ILightningTx) (prevOutIndex: TxOutIndex) (additionalKnownSigs: (PubKey * TransactionSignature) seq) (redeem: Script): RResult<FinalizedTx> =
+    let checkTxFinalized (psbt: PSBT) (inputIndex: int) (additionalKnownSigs: (PubKey * TransactionSignature) seq): RResult<FinalizedTx> =
         let checkTxFinalizedCore (psbt: PSBT): RResult<_> =
             match psbt.TryFinalize() with
             | false, e -> RResult.rmsg (sprintf "failed to finalize psbt Errors: %A" e)
             | true, _ ->
                 psbt.ExtractTransaction() |> FinalizedTx |> Good
         try
-            match tx with
-            | :? CommitTx as tx ->
-                let (CommitTx commitTx) = tx
-                match commitTx.Inputs.[int prevOutIndex.Value].GetTxOut() with
-                | null -> RResult.rmsg ("Unknown prevout")
-                | _ ->
-                    additionalKnownSigs |> Seq.iter (fun kv ->
-                        commitTx.Inputs.[int prevOutIndex.Value].PartialSigs.AddOrReplace(kv)
-                    )
+            match psbt.Inputs.[inputIndex].GetTxOut() with
+            | null -> RResult.rmsg ("Unknown prevout")
+            | _ ->
+                additionalKnownSigs |> Seq.iter (fun kv ->
+                    psbt.Inputs.[inputIndex].PartialSigs.AddOrReplace(kv)
+                )
 
-                    match commitTx.Inputs.[int prevOutIndex.Value].WitnessScript with
-                    | null ->
-                        commitTx.AddScripts(redeem) |> ignore
-                        checkTxFinalizedCore commitTx
-                    | sc ->
-                        if sc <> redeem then
-                            RResult.rmsg (sprintf "commitment tx has unexpected script %A. must be: %A" sc redeem)
-                        else
-                            checkTxFinalizedCore commitTx
-
-            | t -> RResult.rmsg (sprintf "Checking signature for type %A is not supported" t)
+                checkTxFinalizedCore psbt
         with
         | e -> RResult.rexn e
 
+    let checkSigAndAdd (tx: IHTLCTx) (signature: TransactionSignature) (pk: PubKey) =
+        let psbt = tx.Value
+        let spentOutput = psbt.Inputs.[tx.WhichInput].GetTxOut()
+        let spk = spentOutput.ScriptPubKey
+        let globalTx = psbt.GetGlobalTransaction()
+
+        let ctx = ScriptEvaluationContext()
+        ctx.SigHash <- signature.SigHash
+        ctx.ScriptVerify <- ScriptVerify.Standard
+        if ctx.CheckSig(signature.ToBytes(), pk.ToBytes(), spk, globalTx, tx.WhichInput, 1, spentOutput) then
+            tx.Value.Inputs.[tx.WhichInput].PartialSigs.AddOrReplace(pk, signature)
+            tx |> Good
+        else
+            RResult.rmsg "Invalid signature"
 
     let makeHTLCTimeoutTx (commitTx: Transaction)
                           (localDustLimit: Money)

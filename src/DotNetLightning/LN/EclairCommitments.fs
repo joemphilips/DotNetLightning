@@ -64,6 +64,8 @@ type LocalCommit = {
     Index: uint64
     Spec: CommitmentSpec
     PublishableTxs: PublishableTxs
+    /// These are not redeemable on-chain until we get a corresponding preimage.
+    PendingHTLCSuccessTxs: HTLCSuccessTx list
 }
 type RemoteCommit = {
     Index: uint64
@@ -86,7 +88,7 @@ type WaitingForRevocation = {
 
 type LocalParams = {
     NodeId: NodeId
-    ChannelKeys: ChannelKeys
+    ChannelPubKeys: ChannelPubKeys
     DustLimitSatoshis: Money
     MaxHTLCValueInFlightMSat: LNMoney
     ChannelReserveSatoshis: Money
