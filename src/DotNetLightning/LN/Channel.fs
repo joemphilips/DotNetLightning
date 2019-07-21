@@ -1180,6 +1180,25 @@ module Channel =
 
         | WeAcceptedCMDFailHTLC (msg, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
+        | WeAcceptedFailHTLC (origin, msg, newCommitments), ChannelState.Normal d ->
+            { c with State = ChannelState.Normal({ d with Commitments = newCommitments })}
+        
+        | WeAcceptedCMDFailMalformedHTLC(msg, newCommitments), ChannelState.Normal d ->
+            { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
+        | WeAcceptedFailMalformedHTLC(origin, msg, newCommitments), ChannelState.Normal d ->
+            { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
+
+        | WeAcceptedCMDUpdateFee(msg, newCommitments), ChannelState.Normal d ->
+            { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
+        | WeAcceptedUpdateFee(msg), ChannelState.Normal d -> c
+
+        | WeAcceptedCMDSign(msg, newCommitments), ChannelState.Normal d ->
+            { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
+        | WeAcceptedCommitmentSigned(msg, newCommitments), ChannelState.Normal d ->
+            { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
+
+        | WeAcceptedRevokeAndACK(newCommitments), ChannelState.Normal d ->
+            { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
 
         // ----- else -----
         | NewBlockVerified height, _ ->
