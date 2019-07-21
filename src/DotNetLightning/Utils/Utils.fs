@@ -108,6 +108,9 @@ module Set =
         else
             Some(res |> Set.toList |> fun x -> x.[0])
 
+module Array =
+    let skipBack (length: int) (a: 'a array) =
+        a.[0..a.Length - 1 - length]
 
 module List =
     /// Map a Async producing function over a list to get a new Async using

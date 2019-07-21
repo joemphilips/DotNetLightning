@@ -50,10 +50,22 @@ module Primitives =
             a.Value - b.Value |> BlockHeightOffset
 
 
+    [<Struct>]
     type PaymentPreimage = PaymentPreimage of uint256 with
         member x.Value = let (PaymentPreimage v) = x in v
 
-    type PaymentHash = PaymentHash of uint256 with
+        member this.ToBytes() =
+            this.Value.ToBytes()
+
+        member this.GetHash() =
+            this.Value.ToBytes() |> Crypto.Hashes.SHA256 |> uint256 |> PaymentHash
+
+        member this.ToKey() =
+            this.Value.ToBytes() |> Key
+        member this.ToPubKey() =
+            this.ToKey().PubKey
+
+    and PaymentHash = PaymentHash of uint256 with
         member x.Value = let (PaymentHash v) = x in v
         member x.ToBytes() = x.Value.ToBytes()
 

@@ -1,12 +1,15 @@
 namespace DotNetLightning.LN
 open NBitcoin
 open NBitcoin.Crypto
+
 open System.IO
 open DotNetLightning.Utils
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils.Aether
 open DotNetLightning.Utils.Aether.Operators
 open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Crypto
+open DotNetLightning.Crypto.CryptoUtils
 open System
 open System.Diagnostics
 
@@ -30,12 +33,7 @@ module PeerChannelEncryptor =
     // Sha256(NOISE_CK || "lightning")
     let NOISE_H = [|0xd1uy; 0xfbuy; 0xf6uy; 0xdeuy; 0xe4uy; 0xf6uy; 0x86uy; 0xf1uy; 0x32uy; 0xfduy; 0x70uy; 0x2cuy; 0x4auy; 0xbfuy; 0x8fuy; 0xbauy; 0x4buy; 0xb4uy; 0x20uy; 0xd8uy; 0x9duy; 0x2auy; 0x04uy; 0x8auy; 0x3cuy; 0x4fuy; 0x4cuy; 0x09uy; 0x2euy; 0x37uy; 0xb6uy; 0x76uy|]
 
-    let chacha20 = NSec.Cryptography.ChaCha20Poly1305.ChaCha20Poly1305
     type SharedSecret = NSec.Cryptography.SharedSecret
-
-    module internal SharedSecret =
-        let FromKeyPair(pub: PubKey, priv: Key) =
-            Hashes.SHA256 (pub.GetSharedPubkey(priv).ToBytes())
 
     type NextNoiseStep =
         | ActOne
@@ -299,27 +297,9 @@ module PeerChannelEncryptor =
                         BidirectionalState = {H = h; CK = uint256(NOISE_CK)}
                     }
             }
-
-        let private getNonce (n: uint64) =
-            let nonceBytes = ReadOnlySpan(Array.concat[| Array.zeroCreate 4; BitConverter.GetBytes(n) |]) // little endian
-            NSec.Cryptography.Nonce(nonceBytes, 0)
-
-        let internal decryptWithAD(n: uint64, key: uint256, h: byte[], cipherText: ReadOnlySpan<byte>): RResult<byte[]> =
-            let nonce = getNonce n
-            let keySpan = ReadOnlySpan(key.ToBytes())
-            let hSpan = ReadOnlySpan(h)
-            let blobF = NSec.Cryptography.KeyBlobFormat.RawSymmetricKey
-            let chachaKey = NSec.Cryptography.Key.Import(chacha20, keySpan, blobF)
-            match chacha20.Decrypt(chachaKey, &nonce, hSpan, cipherText) with
-            | true, plainText -> Good plainText
-            | false, _ -> RResult.rbad(RBad.Object({ HandleError.Error = "Bad MAC"; Action = Some(DisconnectPeer(None))} ))
-
-        let internal encryptWithAD(n: uint64, key: uint256, h: ReadOnlySpan<byte>, plainText: ReadOnlySpan<byte>) =
-            let nonce = getNonce n
-            let keySpan = ReadOnlySpan(key.ToBytes())
-            let blobF = NSec.Cryptography.KeyBlobFormat.RawSymmetricKey
-            use chachaKey = NSec.Cryptography.Key.Import(chacha20, keySpan, blobF)
-            chacha20.Encrypt(chachaKey, &nonce, h, plainText)
+        let internal decryptWithAD(n: uint64, key: uint256, ad: byte[], cipherText: ReadOnlySpan<byte>): RResult<byte[]> =
+            CryptoUtils.decryptWithAD(n, key, ad, cipherText)
+            *> RResult.rbad(RBad.Object({ HandleError.Error = "Bad MAC"; Action = Some(DisconnectPeer(None))} ))
 
         let internal hkdfExtractExpand(salt: byte[], ikm: byte[]) =
             let prk = Hashes.HMACSHA256(salt, ikm)
@@ -662,4 +642,4 @@ module PeerChannelEncryptorMonad =
         member this.Bind(x, f) = bindP f x
         member this.Zero(x) = returnP ()
 
-    let cipherchannel = PeerChannelEncryptorComputationBuilder()
+    let noise = PeerChannelEncryptorComputationBuilder()

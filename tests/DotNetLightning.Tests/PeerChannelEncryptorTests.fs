@@ -251,7 +251,7 @@ let tests =
                 else
                     let msg = [| 0x68uy; 0x65uy; 0x6cuy; 0x6cuy; 0x6fuy |]
                     let res, newOutBound =
-                        let instruction = cipherchannel {
+                        let instruction = noise {
                                 return! encryptMessage log msg;
                             }
                         runP instruction localOutBound |> RResult.rderef
@@ -260,7 +260,7 @@ let tests =
                     log(sprintf "new outbound is %A" newOutBound)
                     let lengthHeader = res.[0..2+16 - 1]
                     let actualLengthRR =
-                        let instruction = cipherchannel {
+                        let instruction = noise {
                             let! header = decryptLengthHeader log (lengthHeader)
                             return header
                         }
@@ -272,7 +272,7 @@ let tests =
                     Expect.equal actualLength (expectedLength) ""
 
                     let actualRR =
-                        let instruction = cipherchannel {
+                        let instruction = noise {
                             let! msg = decryptMessage log (res.[2 + 16..])
                             return msg
                         }

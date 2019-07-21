@@ -22,3 +22,4 @@ module Scripts =
             let p = ph.ToBytes()
             Hashes.RIPEMD160(p, 0, p.Length)
         failwith ""
+

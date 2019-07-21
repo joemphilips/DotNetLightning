@@ -21,9 +21,10 @@ type InputInitFunder = {
     LocalParams: LocalParams
     RemoteInit: Init
     ChannelFlags: uint8
+    ChannelKeys: ChannelKeys
 }
     with
-        static member FromOpenChannel (localParams) (remoteInit) (o: OpenChannel) =
+        static member FromOpenChannel (localParams) (remoteInit) (channelKeys) (o: OpenChannel) =
             {
                 InputInitFunder.TemporaryChannelId = o.TemporaryChannelId
                 FundingSatoshis = o.FundingSatoshis
@@ -33,6 +34,7 @@ type InputInitFunder = {
                 LocalParams = localParams
                 RemoteInit = remoteInit
                 ChannelFlags = o.ChannelFlags
+                ChannelKeys = channelKeys
             }
 
         member this.DeriveCommitmentSpec() =
@@ -46,6 +48,7 @@ and InputInitFundee = {
     LocalParams: LocalParams
     RemoteInit: Init
     ToLocal: LNMoney
+    ChannelKeys: ChannelKeys
 }
 
 
@@ -236,6 +239,23 @@ type ChannelEvent =
     | WeAcceptedCMDAddHTLC of msg: UpdateAddHTLC * newCommitments: Commitments
     | WeAcceptedUpdateAddHTLC of newCommitments: Commitments
 
+    | WeAcceptedCMDFulfillHTLC of msg: UpdateFulfillHTLC * newCommitments: Commitments
+    | WeAcceptedFulfillHTLC of msg: UpdateFulfillHTLC * origin: HTLCSource * htlc: UpdateAddHTLC * newCommitments: Commitments
+
+    | WeAcceptedCMDFailHTLC of msg: UpdateFailHTLC * newCommitments: Commitments
+    | WeAcceptedFailHTLC of origin: HTLCSource * msg: UpdateAddHTLC * nextCommitments: Commitments
+
+    | WeAcceptedCMDFailMalformedHTLC of msg: UpdateFailMalformedHTLC * newCommitments: Commitments
+    | WeAcceptedFailMalformedHTLC of origin: HTLCSource * msg: UpdateAddHTLC * newCommitments: Commitments
+
+    | WeAcceptedCMDUpdateFee of msg: UpdateFee  * nextCommitments: Commitments
+    | WeAcceptedUpdateFee of msg: UpdateFee
+
+    | WeAcceptedCMDSign of msg: CommitmentSigned * nextCommitments: Commitments
+    | WeAcceptedCommitmentSigned of msg: RevokeAndACK * nextCommitments: Commitments
+
+    | WeAcceptedRevokeAndACK of nextCommitments: Commitments
+
     // -------- else ---------
     | Closed
     | Disconnected
@@ -322,20 +342,17 @@ type CMDFulfillHTLC = {
 
 type CMDFailHTLC = {
     Id: HTLCId
-    Reason: OnionErrorPacket
-    Commit: bool
+    Reason: Choice<byte[], FailureMsg>
 }
 
 type CMDFailMalformedHTLC = {
     Id: HTLCId
     Sha256OfOnion: uint256
     FailureCode: ErrorCode
-    Commit: bool
 }
 
 type CMDUpdateFee = {
     FeeRatePerKw: FeeRatePerKw
-    Commit: bool
 }
 
 type CMDClose = { ScriptPubKey: Script option }
@@ -378,7 +395,11 @@ type ChannelCommand =
     | ApplyUpdateFailMalformedHTLC of UpdateFailMalformedHTLC
     | UpdateFee of CMDUpdateFee
     | ApplyUpdateFee of UpdateFee
+
     | SignCommitment
+    | ApplyCommitmentSigned of CommitmentSigned
+
+    | ApplyRevokeAndACK of RevokeAndACK
 
     // close
     | Close of CMDClose

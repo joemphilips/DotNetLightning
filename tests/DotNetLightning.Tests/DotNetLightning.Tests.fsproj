@@ -9,6 +9,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Utils/Utils.fs" />
     <Compile Include="Utils/FromRustLightning.fs" />
     <Compile Include="Generators/Primitives.fs" />
     <Compile Include="Generators/Msgs.fs" />
@@ -16,6 +17,7 @@
     <Compile Include="Serialization.fs" />
     <Compile Include="SerializationPropertyTests.fs" />
     <Compile Include="FunctionalTests.fs" />
+    <Compile Include="SphinxTests.fs" />
     <Compile Include="TransactionTests.fs" />
     <Compile Include="PeerChannelEncryptorTests.fs" />
     <Compile Include="ChannelTests.fs" />

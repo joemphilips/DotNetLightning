@@ -1,6 +1,6 @@
-namespace DotNetLightning.LN
+namespace DotNetLightning.Utils
+
 open NBitcoin
-open DotNetLightning.Utils
 
 /// A hop in route
 type RouteHop = {
@@ -17,3 +17,5 @@ type RouteHop = {
 
 /// This should not exceed 20 (as a protocol rule).
 type Route = Route of RouteHop list
+    with
+        member this.Value = let (Route r) = this in r

@@ -94,7 +94,8 @@ type UserConfig = {
             (fun v uc -> { uc with ChannelOptions = v })
 
 and ChannelConfig = {
-    // Amount (in millionth of a satoshi) the channel will change per transfered satoshi.
+    MaxFeeRateMismatchRatio: float
+    // Amount (in millionth of a satoshi) the channel will charge per transfered satoshi.
     // This may be allowed to change at runtime in a later update, however doing so must result in
     // update mesages sent to notify all nodes of our updated relay fee.
     FeeProportionalMillionths: uint32
@@ -109,6 +110,7 @@ and ChannelConfig = {
             {
                 FeeProportionalMillionths = 0u
                 AnnouncedChannel = false
+                MaxFeeRateMismatchRatio = 0.
             }
 
         static member FeeProportionalMillionths_: Lens<_, _> =

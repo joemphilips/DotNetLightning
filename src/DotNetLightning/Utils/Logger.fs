@@ -8,4 +8,4 @@ type LogLevel =
     | Debug
     | Trace
 
-type Logger = string * LogLevel -> unit
+type Logger = LogLevel -> string -> unit
