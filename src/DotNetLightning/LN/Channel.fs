@@ -208,13 +208,6 @@ module Channel =
             else
                 makeFirstCommitTxCore()
 
-        let isAlreadySent (htlc: UpdateAddHTLC) (proposed: IUpdateMsg list) =
-            proposed
-            |> List.exists(fun p -> match p with
-                                    | :? UpdateFulfillHTLC as u -> u.HTLCId = htlc.HTLCId
-                                    | :? UpdateFailHTLC as u -> u.HTLCId = htlc.HTLCId
-                                    | :? UpdateFailMalformedHTLC as u -> u.HTLCId = htlc.HTLCId
-                                    | _ -> false)
         // facades
         let makeLocalTXs
             (channelKeys: ChannelPubKeys)
@@ -587,22 +580,6 @@ module Channel =
             *> UpdateAddHTLCValidator.checkWeHaveSufficientFunds state currentSpec
             >>>= fun e -> RRClose(e.Describe())
 
-        module private UpdateFeeValidator =
-            let private feeRateMismatch (FeeRatePerKw remote, FeeRatePerKw local) =
-                (2.0 * float (remote - local) / float (remote + local))
-                |> abs
-            let checkFeeDiffTooHigh (remoteFeeRatePerKw: FeeRatePerKw) (localFeeRatePerKw: FeeRatePerKw) (maxFeeRateMismatchRatio) =
-                let diff = feeRateMismatch(remoteFeeRatePerKw, localFeeRatePerKw)
-                if (diff > maxFeeRateMismatchRatio) then
-                    sprintf "FeeReate Delta is too big. Local: %A ; remote %A ; So it will be %.2f%% higher. But it must be lower than %.2f%%"
-                            (localFeeRatePerKw) (remoteFeeRatePerKw) (diff * 100.0) (maxFeeRateMismatchRatio * 100.0)
-                    |> RRClose
-                else
-                    Good ()
-
-        let checkUpdateFee (config: UserConfig) (msg: UpdateFee) (localFeeRate: FeeRatePerKw) =
-            let maxMismatch = config.ChannelOptions.MaxFeeRateMismatchRatio
-            UpdateFeeValidator.checkFeeDiffTooHigh (msg.FeeRatePerKw) (localFeeRate) (maxMismatch)
 
     let executeCommand (cs: Channel) (command: ChannelCommand): RResult<ChannelEvent list> =
         match cs.State, command with
@@ -863,148 +840,39 @@ module Channel =
                 >>= fun reduced ->
                     Validation.checkTheirUpdateAddHTLCIsAcceptableWithCurrentSpec reduced commitments1 msg
                     *> Good [ WeAcceptedUpdateAddHTLC commitments1 ]
+
         | ChannelState.Normal state, FulfillHTLC cmd ->
-            match state.Commitments.GetHTLCCrossSigned(Direction.In, cmd.Id) with
-            | Some htlc when (state.Commitments.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
-                sprintf "We have already sent a fail/fulfill for this htlc: %A" htlc
-                |> RRApiMisuse
-            | Some htlc when (htlc.PaymentHash = cmd.PaymentPreimage.GetHash()) ->
-                let msgToSend: UpdateFulfillHTLC = { ChannelId = state.Commitments.ChannelId; HTLCId = cmd.Id; PaymentPreimage = cmd.PaymentPreimage }
-                let newCommitments = state.Commitments.AddLocalProposal(msgToSend)
-                [ WeAcceptedCMDFulfillHTLC (msgToSend, newCommitments)] |> Good
-            | Some htlc ->
-                sprintf "Invalid HTLC PreImage %A. Hash (%A) does not match the one expected %A"
-                        cmd.PaymentPreimage
-                        (cmd.PaymentPreimage.GetHash())
-                        (htlc.PaymentHash)
-                |> RRApiMisuse
-            | None ->
-                sprintf "Unknown HTLCId (%A)" cmd.Id
-                |> RRApiMisuse
-        | ChannelState.Normal state, ApplyUpdateFulfillHLTC msg ->
-            match state.Commitments.GetHTLCCrossSigned(Direction.Out, msg.HTLCId) with
-            | Some htlc when htlc.PaymentHash = msg.PaymentPreimage.GetHash() ->
-                let commitments = state.Commitments.AddRemoteProposal(msg)
-                let origin = state.Commitments.OriginChannels |> Map.find(msg.HTLCId)
-                [WeAcceptedFulfillHTLC(msg, origin, htlc, commitments)] |> Good
-            | Some htlc ->
-                sprintf "Invalid HTLC PreImage %A. Hash (%A) does not match the one expected %A"
-                        msg.PaymentPreimage
-                        (msg.PaymentPreimage.GetHash())
-                        (htlc.PaymentHash)
-                |> RRClose
-            | None ->
-                sprintf "Unknown HTLCId (%A)" msg.HTLCId
-                |> RRClose
+            state.Commitments |> Commitments.sendFulfill (cmd)
+            >>>= fun e -> RRApiMisuse (e.Describe())
+
+        | ChannelState.Normal state, ChannelCommand.ApplyUpdateFulfillHTLC msg ->
+            state.Commitments |> Commitments.receiveFulfill msg
+            >>>= fun e -> RRClose(e.Describe())
+
         | ChannelState.Normal state, FailHTLC cmd ->
-            match state.Commitments.GetHTLCCrossSigned(Direction.In, cmd.Id) with
-            | Some htlc when  (state.Commitments.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
-                sprintf "We have already sent a fail/fulfill for this htlc: %A" htlc
-                |> RRApiMisuse
-            | Some htlc ->
-                let localKey = cs.LocalNodeSecret
-                let ad = htlc.PaymentHash.ToBytes()
-                let rawPacket = htlc.OnionRoutingPacket.ToBytes()
-                Sphinx.parsePacket localKey ad rawPacket
-                >>= fun ({ SharedSecret = ss}) ->
-                    let reason =
-                        cmd.Reason
-                        |> function Choice1Of2 b -> Sphinx.forwardErrorPacket(b, ss) | Choice2Of2 f -> Sphinx.ErrorPacket.Create(ss, f)
-                    let f = { UpdateFailHTLC.ChannelId = state.Commitments.ChannelId
-                              HTLCId = cmd.Id
-                              Reason = { Data = reason } }
-                    let nextComitments = state.Commitments.AddLocalProposal(f)
-                    [ WeAcceptedCMDFailHTLC(f, nextComitments) ]
-                    |> Good
-                >>>= fun e -> RRApiMisuse(e.Describe())
-            | None ->
-                sprintf "Unknown HTLCId (%A)" cmd.Id
-                |> RRApiMisuse
+            state.Commitments |> Commitments.sendFail cs.LocalNodeSecret cmd
+            >>>= fun e -> RRApiMisuse(e.Describe())
+
         | ChannelState.Normal state, FailMalformedHTLC cmd ->
-            // BADONION bit must be set in failure code
-            if ((cmd.FailureCode.Value &&& Error.BADONION) = 0us) then
-                sprintf "invalid failure code %A" (cmd.FailureCode.GetOnionErrorDescription())
-                |> RRApiMisuse
-            else
-                match state.Commitments.GetHTLCCrossSigned(Direction.In, cmd.Id) with
-                | Some htlc when (state.Commitments.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
-                    sprintf "We have already sent a fail/fulfill for this htlc: %A" htlc
-                    |> RRApiMisuse
-                | Some htlc ->
-                    let msg = { UpdateFailMalformedHTLC.ChannelId = state.Commitments.ChannelId
-                                HTLCId = cmd.Id
-                                Sha256OfOnion = cmd.Sha256OfOnion
-                                FailureCode = cmd.FailureCode }
-                    let nextCommitments = state.Commitments.AddLocalProposal(msg)
-                    [ WeAcceptedCMDFailMalformedHTLC(msg, nextCommitments) ]
-                    |> Good
-                | None ->
-                    sprintf "Unknown HTLCId (%A)" cmd.Id |> RRClose
+            state.Commitments |> Commitments.sendFailMalformed cmd
+            >>>= fun e -> RRApiMisuse(e.Describe())
+
         | ChannelState.Normal state, ApplyUpdateFailHTLC msg ->
-            match state.Commitments.GetHTLCCrossSigned(Direction.Out, msg.HTLCId) with
-            | Some htlc ->
-                match state.Commitments.OriginChannels.TryGetValue(msg.HTLCId) with
-                | true, origin -> Good origin
-                | false, _ -> sprintf "Invalid HTLCId, Unknown Origin. HTLCId (%A)" msg.HTLCId |> RRClose
-                >>= fun o ->
-                    let nextC = state.Commitments.AddRemoteProposal(msg)
-                    [WeAcceptedFailHTLC(o, htlc, nextC)]
-                    |> Good
-            | None ->
-                sprintf "Unknown HTLCId (%A)" msg.HTLCId |> RRClose
+            state.Commitments |> Commitments.receiveFail msg
+            >>>= fun e -> RRClose(e.Describe())
+
         | ChannelState.Normal state, ApplyUpdateFailMalformedHTLC msg ->
-            if msg.FailureCode.Value &&& Error.BADONION = 0us then
-                sprintf "invalid failure code %A" (msg.FailureCode.GetOnionErrorDescription()) |> RRClose
-            else
-                match state.Commitments.GetHTLCCrossSigned(Direction.Out, msg.HTLCId) with
-                | Some htlc ->
-                    match state.Commitments.OriginChannels.TryGetValue(msg.HTLCId) with
-                    | true, o -> Good o
-                    | false, _ -> sprintf "Invalid HTLCId, Unknown Origin. HTLCId(%A)" msg.HTLCId |> RRClose
-                    >>= fun o ->
-                        let nextC = state.Commitments.AddRemoteProposal(msg)
-                        [WeAcceptedFailMalformedHTLC(o, htlc, nextC)]
-                        |> Good
-                | None ->
-                    sprintf "Unknown HTLCId (%A)" msg.HTLCId |> RRClose
+            state.Commitments |> Commitments.receiveFailMalformed msg
+            >>>= fun e -> RRClose(e.Describe())
+
         | ChannelState.Normal state, UpdateFee cmd ->
-            if (not state.Commitments.LocalParams.IsFunder) then
-                "Local is Fundee so it cannot send update fee" |> RRApiMisuse
-            else
-                let fee = { UpdateFee.ChannelId = state.Commitments.ChannelId
-                            FeeRatePerKw = cmd.FeeRatePerKw }
-                let c1 = state.Commitments.AddLocalProposal(fee)
-                c1.RemoteCommit.Spec.Reduce(c1.RemoteChanges.ACKed, c1.LocalChanges.Proposed)
-                >>= fun reduced ->
-                    // A node cannot spend pending incoming htlcs, and need to keep funds above the reserve required by
-                    // the counterparty, after paying the fee, we look from remote'S point of view, so if local is funder
-                    // remote doesn'T pay the fees.
-                    let fees = Transactions.commitTxFee(c1.RemoteParams.DustLimitSatoshis) reduced
-                    let missing = reduced.ToRemote.ToMoney() - c1.RemoteParams.ChannelReserveSatoshis - fees
-                    if (missing < Money.Zero) then
-                        sprintf "Cannot affored fees. Missing Satoshis are: %A . Reserve Satoshis are %A . Fees are %A" (-1 * missing) (c1.LocalParams.ChannelReserveSatoshis) (fees)
-                        |> RRIgnore
-                    else
-                        [ WeAcceptedCMDUpdateFee(fee, c1) ]
-                        |> Good
+            state.Commitments |> Commitments.sendFee cmd
+            >>>= fun e -> e.Describe() |> RRApiMisuse
         | ChannelState.Normal state, ApplyUpdateFee msg ->
-            if (state.Commitments.LocalParams.IsFunder) then
-                "Remote is Fundee so it cannot send update fee" |> RRClose
-            else
-                let localFeerate = cs.FeeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority)
-                Validation.checkUpdateFee (cs.Config) (msg) (localFeerate)
-                >>= fun _ ->
-                    let c1 = state.Commitments.AddRemoteProposal(msg)
-                    c1.LocalCommit.Spec.Reduce(c1.LocalChanges.ACKed, c1.RemoteChanges.Proposed)
-                    >>= fun reduced ->
-                        let fees = Transactions.commitTxFee(c1.RemoteParams.DustLimitSatoshis) reduced
-                        let missing = reduced.ToRemote.ToMoney() - c1.RemoteParams.ChannelReserveSatoshis - fees
-                        if (missing < Money.Zero) then
-                            sprintf "Cannot affored fees. Missing Satoshis are: %A . Reserve Satoshis are %A . Fees are %A" (-1 * missing) (c1.LocalParams.ChannelReserveSatoshis) (fees)
-                            |> RRClose
-                        else
-                            [ WeAcceptedUpdateFee msg ]
-                            |> Good
+            let localFeerate = cs.FeeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority)
+            state.Commitments |> Commitments.receiveFee cs.Config localFeerate msg
+            >>>= fun e -> e.Describe() |> RRClose
+
         | ChannelState.Normal state, SignCommitment ->
             let cm = state.Commitments
             match cm.RemoteNextCommitInfo with
@@ -1247,9 +1115,23 @@ module Channel =
                     |> Good
 
         // ----------- closing ---------
-        | ChannelState.Shutdown state, FulfillHTLC cmd ->
-            failwith ""
-
+        | Shutdown state, FulfillHTLC cmd ->
+            state.Commitments |> Commitments.sendFulfill cmd
+            >>>= fun e -> e.Describe() |> RRApiMisuse
+        | Shutdown state, ApplyUpdateFulfillHTLC msg ->
+            state.Commitments |> Commitments.receiveFulfill msg
+            >>>= fun e -> e.Describe() |> RRClose
+        | Shutdown state, FailHTLC cmd ->
+            state.Commitments |> Commitments.sendFail (cs.LocalNodeSecret) cmd
+            >>>= fun e -> e.Describe() |> RRApiMisuse
+        | Shutdown state, FailMalformedHTLC cmd ->
+            state.Commitments |> Commitments.sendFailMalformed cmd
+            >>>= fun e -> e.Describe() |> RRApiMisuse
+        | Shutdown state, ApplyUpdateFailMalformedHTLC msg ->
+            state.Commitments |> Commitments.receiveFailMalformed msg
+            >>>= fun e -> e.Describe() |> RRClose
+        | Shutdown state, UpdateFee cmd ->
+            failwith "not impl"
 
 
     let applyEvent c (e: ChannelEvent): Channel =

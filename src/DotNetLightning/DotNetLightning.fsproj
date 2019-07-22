@@ -38,8 +38,10 @@
     <Compile Include="LN/ChannelManager.fs" />
     <Compile Include="LN/ChannelMonitor.fs" />
     <Compile Include="LN/ChannelConstants.fs" />
+    <Compile Include="LN/ChannelCommands.fs" />
     <Compile Include="LN/Commitments.fs" />
     <Compile Include="LN/ChannelTypes.fs" />
+    <Compile Include="LN/CommitmentsModule.fs" />
     <Compile Include="LN/Channel.fs" />
     <Compile Include="LN/PeerHandler.fs" />
     <Compile Include="Library.fs" />
