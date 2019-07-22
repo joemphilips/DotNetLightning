@@ -95,6 +95,9 @@ module Primitives =
 
         member this.ToFee(weight) =
             Money.Satoshis((uint64 this.Value) * weight / 1000UL)
+
+        static member Max(a: FeeRatePerKw, b: FeeRatePerKw) =
+            if (a.Value >= b.Value) then a else b
     /// Block Hash
     type BlockId = BlockId of uint256 with
         member x.Value = let (BlockId v) = x in v

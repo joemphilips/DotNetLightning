@@ -1,5 +1,6 @@
 namespace DotNetLightning.LN
 open DotNetLightning.Utils
+open DotNetLightning.Utils.Aether
 open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Utils.Error
 open DotNetLightning.Chain
@@ -64,7 +65,7 @@ and InputInitFundee = {
 [<AutoOpen>]
 module Data =
     type ClosingTxProposed = {
-        unsignedTx: Transaction 
+        UnsignedTx: ClosingTx
         LocalClosingSigned: ClosingSigned
     }
 
@@ -95,6 +96,11 @@ module Data =
     }
 
     type IChannelStateData = interface inherit IStateData end
+    type IHasCommitments =
+        inherit IChannelStateData
+        abstract member ChannelId: ChannelId
+        abstract member Commitments: Commitments
+
 
     type WaitForOpenChannelData = { InitFundee: InputInitFundee }
         with interface IChannelStateData
@@ -159,16 +165,28 @@ module Data =
                                             Deferred: FundingLocked option
                                             LastSent: Choice<FundingCreated, FundingSigned>
                                             InitialFeeRatePerKw: FeeRatePerKw
+                                            ChannelId: ChannelId
                                           }
-        with interface IChannelStateData
+        with
+            interface IHasCommitments with
+                member this.ChannelId: ChannelId = 
+                    this.ChannelId
+                member this.Commitments: Commitments = 
+                    this.Commitments
+
 
     type WaitForFundingLockedData = { Commitments: Commitments;
                                       ShortChannelId: ShortChannelId;
                                       OurMessage: FundingLocked
                                       TheirMessage: FundingLocked option
                                       InitialFeeRatePerKw: FeeRatePerKw
-                                      HaveWeSentFundingLocked:bool }
-        with interface IChannelStateData
+                                      HaveWeSentFundingLocked:bool
+                                      ChannelId: ChannelId }
+        with interface IHasCommitments with
+                member this.ChannelId: ChannelId = 
+                    this.ChannelId
+                member this.Commitments: Commitments = 
+                    this.Commitments
 
     type NormalData =   {
                             Commitments: Commitments;
@@ -178,11 +196,24 @@ module Data =
                             ChannelUpdate: ChannelUpdate
                             LocalShutdown: Shutdown option
                             RemoteShutdown: Shutdown option
+                            ChannelId: ChannelId
                         }
-        with interface IChannelStateData
+        with
+            static member Commitments_: Lens<_, _> =
+                (fun nd -> nd.Commitments), (fun v nd -> { nd with Commitments = v })
 
-    type ShutdownData = { Commitments: Commitments; LocalShutdown: Shutdown; RemoteShutdown: Shutdown }
-        with interface IChannelStateData
+            interface IHasCommitments with
+                member this.ChannelId: ChannelId = 
+                    this.ChannelId
+                member this.Commitments: Commitments = 
+                    this.Commitments
+
+    type ShutdownData = { Commitments: Commitments; LocalShutdown: Shutdown; RemoteShutdown: Shutdown; ChannelId: ChannelId }
+        with interface IHasCommitments with
+                member this.ChannelId: ChannelId = 
+                    this.ChannelId
+                member this.Commitments: Commitments = 
+                    this.Commitments
 
     type NegotiatingData = {
                             Commitments: Commitments;
@@ -190,22 +221,37 @@ module Data =
                             RemoteShutdown: Shutdown;
                             ClosingTxProposed: ClosingTxProposed list list
                             MaybeBestUnpublishedTx: Transaction option
+                            ChannelId: ChannelId
                           }
-        with interface IChannelStateData
+        with interface IHasCommitments with
+                member this.ChannelId: ChannelId = 
+                    this.ChannelId
+                member this.Commitments: Commitments = 
+                    this.Commitments
 
     type ClosingData = {
                         Commitments: Commitments
                         MutualCloseProposed: Transaction list
                         MutualClosePublished: Transaction list
                         LocalCommitPublished: LocalCommitPublished option
+                        ChannelId: ChannelId
                       }
-        with interface IChannelStateData
+        with interface IHasCommitments with
+                member this.ChannelId: ChannelId = 
+                    this.ChannelId
+                member this.Commitments: Commitments = 
+                    this.Commitments
 
     type WaitForRemotePublishFutureCommitmentData = {
                                                     Commitments: Commitments;
                                                     RemoteChannelReestablish: ChannelReestablish
+                                                    ChannelId: ChannelId
                                                    }
-        with interface IChannelStateData
+        with interface IHasCommitments with
+                member this.ChannelId: ChannelId = 
+                    this.ChannelId
+                member this.Commitments: Commitments = 
+                    this.Commitments
 
 //     8888888888 888     888 8888888888 888b    888 88888888888 .d8888b.
 //     888        888     888 888        8888b   888     888    d88P  Y88b
@@ -256,10 +302,17 @@ type ChannelEvent =
 
     | WeAcceptedRevokeAndACK of nextCommitments: Commitments
 
+    | AcceptedShutdownCMD of msg: Shutdown
+    | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs of remoteShutdown: Shutdown * nextCommitments: Commitments
+    /// We have to send closing_signed to initiate the negotiation only when if we are the funder
+    | AcceptedShutdownWhenNoPendingHTLCs of msgToSend: ClosingSigned option * nextState: NegotiatingData
+    | AcceptedShutdownWhenWeHavePendingHTLCs of nextState: ShutdownData
+
     // -------- else ---------
     | Closed
     | Disconnected
     | NewBlockVerified of height: BlockHeight
+    | ChannelStateRequestedSignCommitment
 
 
 //      .d8888b. 88888888888     d8888 88888888888 8888888888 .d8888b.
@@ -302,8 +355,16 @@ type ChannelState =
     | ErrFundingTimeOut of IChannelStateData
     | ErrInformationLeak of IChannelStateData
     with
-        interface IState
+        interface IState 
+
         static member Zero = WaitForInitInternal
+        static member Normal_: Prism<_, _> =
+            (fun cc -> match cc with
+                       | Normal s -> Some s
+                       | _ -> None ),
+            (fun v cc -> match cc with
+                         | Normal _ -> Normal v
+                         | _ -> cc )
 
 //       .d8888b.   .d88888b.  888b     d888 888b     d888        d8888 888b    888 8888888b.   .d8888b.
 //      d88P  Y88b d88P" "Y88b 8888b   d8888 8888b   d8888       d88888 8888b   888 888  "Y88b d88P  Y88b
@@ -403,6 +464,7 @@ type ChannelCommand =
 
     // close
     | Close of CMDClose
+    | RemoteShutdown of Shutdown
     | ForceClose
     | GetState
     | GetStateData

@@ -67,6 +67,18 @@ module Channel =
     let private RRIgnore (msg: string) =
         RRChannelE(ChannelError.Ignore(msg))
 
+    let private hex = NBitcoin.DataEncoders.HexEncoder()
+    let private ascii = System.Text.ASCIIEncoding.ASCII
+    let private dummyPrivKey = Key(hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101"))
+    let private dummyPubKey = dummyPrivKey.PubKey
+    let private dummySig =
+        "01010101010101010101010101010101" |> ascii.GetBytes
+        |> uint256
+        |> fun m -> dummyPrivKey.SignCompact(m ,false)
+        |> fun d -> Crypto.ECDSASignature.FromBytesCompact(d, true)
+        |> fun ecdsaSig -> TransactionSignature(ecdsaSig, SigHash.All)
+
+
     module internal Helpers =
         let deriveOurDustLimitSatoshis(feeEstimator: IFeeEstimator): Money =
             let (FeeRatePerKw atOpenBackGroundFee) = feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background)
@@ -295,6 +307,32 @@ module Channel =
             |> List.ofSeq
             |> List.sortBy(fun htlc -> htlc.Value.GetGlobalTransaction().Inputs.[htlc.WhichInput].PrevOut.N)
 
+        let makeClosingTx(keyRepo: IKeysRepository, cm: Commitments, localSpk: Script, remoteSpk: Script, closingFee: Money, localFundingPk, n) =
+            assert (Scripts.isValidFinalScriptPubKey(remoteSpk) && Scripts.isValidFinalScriptPubKey(localSpk))
+            let dustLimitSatoshis = Money.Max(cm.LocalParams.DustLimitSatoshis, cm.RemoteParams.DustLimitSatoshis)
+            Transactions.makeClosingTx(cm.FundingSCoin) (localSpk) (remoteSpk) (cm.LocalParams.IsFunder) (dustLimitSatoshis) (closingFee) (cm.LocalCommit.Spec) n
+            |>> fun closingTx ->
+                let localSignature, psbtUpdated = keyRepo.GetSignatureFor(closingTx.Value, localFundingPk)
+                let msg = { ClosingSigned.ChannelId = cm.ChannelId
+                            FeeSatoshis = closingFee
+                            Signature = localSignature.Signature }
+                (ClosingTx psbtUpdated, msg)
+
+        let private firstClosingFee(cm: Commitments, localSpk: Script, remoteSpk: Script, feeEst: IFeeEstimator, n) =
+            Transactions.makeClosingTx cm.FundingSCoin localSpk remoteSpk cm.LocalParams.IsFunder Money.Zero Money.Zero cm.LocalCommit.Spec n
+            |>> fun dummyClosingTx ->
+                let tx = dummyClosingTx.Value.GetGlobalTransaction()
+                tx.Inputs.[0].WitScript <-
+                    let witness = seq [dummySig.ToBytes(); dummySig.ToBytes(); dummyClosingTx.Value.Inputs.[0].WitnessScript.ToBytes()] |> Array.concat
+                    Script(witness).ToWitScript()
+                let feeRatePerKw = FeeRatePerKw.Max(feeEst.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority), cm.LocalCommit.Spec.FeeRatePerKw)
+                let vsize = tx.GetVirtualSize()
+                feeRatePerKw.ToFee(uint64 vsize)
+
+        let makeFirstClosingTx(keyRepo, commitments, localSpk, remoteSpk, feeEst, localFundingPk, n) = 
+            firstClosingFee(commitments, localSpk, remoteSpk, feeEst ,n)
+            >>= fun closingFee ->
+                makeClosingTx(keyRepo, commitments, localSpk, remoteSpk, closingFee, localFundingPk, n)
     module internal Validation =
 
         let checkOrClose left predicate right msg =
@@ -644,7 +682,8 @@ module Channel =
                         let nextState = { WaitForFundingConfirmedData.Commitments = commitments
                                           Deferred = None
                                           LastSent = msgToSend |> Choice2Of2
-                                          InitialFeeRatePerKw = state.InitialFeeRatePerKw }
+                                          InitialFeeRatePerKw = state.InitialFeeRatePerKw
+                                          ChannelId = channelId }
                         [ WeAcceptedFundingCreated (msgToSend, nextState) ]
                         |> Good
 
@@ -728,7 +767,8 @@ module Channel =
                 let nextState = { WaitForFundingConfirmedData.Commitments = commitments
                                   Deferred = None
                                   LastSent = Choice1Of2 state.LastSent
-                                  InitialFeeRatePerKw = state.InitialFeeRatePerKw }
+                                  InitialFeeRatePerKw = state.InitialFeeRatePerKw
+                                  ChannelId = msg.ChannelId}
                 [WeAcceptedFundingSigned (state.FundingTx, nextState)]
         | WaitForFundingConfirmed state, ApplyFundingLocked msg ->
             [ TheySentFundingLockedMsgBeforeUs msg ] |> Good
@@ -750,7 +790,8 @@ module Channel =
                               OurMessage = msgToSend
                               TheirMessage = None
                               HaveWeSentFundingLocked = false
-                              InitialFeeRatePerKw = state.InitialFeeRatePerKw }
+                              InitialFeeRatePerKw = state.InitialFeeRatePerKw
+                              ChannelId = state.Commitments.ChannelId }
             [ FundingConfirmed nextState ] |> Good
         | WaitForFundingLocked state, ApplyFundingConfirmedOnBC (height, txindex, depth) ->
             if (state.HaveWeSentFundingLocked) then
@@ -779,7 +820,8 @@ module Channel =
                                   ChannelAnnouncement = None
                                   ChannelUpdate = initialCahnnelUpdate
                                   LocalShutdown = None
-                                  RemoteShutdown = None }
+                                  RemoteShutdown = None
+                                  ChannelId = state.ChannelId }
                 [ BothFundingLocked nextState ] |> Good
             else
                 [ TheySentFundingLockedMsgBeforeUs msg ] |> Good
@@ -1004,7 +1046,7 @@ module Channel =
                                                                         TxId = remoteCommitTx.GetTxId() }
                                                              Sent = msg
                                                              SentAfterLocalCommitmentIndex = cm.LocalCommit.Index
-                                                             ReAsignASAP = false }
+                                                             ReSignASAP = false }
 
                                 { cm with RemoteNextCommitInfo = Choice1Of2(nextRemoteCommitInfo)
                                           LocalChanges = { cm.LocalChanges with Proposed = []; Signed = cm.LocalChanges.Proposed }
@@ -1103,21 +1145,110 @@ module Channel =
             | Choice1Of2 _ when (msg.PerCommitmentSecret.ToPubKey() <> cm.RemoteCommit.RemotePerCommitmentPoint) ->
                 sprintf "Invalid revoke_and_ack %A; must be %A" msg.PerCommitmentSecret cm.RemoteCommit.RemotePerCommitmentPoint
                 |> RRClose
+            | Choice2Of2 _ ->
+                sprintf "Unexpected revocation"
+                |> RRClose
             | Choice1Of2 ({ NextRemoteCommit = theirNextCommit }) ->
                 let commitments1 = { cm  with LocalChanges = { cm.LocalChanges with Signed = []; ACKed = cm.LocalChanges.ACKed @ cm.LocalChanges.Signed }
                                               RemoteChanges = { cm.RemoteChanges with Signed = [] }
                                               RemoteCommit = theirNextCommit
                                               RemoteNextCommitInfo = Choice2Of2(msg.NextPerCommitmentPoint)
                                               RemotePerCommitmentSecrets = cm.RemotePerCommitmentSecrets.AddHash(msg.PerCommitmentSecret.ToBytes(), 0xffffffffffffUL - cm.RemoteCommit.Index )}
-                [ WeAcceptedRevokeAndACK (commitments1) ] |> Good
-            | Choice2Of2 _ ->
-                sprintf "Unexpected revocation"
+                let result = [ WeAcceptedRevokeAndACK (commitments1) ]
+                result |> Good
+                failwith "needs update"
+
+
+        | ChannelState.Normal state, ChannelCommand.Close cmd ->
+            let localSPK = cmd.ScriptPubKey |> Option.defaultValue (state.Commitments.LocalParams.DefaultFinalScriptPubKey)
+            if (not <| Scripts.isValidFinalScriptPubKey(localSPK)) then
+                sprintf "Invalid local final ScriptPubKey %O" (localSPK)
+                |> RRIgnore
+            else if (state.LocalShutdown.IsSome) then
+                RRIgnore "shutdown is already in progress"
+            else if (state.Commitments.LocalHasUnsignedOutgoingHTLCs()) then
+                RRIgnore "Cannot close with unsigned outgoing htlcs"
+            else
+                let shutDown = { Shutdown.ChannelId = state.ChannelId
+                                 ScriptPubKey = localSPK }
+                [ AcceptedShutdownCMD shutDown ]
+                |> Good
+        | ChannelState.Normal state, RemoteShutdown msg ->
+            let cm = state.Commitments
+            // They have pending unsigned htlcs => they violated the spec, close the channel
+            // they don't have pending unsigned htlcs
+            //      We have pending unsigned htlcs
+            //          We already sent a shutdown msg => spec violation (we can't send htlcs after having sent shutdown)
+            //          We did not send a shutdown msg
+            //              We are ready to sign => we stop sending further htlcs, we initiate a signature
+            //              We are waiting for a rev => we stop sending further htlcs, we wait for their revocation, will resign immediately after, and then we will send our shutdown msg
+            //      We have no pending unsigned htlcs
+            //          we already sent a shutwodn msg
+            //              There are pensing signed htlcs => send our shutdown msg, go to SHUTDOWN state
+            //              there are no htlcs => send our shutdown msg, goto NEGOTIATING state
+            //          We did not send a shutdown msg
+            //              There are pending signed htlcs => go to SHUTDOWN state
+            //              there are no HTLCs => go to NEGOTIATING state
+            if (not <| Scripts.isValidFinalScriptPubKey(msg.ScriptPubKey)) then
+                sprintf "Invalid remote final ScriptPubKey %O" (msg.ScriptPubKey.ToString())
                 |> RRClose
+            else if (cm.RemoteHasUnsignedOutgoingHTLCs()) then
+                sprintf "They sent shutdown msg (%A) while they have pending unsigned HTLCs, this is protocol violation" msg
+                |> RRClose
+            // Do we have Unsigned Outgoing HTLCs?
+            else if (cm.LocalHasUnsignedOutgoingHTLCs()) then
+                if (state.LocalShutdown.IsSome) then
+                    "can't have pending unsigned outgoing htlcs after having sent Shutdown" |> RRClose
+                else
+                    // Are we in the middle of a signature?
+                    match cm.RemoteNextCommitInfo with
+                    // yes.
+                    | Choice1Of2 waitingForRevocation ->
+                        let nextCommitments = { state.Commitments with
+                                                    RemoteNextCommitInfo = Choice1Of2({ waitingForRevocation with ReSignASAP = true }) }
+                        [ AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs(msg, nextCommitments) ]
+                        |> Good
+                    // No. let's sign right away.
+                    | Choice2Of2 _ ->
+                        [ ChannelStateRequestedSignCommitment; AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs(msg, cm) ] |> Good
+            else
+                let (localShutdown, sendList) = match state.LocalShutdown with
+                                                | Some localShutdown -> (localShutdown, [])
+                                                | None ->
+                                                    let localShutdown = { Shutdown.ChannelId = state.ChannelId
+                                                                          ScriptPubKey = cm.LocalParams.DefaultFinalScriptPubKey }
+                                                    (localShutdown, [localShutdown])
+                if (cm.HasNoPendingHTLCs()) then
+                    // we have to send first closing_signed msg iif we are the funder
+                    if (cm.LocalParams.IsFunder) then
+                        Helpers.makeFirstClosingTx(cs.KeysRepository, cm, localShutdown.ScriptPubKey, msg.ScriptPubKey, cs.FeeEstimator, cm.LocalParams.ChannelPubKeys.FundingPubKey, cs.Network)
+                        |>> fun (closingTx, closingSignedMsg) ->
+                            let nextState = { NegotiatingData.ChannelId = cm.ChannelId
+                                              Commitments = cm
+                                              LocalShutdown = localShutdown
+                                              RemoteShutdown = msg
+                                              ClosingTxProposed = [[{ ClosingTxProposed.UnsignedTx = closingTx; LocalClosingSigned = closingSignedMsg }]]
+                                              MaybeBestUnpublishedTx = None }
+                            [ AcceptedShutdownWhenNoPendingHTLCs(closingSignedMsg |> Some, nextState) ]
+                    else
+                        let nextState = { NegotiatingData.ChannelId = cm.ChannelId
+                                          Commitments = cm
+                                          LocalShutdown = localShutdown
+                                          RemoteShutdown = msg
+                                          ClosingTxProposed = [[]]
+                                          MaybeBestUnpublishedTx = None }
+                        [ AcceptedShutdownWhenNoPendingHTLCs(None, nextState) ] |> Good
+                else
+                    let nextState = { ShutdownData.Commitments = cm
+                                      LocalShutdown = localShutdown
+                                      RemoteShutdown = msg
+                                      ChannelId = cm.ChannelId }
+                    [ AcceptedShutdownWhenWeHavePendingHTLCs(nextState) ]
+                    |> Good
 
-
-
-
-
+        // ----------- closing ---------
+        | ChannelState.Shutdown state, FulfillHTLC cmd ->
+            failwith ""
 
 
 
@@ -1160,7 +1291,8 @@ module Channel =
                               ChannelAnnouncement = None
                               ChannelUpdate = channelUpdate
                               LocalShutdown = None
-                              RemoteShutdown = None }
+                              RemoteShutdown = None
+                              ChannelId = msg.ChannelId }
             { c with State = ChannelState.Normal nextState }
         | WeSentFundingLockedMsgBeforeThem msg, WaitForFundingLocked prevState ->
             { c with State = WaitForFundingLocked { prevState with OurMessage = msg; HaveWeSentFundingLocked = true } }
@@ -1200,6 +1332,14 @@ module Channel =
         | WeAcceptedRevokeAndACK(newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
 
+        | AcceptedShutdownCMD msg, ChannelState.Normal d ->
+            { c with State = ChannelState.Normal({ d with LocalShutdown = Some msg }) }
+        | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs(remoteShutdown, nextCommitments), ChannelState.Normal d ->
+            { c with State = ChannelState.Normal({ d with RemoteShutdown = Some remoteShutdown; Commitments = nextCommitments })}
+        | AcceptedShutdownWhenNoPendingHTLCs (maybeMsg, nextState), ChannelState.Normal d ->
+            { c with State = Negotiating nextState }
+        | AcceptedShutdownWhenWeHavePendingHTLCs(nextState), ChannelState.Normal d ->
+            { c with State = Shutdown nextState }
         // ----- else -----
         | NewBlockVerified height, _ ->
             { c with CurrentBlockHeight = height }

@@ -23,3 +23,8 @@ module Scripts =
             Hashes.RIPEMD160(p, 0, p.Length)
         failwith ""
 
+    let isValidFinalScriptPubKey(spk: Script) =
+        (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(spk))
+        || (PayToScriptHashTemplate.Instance.CheckScriptPubKey(spk))
+        || (PayToWitPubKeyHashTemplate.Instance.CheckScriptPubKey(spk))
+        || (PayToWitScriptHashTemplate.Instance.CheckScriptPubKey(spk))

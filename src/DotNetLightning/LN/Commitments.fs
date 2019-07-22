@@ -78,12 +78,16 @@ type WaitingForRevocation = {
     NextRemoteCommit: RemoteCommit
     Sent: CommitmentSigned
     SentAfterLocalCommitmentIndex: uint64
-    ReAsignASAP: bool
+    ReSignASAP: bool
 }
     with
         static member NextRemoteCommit_: Lens<_,_> =
             (fun w -> w.NextRemoteCommit),
             (fun v w -> { w with NextRemoteCommit = v})
+
+        static member ReSignASAP_: Lens<_,_> =
+            (fun w -> w.ReSignASAP),
+            (fun v w -> { w with ReSignASAP = v })
 
 
 type LocalParams = {
@@ -180,6 +184,7 @@ type Commitments = {
             (fun c -> c.RemoteNextCommitInfo),
             (fun v c -> { c with RemoteNextCommitInfo = v })
 
+
         member this.AddLocalProposal(proposal: IUpdateMsg) =
             let lens = Commitments.LocalChanges_ >-> LocalChanges.Proposed_
             Optic.map lens (fun proposalList -> proposal :: proposalList) this
@@ -196,6 +201,15 @@ type Commitments = {
 
         member this.RemoteHasChanges() =
             (not this.LocalChanges.ACKed.IsEmpty) || (not this.RemoteChanges.Proposed.IsEmpty)
+
+        member internal this.LocalHasUnsignedOutgoingHTLCs() =
+            this.LocalChanges.Proposed |> List.exists(fun p -> match p with | :? UpdateAddHTLC -> true | _ -> false)
+
+        member internal this.RemoteHasUnsignedOutgoingHTLCs() =
+            this.RemoteChanges.Proposed |> List.exists(fun p -> match p with | :? UpdateAddHTLC -> true | _ -> false)
+
+        member internal this.HasNoPendingHTLCs() =
+            this.LocalCommit.Spec.HTLCs.IsEmpty && this.RemoteCommit.Spec.HTLCs.IsEmpty && (this.RemoteNextCommitInfo |> function Choice1Of2 _ -> false | Choice2Of2 _ -> true)
 
         member internal this.GetHTLCCrossSigned(directionRelativeToLocal: Direction, htlcId: HTLCId): UpdateAddHTLC option =
             let remoteSigned =

@@ -65,7 +65,9 @@ type MainPenaltyTx = MainPenaltyTx of PSBT
 type HTLCPenaltyTx = HTLCPenaltyTx of PSBT
     with interface ILightningTx
 type ClosingTx = ClosingTx of PSBT
-    with interface ILightningTx
+    with
+        interface ILightningTx
+        member this.Value = let (ClosingTx v) = this in v;
 
 /// Tx already verified and it can be published anytime
 type FinalizedTx =
@@ -539,9 +541,9 @@ module Transactions =
     let makeHTLCPenaltyTx (commitTx: Transaction) (localDustLimit: Money): HTLCPenaltyTx =
         raise <| NotImplementedException()
 
-    let makeClosingTx (commitTxInput: ICoin)
-                      (localDestination: IDestination)
-                      (remoteDestination: IDestination)
+    let makeClosingTx (commitTxInput: ScriptCoin)
+                      (localDestination: Script)
+                      (remoteDestination: Script)
                       (localIsFunder: bool)
                       (dustLimit: Money)
                       (closingFee: Money)
