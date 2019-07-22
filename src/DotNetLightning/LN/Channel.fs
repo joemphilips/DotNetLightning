@@ -89,13 +89,6 @@ module Channel =
             let q = channelValue / 100L
             Money.Min(channelValue, Money.Max(q, Money.Satoshis(1L)))
 
-        let buildLocalCommitmentSecret (seed, n) =
-            ChannelUtils.buildCommitmentSecret(seed, n)
-            |> fun sec -> Key(sec.ToBytes())
-
-        let buildLocalCommitmentPoint (seed, n) =
-            buildLocalCommitmentSecret(seed, n) |> fun k -> k.PubKey
-
         let getFundingRedeemScript (ck: ChannelPubKeys) (theirFundingPubKey: PubKey) : Script =
             let ourFundingKey = ck.FundingPubKey
             let pks = if ourFundingKey.ToBytes() < theirFundingPubKey.ToBytes() then
@@ -209,97 +202,6 @@ module Channel =
                 makeFirstCommitTxCore()
 
         // facades
-        let makeLocalTXs
-            (channelKeys: ChannelPubKeys)
-            (commitTxNumber: uint64)
-            (localParams: LocalParams)
-            (remoteParams: RemoteParams)
-            (commitmentInput: ScriptCoin)
-            (localPerCommitmentPoint: PubKey)
-            (spec: CommitmentSpec)
-            n: RResult<(CommitTx * HTLCTimeoutTx list * HTLCSuccessTx list)> =
-            let pkGen = Generators.derivePubKey localPerCommitmentPoint
-            let localPaymentPK = pkGen channelKeys.PaymentBasePubKey
-            let localDelayedPaymentPK = pkGen channelKeys.DelayedPaymentBasePubKey
-            let localHTLCPK = pkGen channelKeys.HTLCBasePubKey
-            let remotePaymentPK = pkGen remoteParams.PaymentBasePoint
-            let remoteHTLCPK = pkGen remoteParams.HTLCBasePoint
-            let localRevocationPK = pkGen remoteParams.RevocationBasePoint
-            let commitTx =
-                Transactions.makeCommitTx commitmentInput
-                                          commitTxNumber
-                                          channelKeys.PaymentBasePubKey
-                                          remoteParams.PaymentBasePoint
-                                          localParams.IsFunder
-                                          localParams.DustLimitSatoshis
-                                          localRevocationPK
-                                          remoteParams.ToSelfDelay
-                                          localDelayedPaymentPK
-                                          remotePaymentPK
-                                          localHTLCPK
-                                          remoteHTLCPK
-                                          spec n
-            let r =
-                Transactions.makeHTLCTxs (commitTx.Value.GetGlobalTransaction())
-                                         (localParams.DustLimitSatoshis)
-                                         (localRevocationPK)
-                                         (remoteParams.ToSelfDelay)
-                                         (localDelayedPaymentPK)
-                                         (localHTLCPK)
-                                         (remoteHTLCPK)
-                                         (spec)
-                                         (n)
-            r |>> fun (htlcTimeoutTxs, htlcSuccessTxs) ->
-                (commitTx, htlcTimeoutTxs, htlcSuccessTxs)
-
-        let makeRemoteTxs
-            (channelKeys: ChannelKeys)
-            (commitTxNumber: uint64)
-            (localParams: LocalParams)
-            (remoteParams: RemoteParams)
-            (commitmentInput: ScriptCoin)
-            (remotePerCommitmentPoint: PubKey)
-            (spec) (n) =
-            let pkGen = Generators.derivePubKey remotePerCommitmentPoint
-            let localPaymentPK = pkGen (channelKeys.PaymentBaseKey.PubKey)
-            let localHTLCPK = pkGen channelKeys.HTLCBaseKey.PubKey
-            let remotePaymentPK = pkGen (remoteParams.PaymentBasePoint)
-            let remoteDelayedPaymentPK = pkGen (remoteParams.PaymentBasePoint)
-            let remoteHTLCPK = pkGen (remoteParams.HTLCBasePoint)
-            let remoteRevocationPK = pkGen (channelKeys.RevocationBaseKey.PubKey)
-            let commitTx =
-                Transactions.makeCommitTx commitmentInput 
-                                          commitTxNumber
-                                          remoteParams.PaymentBasePoint
-                                          channelKeys.PaymentBaseKey.PubKey
-                                          (not localParams.IsFunder)
-                                          (remoteParams.DustLimitSatoshis)
-                                          (remoteRevocationPK)
-                                          (localParams.ToSelfDelay)
-                                          (remoteDelayedPaymentPK)
-                                          (localPaymentPK)
-                                          (remoteHTLCPK)
-                                          (localHTLCPK)
-                                          (spec)
-                                          (n)
-            Transactions.makeHTLCTxs (commitTx.Value.GetGlobalTransaction())
-                                     (remoteParams.DustLimitSatoshis)
-                                     (remoteRevocationPK)
-                                     (localParams.ToSelfDelay)
-                                     (remoteDelayedPaymentPK)
-                                     (remoteHTLCPK)
-                                     (localHTLCPK)
-                                     (spec) (n)
-            |>> fun (htlcTimeoutTxs, htlcSuccessTxs) ->
-                (commitTx, htlcTimeoutTxs, htlcSuccessTxs)
-
-        let sortBothHTLCs (htlcTimeoutTxs: HTLCTimeoutTx list) (htlcSuccessTxs: HTLCSuccessTx list) =
-            let timeoutTXsV = (htlcTimeoutTxs |> Seq.cast<IHTLCTx>)
-            let successTXsV = (htlcSuccessTxs |> Seq.cast<IHTLCTx>)
-            Seq.append timeoutTXsV successTXsV
-            |> List.ofSeq
-            |> List.sortBy(fun htlc -> htlc.Value.GetGlobalTransaction().Inputs.[htlc.WhichInput].PrevOut.N)
-
         let makeClosingTx(keyRepo: IKeysRepository, cm: Commitments, localSpk: Script, remoteSpk: Script, closingFee: Money, localFundingPk, n) =
             assert (Scripts.isValidFinalScriptPubKey(remoteSpk) && Scripts.isValidFinalScriptPubKey(localSpk))
             let dustLimitSatoshis = Money.Max(cm.LocalParams.DustLimitSatoshis, cm.RemoteParams.DustLimitSatoshis)
@@ -590,7 +492,7 @@ module Channel =
             |>> fun _ ->
                 let localParams = state.InitFundee.LocalParams
                 let channelKeys = cs.KeysRepository.GetChannelKeys(true)
-                let localCommitmentSecret = Helpers.buildLocalCommitmentSecret (channelKeys.CommitmentSeed, 0UL)
+                let localCommitmentSecret = ChannelUtils.buildCommitmentSecret (channelKeys.CommitmentSeed, 0UL)
                 let acceptChannel = { AcceptChannel.TemporaryChannelId = msg.TemporaryChannelId
                                       DustLimitSatoshis = localParams.DustLimitSatoshis
                                       MaxHTLCValueInFlightMsat = localParams.MaxHTLCValueInFlightMSat
@@ -752,7 +654,7 @@ module Channel =
         | WaitForFundingConfirmed state, ApplyFundingConfirmedOnBC (height, txindex, depth) ->
             cs.Logger (LogLevel.Info) (sprintf "ChannelId %A was confirmed at blockheight %A; depth: %A" state.Commitments.ChannelId height.Value depth)
             let nextPerCommitmentPoint =
-                Helpers.buildLocalCommitmentPoint (state.Commitments.LocalParams.ChannelPubKeys.CommitmentSeed, 1UL)
+                ChannelUtils.buildCommitmentPoint (state.Commitments.LocalParams.ChannelPubKeys.CommitmentSeed, 1UL)
             let msgToSend: FundingLocked = { ChannelId = state.Commitments.ChannelId; NextPerCommitmentPoint = nextPerCommitmentPoint }
 
             // This is temporary channel id that we will use in our channel_update message, the goal is to be able to use our channel
@@ -879,133 +781,15 @@ module Channel =
             | _ when (cm.LocalHasChanges() |> not) ->
                 sprintf "Ignoring SignCommitment Command (nothing to sign)" |> RRIgnore
             | Choice2Of2 _ ->
-                match cm.RemoteNextCommitInfo with
-                | Choice2Of2 remoteNextPerCommitmentPoint ->
-                    // remote commitment will include all local changes + remote acked changes
-                    cm.RemoteCommit.Spec.Reduce(cm.RemoteChanges.ACKed, cm.LocalChanges.Proposed)
-                    >>= fun spec ->
-                        let localKeys = cs.KeysRepository.GetChannelKeys(not cm.LocalParams.IsFunder)
-                        Helpers.makeRemoteTxs (localKeys)
-                                              (cm.RemoteCommit.Index + 1UL)
-                                              (cm.LocalParams)
-                                              (cm.RemoteParams)
-                                              (cm.FundingSCoin)
-                                              (remoteNextPerCommitmentPoint)
-                                              (spec) cs.Network
-                        >>= fun (remoteCommitTx, htlcTimeoutTxs, htlcSuccessTxs) ->
-                            let signature,_ = cs.KeysRepository.GetSignatureFor(remoteCommitTx.Value, cm.LocalParams.ChannelPubKeys.FundingPubKey)
-                            let sortedHTLCTXs = Helpers.sortBothHTLCs htlcTimeoutTxs htlcSuccessTxs
-                            let htlcSigs =
-                                sortedHTLCTXs
-                                |> List.map(
-                                        (fun htlc -> cs.KeysRepository.GenerateKeyFromBasePointAndSign(htlc.Value, cm.LocalParams.ChannelPubKeys.HTLCBasePubKey, remoteNextPerCommitmentPoint))
-                                        >> fst
-                                        >> (fun txSig -> txSig.Signature)
-                                        )
-                            let msg = { CommitmentSigned.ChannelId = cm.ChannelId
-                                        Signature = signature.Signature
-                                        HTLCSignatures = htlcSigs }
-                            let nextCommitments =
-                                let nextRemoteCommitInfo = { WaitingForRevocation.NextRemoteCommit =
-                                                                { cm.RemoteCommit
-                                                                    with
-                                                                        Index = 1UL;
-                                                                        RemotePerCommitmentPoint = remoteNextPerCommitmentPoint
-                                                                        TxId = remoteCommitTx.GetTxId() }
-                                                             Sent = msg
-                                                             SentAfterLocalCommitmentIndex = cm.LocalCommit.Index
-                                                             ReSignASAP = false }
-
-                                { cm with RemoteNextCommitInfo = Choice1Of2(nextRemoteCommitInfo)
-                                          LocalChanges = { cm.LocalChanges with Proposed = []; Signed = cm.LocalChanges.Proposed }
-                                          RemoteChanges = { cm.RemoteChanges with ACKed = []; Signed = cm.RemoteChanges.ACKed } }
-                            [ WeAcceptedCMDSign (msg, nextCommitments) ] |> Good
-
-                | Choice1Of2 _ ->
-                    "Can not sign before Revocation"
-                    |> RRApiMisuse
+                cm |> Commitments.sendCommit (cs.KeysRepository) (cs.Network)
+                >>>= fun e -> e.Describe() |> RRApiMisuse
             | Choice1Of2 _ ->
                 sprintf "Already in the process of signing."
                 |> RRIgnore
 
         | ChannelState.Normal state, ApplyCommitmentSigned msg ->
-            let cm = state.Commitments
-            if cm.RemoteHasChanges() |> not then
-                sprintf "Remote has sent commitment_signed but we have no pending changes" |> RRClose
-            else
-                let chanKeys = cm.LocalParams.ChannelPubKeys
-                let nextI = cm.LocalCommit.Index + 1UL
-                cm.LocalCommit.Spec.Reduce(cm.LocalChanges.ACKed, cm.RemoteChanges.Proposed)
-                >>= fun spec ->
-                    let localPerCommitmentPoint = Helpers.buildLocalCommitmentPoint (chanKeys.CommitmentSeed, nextI)
-                    Helpers.makeLocalTXs chanKeys (nextI) (cm.LocalParams) (cm.RemoteParams) (cm.FundingSCoin) (localPerCommitmentPoint) spec cs.Network
-                    >>= fun (localCommitTx, htlcTimeoutTxs, htlcSuccessTxs) ->
-                        let signature, signedCommitTx = cs.KeysRepository.GetSignatureFor (localCommitTx.Value, chanKeys.FundingPubKey)
-
-                        let sigPair =
-                            let localSigPair = seq [(chanKeys.FundingPubKey, signature)]
-                            let remoteSigPair = seq[ (cm.RemoteParams.FundingPubKey, TransactionSignature(msg.Signature, SigHash.All)) ]
-                            Seq.append localSigPair remoteSigPair
-                        Transactions.checkTxFinalized signedCommitTx localCommitTx.WhichInput sigPair
-                        >>= fun finalizedCommitTx ->
-                            let sortedHTLCTXs = Helpers.sortBothHTLCs htlcTimeoutTxs htlcSuccessTxs
-                            Validation.checkOrClose sortedHTLCTXs.Length (<>) msg.HTLCSignatures.Length "Number of signatures went from the remote (%A) does not match the number expected (%A)"
-                            >>= fun _ ->
-                                let localHTLCSigs, sortedHTLCTXs =
-                                    let localHtlcSigsAndHTLCTxs = sortedHTLCTXs |> List.map(fun htlc -> cs.KeysRepository.GenerateKeyFromBasePointAndSign(htlc.Value, cm.LocalParams.ChannelPubKeys.HTLCBasePubKey, localPerCommitmentPoint))
-                                    localHtlcSigsAndHTLCTxs |> List.map(fst), localHtlcSigsAndHTLCTxs |> List.map(snd) |> Seq.cast<IHTLCTx> |> List.ofSeq
-
-                                let remoteHTLCPubKey = Generators.derivePubKey(cm.RemoteParams.HTLCBasePoint) (localPerCommitmentPoint)
-
-                                let checkHTLCSig (htlc: IHTLCTx, remoteECDSASig: Crypto.ECDSASignature): RResult<_> =
-                                    let remoteS = TransactionSignature(remoteECDSASig, SigHash.All)
-                                    match htlc with
-                                    | :? HTLCTimeoutTx ->
-                                        (Transactions.checkTxFinalized (htlc.Value) (0) (seq [(remoteHTLCPubKey, remoteS)]))
-                                        |>> box
-                                    // we cannot check that htlc-success tx are spendable because we need the payment preimage; thus we only check the remote sig
-                                    | :? HTLCSuccessTx ->
-                                        (Transactions.checkSigAndAdd (htlc) (remoteS) (remoteHTLCPubKey))
-                                        |>> box
-                                    | _ -> failwith "Unreachable!"
-
-                                List.zip sortedHTLCTXs msg.HTLCSignatures
-                                |> List.map(checkHTLCSig)
-                                |> List.sequenceRResult
-                                >>= fun txList ->
-                                    let successTxs = txList |> List.choose(fun o -> match o with | :? HTLCSuccessTx as tx -> Some tx | _ -> None)
-                                    let finalizedTxs = txList |> List.choose(fun o -> match o with | :? FinalizedTx as tx -> Some tx | _ -> None)
-                                    let localPerCommitmentSecret =
-                                        Helpers.buildLocalCommitmentSecret(cm.LocalParams.ChannelPubKeys.CommitmentSeed, cm.LocalCommit.Index)
-                                    let localNextPerCommitmentPoint =
-                                        Helpers.buildLocalCommitmentPoint(cm.LocalParams.ChannelPubKeys.CommitmentSeed, cm.LocalCommit.Index + 2UL)
-
-                                    let nextMsg = { RevokeAndACK.ChannelId = cm.ChannelId
-                                                    PerCommitmentSecret = localPerCommitmentSecret.ToBytes() |> uint256 |> PaymentPreimage
-                                                    NextPerCommitmentPoint = localNextPerCommitmentPoint }
-                                    
-                                    let nextCommitments =
-                                        let localCommit1 = { LocalCommit.Index = cm.LocalCommit.Index + 1UL
-                                                             Spec = cm.LocalCommit.Spec
-                                                             PublishableTxs = { PublishableTxs.CommitTx = finalizedCommitTx
-                                                                                HTLCTxs = finalizedTxs }
-                                                             PendingHTLCSuccessTxs = successTxs }
-                                        let ourChanges1 = { cm.LocalChanges with ACKed = []}
-                                        let theirChanges1 = { cm.RemoteChanges with Proposed = []; ACKed = (cm.RemoteChanges.ACKed @ cm.RemoteChanges.Proposed) }
-                                        let completedOutgoingHTLCs =
-                                            let t1 = cm.LocalCommit.Spec.HTLCs
-                                                     |> Map.filter(fun k v -> v.Direction = Out)
-                                                     |> Map.toSeq |> Seq.map (fun (k, v) -> k) |> Set.ofSeq
-                                            let t2 = localCommit1.Spec.HTLCs |> Map.filter(fun k v -> v.Direction = Out)
-                                                     |> Map.toSeq |> Seq.map (fun (k, v) -> k) |> Set.ofSeq
-                                            Set.difference t1 t2
-                                        let originChannels1 = cm.OriginChannels |> Map.filter(fun k v -> Set.contains k completedOutgoingHTLCs)
-                                        { cm with LocalCommit = localCommit1
-                                                  LocalChanges = ourChanges1
-                                                  RemoteChanges = theirChanges1
-                                                  OriginChannels = originChannels1 }
-                                    Good ([ WeAcceptedCommitmentSigned(nextMsg, nextCommitments) ;])
-                            >>>= fun e -> RRClose("Something unexpected happend while handling commitment_signed from remote" + e.Describe())
+            state.Commitments |> Commitments.receiveCommit cs.KeysRepository msg cs.Network
+            >>>= fun e -> RRClose("Something unexpected happend while handling commitment_signed from remote" + e.Describe())
 
         | ChannelState.Normal state, ApplyRevokeAndACK msg ->
             let cm = state.Commitments
@@ -1131,7 +915,21 @@ module Channel =
             state.Commitments |> Commitments.receiveFailMalformed msg
             >>>= fun e -> e.Describe() |> RRClose
         | Shutdown state, UpdateFee cmd ->
-            failwith "not impl"
+            state.Commitments |> Commitments.sendFee cmd
+            >>>= fun e -> e.Describe() |> RRApiMisuse
+        | Shutdown state, ApplyUpdateFee  msg ->
+            let localFeerate = cs.FeeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority)
+            state.Commitments |> Commitments.receiveFee cs.Config localFeerate msg
+            >>>= fun e -> e.Describe() |> RRClose
+        | Shutdown state, SignCommitment ->
+            let cm = state.Commitments
+            match cm.RemoteNextCommitInfo with
+            | _ when (not <| cm.LocalHasChanges()) ->
+                sprintf "nothing to sign" |> RRIgnore
+            | Choice2Of2 _ ->
+                failwith "not impl"
+            | Choice1Of2 waitForRevocation ->
+                failwith "not impl"
 
 
     let applyEvent c (e: ChannelEvent): Channel =
