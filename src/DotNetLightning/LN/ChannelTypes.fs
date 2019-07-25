@@ -336,6 +336,7 @@ type ChannelEvent =
 
     // ------ closing ------
     | MutualClosePerformed of nextState : ClosingData
+    | WeProposedNewClosingSigned of msgToSend: ClosingSigned * nextState: NegotiatingData
     // -------- else ---------
     | Closed
     | Disconnected

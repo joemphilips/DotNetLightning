@@ -240,7 +240,7 @@ module Channel =
                     match d with
                     | Choice1Of2 negotiating -> 
                         ClosingData.Create(negotiating.ChannelId, negotiating.Commitments, None, DateTime.Now, (negotiating.ClosingTxProposed |> List.collect id |> List.map(fun tx -> tx.UnsignedTx)), closingTx::[])
-                    | Choice2Of2 closing -> { closing with MutualClosePublished  = closing.MutualClosePublished @ [closingTx]}
+                    | Choice2Of2 closing -> { closing with MutualClosePublished  = closingTx::closing.MutualClosePublished }
                 [ MutualClosePerformed nextData ]
                 |> Good
 
@@ -966,8 +966,8 @@ module Channel =
                     >>= fun finalizedTx ->
                         let maybeLocalFee =
                             state.ClosingTxProposed
-                            |> List.tryLast
-                            |> Option.bind (List.tryLast)
+                            |> List.tryHead
+                            |> Option.bind (List.tryHead)
                             |> Option.map(fun v -> v.LocalClosingSigned.FeeSatoshis)
                         let areWeInDeal = Some (msg.FeeSatoshis) = maybeLocalFee
                         let hasTooManyNegotiationDone =
@@ -975,7 +975,7 @@ module Channel =
                         if (areWeInDeal || hasTooManyNegotiationDone) then
                             Helpers.Closing.handleMutualClose(finalizedTx, Choice1Of2({ state with MaybeBestUnpublishedTx = Some(finalizedTx) }))
                         else
-                            let lastLocalClosingFee = state.ClosingTxProposed |> List.tryLast |> Option.bind(List.tryLast) |> Option.map(fun txp -> txp.LocalClosingSigned.FeeSatoshis)
+                            let lastLocalClosingFee = state.ClosingTxProposed |> List.tryHead |> Option.bind(List.tryHead) |> Option.map(fun txp -> txp.LocalClosingSigned.FeeSatoshis)
                             let nextClosingFeeRR =
                                 match lastLocalClosingFee with Some v -> Good v | None -> (Helpers.Closing.firstClosingFee(state.Commitments, state.LocalShutdown.ScriptPubKey, state.RemoteShutdown.ScriptPubKey, cs.FeeEstimator, cs.Network))
                                 |>> fun localF ->
@@ -987,11 +987,20 @@ module Channel =
                                 else if (nextClosingFee = msg.FeeSatoshis) then
                                     // we have reached on agreement!
                                     let closingTxProposed1 =
-                                        match state.ClosingTxProposed with 
-                                        | previousNegotiations::currentNegotiations
-                                    failwith ""
+                                        let newProposed = [{ ClosingTxProposed.UnsignedTx = closingTx
+                                                             LocalClosingSigned = closingSignedMsg }]
+                                        newProposed::state.ClosingTxProposed
+                                    let negoData = { state with ClosingTxProposed = closingTxProposed1
+                                                                MaybeBestUnpublishedTx = Some(finalizedTx) }
+                                    Helpers.Closing.handleMutualClose (finalizedTx, Choice1Of2(negoData))
                                 else
-                                    failwith ""
+                                    let closingTxProposed1 =
+                                        let newProposed = [{ ClosingTxProposed.UnsignedTx = closingTx
+                                                             LocalClosingSigned = closingSignedMsg }]
+                                        newProposed::state.ClosingTxProposed
+                                    let nextState = { state with ClosingTxProposed = closingTxProposed1; MaybeBestUnpublishedTx = Some (finalizedTx) }
+                                    [ WeProposedNewClosingSigned(closingSignedMsg, nextState) ]
+                                    |> Good
             >>>= fun e -> e.Describe() |> RRClose
 
 
