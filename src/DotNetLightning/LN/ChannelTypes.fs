@@ -68,6 +68,10 @@ module Data =
         UnsignedTx: ClosingTx
         LocalClosingSigned: ClosingSigned
     }
+    with
+        static member LocalClosingSigned_: Lens<_ ,_> =
+            (fun p -> p.LocalClosingSigned),
+            (fun v p -> { p with LocalClosingSigned = v })
 
     type LocalCommitPublished = {
         CommitTx: CommitTx
@@ -220,27 +224,49 @@ module Data =
                             LocalShutdown: Shutdown;
                             RemoteShutdown: Shutdown;
                             ClosingTxProposed: ClosingTxProposed list list
-                            MaybeBestUnpublishedTx: Transaction option
+                            MaybeBestUnpublishedTx: FinalizedTx option
                             ChannelId: ChannelId
                           }
-        with interface IHasCommitments with
+        with
+            interface IHasCommitments with
                 member this.ChannelId: ChannelId = 
                     this.ChannelId
                 member this.Commitments: Commitments = 
                     this.Commitments
 
-    type ClosingData = {
-                        Commitments: Commitments
-                        MutualCloseProposed: Transaction list
-                        MutualClosePublished: Transaction list
-                        LocalCommitPublished: LocalCommitPublished option
+    type ClosingData = internal {
                         ChannelId: ChannelId
+                        Commitments: Commitments
+                        MaybeFundingTx: Transaction option
+                        WaitingSince: System.DateTime
+                        MutualCloseProposed: ClosingTx list
+                        MutualClosePublished: FinalizedTx list
+                        LocalCommitPublished: LocalCommitPublished option
+                        RemoteCommitPublished: RemoteCommitPublished option
+                        NextRemoteCommitPublished: RemoteCommitPublished option
+                        FutureRemoteCommitPublished: RemoteCommitPublished option
+                        RevokedCommitPublished: RevokedCommitPublished list
                       }
-        with interface IHasCommitments with
+        with
+            interface IHasCommitments with
                 member this.ChannelId: ChannelId = 
                     this.ChannelId
                 member this.Commitments: Commitments = 
                     this.Commitments
+            static member Create(channelId, commitments, maybeFundingTx, waitingSince, mutualCloseProposed, ?mutualClosePublished) =
+                {
+                    ChannelId = channelId
+                    Commitments = commitments
+                    MaybeFundingTx = maybeFundingTx
+                    WaitingSince = waitingSince
+                    MutualCloseProposed = mutualCloseProposed
+                    MutualClosePublished = defaultArg mutualClosePublished []
+                    LocalCommitPublished = None
+                    RemoteCommitPublished = None
+                    NextRemoteCommitPublished = None
+                    FutureRemoteCommitPublished = None
+                    RevokedCommitPublished = []
+                }
 
     type WaitForRemotePublishFutureCommitmentData = {
                                                     Commitments: Commitments;
@@ -308,6 +334,8 @@ type ChannelEvent =
     | AcceptedShutdownWhenNoPendingHTLCs of msgToSend: ClosingSigned option * nextState: NegotiatingData
     | AcceptedShutdownWhenWeHavePendingHTLCs of nextState: ShutdownData
 
+    // ------ closing ------
+    | MutualClosePerformed of nextState : ClosingData
     // -------- else ---------
     | Closed
     | Disconnected

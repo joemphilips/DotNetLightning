@@ -14,12 +14,12 @@ open DotNetLightning.Chain
 /// We define all possible txs here.
 /// For internal representation is psbt. But this is just for convenience since
 /// in current spec we don't have to send PSBT with each other in case of Lightning.
-type ILightningTx = interface end
+type ILightningTx = 
+    abstract member Value: PSBT
+    abstract member WhichInput: int
 
 type IHTLCTx =
     inherit ILightningTx
-    abstract member Value: PSBT
-    abstract member WhichInput: int
 
 
 type CommitTx = {
@@ -27,7 +27,12 @@ type CommitTx = {
     WhichInput: int
 }
     with    
-        interface ILightningTx
+        interface ILightningTx with
+            member this.Value: PSBT = 
+                this.Value
+            member this.WhichInput: int = 
+                this.WhichInput
+
         member this.GetTxId() =
             this.Value.GetGlobalTransaction().GetTxId()
 
@@ -53,21 +58,64 @@ type HTLCTimeoutTx = {
 
 
 type ClaimHTLCSuccessTx = ClaimHTLCSuccessTx of PSBT
-    with interface ILightningTx
+    with
+        interface ILightningTx with
+            member this.Value = 
+                this.Value
+            member this.WhichInput: int = 
+                0
+        member this.Value = let (ClaimHTLCSuccessTx v) = this in v;
 type ClaimHTLCTimeoutTx = ClaimHTLCTimeoutTx of PSBT
-    with interface ILightningTx
+    with
+        interface ILightningTx with
+            member this.Value = 
+                this.Value
+            member this.WhichInput: int = 
+                0
+        member this.Value = let (ClaimHTLCTimeoutTx v) = this in v;
 type ClaimP2WPKHOutputTx = ClaimP2WPKHOutputTx of PSBT
-    with interface ILightningTx
+    with
+        interface ILightningTx with
+            member this.Value = 
+                this.Value
+            member this.WhichInput: int = 
+                0
+        member this.Value = let (ClaimP2WPKHOutputTx v) = this in v;
 type ClaimDelayedOutputTx = ClaimDelayedOutputTx of PSBT
-    with interface ILightningTx
+    with
+        interface ILightningTx with
+            member this.Value = 
+                this.Value
+            member this.WhichInput: int = 
+                0
+        member this.Value = let (ClaimDelayedOutputTx v) = this in v;
 type MainPenaltyTx = MainPenaltyTx of PSBT
-    with interface ILightningTx
+    with
+        interface ILightningTx with
+            member this.Value = 
+                this.Value
+            member this.WhichInput: int = 
+                0
+        member this.Value = let (MainPenaltyTx v) = this in v;
 type HTLCPenaltyTx = HTLCPenaltyTx of PSBT
-    with interface ILightningTx
+    with
+        interface ILightningTx with
+            member this.Value = 
+                this.Value
+            member this.WhichInput: int = 
+                0
+        member this.Value = let (HTLCPenaltyTx v) = this in v;
 type ClosingTx = ClosingTx of PSBT
     with
-        interface ILightningTx
         member this.Value = let (ClosingTx v) = this in v;
+        member this.WhichInput = 0
+
+        interface ILightningTx with
+            member this.Value = 
+                this.Value
+            member this.WhichInput: int = 
+                this.WhichInput
+
 
 /// Tx already verified and it can be published anytime
 type FinalizedTx =
@@ -323,7 +371,7 @@ module Transactions =
         with
         | e -> RResult.rexn e
 
-    let checkSigAndAdd (tx: IHTLCTx) (signature: TransactionSignature) (pk: PubKey) =
+    let checkSigAndAdd (tx: ILightningTx) (signature: TransactionSignature) (pk: PubKey) =
         let psbt = tx.Value
         let spentOutput = psbt.Inputs.[tx.WhichInput].GetTxOut()
         let spk = spentOutput.ScriptPubKey

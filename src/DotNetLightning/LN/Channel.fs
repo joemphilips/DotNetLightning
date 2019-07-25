@@ -202,32 +202,48 @@ module Channel =
                 makeFirstCommitTxCore()
 
         // facades
-        let makeClosingTx(keyRepo: IKeysRepository, cm: Commitments, localSpk: Script, remoteSpk: Script, closingFee: Money, localFundingPk, n) =
-            assert (Scripts.isValidFinalScriptPubKey(remoteSpk) && Scripts.isValidFinalScriptPubKey(localSpk))
-            let dustLimitSatoshis = Money.Max(cm.LocalParams.DustLimitSatoshis, cm.RemoteParams.DustLimitSatoshis)
-            Transactions.makeClosingTx(cm.FundingSCoin) (localSpk) (remoteSpk) (cm.LocalParams.IsFunder) (dustLimitSatoshis) (closingFee) (cm.LocalCommit.Spec) n
-            |>> fun closingTx ->
-                let localSignature, psbtUpdated = keyRepo.GetSignatureFor(closingTx.Value, localFundingPk)
-                let msg = { ClosingSigned.ChannelId = cm.ChannelId
-                            FeeSatoshis = closingFee
-                            Signature = localSignature.Signature }
-                (ClosingTx psbtUpdated, msg)
 
-        let private firstClosingFee(cm: Commitments, localSpk: Script, remoteSpk: Script, feeEst: IFeeEstimator, n) =
-            Transactions.makeClosingTx cm.FundingSCoin localSpk remoteSpk cm.LocalParams.IsFunder Money.Zero Money.Zero cm.LocalCommit.Spec n
-            |>> fun dummyClosingTx ->
-                let tx = dummyClosingTx.Value.GetGlobalTransaction()
-                tx.Inputs.[0].WitScript <-
-                    let witness = seq [dummySig.ToBytes(); dummySig.ToBytes(); dummyClosingTx.Value.Inputs.[0].WitnessScript.ToBytes()] |> Array.concat
-                    Script(witness).ToWitScript()
-                let feeRatePerKw = FeeRatePerKw.Max(feeEst.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority), cm.LocalCommit.Spec.FeeRatePerKw)
-                let vsize = tx.GetVirtualSize()
-                feeRatePerKw.ToFee(uint64 vsize)
+        module Closing =
+            let makeClosingTx(keyRepo: IKeysRepository, cm: Commitments, localSpk: Script, remoteSpk: Script, closingFee: Money, localFundingPk, n) =
+                assert (Scripts.isValidFinalScriptPubKey(remoteSpk) && Scripts.isValidFinalScriptPubKey(localSpk))
+                let dustLimitSatoshis = Money.Max(cm.LocalParams.DustLimitSatoshis, cm.RemoteParams.DustLimitSatoshis)
+                Transactions.makeClosingTx(cm.FundingSCoin) (localSpk) (remoteSpk) (cm.LocalParams.IsFunder) (dustLimitSatoshis) (closingFee) (cm.LocalCommit.Spec) n
+                |>> fun closingTx ->
+                    let localSignature, psbtUpdated = keyRepo.GetSignatureFor(closingTx.Value, localFundingPk)
+                    let msg = { ClosingSigned.ChannelId = cm.ChannelId
+                                FeeSatoshis = closingFee
+                                Signature = localSignature.Signature }
+                    (ClosingTx psbtUpdated, msg)
 
-        let makeFirstClosingTx(keyRepo, commitments, localSpk, remoteSpk, feeEst, localFundingPk, n) = 
-            firstClosingFee(commitments, localSpk, remoteSpk, feeEst ,n)
-            >>= fun closingFee ->
-                makeClosingTx(keyRepo, commitments, localSpk, remoteSpk, closingFee, localFundingPk, n)
+            let firstClosingFee(cm: Commitments, localSpk: Script, remoteSpk: Script, feeEst: IFeeEstimator, n) =
+                Transactions.makeClosingTx cm.FundingSCoin localSpk remoteSpk cm.LocalParams.IsFunder Money.Zero Money.Zero cm.LocalCommit.Spec n
+                |>> fun dummyClosingTx ->
+                    let tx = dummyClosingTx.Value.GetGlobalTransaction()
+                    tx.Inputs.[0].WitScript <-
+                        let witness = seq [dummySig.ToBytes(); dummySig.ToBytes(); dummyClosingTx.Value.Inputs.[0].WitnessScript.ToBytes()] |> Array.concat
+                        Script(witness).ToWitScript()
+                    let feeRatePerKw = FeeRatePerKw.Max(feeEst.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority), cm.LocalCommit.Spec.FeeRatePerKw)
+                    let vsize = tx.GetVirtualSize()
+                    feeRatePerKw.ToFee(uint64 vsize)
+
+            let makeFirstClosingTx(keyRepo, commitments, localSpk, remoteSpk, feeEst, localFundingPk, n) = 
+                firstClosingFee(commitments, localSpk, remoteSpk, feeEst ,n)
+                >>= fun closingFee ->
+                    makeClosingTx(keyRepo, commitments, localSpk, remoteSpk, closingFee, localFundingPk, n)
+
+            let nextClosingFee(localClosingFee: Money, remoteClosingFee: Money) =
+                ((localClosingFee.Satoshi + remoteClosingFee.Satoshi) / 4L) * 2L
+                |> Money.Satoshis
+
+            let handleMutualClose (closingTx: FinalizedTx, d: Choice<NegotiatingData, ClosingData>) =
+                let nextData =
+                    match d with
+                    | Choice1Of2 negotiating -> 
+                        ClosingData.Create(negotiating.ChannelId, negotiating.Commitments, None, DateTime.Now, (negotiating.ClosingTxProposed |> List.collect id |> List.map(fun tx -> tx.UnsignedTx)), closingTx::[])
+                    | Choice2Of2 closing -> { closing with MutualClosePublished  = closing.MutualClosePublished @ [closingTx]}
+                [ MutualClosePerformed nextData ]
+                |> Good
+
     module internal Validation =
 
         let checkOrClose left predicate right msg =
@@ -873,7 +889,7 @@ module Channel =
                 if (cm.HasNoPendingHTLCs()) then
                     // we have to send first closing_signed msg iif we are the funder
                     if (cm.LocalParams.IsFunder) then
-                        Helpers.makeFirstClosingTx(cs.KeysRepository, cm, localShutdown.ScriptPubKey, msg.ScriptPubKey, cs.FeeEstimator, cm.LocalParams.ChannelPubKeys.FundingPubKey, cs.Network)
+                        Helpers.Closing.makeFirstClosingTx(cs.KeysRepository, cm, localShutdown.ScriptPubKey, msg.ScriptPubKey, cs.FeeEstimator, cm.LocalParams.ChannelPubKeys.FundingPubKey, cs.Network)
                         |>> fun (closingTx, closingSignedMsg) ->
                             let nextState = { NegotiatingData.ChannelId = cm.ChannelId
                                               Commitments = cm
@@ -927,9 +943,56 @@ module Channel =
             | _ when (not <| cm.LocalHasChanges()) ->
                 sprintf "nothing to sign" |> RRIgnore
             | Choice2Of2 _ ->
-                failwith "not impl"
+                cm |> Commitments.sendCommit (cs.KeysRepository) (cs.Network)
+                >>>= fun e -> e.Describe() |> RRClose
             | Choice1Of2 waitForRevocation ->
-                failwith "not impl"
+                sprintf "Already in the process of signing."
+                |> RRIgnore
+        | Shutdown state, ApplyCommitmentSigned msg ->
+            state.Commitments |> Commitments.receiveCommit (cs.KeysRepository) msg cs.Network
+            >>>= fun e -> e.Describe() |> RRClose
+        | Shutdown state, ApplyRevokeAndACK msg ->
+            failwith "not implemented"
+
+        | Negotiating state, ApplyClosingSigned msg ->
+            let cm = state.Commitments
+            let lastCommitFeeSatoshi =
+                cm.FundingSCoin.TxOut.Value - (cm.LocalCommit.PublishableTxs.CommitTx.Value.TotalOut)
+            Validation.checkOrClose msg.FeeSatoshis (>) lastCommitFeeSatoshi "remote proposed a commit fee higher than the last commitment fee. remoteClosingFee=%A; localCommitTxFee=%A;" 
+            >>= fun _ ->
+                Helpers.Closing.makeClosingTx(cs.KeysRepository, cm, state.LocalShutdown.ScriptPubKey, state.RemoteShutdown.ScriptPubKey, msg.FeeSatoshis, cm.LocalParams.ChannelPubKeys.FundingPubKey, cs.Network)
+                >>= fun (closingTx, closingSignedMsg) ->
+                    Transactions.checkTxFinalized closingTx.Value (closingTx.WhichInput) (seq [cm.RemoteParams.FundingPubKey, TransactionSignature(msg.Signature, SigHash.All)])
+                    >>= fun finalizedTx ->
+                        let maybeLocalFee =
+                            state.ClosingTxProposed
+                            |> List.tryLast
+                            |> Option.bind (List.tryLast)
+                            |> Option.map(fun v -> v.LocalClosingSigned.FeeSatoshis)
+                        let areWeInDeal = Some (msg.FeeSatoshis) = maybeLocalFee
+                        let hasTooManyNegotiationDone =
+                            (state.ClosingTxProposed |> List.collect(id) |> List.length) >= MAX_NEGOTIATION_ITERATIONS
+                        if (areWeInDeal || hasTooManyNegotiationDone) then
+                            Helpers.Closing.handleMutualClose(finalizedTx, Choice1Of2({ state with MaybeBestUnpublishedTx = Some(finalizedTx) }))
+                        else
+                            let lastLocalClosingFee = state.ClosingTxProposed |> List.tryLast |> Option.bind(List.tryLast) |> Option.map(fun txp -> txp.LocalClosingSigned.FeeSatoshis)
+                            let nextClosingFeeRR =
+                                match lastLocalClosingFee with Some v -> Good v | None -> (Helpers.Closing.firstClosingFee(state.Commitments, state.LocalShutdown.ScriptPubKey, state.RemoteShutdown.ScriptPubKey, cs.FeeEstimator, cs.Network))
+                                |>> fun localF ->
+                                    Helpers.Closing.nextClosingFee(localF, msg.FeeSatoshis)
+                            nextClosingFeeRR
+                            >>= fun nextClosingFee ->
+                                if (Some nextClosingFee = lastLocalClosingFee) then
+                                    Helpers.Closing.handleMutualClose(finalizedTx, Choice1Of2({ state with MaybeBestUnpublishedTx = Some(finalizedTx) }))
+                                else if (nextClosingFee = msg.FeeSatoshis) then
+                                    // we have reached on agreement!
+                                    let closingTxProposed1 =
+                                        match state.ClosingTxProposed with 
+                                        | previousNegotiations::currentNegotiations
+                                    failwith ""
+                                else
+                                    failwith ""
+            >>>= fun e -> e.Describe() |> RRClose
 
 
     let applyEvent c (e: ChannelEvent): Channel =

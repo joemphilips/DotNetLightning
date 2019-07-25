@@ -89,12 +89,14 @@ type ChannelCommand =
 
     | SignCommitment
     | ApplyCommitmentSigned of CommitmentSigned
-
     | ApplyRevokeAndACK of RevokeAndACK
 
     // close
     | Close of CMDClose
+    | ApplyClosingSigned of ClosingSigned
     | RemoteShutdown of Shutdown
+
+    // else
     | ForceClose
     | GetState
     | GetStateData
