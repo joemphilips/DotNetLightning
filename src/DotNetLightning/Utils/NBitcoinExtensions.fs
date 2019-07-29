@@ -29,6 +29,9 @@ module NBitcoinExtensions =
             |> Seq.choose(fun kv -> if kv.Key = pubkey then Some kv.Value else None)
             |> Seq.exactlyOne
 
+        member this.GetTxId() =
+            this.GetGlobalTransaction().GetTxId()
+
     type ECDSASignature with
 
         /// ** Description **

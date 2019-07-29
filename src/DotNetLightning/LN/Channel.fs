@@ -79,6 +79,19 @@ module Channel =
         |> fun ecdsaSig -> TransactionSignature(ecdsaSig, SigHash.All)
 
 
+    let private checkOrClose left predicate right msg =
+        if predicate left right then
+            sprintf msg left right |> RRClose
+        else
+            Good ()
+
+    let private checkOrIgnore left predicate right msg =
+        if predicate left right then
+            sprintf msg left right |> RRIgnore
+        else
+            Good ()
+
+
     module internal Helpers =
         let deriveOurDustLimitSatoshis(feeEstimator: IFeeEstimator): Money =
             let (FeeRatePerKw atOpenBackGroundFee) = feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background)
@@ -244,19 +257,14 @@ module Channel =
                 [ MutualClosePerformed nextData ]
                 |> Good
 
+            let claimCurrentLocalCommitTxOutputs(keyRepo: IKeysRepository, channelPubKeys: ChannelPubKeys, commitments: Commitments, commitTx: CommitTx) =
+                checkOrClose (commitments.LocalCommit.PublishableTxs.CommitTx.Value.GetTxId()) (=) (commitTx.Value.GetTxId()) "txid mismatch. provided txid (%A) does not match current local commit tx (%A)"
+                >>= fun _ ->
+                    let localPerCommitmentPoint = ChannelUtils.buildCommitmentPoint (channelPubKeys.CommitmentSeed, commitments.LocalCommit.Index)
+                    let localRevocationPubKey = Generators.revocationPubKey
+                    failwith ""
+
     module internal Validation =
-
-        let checkOrClose left predicate right msg =
-            if predicate left right then
-                sprintf msg left right |> RRClose
-            else
-                Good ()
-
-        let checkOrIgnore left predicate right msg =
-            if predicate left right then
-                sprintf msg left right |> RRIgnore
-            else
-                Good ()
 
         let checkMaxAcceptedHTLCsInMeaningfulRange (maxAcceptedHTLCs: uint16) =
             if (maxAcceptedHTLCs < 1us) then
@@ -761,6 +769,7 @@ module Channel =
 
         | ChannelState.Normal state, FulfillHTLC cmd ->
             state.Commitments |> Commitments.sendFulfill (cmd)
+            |>> fun t -> [ WeAcceptedCMDFulfillHTLC (t) ]
             >>>= fun e -> RRApiMisuse (e.Describe())
 
         | ChannelState.Normal state, ChannelCommand.ApplyUpdateFulfillHTLC msg ->
@@ -917,6 +926,7 @@ module Channel =
         // ----------- closing ---------
         | Shutdown state, FulfillHTLC cmd ->
             state.Commitments |> Commitments.sendFulfill cmd
+            |>> fun t -> [ WeAcceptedCMDFulfillHTLC (t) ]
             >>>= fun e -> e.Describe() |> RRApiMisuse
         | Shutdown state, ApplyUpdateFulfillHTLC msg ->
             state.Commitments |> Commitments.receiveFulfill msg
@@ -958,7 +968,7 @@ module Channel =
             let cm = state.Commitments
             let lastCommitFeeSatoshi =
                 cm.FundingSCoin.TxOut.Value - (cm.LocalCommit.PublishableTxs.CommitTx.Value.TotalOut)
-            Validation.checkOrClose msg.FeeSatoshis (>) lastCommitFeeSatoshi "remote proposed a commit fee higher than the last commitment fee. remoteClosingFee=%A; localCommitTxFee=%A;" 
+            checkOrClose msg.FeeSatoshis (>) lastCommitFeeSatoshi "remote proposed a commit fee higher than the last commitment fee. remoteClosingFee=%A; localCommitTxFee=%A;" 
             >>= fun _ ->
                 Helpers.Closing.makeClosingTx(cs.KeysRepository, cm, state.LocalShutdown.ScriptPubKey, state.RemoteShutdown.ScriptPubKey, msg.FeeSatoshis, cm.LocalParams.ChannelPubKeys.FundingPubKey, cs.Network)
                 >>= fun (closingTx, closingSignedMsg) ->
@@ -1002,7 +1012,15 @@ module Channel =
                                     [ WeProposedNewClosingSigned(closingSignedMsg, nextState) ]
                                     |> Good
             >>>= fun e -> e.Describe() |> RRClose
-
+        | Closing state, FulfillHTLC cmd ->
+            cs.Logger(LogLevel.Info) (sprintf "got valid payment preimage, recalculating txs to redeem the corresponding htlc on-chain")
+            let cm = state.Commitments
+            cm |> Commitments.sendFulfill cmd
+            >>= fun (msgToSend, newCommitments) ->
+                let localCommitPublished  =
+                    state.LocalCommitPublished
+                    |> Option.map (fun localCommitPublished -> Helpers.Closing.claimCurrentLocalCommitTxOutputs (cs.KeysRepository, newCommitments, localCommitPublished.CommitTx))
+                failwith ""
 
     let applyEvent c (e: ChannelEvent): Channel =
         match e, c.State with
@@ -1084,6 +1102,7 @@ module Channel =
         | WeAcceptedRevokeAndACK(newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
 
+        // -----  closing ------
         | AcceptedShutdownCMD msg, ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with LocalShutdown = Some msg }) }
         | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs(remoteShutdown, nextCommitments), ChannelState.Normal d ->
@@ -1092,6 +1111,10 @@ module Channel =
             { c with State = Negotiating nextState }
         | AcceptedShutdownWhenWeHavePendingHTLCs(nextState), ChannelState.Normal d ->
             { c with State = Shutdown nextState }
+        | MutualClosePerformed nextState, ChannelState.Negotiating d ->
+            { c with State = Closing nextState }
+        | WeProposedNewClosingSigned (msg, nextState), ChannelState.Negotiating d ->
+            { c with State = Negotiating (nextState) }
         // ----- else -----
         | NewBlockVerified height, _ ->
             { c with CurrentBlockHeight = height }

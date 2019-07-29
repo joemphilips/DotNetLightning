@@ -140,7 +140,7 @@ module internal Commitments =
         | Some htlc when (htlc.PaymentHash = cmd.PaymentPreimage.GetHash()) ->
             let msgToSend: UpdateFulfillHTLC = { ChannelId = cm.ChannelId; HTLCId = cmd.Id; PaymentPreimage = cmd.PaymentPreimage }
             let newCommitments = cm.AddLocalProposal(msgToSend)
-            [ WeAcceptedCMDFulfillHTLC (msgToSend, newCommitments)] |> Good
+            (msgToSend, newCommitments) |> Good
         | Some htlc ->
             sprintf "Invalid HTLC PreImage %A. Hash (%A) does not match the one expected %A"
                     cmd.PaymentPreimage
