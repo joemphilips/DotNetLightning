@@ -51,17 +51,17 @@ module Primitives =
 
 
     [<Struct>]
-    type PaymentPreimage = PaymentPreimage of uint256 with
+    type PaymentPreimage = PaymentPreimage of byte[] with
         member x.Value = let (PaymentPreimage v) = x in v
 
         member this.ToBytes() =
-            this.Value.ToBytes()
+            this.Value
 
         member this.GetHash() =
-            this.Value.ToBytes() |> Crypto.Hashes.SHA256 |> uint256 |> PaymentHash
+            this.ToBytes() |> Crypto.Hashes.SHA256 |> uint256 |> PaymentHash
 
         member this.ToKey() =
-            this.Value.ToBytes() |> Key
+            this.ToBytes() |> Key
         member this.ToPubKey() =
             this.ToKey().PubKey
 

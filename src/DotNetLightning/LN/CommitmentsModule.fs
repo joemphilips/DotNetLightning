@@ -378,7 +378,7 @@ module internal Commitments =
                                     ChannelUtils.buildCommitmentPoint(cm.LocalParams.ChannelPubKeys.CommitmentSeed, cm.LocalCommit.Index + 2UL)
 
                                 let nextMsg = { RevokeAndACK.ChannelId = cm.ChannelId
-                                                PerCommitmentSecret = localPerCommitmentSecret.ToBytes() |> uint256 |> PaymentPreimage
+                                                PerCommitmentSecret = localPerCommitmentSecret.ToBytes() |> PaymentPreimage
                                                 NextPerCommitmentPoint = localNextPerCommitmentPoint }
                                 
                                 let nextCommitments =

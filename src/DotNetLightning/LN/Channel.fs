@@ -1019,7 +1019,7 @@ module Channel =
             >>= fun (msgToSend, newCommitments) ->
                 let localCommitPublished  =
                     state.LocalCommitPublished
-                    |> Option.map (fun localCommitPublished -> Helpers.Closing.claimCurrentLocalCommitTxOutputs (cs.KeysRepository, newCommitments, localCommitPublished.CommitTx))
+                    |> Option.map (fun localCommitPublished -> Helpers.Closing.claimCurrentLocalCommitTxOutputs (cs.KeysRepository, newCommitments.LocalParams.ChannelPubKeys, newCommitments, localCommitPublished.CommitTx))
                 failwith ""
 
     let applyEvent c (e: ChannelEvent): Channel =

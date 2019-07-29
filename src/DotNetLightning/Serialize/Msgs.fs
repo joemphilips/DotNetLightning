@@ -462,11 +462,11 @@ module Msgs =
             member this.Deserialize(ls) =
                 this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
                 this.HTLCId <- ls.ReadUInt64(false) |> HTLCId
-                this.PaymentPreimage <- ls.ReadUInt256(false) |> PaymentPreimage
+                this.PaymentPreimage <- PaymentPreimage(ls.ReadBytes(32))
             member this.Serialize(ls) =
                 ls.Write(this.ChannelId.Value.ToBytes())
                 ls.Write(this.HTLCId.Value, false)
-                ls.Write(this.PaymentPreimage.Value.ToBytes())
+                ls.Write(this.PaymentPreimage.ToBytes())
 
     [<CLIMutable>]
     type UpdateFailHTLC = {
@@ -541,11 +541,11 @@ module Msgs =
         interface ILightningSerializable<RevokeAndACK> with
             member this.Deserialize(ls) =
                 this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
-                this.PerCommitmentSecret <- ls.ReadUInt256(false) |> PaymentPreimage
+                this.PerCommitmentSecret <- PaymentPreimage(ls.ReadBytes(32))
                 this.NextPerCommitmentPoint <- ls.ReadPubKey()
             member this.Serialize(ls) =
                 ls.Write(this.ChannelId.Value.ToBytes())
-                ls.Write(this.PerCommitmentSecret.Value.ToBytes())
+                ls.Write(this.PerCommitmentSecret.ToBytes())
                 ls.Write(this.NextPerCommitmentPoint.ToBytes())
 
     [<CLIMutable>]
@@ -590,7 +590,7 @@ module Msgs =
                 ls.Write(this.ChannelId.Value.ToBytes())
                 ls.Write(Utils.ToBytes(this.NextLocalCommitmentNumber, false))
                 ls.Write(Utils.ToBytes(this.NextRemoteCommitmentNumber, false))
-                ls.Write(this.DataLossProtect |> Option.map(fun x -> x.YourLastPerCommitmentSecret.Value.ToBytes()))
+                ls.Write(this.DataLossProtect |> Option.map(fun x -> x.YourLastPerCommitmentSecret.ToBytes()))
                 ls.Write(this.DataLossProtect |> Option.map(fun x -> x.MyCurrentPerCommitmentPoint.ToBytes()))
 
     [<CLIMutable>]
