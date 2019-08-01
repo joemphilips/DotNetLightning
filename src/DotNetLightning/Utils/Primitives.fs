@@ -50,7 +50,6 @@ module Primitives =
             a.Value - b.Value |> BlockHeightOffset
 
 
-    [<Struct>]
     type PaymentPreimage = PaymentPreimage of byte[] with
         member x.Value = let (PaymentPreimage v) = x in v
 
