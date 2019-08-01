@@ -135,15 +135,34 @@ exception HTLCNotCleanException
 
 
 // Write
-[<CustomComparison;StructuralEquality>]
+[<CustomComparison;CustomEquality>]
 type SortableTxOut = {
        TxOut: TxOut
        UpdateAddHTLC: UpdateAddHTLC option
     }
     with
+        override this.Equals(other: obj): bool =
+            match other with
+            | :? SortableTxOut as o -> (this :> IEquatable<SortableTxOut>).Equals(o)
+            | _ -> false
+
+        override this.GetHashCode() =
+            match this.UpdateAddHTLC with
+            | None -> this.TxOut.GetHashCode()
+            | Some htlc -> Array.append (this.TxOut.ToBytes()) (htlc.ToBytes()) |> hash
+
+        interface IEquatable<SortableTxOut> with
+            member this.Equals(other) =
+                this.TxOut.ScriptPubKey.Equals(other.TxOut.ScriptPubKey)
+                && this.TxOut.Value.Equals(other.TxOut.Value)
+                && this.UpdateAddHTLC.Equals(other.UpdateAddHTLC)
+
         interface IComparable with
-            member this.CompareTo(obj: obj): int = 
-                (this :> IComparable<SortableTxOut>).CompareTo(obj :?> SortableTxOut)
+            member this.CompareTo(obj: obj): int =
+                match obj with
+                | :? SortableTxOut as other -> (this :> IComparable<SortableTxOut>).CompareTo(other)
+                | _ -> 1
+
         interface IComparable<SortableTxOut> with
             member this.CompareTo(obj: SortableTxOut) =
                 let (txout1) = this.TxOut
