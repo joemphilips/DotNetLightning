@@ -188,7 +188,7 @@ let updateAddHTLCGen = gen {
 let updateFulfillHTLCGen = gen {
     let! c = ChannelId <!> uint256Gen
     let! htlc = HTLCId <!> Arb.generate<uint64>
-    let! paymentPreimage = PaymentPreimage <!> uint256Gen
+    let! paymentPreimage = PaymentPreimage <!> bytesOfNGen(32)
     return { ChannelId = c; HTLCId = htlc; PaymentPreimage = paymentPreimage }
 }
 
@@ -230,7 +230,7 @@ let commitmentSignedGen = gen {
 
 let revokeAndACKGen = gen {
     let! c = ChannelId <!> uint256Gen
-    let! paymentPreimage = PaymentPreimage <!> uint256Gen
+    let! paymentPreimage = PaymentPreimage <!> bytesOfNGen(32)
     let! pk = pubKeyGen 
     return {
         ChannelId = c
@@ -248,7 +248,7 @@ let updateFeeGen = gen {
 }
 
 let private dataLossProtectGen = gen {
-    let! paymentPreimage = PaymentPreimage <!> uint256Gen
+    let! paymentPreimage = PaymentPreimage <!> bytesOfNGen(32)
     let! pk = pubKeyGen
     return {
         YourLastPerCommitmentSecret = paymentPreimage

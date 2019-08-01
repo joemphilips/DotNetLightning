@@ -61,6 +61,7 @@ module Primitives =
 
         member this.ToKey() =
             this.ToBytes() |> Key
+
         member this.ToPubKey() =
             this.ToKey().PubKey
 
