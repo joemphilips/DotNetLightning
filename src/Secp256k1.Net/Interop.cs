@@ -321,12 +321,12 @@ namespace Secp256k1Net
     /// <param name="n"> the number of public keys to add together (must be at least 1) </param>
     /// <returns>
     /// 1: the sum of the public key is valid.
-    /// 2: the sum of the public keys is not valid.
+    /// 0: the sum of the public keys is not valid.
     /// </returns>
     [SymbolName(nameof(secp256k1_ec_pubkey_combine))]
     public unsafe delegate int secp256k1_ec_pubkey_combine(IntPtr ctx,
         byte* outpk, // secp256k1_pubkey*
-        byte* ins,
+        void* ins, // const secp256k1 * const * ins
         UIntPtr n
     );
 

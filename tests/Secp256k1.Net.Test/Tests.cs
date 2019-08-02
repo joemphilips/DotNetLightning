@@ -51,8 +51,8 @@ namespace Secp256k1Net.Test
 
                 Assert.True(secp256k1.Ecdh(kp1.PublicKey, kp1.PrivateKey, out var sec3));
 
-                Assert.Equal(sec1.ToHexString(), sec2.ToHexString());
-                Assert.NotEqual(sec3.ToHexString(), sec2.ToHexString());
+                Assert.Equal(sec1.AsSpan().ToHexString(), sec2.AsSpan().ToHexString());
+                Assert.NotEqual(sec3.AsSpan().ToHexString(), sec2.AsSpan().ToHexString());
             }
         }
 
@@ -80,8 +80,8 @@ namespace Secp256k1Net.Test
 
                 Assert.True(secp256k1.Ecdh(kp1.PublicKey, kp1.PrivateKey, hashFunc, IntPtr.Zero, out var sec3));
 
-                Assert.Equal(sec1.ToHexString(), sec2.ToHexString());
-                Assert.NotEqual(sec3.ToHexString(), sec2.ToHexString());
+                Assert.Equal(sec1.AsSpan().ToHexString(), sec2.AsSpan().ToHexString());
+                Assert.NotEqual(sec3.AsSpan().ToHexString(), sec2.AsSpan().ToHexString());
             }
         }
 
@@ -188,6 +188,71 @@ namespace Secp256k1Net.Test
 
                 // Assert our key
                 Assert.Equal("0x3a2361270fb1bdd220a2fa0f187cc6f85079043a56fb6a968dfad7d7032b07b01213e80ecd4fb41f1500f94698b1117bc9f3335bde5efbb1330271afc6e85e92", serializedKey.ToHexString(), true);
+            }
+        }
+
+        [Fact]
+        public void AdditionTest()
+        {
+            using (var secp256k1 = new Secp256k1())
+            {
+                var kp1 = GenerateKeyPair(secp256k1);
+                var tweak = GeneratePrivateKey(secp256k1);
+                Assert.True(secp256k1.PrivateKeyTweakAdd(tweak, kp1.PrivateKey));
+                Assert.True(secp256k1.PublicKeyCreate(kp1.PrivateKey, out var pkDerived));
+                Assert.NotEqual(kp1.PublicKey.ToHexString(), pkDerived.AsSpan().ToHexString());
+
+                Assert.True(secp256k1.PublicKeyTweakAdd(tweak, kp1.PublicKey));
+                Assert.True(secp256k1.PublicKeyCreate(kp1.PrivateKey, out var pkFinal));
+                Assert.Equal(kp1.PublicKey.ToHexString(), pkFinal.AsSpan().ToHexString());
+            }
+        }
+
+        [Fact]
+        public void MultiplicationTest()
+        {
+            using (var secp256k1 = new Secp256k1())
+            {
+                var tweak = GeneratePrivateKey(secp256k1);
+                var kp = GenerateKeyPair(secp256k1);
+                Assert.True(secp256k1.PrivateKeyTweakMultiply(tweak, kp.PrivateKey));
+                Assert.True(secp256k1.PublicKeyCreate(kp.PrivateKey, out var pkDerived));
+                Assert.NotEqual(kp.PublicKey.ToHexString(), pkDerived.AsSpan().ToHexString());
+                Assert.True(secp256k1.PublicKeyTweakMultiply(tweak, kp.PublicKey));
+                Assert.True(secp256k1.PublicKeyCreate(kp.PrivateKey, out var pkFinal));
+                Assert.Equal(kp.PublicKey.ToHexString(), pkFinal.AsSpan().ToHexString());
+            }
+        }
+
+        [Fact]
+        public void PublicKeyCombineTest()
+        {
+            using (var secp256k1 = new Secp256k1())
+            {
+                Span<byte> compressed1 = "0241cc121c419921942add6db6482fb36243faf83317c866d2a28d8c6d7089f7ba".HexToBytes();
+                var compressed2 = "02e6642fd69bd211f93f7f1f36ca51a26a5290eb2dd1b0d8279a87bb0d480c8443".HexToBytes();
+                var expectedSum = "0384526253c27c7aef56c7b71a5cd25bebb66dddda437826defc5b2568bde81f07".HexToBytes();
+                Assert.True(secp256k1.PublicKeyCombine(compressed1, compressed2, out var actualSumUnCompressed12));
+                Assert.True(secp256k1.PublicKeySerialize(actualSumUnCompressed12, Flags.SECP256K1_EC_COMPRESSED, out var actualSum12));
+                Assert.True(secp256k1.PublicKeyCombine(compressed2, compressed1, out var actualSumUnCompressed21));
+                Assert.True(secp256k1.PublicKeySerialize(actualSumUnCompressed21, Flags.SECP256K1_EC_COMPRESSED, out var actualSum21));
+                Assert.Equal(actualSum12.AsSpan().ToHexString(), actualSum21.AsSpan().ToHexString());
+                Assert.Equal(actualSum12.AsSpan().ToHexString(), expectedSum.AsSpan().ToHexString());
+            }
+        }
+
+        [Fact]
+        public void ShouldBeHomomorphicInAddition()
+        {
+            using (var secp256k1 = new Secp256k1())
+            {
+                var tweak = GeneratePrivateKey(secp256k1);
+                var kp = GenerateKeyPair(secp256k1);
+                secp256k1.PrivateKeyTweakAdd(tweak, kp.PrivateKey);
+                Assert.True(secp256k1.PublicKeyCreate(tweak, out var tweakPubkey));
+                Assert.True(secp256k1.PublicKeyCreate(kp.PrivateKey, out var finalPubKey1));
+                secp256k1.PublicKeyCombine(tweakPubkey, kp.PublicKey, out var finalPubKey2);
+                Assert.Equal(finalPubKey1.AsSpan().ToHexString(), finalPubKey2.AsSpan().ToHexString());
             }
         }
     }
