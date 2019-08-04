@@ -21,7 +21,7 @@
     <Compile Include="GeneratorsTests.fs" />
     <Compile Include="TransactionTests.fs" />
     <Compile Include="PeerChannelEncryptorTests.fs" />
-    <Compile Include="ChannelTests.fs" />
+    <Compile Include="Channel/WaitForAcceptChannelStateTests.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
   <ItemGroup>
