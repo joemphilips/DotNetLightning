@@ -28,9 +28,9 @@ type Channel = internal {
     Secp256k1Context: Secp256k1
 }
     with
-        static member Create (ctx, config, userId, logger, chainListener, keysRepo, feeEstimator, remoteNodeId, localNodeSecret, fundingTxProvider, n) =
+        static member Create (config, userId, logger, chainListener, keysRepo, feeEstimator, remoteNodeId, localNodeSecret, fundingTxProvider, n) =
             {
-                Secp256k1Context = ctx
+                Secp256k1Context = new Secp256k1()
                 Config = config
                 UserId = userId
                 ChainListener = chainListener
@@ -44,7 +44,7 @@ type Channel = internal {
                 CurrentBlockHeight = BlockHeight.Zero
                 Network = n
             }
-        static member CreateCurried  = curry11 (Channel.Create)
+        static member CreateCurried  = curry10 (Channel.Create)
 
 type ChannelError =
     | Ignore of string
