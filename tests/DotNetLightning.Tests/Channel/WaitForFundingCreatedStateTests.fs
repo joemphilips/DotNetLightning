@@ -1,10 +1,9 @@
-module Channel.WaitForAcceptChannelStateTests
-
+module Channel.WaitForFundingCreatedStateTests
 open Expecto
 open DotNetLightning.LN
 
 [<Tests>]
 let tests =
     testList "" [
-        testCase "" <| id
+
     ]
