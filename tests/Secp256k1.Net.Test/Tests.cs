@@ -4,6 +4,7 @@ using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
 using Xunit;
+using System.Threading.Tasks;
 
 namespace Secp256k1Net.Test
 {
@@ -254,6 +255,25 @@ namespace Secp256k1Net.Test
                 secp256k1.PublicKeyCombine(tweakPubkey, kp.PublicKey, out var finalPubKey2);
                 Assert.Equal(finalPubKey1.AsSpan().ToHexString(), finalPubKey2.AsSpan().ToHexString());
             }
+        }
+        [Fact]
+        public async void RunMany()
+        {
+            var tasks = new Task[10];
+            for(var i = 0; i <= 9; i++)
+            {
+                var t = Task.Run(() =>
+                    {
+                        using (var secp256k1 = new Secp256k1())
+                        {
+                            var kp = GenerateKeyPair(secp256k1);
+                        }
+                    }
+                );
+                tasks[i] = t;
+            }
+
+            await Task.WhenAll(tasks);
         }
     }
 
