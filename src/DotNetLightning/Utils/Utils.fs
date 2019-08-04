@@ -1,6 +1,7 @@
 namespace DotNetLightning.Utils
 open System
 open System.Threading.Tasks
+open System.Runtime.CompilerServices
 
 [<AutoOpen>]
 module Utils =
@@ -36,6 +37,12 @@ module Utils =
 
     let inline max a b = if b > a then b else a
     let inline min a b = if a > b then b else a
+
+[<Extension>]
+type Extensions()=
+    [<Extension>]
+    static member ToHexString(this: byte[]) =
+        "0x" + BitConverter.ToString(this).Replace("-", "").ToLowerInvariant()
 
 module Async =
     let result = async.Return

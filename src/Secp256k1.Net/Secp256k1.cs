@@ -681,7 +681,7 @@ namespace Secp256k1Net
             return PublicKeyCombine(inputPubKey1, inputPubKey2, pubkeyOutput);
         }
 
-        private Span<byte> SerializePubKeyIfNot(Span<byte> pubkey)
+        private Span<byte> ParsePubKeyIfNot(Span<byte> pubkey)
         {
             if (pubkey.Length == PUBKEY_LENGTH)
             {
@@ -707,8 +707,8 @@ namespace Secp256k1Net
         public bool PublicKeyCombine(Span<byte> inputPubKey1, Span<byte> inputPubKey2, Span<byte> pubkeyOutput)
         {
             // un-compress pubkey if it is compressed.
-            Span<byte> serializedPK1 = SerializePubKeyIfNot(inputPubKey1);
-            Span<byte> serializedPK2 = SerializePubKeyIfNot(inputPubKey2);
+            Span<byte> serializedPK1 = ParsePubKeyIfNot(inputPubKey1);
+            Span<byte> serializedPK2 = ParsePubKeyIfNot(inputPubKey2);
             var n = 2;
             if (pubkeyOutput.Length != PUBKEY_LENGTH)
                 throw new ArgumentException($"{nameof(pubkeyOutput)} must be {PUBKEY_LENGTH} bytes");

@@ -18,6 +18,7 @@
     <Compile Include="SerializationPropertyTests.fs" />
     <Compile Include="FunctionalTests.fs" />
     <Compile Include="SphinxTests.fs" />
+    <Compile Include="GeneratorsTests.fs" />
     <Compile Include="TransactionTests.fs" />
     <Compile Include="PeerChannelEncryptorTests.fs" />
     <Compile Include="ChannelTests.fs" />

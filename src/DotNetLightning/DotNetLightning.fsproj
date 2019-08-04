@@ -4,6 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\NSec.Cryptography\NSec.Cryptography.csproj" />
+    <ProjectReference Include="..\Secp256k1.Net\Secp256k1.Net.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />

@@ -6,17 +6,10 @@ open NBitcoin.Crypto
 
 module private KeyCreationHelpers =
     let derivePublicKey (perCommitmentPoint: PubKey) (basePoint: PubKey) =
-        let sha = Hashes.SHA256(Array.concat (seq [perCommitmentPoint.ToBytes(); basePoint.ToBytes()]) )
-        let key = Key(sha).PubKey
-        basePoint.Add(key)
+        DotNetLightning.Crypto.Generators.derivePubKey (basePoint) (perCommitmentPoint) 
 
     let derivePublicRevocationKey (perCommitmentPoint: PubKey) (revocationBasePoint: PubKey) =
-        let revAppendCommitHashKey = Hashes.SHA256(Array.concat (seq[ revocationBasePoint.ToBytes(); perCommitmentPoint.ToBytes() ])) |> Key
-        let commitAppendRevHashKey = Hashes.SHA256(Array.concat (seq [perCommitmentPoint.ToBytes(); revocationBasePoint.ToBytes() ])) |> Key
-
-        let partA = revocationBasePoint.GetSharedPubkey(revAppendCommitHashKey)
-        let partB = perCommitmentPoint.GetSharedPubkey(commitAppendRevHashKey)
-        partA.Add(partB)
+        DotNetLightning.Crypto.Generators.revocationPubKey(revocationBasePoint) (perCommitmentPoint)
 
 type TxCreationKeys = {
     PerCommitmentPoint: PubKey

@@ -43,7 +43,7 @@ let log level = logCore
 
 [<Tests>]
 let tests =
-    ftestList "bolt4 tests" [
+    testList "bolt4 tests" [
         testCase "pubkey is as expected" <| fun _ ->
             Expect.equal (pubKeys) (expectedPubKeys) ""
 
