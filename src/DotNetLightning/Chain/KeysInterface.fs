@@ -147,8 +147,9 @@ type DefaultKeyRepository(seed: uint256, network: Network, logger: ILogger) =
             (psbt.GetMatchingSig(priv.PubKey), psbt)
 
         member this.GenerateKeyFromBasePointAndSign(psbt, pubkey, basePoint) =
+            use ctx = new Secp256k1Net.Secp256k1()
             let basepointSecret: Key = this.BasepointToSecretMap |> Map.find pubkey
-            let priv2 = Generators.derivePrivKey(basepointSecret)  basePoint 
+            let priv2 = Generators.derivePrivKey ctx (basepointSecret)  basePoint 
             psbt.SignWithKeys(priv2) |> ignore
             (psbt.GetMatchingSig(priv2.PubKey), psbt)
 

@@ -1,6 +1,7 @@
 namespace DotNetLightning.LN
 
 open NBitcoin
+open Secp256k1Net
 open DotNetLightning.Utils
 open DotNetLightning.Transactions
 open DotNetLightning.Crypto
@@ -19,6 +20,7 @@ module internal Commitments =
                                     | _ -> false)
 
         let makeRemoteTxs
+            (ctx: Secp256k1)
             (channelKeys: ChannelKeys)
             (commitTxNumber: uint64)
             (localParams: LocalParams)
@@ -26,7 +28,7 @@ module internal Commitments =
             (commitmentInput: ScriptCoin)
             (remotePerCommitmentPoint: PubKey)
             (spec) (n) =
-            let pkGen = Generators.derivePubKey remotePerCommitmentPoint
+            let pkGen = Generators.derivePubKey ctx remotePerCommitmentPoint
             let localPaymentPK = pkGen (channelKeys.PaymentBaseKey.PubKey)
             let localHTLCPK = pkGen channelKeys.HTLCBaseKey.PubKey
             let remotePaymentPK = pkGen (remoteParams.PaymentBasePoint)
@@ -60,6 +62,7 @@ module internal Commitments =
                 (commitTx, htlcTimeoutTxs, htlcSuccessTxs)
 
         let makeLocalTXs
+            (ctx: Secp256k1)
             (channelKeys: ChannelPubKeys)
             (commitTxNumber: uint64)
             (localParams: LocalParams)
@@ -68,7 +71,7 @@ module internal Commitments =
             (localPerCommitmentPoint: PubKey)
             (spec: CommitmentSpec)
             n: RResult<(CommitTx * HTLCTimeoutTx list * HTLCSuccessTx list)> =
-            let pkGen = Generators.derivePubKey localPerCommitmentPoint
+            let pkGen = Generators.derivePubKey ctx localPerCommitmentPoint
             let localPaymentPK = pkGen channelKeys.PaymentBasePubKey
             let localDelayedPaymentPK = pkGen channelKeys.DelayedPaymentBasePubKey
             let localHTLCPK = pkGen channelKeys.HTLCBasePubKey
@@ -280,14 +283,15 @@ module internal Commitments =
                         [ WeAcceptedUpdateFee msg ]
                         |> Good
 
-    let sendCommit(keyRepo: IKeysRepository) (n: Network) (cm: Commitments) =
+    let sendCommit (ctx: Secp256k1) (keyRepo: IKeysRepository) (n: Network) (cm: Commitments) =
         match cm.RemoteNextCommitInfo with
         | Choice2Of2 remoteNextPerCommitmentPoint ->
             // remote commitment will include all local changes + remote acked changes
             cm.RemoteCommit.Spec.Reduce(cm.RemoteChanges.ACKed, cm.LocalChanges.Proposed)
             >>= fun spec ->
                 let localKeys = keyRepo.GetChannelKeys(not cm.LocalParams.IsFunder)
-                Helpers.makeRemoteTxs (localKeys)
+                Helpers.makeRemoteTxs (ctx)
+                                      (localKeys)
                                       (cm.RemoteCommit.Index + 1UL)
                                       (cm.LocalParams)
                                       (cm.RemoteParams)
@@ -326,7 +330,7 @@ module internal Commitments =
             "Can not sign before Revocation"
             |> RResult.rmsg
 
-    let receiveCommit (keyRepo: IKeysRepository) (msg: CommitmentSigned) (n: Network) (cm: Commitments) =
+    let receiveCommit (ctx) (keyRepo: IKeysRepository) (msg: CommitmentSigned) (n: Network) (cm: Commitments) =
         if cm.RemoteHasChanges() |> not then
             sprintf "Remote has sent commitment_signed but we have no pending changes" |> RResult.rmsg
         else
@@ -335,7 +339,7 @@ module internal Commitments =
             cm.LocalCommit.Spec.Reduce(cm.LocalChanges.ACKed, cm.RemoteChanges.Proposed)
             >>= fun spec ->
                 let localPerCommitmentPoint = ChannelUtils.buildCommitmentPoint (chanKeys.CommitmentSeed, nextI)
-                Helpers.makeLocalTXs chanKeys (nextI) (cm.LocalParams) (cm.RemoteParams) (cm.FundingSCoin) (localPerCommitmentPoint) spec n
+                Helpers.makeLocalTXs (ctx) chanKeys (nextI) (cm.LocalParams) (cm.RemoteParams) (cm.FundingSCoin) (localPerCommitmentPoint) spec n
                 >>= fun (localCommitTx, htlcTimeoutTxs, htlcSuccessTxs) ->
                     let signature, signedCommitTx = keyRepo.GetSignatureFor (localCommitTx.Value, chanKeys.FundingPubKey)
 
@@ -352,7 +356,7 @@ module internal Commitments =
                                 let localHtlcSigsAndHTLCTxs = sortedHTLCTXs |> List.map(fun htlc -> keyRepo.GenerateKeyFromBasePointAndSign(htlc.Value, cm.LocalParams.ChannelPubKeys.HTLCBasePubKey, localPerCommitmentPoint))
                                 localHtlcSigsAndHTLCTxs |> List.map(fst), localHtlcSigsAndHTLCTxs |> List.map(snd) |> Seq.cast<IHTLCTx> |> List.ofSeq
 
-                            let remoteHTLCPubKey = Generators.derivePubKey(cm.RemoteParams.HTLCBasePoint) (localPerCommitmentPoint)
+                            let remoteHTLCPubKey = Generators.derivePubKey ctx (cm.RemoteParams.HTLCBasePoint) (localPerCommitmentPoint)
 
                             let checkHTLCSig (htlc: IHTLCTx, remoteECDSASig: Crypto.ECDSASignature): RResult<_> =
                                 let remoteS = TransactionSignature(remoteECDSASig, SigHash.All)

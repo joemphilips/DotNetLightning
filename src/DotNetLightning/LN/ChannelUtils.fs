@@ -1,15 +1,9 @@
 namespace DotNetLightning.LN
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils
+open DotNetLightning.Crypto
 open NBitcoin
 open NBitcoin.Crypto
-
-module private KeyCreationHelpers =
-    let derivePublicKey (perCommitmentPoint: PubKey) (basePoint: PubKey) =
-        DotNetLightning.Crypto.Generators.derivePubKey (basePoint) (perCommitmentPoint) 
-
-    let derivePublicRevocationKey (perCommitmentPoint: PubKey) (revocationBasePoint: PubKey) =
-        DotNetLightning.Crypto.Generators.revocationPubKey(revocationBasePoint) (perCommitmentPoint)
 
 type TxCreationKeys = {
     PerCommitmentPoint: PubKey
@@ -20,16 +14,17 @@ type TxCreationKeys = {
     BPaymentKey: PubKey
 }
     with
-        static member Create(perCommitmentPoint: PubKey,
+        static member Create(ctx: Secp256k1Net.Secp256k1,
+                             perCommitmentPoint: PubKey,
                              a_DelayedPaymentBase: PubKey,
                              a_HTLCBase: PubKey,
                              b_RevocationBase: PubKey,
                              b_PaymentBase: PubKey,
                              b_HTLCBase: PubKey) =
-            let helper = KeyCreationHelpers.derivePublicKey(perCommitmentPoint)
+            let helper = Generators.derivePubKey ctx (perCommitmentPoint)
             {
                 TxCreationKeys.PerCommitmentPoint = perCommitmentPoint
-                RevocationKey = KeyCreationHelpers.derivePublicRevocationKey(perCommitmentPoint) (b_RevocationBase)
+                RevocationKey = Generators.revocationPubKey ctx (perCommitmentPoint) (b_RevocationBase)
                 AHTLCKey = helper (a_HTLCBase)
                 BHTLCKey = helper (b_HTLCBase)
                 ADelayedPaymentKey = helper (a_DelayedPaymentBase)

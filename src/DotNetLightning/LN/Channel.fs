@@ -10,6 +10,7 @@ open DotNetLightning.Serialize.Msgs
 open NBitcoin
 open System.Linq
 open System
+open Secp256k1Net
 
 type Channel = internal {
     Config: UserConfig
@@ -24,10 +25,12 @@ type Channel = internal {
     State: ChannelState
     CurrentBlockHeight: BlockHeight
     Network: Network
+    Secp256k1Context: Secp256k1
 }
     with
-        static member Create (config, userId, logger, chainListener, keysRepo, feeEstimator, remoteNodeId, localNodeSecret, fundingTxProvider, n) =
+        static member Create (ctx, config, userId, logger, chainListener, keysRepo, feeEstimator, remoteNodeId, localNodeSecret, fundingTxProvider, n) =
             {
+                Secp256k1Context = ctx
                 Config = config
                 UserId = userId
                 ChainListener = chainListener
@@ -41,7 +44,7 @@ type Channel = internal {
                 CurrentBlockHeight = BlockHeight.Zero
                 Network = n
             }
-        static member CreateCurried  = curry10 (Channel.Create)
+        static member CreateCurried  = curry11 (Channel.Create)
 
 type ChannelError =
     | Ignore of string
@@ -806,14 +809,14 @@ module Channel =
             | _ when (cm.LocalHasChanges() |> not) ->
                 sprintf "Ignoring SignCommitment Command (nothing to sign)" |> RRIgnore
             | Choice2Of2 _ ->
-                cm |> Commitments.sendCommit (cs.KeysRepository) (cs.Network)
+                cm |> Commitments.sendCommit (cs.Secp256k1Context) (cs.KeysRepository) (cs.Network)
                 >>>= fun e -> e.Describe() |> RRApiMisuse
             | Choice1Of2 _ ->
                 sprintf "Already in the process of signing."
                 |> RRIgnore
 
         | ChannelState.Normal state, ApplyCommitmentSigned msg ->
-            state.Commitments |> Commitments.receiveCommit cs.KeysRepository msg cs.Network
+            state.Commitments |> Commitments.receiveCommit (cs.Secp256k1Context) cs.KeysRepository msg cs.Network
             >>>= fun e -> RRClose("Something unexpected happend while handling commitment_signed from remote" + e.Describe())
 
         | ChannelState.Normal state, ApplyRevokeAndACK msg ->
@@ -953,13 +956,13 @@ module Channel =
             | _ when (not <| cm.LocalHasChanges()) ->
                 sprintf "nothing to sign" |> RRIgnore
             | Choice2Of2 _ ->
-                cm |> Commitments.sendCommit (cs.KeysRepository) (cs.Network)
+                cm |> Commitments.sendCommit (cs.Secp256k1Context) (cs.KeysRepository) (cs.Network)
                 >>>= fun e -> e.Describe() |> RRClose
             | Choice1Of2 waitForRevocation ->
                 sprintf "Already in the process of signing."
                 |> RRIgnore
         | Shutdown state, ApplyCommitmentSigned msg ->
-            state.Commitments |> Commitments.receiveCommit (cs.KeysRepository) msg cs.Network
+            state.Commitments |> Commitments.receiveCommit (cs.Secp256k1Context) (cs.KeysRepository) msg cs.Network
             >>>= fun e -> e.Describe() |> RRClose
         | Shutdown state, ApplyRevokeAndACK msg ->
             failwith "not implemented"
