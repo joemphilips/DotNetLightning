@@ -43,7 +43,3 @@ type HTLCFailureData = {
 type HTLCFailReason =
     | ErrorPacket of OnionErrorPacket
     | Reason of HTLCFailureData
-
-type RAACommitmentOrder =
-    | CommitmentFirst
-    | RevokeAndACKFirst

@@ -69,7 +69,7 @@ type ChannelCommand =
     | ApplyAcceptChannel of AcceptChannel
     | ApplyFundingSigned of FundingSigned
     | ApplyFundingLocked of FundingLocked
-    | ApplyFundingConfirmedOnBC of height: BlockHeight * txIndex: TxIndexInBlock * depth: uint32
+    | ApplyFundingConfirmedOnBC of height: BlockHeight * txIndex: TxIndexInBlock * depth: BlockHeight
 
     // open: fundee
     | ApplyOpenChannel of OpenChannel

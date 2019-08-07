@@ -6,12 +6,12 @@ type ChannelHandshakeConfig = {
     /// Confirmations we will wait for before considering the channel locked in.
     /// Applied only for inbound channels (see `ChannelHandshakeLimits.MaxMinimumDepth` for the
     /// equivalent limit applied to outbound channel) 
-    MinimumDepth: uint32
+    MinimumDepth: BlockHeight
 }
     with
         static member Zero =
             {
-                MinimumDepth = 6u
+                MinimumDepth = BlockHeight 6u
             }
 
 /// Optional Channel limits which are applied during channel creation.
@@ -43,11 +43,11 @@ type ChannelHandshakeLimits = {
     /// going to double-spend themselves).
     /// This config allwos you to set a limit on the maximum amount of time to wait. Defaults to 144
     /// blocks or roughly one day and only applies to outbound channels.
-    MaxMinimumDepth: uint32
+    MaxMinimumDepth: BlockHeight
     /// Set to force the incoming channel to match our announced channel preference in ChannelConfig.
     /// Defaults to true to make the default that no announced channels are possible (which is
     /// appropriate for any nodes which are not online very reliably)
-    ForceAnnouncedChannelPreference: bool
+    ForceAnnounceChannelPreference: bool
 
     /// We don't exchange more than this many signatures when negotiating the closing fee
     MaxNegotiationIterations: int32
@@ -62,28 +62,25 @@ type ChannelHandshakeLimits = {
                 MinMaxAcceptedHTLCs = 0us
                 MinDustLimitSatoshis = Money.Satoshis(546m)
                 MaxDustLimitSatoshis = Money.Coins(21_000_000m)
-                MaxMinimumDepth = 144u
-                ForceAnnouncedChannelPreference = true
+                MaxMinimumDepth = 144u |> BlockHeight
+                ForceAnnounceChannelPreference = true
                 MaxNegotiationIterations = 20
             }
 
 
-type UserConfig = {
-    OwnChannelConfig: ChannelHandshakeConfig
+/// Configuration containing all informations used by Channel
+type ChannelConfig = {
+    ChannelHandshakeConfig: ChannelHandshakeConfig
     PeerChannelConfigLimits: ChannelHandshakeLimits
-    ChannelOptions: ChannelConfig
+    ChannelOptions: ChannelOptions
 }
     with
         static member Zero =
             {
-                OwnChannelConfig = ChannelHandshakeConfig.Zero
+                ChannelHandshakeConfig = ChannelHandshakeConfig.Zero
                 PeerChannelConfigLimits = ChannelHandshakeLimits.Zero
-                ChannelOptions = ChannelConfig.Zero
+                ChannelOptions = ChannelOptions.Zero
             }
-
-        static member OwnChannelConfig_: Lens<_, _> =
-            (fun uc -> uc.OwnChannelConfig),
-            (fun v uc -> { uc with OwnChannelConfig = v })
 
         static member PeerCahnnelConfigLimits_ : Lens<_,_> =
             (fun uc -> uc.PeerChannelConfigLimits),
@@ -93,7 +90,7 @@ type UserConfig = {
             (fun uc -> uc.ChannelOptions),
             (fun v uc -> { uc with ChannelOptions = v })
 
-and ChannelConfig = {
+and ChannelOptions = {
     MaxFeeRateMismatchRatio: float
     // Amount (in millionth of a satoshi) the channel will charge per transfered satoshi.
     // This may be allowed to change at runtime in a later update, however doing so must result in
@@ -103,13 +100,13 @@ and ChannelConfig = {
     // This should only be set to true for nodes which expect to be online reliably.
     // As the node which funds a cahnnel picks this value this will only pply for new outbound channels unless
     // `ChannleHandshaekLimits.ForceAnnnoucedChannelPreferences` is set.
-    AnnouncedChannel: bool
+    AnnounceChannel: bool
 }
     with
         static member Zero =
             {
                 FeeProportionalMillionths = 0u
-                AnnouncedChannel = false
+                AnnounceChannel = false
                 MaxFeeRateMismatchRatio = 0.
             }
 
@@ -118,5 +115,5 @@ and ChannelConfig = {
             (fun v cc -> { cc with FeeProportionalMillionths = v })
 
         static member AnnouncedChannel_ : Lens<_, _> =
-            (fun cc -> cc.AnnouncedChannel),
-            (fun v cc -> { cc with AnnouncedChannel = v })
+            (fun cc -> cc.AnnounceChannel),
+            (fun v cc -> { cc with AnnounceChannel = v })

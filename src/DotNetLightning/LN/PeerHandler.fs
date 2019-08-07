@@ -7,7 +7,6 @@ open DotNetLightning.Serialize.Msgs
 open Microsoft.Extensions.Logging
 open DotNetLightning.Serialize
 open System.Net
-open System.IO.Pipelines
 
 /// Provides references to interface which handle differnt types of messages.
 type MessageHandler = {

@@ -21,6 +21,7 @@
     <Compile Include="GeneratorsTests.fs" />
     <Compile Include="TransactionTests.fs" />
     <Compile Include="PeerChannelEncryptorTests.fs" />
+    <Compile Include="Channel/ChannelTestUtils.fs" />
     <Compile Include="Channel/WaitForAcceptChannelStateTests.fs" />
     <Compile Include="Channel/WaitForOpenChannelStateTests.fs" />
     <Compile Include="Channel/WaitForFundingCreatedStateTests.fs" />

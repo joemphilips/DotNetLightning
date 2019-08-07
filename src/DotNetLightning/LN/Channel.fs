@@ -12,8 +12,8 @@ open System.Linq
 open System
 open Secp256k1Net
 
-type Channel = internal {
-    Config: UserConfig
+type Channel = {
+    Config: ChannelConfig
     UserId: UserId
     ChainListener: IChainListener
     KeysRepository: IKeysRepository
@@ -335,9 +335,9 @@ module Channel =
                 else
                     Good ()
 
-            let checkChannelAnnouncementPreferenceAcceptable (config: UserConfig) (msg) =
+            let checkChannelAnnouncementPreferenceAcceptable (config: ChannelConfig) (msg) =
                 let theirAnnounce = (msg.ChannelFlags &&& 1uy) = 1uy
-                if (config.PeerChannelConfigLimits.ForceAnnouncedChannelPreference) && config.ChannelOptions.AnnouncedChannel <> theirAnnounce then
+                if (config.PeerChannelConfigLimits.ForceAnnounceChannelPreference) && config.ChannelOptions.AnnounceChannel <> theirAnnounce then
                     RRClose("Peer tried to open channel but their announcement preference is different from ours")
                 else
                     Good ()
@@ -525,7 +525,7 @@ module Channel =
                                       MaxHTLCValueInFlightMsat = localParams.MaxHTLCValueInFlightMSat
                                       ChannelReserveSatoshis = localParams.ChannelReserveSatoshis
                                       HTLCMinimumMSat = localParams.HTLCMinimumMSat
-                                      MinimumDepth = cs.Config.OwnChannelConfig.MinimumDepth
+                                      MinimumDepth = cs.Config.ChannelHandshakeConfig.MinimumDepth
                                       ToSelfDelay = localParams.ToSelfDelay
                                       MaxAcceptedHTLCs = localParams.MaxAcceptedHTLCs
                                       FundingPubKey = channelKeys.FundingKey.PubKey
@@ -701,14 +701,14 @@ module Channel =
             [ FundingConfirmed nextState ] |> Good
         | WaitForFundingLocked state, ApplyFundingConfirmedOnBC (height, txindex, depth) ->
             if (state.HaveWeSentFundingLocked) then
-                if (cs.Config.OwnChannelConfig.MinimumDepth <= depth) then
+                if (cs.Config.ChannelHandshakeConfig.MinimumDepth <= depth) then
                     [] |> Good 
                 else
                     let msg = sprintf "once confirmed funding tx has become less confirmed than threashold %A! This is probably caused by reorg. current depth is: %A " height depth
                     cs.Logger (LogLevel.Error) (msg)
                     RRClose(msg)
             else
-                if (cs.Config.OwnChannelConfig.MinimumDepth <= depth) then
+                if (cs.Config.ChannelHandshakeConfig.MinimumDepth <= depth) then
                     let nextPerCommitmentPoint =
                         ChannelUtils.buildCommitmentSecret (state.Commitments.LocalParams.ChannelPubKeys.CommitmentSeed, 1UL)
                         |> fun seed -> Key(seed.ToBytes()).PubKey

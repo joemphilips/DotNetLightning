@@ -34,15 +34,14 @@ module Msgs =
             member x.InitialRoutingSync(): bool =
                 (x.Value.[0] &&& (1uy <<< 3)) <> 0uy
 
-    module LocalFeatures =
-        let setInitialRoutingSync(x: LocalFeatures) =
-            if
-                x.Value.Length = 0
-            then
-                Flags [|1uy <<< 3|]
-            else
-                x.Value.[0] <- (x.Value.[0] ||| (1uy <<< 3))
-                x
+            member x.SetInitialRoutingSync() =
+                if
+                    x.Value.Length = 0
+                then
+                    Flags [|1uy <<< 3|]
+                else
+                    x.Value.[0] <- (x.Value.[0] ||| (1uy <<< 3))
+                    x
 
 
     type TypeFlag =
@@ -292,7 +291,7 @@ module Msgs =
         mutable MaxHTLCValueInFlightMsat: LNMoney
         mutable ChannelReserveSatoshis: Money
         mutable HTLCMinimumMSat: LNMoney
-        mutable MinimumDepth: uint32
+        mutable MinimumDepth: BlockHeight
         mutable ToSelfDelay: BlockHeightOffset
         mutable MaxAcceptedHTLCs: uint16
         mutable FundingPubKey: PubKey
@@ -312,7 +311,7 @@ module Msgs =
                 this.MaxHTLCValueInFlightMsat <- ls.ReadUInt64(false) |> LNMoney.MilliSatoshis
                 this.ChannelReserveSatoshis <- ls.ReadUInt64(false) |> Money.Satoshis
                 this.HTLCMinimumMSat <- ls.ReadUInt64(false) |> LNMoney.MilliSatoshis
-                this.MinimumDepth <- ls.ReadUInt32(false)
+                this.MinimumDepth <- ls.ReadUInt32(false) |> BlockHeight
                 this.ToSelfDelay <- ls.ReadUInt16(false) |> BlockHeightOffset
                 this.MaxAcceptedHTLCs <- ls.ReadUInt16(false)
                 this.FundingPubKey <- ls.ReadPubKey()
@@ -329,7 +328,7 @@ module Msgs =
                 ls.Write(this.MaxHTLCValueInFlightMsat.MilliSatoshi, false)
                 ls.Write(this.ChannelReserveSatoshis.Satoshi, false)
                 ls.Write(this.HTLCMinimumMSat.MilliSatoshi, false)
-                ls.Write(this.MinimumDepth, false)
+                ls.Write(this.MinimumDepth.Value, false)
                 ls.Write(this.ToSelfDelay.Value, false)
                 ls.Write(this.MaxAcceptedHTLCs, false)
                 ls.Write(this.FundingPubKey.ToBytes())

@@ -131,7 +131,7 @@ module internal Commitments =
                 else
                     Good ()
 
-        let checkUpdateFee (config: UserConfig) (msg: UpdateFee) (localFeeRate: FeeRatePerKw) =
+        let checkUpdateFee (config: ChannelConfig) (msg: UpdateFee) (localFeeRate: FeeRatePerKw) =
             let maxMismatch = config.ChannelOptions.MaxFeeRateMismatchRatio
             UpdateFeeValidator.checkFeeDiffTooHigh (msg.FeeRatePerKw) (localFeeRate) (maxMismatch)
 
@@ -265,7 +265,7 @@ module internal Commitments =
                         [ WeAcceptedCMDUpdateFee(fee, c1) ]
                         |> Good
 
-    let receiveFee (config: UserConfig) (localFeerate) (msg: UpdateFee) (cm: Commitments) =
+    let receiveFee (config: ChannelConfig) (localFeerate) (msg: UpdateFee) (cm: Commitments) =
         if (cm.LocalParams.IsFunder) then
             "Remote is Fundee so it cannot send update fee" |> RResult.rmsg
         else
