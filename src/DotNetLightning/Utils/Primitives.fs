@@ -72,6 +72,9 @@ module Primitives =
     type ChannelId = ChannelId of uint256 with
         member x.Value = let (ChannelId v) = x in v
 
+    type ConnectionId = ConnectionId of Guid
+    type PeerId = PeerId of Guid
+
     [<CustomEquality;CustomComparison>]
     type NodeId = NodeId of PubKey with
         member x.Value = let (NodeId v) = x in v

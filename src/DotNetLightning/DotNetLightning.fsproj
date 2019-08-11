@@ -27,7 +27,7 @@
     <Compile Include="Crypto/CryptoUtils.fs" />
     <Compile Include="Crypto/ShaChain.fs" />
     <Compile Include="Crypto/Sphinx.fs" />
-    <Compile Include="Crypto/OnionUtils.fs" />
+    <Compile Include="Crypto/StreamCipherStream.fs" />
     <Compile Include="Crypto/Generators.fs" />
     <Compile Include="Chain/ChainInterface.fs" />
     <Compile Include="Chain/KeysInterface.fs" />
@@ -44,8 +44,7 @@
     <Compile Include="LN/ChannelTypes.fs" />
     <Compile Include="LN/CommitmentsModule.fs" />
     <Compile Include="LN/Channel.fs" />
-    <Compile Include="LN/PeerHandler.fs" />
-    <Compile Include="Library.fs" />
+    <Compile Include="LN/Peer.fs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FSharp.Core" Version="4.5.4" />

@@ -272,7 +272,7 @@ module PeerChannelEncryptor =
                 | _ -> false
 
 
-    module internal PeerChannelEncryptor =
+    module PeerChannelEncryptor =
         let newOutBound (NodeId theirNodeId) =
             let hashInput = Array.concat[| NOISE_H; theirNodeId.ToBytes()|]
             let h = uint256(Hashes.SHA256(hashInput))

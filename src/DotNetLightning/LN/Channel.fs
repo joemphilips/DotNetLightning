@@ -12,7 +12,9 @@ open System.Linq
 open System
 open Secp256k1Net
 
+type InternalChannelId = Guid
 type Channel = {
+    InternalChannelId: InternalChannelId
     Config: ChannelConfig
     UserId: UserId
     ChainListener: IChainListener
@@ -30,6 +32,7 @@ type Channel = {
     with
         static member Create (config, userId, logger, chainListener, keysRepo, feeEstimator, remoteNodeId, localNodeSecret, fundingTxProvider, n) =
             {
+                InternalChannelId = new Guid()
                 Secp256k1Context = new Secp256k1()
                 Config = config
                 UserId = userId

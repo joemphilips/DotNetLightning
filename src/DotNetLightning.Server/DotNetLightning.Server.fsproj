@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <Compile Include="Controllers/ValuesController.fs" />
+    <Compile Include="Controllers/InfoController.fs" />
     <Compile Include="Services.fs" />
     <Compile Include="Startup.fs" />
     <Compile Include="Program.fs" />
@@ -14,6 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\DotnetLightning.Infrastructure\DotnetLightning.Infrastructure.fsproj" />
     <ProjectReference Include="..\DotNetLightning\DotNetLightning.fsproj" />
+    <ProjectReference Include="..\FSharp.SystemTextJson\FSharp.SystemTextJson.fsproj" />
   </ItemGroup>
 
 </Project>

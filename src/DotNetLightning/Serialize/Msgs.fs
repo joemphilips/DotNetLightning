@@ -43,6 +43,23 @@ module Msgs =
                     x.Value.[0] <- (x.Value.[0] ||| (1uy <<< 3))
                     x
 
+            member x.SupportsUpfrontShutdownScript() =
+                x.Value.Length > 0 && (x.Value.[0] &&& (3uy <<< 4) <> 0uy)
+
+            member x.RequiresUpfrontShutdownScript() =
+                x.Value.Length > 0 && (x.Value.[0] &&& (1uy <<< 4) <> 0uy)
+
+            member x.RequiresUnknownBits() =
+                x.Value
+                |> Array.indexed
+                |> Array.exists(fun (i, b) -> (i <> 0 && (b &&& 0x55uy) <> 0uy) ||
+                                              (i =  0 && (b &&& 0x14uy) <> 0uy))
+
+            member x.SupportsUnknownBits() =
+                x.Value
+                |> Array.indexed
+                |> Array.exists(fun (i, b) -> (i <> 0 && b <> 0uy) ||
+                                              (i =  0 && (b &&& 0xc4uy) <> 0uy))
 
     type TypeFlag =
         | Init = 16us
