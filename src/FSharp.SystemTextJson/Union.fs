@@ -4,7 +4,6 @@ open System
 open System.Reflection
 open System.Text.Json
 open FSharp.Reflection
-open Microsoft.FSharp.Core.Operators
 
 type private Case = {
     Info: UnionCaseInfo
