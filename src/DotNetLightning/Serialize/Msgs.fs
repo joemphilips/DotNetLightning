@@ -10,16 +10,23 @@ open NBitcoin.Crypto
 open DotNetLightning.Utils.Error
 
 // #region serialization
-module Msgs =
+module rec Msgs =
+
     [<Struct>]
-    type DecodeError =
-        | UnknownVersion
-        | UnknownRequiredFeature
-        | InvalidValue
+    type P2PDecodeError =
+        //| UnknownVersion
+        // | UnknownRequiredFeature
+        // | InvalidValue
         | ShortRead
         | ExtraAddressesPerType
         | BadLengthDescriptor
         | IO of IOException
+
+    type UnknownVersionException(msg) =
+        inherit FormatException(msg)
+    
+    type UnknownRequiredFeatureException(msg) =
+        inherit FormatException(msg)
 
     [<Struct>]
     type LocalFeatures =
@@ -60,31 +67,68 @@ module Msgs =
                 |> Array.indexed
                 |> Array.exists(fun (i, b) -> (i <> 0 && b <> 0uy) ||
                                               (i =  0 && (b &&& 0xc4uy) <> 0uy))
+    [<Struct>]
+    type GlobalFeatures =
+        Flags of uint8[]
+            member x.Value = let (Flags v) = x in v
 
-    type TypeFlag =
-        | Init = 16us
-        | Error = 17us
-        | Ping = 18us
-        | Pong = 19us
-        | OpenChannel = 32us
-        | AcceptChannel = 33us
-        | FundingCreated = 34us
-        | FundingSigned = 35us
-        | FundingLocked = 36us
-        | Shutdown = 38us
-        | ClosingSigned = 39us
-        | UpdateAddHTLC = 128us
-        | UpdateFulfillHTLC = 130us
-        | UpdateFailHTLC = 131us
-        | UpdateFailMalformedHTLC = 135us
-        | ChannelReestablish = 136us
-        | CommitmentSigned = 132us
-        | RevokeAndACK = 133us
-        | UpdateFee = 134us
-        | AnnouncementSignatures = 259us
-        | ChannelAnnouncement = 256us
-        | NodeAnnouncement = 257us
-        | ChannelUpdate = 258us
+            member x.RequiresUnknownBits() =
+                x.Value
+                |> Array.exists(fun b -> b &&& 0x55uy <> 0uy)
+            
+            member x.SupportsUnknownBits() =
+                x.Value
+                |> Array.exists(fun b -> b <> 0uy)
+
+
+    module internal TypeFlag =
+        [<Literal>]
+        let Init = 16us
+        [<Literal>]
+        let Error = 17us
+        [<Literal>]
+        let Ping = 18us
+        [<Literal>]
+        let Pong = 19us
+        [<Literal>]
+        let OpenChannel = 32us
+        [<Literal>]
+        let AcceptChannel = 33us
+        [<Literal>]
+        let FundingCreated = 34us
+        [<Literal>]
+        let FundingSigned = 35us
+        [<Literal>]
+        let FundingLocked = 36us
+        [<Literal>]
+        let Shutdown = 38us
+        [<Literal>]
+        let ClosingSigned = 39us
+        [<Literal>]
+        let UpdateAddHTLC = 128us
+        [<Literal>]
+        let UpdateFulfillHTLC = 130us
+        [<Literal>]
+        let UpdateFailHTLC = 131us
+        [<Literal>]
+        let UpdateFailMalformedHTLC = 135us
+        [<Literal>]
+        let ChannelReestablish = 136us
+        [<Literal>]
+        let CommitmentSigned = 132us
+        [<Literal>]
+        let RevokeAndACK = 133us
+        [<Literal>]
+        let UpdateFee = 134us
+        [<Literal>]
+        let AnnouncementSignatures = 259us
+        [<Literal>]
+        let ChannelAnnouncement = 256us
+        [<Literal>]
+        let NodeAnnouncement = 257us
+        [<Literal>]
+        let ChannelUpdate = 258us
+
 
     type ILightningMsg = interface end
     type ISetupMsg = inherit ILightningMsg
@@ -94,9 +138,151 @@ module Msgs =
     type IUpdateMsg = inherit ILightningMsg
 
     // #endregion 
+
+    /// Should throw `FormatException` when it fails
     type ILightningSerializable<'T when 'T: (new: unit -> 'T) and 'T :> ILightningSerializable<'T>> =
         abstract Deserialize: LightningReaderStream -> unit
         abstract Serialize: LightningWriterStream -> unit
+
+    module ILightningSerializable =
+        let internal fromBytes<'T when 'T :(new :unit -> 'T) and 'T :> ILightningSerializable<'T>>(data: byte[]) = 
+            use ms = new MemoryStream(data)
+            use ls = new LightningReaderStream(ms)
+            let instance = new 'T()
+            instance.Deserialize(ls)
+            instance
+
+        let internal init<'T when 'T :(new :unit -> 'T) and 'T :> ILightningSerializable<'T>>() =
+            new 'T()
+
+        let internal deserialize<'T when 'T :(new :unit -> 'T) and 'T :> ILightningSerializable<'T>>(ls: LightningReaderStream) =
+            let instance = new 'T()
+            instance.Deserialize(ls)
+            instance
+
+        let internal deserializeWithFlag(ls: LightningReaderStream): ILightningMsg =
+            let t = ls.ReadUInt16(false)
+            match t with
+            | TypeFlag.Init ->
+                deserialize<Init>(ls) :> ILightningMsg
+            | TypeFlag.Error ->
+                deserialize<ErrorMessage>(ls) :> ILightningMsg
+            | TypeFlag.Ping ->
+                deserialize<Ping>(ls) :> ILightningMsg
+            | TypeFlag.Pong ->
+                deserialize<Pong>(ls) :> ILightningMsg
+            | TypeFlag.OpenChannel ->
+                deserialize<OpenChannel>(ls) :> ILightningMsg
+            | TypeFlag.AcceptChannel ->
+                deserialize<AcceptChannel>(ls) :> ILightningMsg
+            | TypeFlag.FundingCreated ->
+                deserialize<FundingCreated>(ls) :> ILightningMsg
+            | TypeFlag.FundingSigned ->
+                deserialize<FundingSigned>(ls) :> ILightningMsg
+            | TypeFlag.FundingLocked ->
+                deserialize<FundingLocked>(ls) :> ILightningMsg
+            | TypeFlag.Shutdown ->
+                deserialize<Shutdown>(ls) :> ILightningMsg
+            | TypeFlag.ClosingSigned ->
+                deserialize<ClosingSigned>(ls) :> ILightningMsg
+            | TypeFlag.UpdateAddHTLC ->
+                deserialize<UpdateAddHTLC>(ls) :> ILightningMsg
+            | TypeFlag.UpdateFulfillHTLC ->
+                deserialize<UpdateFulfillHTLC>(ls) :> ILightningMsg
+            | TypeFlag.UpdateFailHTLC ->
+                deserialize<UpdateFailHTLC>(ls) :> ILightningMsg
+            | TypeFlag.UpdateFailMalformedHTLC ->
+                deserialize<UpdateFailMalformedHTLC>(ls) :> ILightningMsg
+            | TypeFlag.ChannelReestablish ->
+                deserialize<ChannelReestablish>(ls) :> ILightningMsg
+            | TypeFlag.CommitmentSigned ->
+                deserialize<CommitmentSigned>(ls) :> ILightningMsg
+            | TypeFlag.RevokeAndACK ->
+                deserialize<RevokeAndACK>(ls) :> ILightningMsg
+            | TypeFlag.UpdateFee ->
+                deserialize<UpdateFee>(ls) :> ILightningMsg
+            | TypeFlag.AnnouncementSignatures ->
+                deserialize<AnnouncementSignatures>(ls) :> ILightningMsg
+            | TypeFlag.ChannelAnnouncement ->
+                deserialize<ChannelAnnouncement>(ls) :> ILightningMsg
+            | TypeFlag.NodeAnnouncement ->
+                deserialize<NodeAnnouncement>(ls) :> ILightningMsg
+            | TypeFlag.ChannelUpdate ->
+                deserialize<ChannelUpdate>(ls) :> ILightningMsg
+            | x ->
+                raise <| FormatException(sprintf "Unknown message type %d" x)
+        let serializeWithFlags (ls: LightningWriterStream) (data: ILightningMsg) =
+            match data with
+            | :? Init as d ->
+                ls.Write(TypeFlag.Init, false)
+                (d :> ILightningSerializable<Init>).Serialize(ls)
+            | :? ErrorMessage as d ->
+                ls.Write(TypeFlag.Error, false)
+                (d :> ILightningSerializable<ErrorMessage>).Serialize(ls)
+            | :? Ping as d ->
+                ls.Write(TypeFlag.Error, false)
+                (d :> ILightningSerializable<Ping>).Serialize(ls)
+            | :? Pong as d ->
+                ls.Write(TypeFlag.Pong, false)
+                (d :> ILightningSerializable<Pong>).Serialize(ls)
+            | :? OpenChannel as d ->
+                ls.Write(TypeFlag.OpenChannel, false)
+                (d :> ILightningSerializable<OpenChannel>).Serialize(ls)
+            | :? AcceptChannel as d ->
+                ls.Write(TypeFlag.AcceptChannel, false)
+                (d :> ILightningSerializable<AcceptChannel>).Serialize(ls)
+            | :? FundingCreated as d ->
+                ls.Write(TypeFlag.FundingCreated, false)
+                (d :> ILightningSerializable<FundingCreated>).Serialize(ls)
+            | :? FundingSigned as d ->
+                ls.Write(TypeFlag.FundingSigned, false)
+                (d :> ILightningSerializable<FundingSigned>).Serialize(ls)
+            | :? FundingLocked as d ->
+                ls.Write(TypeFlag.FundingLocked, false)
+                (d :> ILightningSerializable<FundingLocked>).Serialize(ls)
+            | :? Shutdown as d ->
+                ls.Write(TypeFlag.Shutdown, false)
+                (d :> ILightningSerializable<Shutdown>).Serialize(ls)
+            | :? ClosingSigned as d ->
+                ls.Write(TypeFlag.ClosingSigned, false)
+                (d :> ILightningSerializable<ClosingSigned>).Serialize(ls)
+            | :? UpdateAddHTLC as d ->
+                ls.Write(TypeFlag.UpdateAddHTLC, false)
+                (d :> ILightningSerializable<UpdateAddHTLC>).Serialize(ls)
+            | :? UpdateFulfillHTLC as d ->
+                ls.Write(TypeFlag.UpdateFulfillHTLC, false)
+                (d :> ILightningSerializable<UpdateFulfillHTLC>).Serialize(ls)
+            | :? UpdateFailHTLC as d ->
+                ls.Write(TypeFlag.UpdateFailHTLC, false)
+                (d :> ILightningSerializable<UpdateFailHTLC>).Serialize(ls)
+            | :? UpdateFailMalformedHTLC as d ->
+                ls.Write(TypeFlag.UpdateFailMalformedHTLC, false)
+                (d :> ILightningSerializable<UpdateFailMalformedHTLC>).Serialize(ls)
+            | :? ChannelReestablish as d ->
+                ls.Write(TypeFlag.ChannelReestablish, false)
+                (d :> ILightningSerializable<ChannelReestablish>).Serialize(ls)
+            | :? CommitmentSigned as d ->
+                ls.Write(TypeFlag.CommitmentSigned, false)
+                (d :> ILightningSerializable<CommitmentSigned>).Serialize(ls)
+            | :? RevokeAndACK as d ->
+                ls.Write(TypeFlag.RevokeAndACK, false)
+                (d :> ILightningSerializable<RevokeAndACK>).Serialize(ls)
+            | :? UpdateFee as d ->
+                ls.Write(TypeFlag.UpdateFee, false)
+                (d :> ILightningSerializable<UpdateFee>).Serialize(ls)
+            | :? AnnouncementSignatures as d ->
+                ls.Write(TypeFlag.AnnouncementSignatures, false)
+                (d :> ILightningSerializable<AnnouncementSignatures>).Serialize(ls)
+            | :? ChannelAnnouncement as d ->
+                ls.Write(TypeFlag.ChannelAnnouncement, false)
+                (d :> ILightningSerializable<ChannelAnnouncement>).Serialize(ls)
+            | :? NodeAnnouncement as d ->
+                ls.Write(TypeFlag.NodeAnnouncement, false)
+                (d :> ILightningSerializable<NodeAnnouncement>).Serialize(ls)
+            | :? ChannelUpdate as d ->
+                ls.Write(TypeFlag.ChannelUpdate, false)
+                (d :> ILightningSerializable<ChannelUpdate>).Serialize(ls)
+            | x -> failwithf "%A is not known lightning message. This should never happen" x
 
     [<Extension>]
     type ILightningSerializableExtension() =
@@ -133,11 +319,6 @@ module Msgs =
             this.FromBytes(this.ToBytes())
 
 
-    [<Struct>]
-    type GlobalFeatures =
-        Flags of uint8[]
-            member x.Value = let (Flags v) = x in v
-
     // ---------- network message primitives
     type OptionalField<'T> = 'T option
 
@@ -152,23 +333,20 @@ module Msgs =
             mutable HMAC: uint256
         }
         with
-            static member Init() =
-                {
-                    Version = 0uy
-                    PublicKey = Array.zeroCreate 33
-                    HopData = Array.zeroCreate (1300)
-                    HMAC = uint256.Zero
-                }
 
-
-            static member LastPacket = OnionPacket.Init()
+            static member LastPacket = ILightningSerializable.init<OnionPacket>()
 
             member this.IsLastPacket =
                 this.HMAC = uint256.Zero
 
             interface ILightningSerializable<OnionPacket> with
                 member this.Deserialize(ls: LightningReaderStream) =
-                    this.Version <- ls.ReadUInt8()
+                    this.Version <-
+                        let v = ls.ReadUInt8()
+                        if (v <> 0uy) then
+                            raise <| UnknownVersionException("Unknown version byte for OnionPacket")
+                        else
+                            v
                     this.PublicKey <- ls.ReadBytes(33)
                     this.HopData <- ls.ReadBytes(1300) 
                     this.HMAC <- ls.ReadUInt256(true)
@@ -201,7 +379,6 @@ module Msgs =
                     let l: byte[] = this.LocalFeatures.Value
                     ls.WriteWithLen(g)
                     ls.WriteWithLen(l)
-
 
     [<CLIMutable>]
     type Ping = {
@@ -278,8 +455,7 @@ module Msgs =
                 this.HTLCBasepoint <- ls.ReadPubKey()
                 this.FirstPerCommitmentPoint <- ls.ReadPubKey()
                 this.ChannelFlags <- ls.ReadUInt8()
-                this.ShutdownScriptPubKey |> ignore
-                failwith "update OptionalField part"
+                this.ShutdownScriptPubKey <- ls.TryReadAll() |> Option.map(Script)
             member this.Serialize(ls) =
                 ls.Write(this.Chainhash, false)
                 ls.Write(this.TemporaryChannelId.Value.ToBytes())
@@ -337,8 +513,7 @@ module Msgs =
                 this.DelayedPaymentBasepoint <- ls.ReadPubKey()
                 this.HTLCBasepoint <- ls.ReadPubKey()
                 this.FirstPerCommitmentPoint <- ls.ReadPubKey()
-                failwith "consider optional field handling"
-                this.ShutdownScriptPubKey |> ignore
+                this.ShutdownScriptPubKey <- ls.TryReadAll() |> Option.map(Script)
             member this.Serialize(ls) =
                 ls.Write(this.TemporaryChannelId.Value.ToBytes())
                 ls.Write(this.DustLimitSatoshis.Satoshi, false)
@@ -367,7 +542,10 @@ module Msgs =
         interface IChannelMsg
         interface ILightningSerializable<FundingCreated> with
             member this.Deserialize(ls) =
-                failwith ""
+                this.TemporaryChannelId <- ls.ReadUInt256(false) |> ChannelId
+                this.FundingTxId <- ls.ReadUInt256(false) |> TxId
+                this.FundingOutputIndex <- ls.ReadUInt16(false) |> TxOutIndex
+                this.Signature <- ls.ReadECDSACompact()
             member this.Serialize(ls) =
                 ls.Write(this.TemporaryChannelId.Value.ToBytes())
                 ls.Write(this.FundingTxId.Value.ToBytes())
@@ -585,6 +763,15 @@ module Msgs =
         mutable YourLastPerCommitmentSecret: PaymentPreimage
         mutable MyCurrentPerCommitmentPoint: PubKey
     }
+        with
+            interface ILightningSerializable<DataLossProtect> with
+                member this.Deserialize(ls: LightningReaderStream) =
+                    this.YourLastPerCommitmentSecret <- ls.ReadBytes(32) |> PaymentPreimage
+                    this.MyCurrentPerCommitmentPoint <- ls.ReadPubKey()
+                member this.Serialize(ls: LightningWriterStream): unit = 
+                    ls.Write(this.YourLastPerCommitmentSecret.Value)
+                    ls.Write(this.MyCurrentPerCommitmentPoint)
+
 
     [<CLIMutable>]
     type ChannelReestablish = {
@@ -600,8 +787,7 @@ module Msgs =
                 this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
                 this.NextLocalCommitmentNumber <- ls.ReadUInt64(false)
                 this.NextRemoteCommitmentNumber <- ls.ReadUInt64(false)
-                this.DataLossProtect |> ignore
-                failwith "Update optional field part"
+                this.DataLossProtect <- ls.TryReadAll() |> Option.map ILightningSerializable.fromBytes<DataLossProtect>
             member this.Serialize(ls) =
                 ls.Write(this.ChannelId.Value.ToBytes())
                 ls.Write(Utils.ToBytes(this.NextLocalCommitmentNumber, false))
@@ -631,8 +817,8 @@ module Msgs =
                 ls.Write(this.BitcoinSignature)
 
     type NetAddress =
-        | IPv4 of IPEndPoint
-        | IPv6 of IPEndPoint
+        | IPv4 of IPv4Or6Data
+        | IPv6 of IPv4Or6Data
         | OnionV2 of OnionV2EndPoint
         | OnionV3 of OnionV3EndPoint
         member this.GetId() =
@@ -650,24 +836,55 @@ module Msgs =
                                 | OnionV3 _ -> 37us
 
         member this.WriteTo(ls: LightningWriterStream) =
-         match this with
-         | IPv4 d ->
-             ls.Write(d.Address.GetAddressBytes())
-             ls.Write((uint16)d.Port, false)
-         | IPv6 d ->
-             ls.Write(d.Address.GetAddressBytes())
-             ls.Write((uint16)d.Port, false)
-         | OnionV2 d ->
-             ls.Write(d.Addr)
-             ls.Write((uint16)d.Port, false)
-         | OnionV3 d ->
-             ls.Write(d.ed25519PubKey)
-             ls.Write(d.CheckSum, false)
-             ls.Write(d.Version)
-             ls.Write((uint16)d.Port, false)
+            match this with
+            | IPv4 d ->
+                ls.Write(d.Addr)
+                ls.Write(d.Port, false)
+            | IPv6 d ->
+                ls.Write(d.Addr)
+                ls.Write(d.Port, false)
+            | OnionV2 d ->
+                ls.Write(d.Addr)
+                ls.Write(d.Port, false)
+            | OnionV3 d ->
+                ls.Write(d.ed25519PubKey)
+                ls.Write(d.CheckSum, false)
+                ls.Write(d.Version)
+                ls.Write(d.Port, false)
 
-        static member ReadFrom(ls) =
-            failwith ""
+        static member ReadFrom(ls: LightningReaderStream) =
+            let id = ls.ReadUInt8()
+            match id with
+            | 1uy ->
+                let addr = ls.ReadBytes(4)
+                let port = ls.ReadUInt16(false)
+                IPv4 { Addr = addr; Port = port }
+            | 2uy ->
+                let addr = ls.ReadBytes(16)
+                let port = ls.ReadUInt16((false))
+                IPv6 { Addr = addr; Port = port }
+            | 3uy ->
+                let addr = ls.ReadBytes(10)
+                let port = ls.ReadUInt16(false)
+                OnionV2 { Addr = addr; Port = port }
+            | 4uy ->
+                let ed25519PK = ls.ReadBytes(32)
+                let checkSum = ls.ReadUInt16(false)
+                let v = ls.ReadUInt8()
+                let port = ls.ReadUInt16(false)
+                OnionV3 {
+                    OnionV3EndPoint.ed25519PubKey = ed25519PK
+                    CheckSum = checkSum
+                    Version = v
+                    Port = port
+                }
+            | x ->
+                raise <|  FormatException (sprintf "Unknown NetAddress type %d" x)
+    and IPv4Or6Data = {
+        /// 4 byte in case of IPv4. 16 byes in case of IPv6
+        Addr: byte[]
+        Port: uint16 
+    }
 
     and OnionV2EndPoint = {
         Addr: byte[]
@@ -702,9 +919,31 @@ module Msgs =
                 this.NodeId <- ls.ReadPubKey() |> NodeId
                 this.RGB <- ls.ReadRGB()
                 this.Alias <- ls.ReadUInt256(false)
-                let addrlen = ls.ReadUInt16(false)
-                this.Addresses <- [1us..addrlen] |> List.map(fun a -> NetAddress.ReadFrom(ls))
-                failwith "Update Excess data part"
+                this.Addresses <-
+                    let addrLen = ls.ReadUInt16(false)
+                    let mutable addresses: NetAddress list = []
+                    let mutable addr_readPos = 0us
+                    while addrLen <= addr_readPos do
+                        let addr = NetAddress.ReadFrom ls
+                        ignore <| match addr with
+                                  | IPv4 _ ->
+                                      if addresses.Length > 0 then
+                                          raise <| FormatException("Extra Address per type")
+                                  | IPv6 _ ->
+                                      if addresses.Length > 1 || (addresses.Length = 1 && addresses.[0].GetId() <> 1uy) then
+                                          raise <| FormatException("Extra Address per type")
+                                  | OnionV2 _ ->
+                                      if addresses.Length > 2 || (addresses.Length > 0 && addresses.[addresses.Length - 1].GetId() > 2uy) then
+                                          raise <| FormatException("Extra Address per type")
+                                  | OnionV3 _ ->
+                                      if addresses.Length > 3 || (addresses.Length > 0 && addresses.[addresses.Length - 1].GetId() > 3uy) then
+                                          raise <| FormatException("Extra Address per type")
+
+                        addr_readPos <- addr_readPos + (1us + addr.Length)
+                        addresses <- addr :: addresses
+                    addresses |> List.rev
+
+                this.ExcessData <- ls.ReadAll()
             member this.Serialize(ls) =
                 ls.WriteWithLen(this.Features.Value)
                 ls.Write(this.Timestamp, false)
@@ -750,14 +989,19 @@ module Msgs =
     with
         interface ILightningSerializable<UnsignedChannelAnnouncement> with
             member this.Deserialize(ls) =
-                this.Features <- ls.ReadWithLen() |> GlobalFeatures.Flags
+                this.Features <-
+                    let g = ls.ReadWithLen() |> GlobalFeatures.Flags
+                    if g.RequiresUnknownBits() then
+                        raise <| UnknownRequiredFeatureException(sprintf "Channel Annoucement contains Unknown requied feature %A" g)
+                    else
+                        g
                 this.ChainHash <- ls.ReadUInt256(false)
                 this.ShortChannelId <- ls.ReadUInt64(false) |> ShortChannelId.FromUInt64
                 this.NodeId1 <- ls.ReadPubKey() |> NodeId
                 this.NodeId2 <- ls.ReadPubKey() |> NodeId
                 this.BitcoinKey1 <- ls.ReadPubKey()
                 this.BitcoinKey2 <- ls.ReadPubKey()
-                failwith "Handle Excessdata"
+                this.ExcessData <- ls.ReadAll()
             member this.Serialize(ls) =
                 ls.WriteWithLen(this.Features.Value)
                 ls.Write(this.ChainHash, false)
@@ -806,24 +1050,27 @@ module Msgs =
     }
         with
             interface IRoutingMsg
-            static member Init() =
-                {
-                    UnsignedChannelUpdate.ChainHash = uint256.Zero
-                    ShortChannelId = failwith "not impl"
-                    Timestamp = failwith "Not Implemented"
-                    Flags = failwith "Not Implemented"
-                    CLTVExpiryDelta = failwith "Not Implemented"
-                    HTLCMinimumMSat = failwith "Not Implemented"
-                    FeeBaseMSat = failwith "Not Implemented"
-                    FeeProportionalMillionths = failwith "Not Implemented"
-                    ExcessData = failwith "Not Implemented"
-                }
             interface  ILightningSerializable<ChannelAnnouncement> with
-                member this.Serialize(arg1: LightningWriterStream): unit = 
-                    failwith "Not Implemented"
+                member this.Serialize(ls: LightningWriterStream): unit = 
+                    ls.Write(this.ChainHash, false)
+                    ls.Write(this.ShortChannelId)
+                    ls.Write(this.Timestamp, false)
+                    ls.Write(this.Flags, false)
+                    ls.Write(this.CLTVExpiryDelta.Value, false)
+                    ls.Write(this.HTLCMinimumMSat.MilliSatoshi, false)
+                    ls.Write(this.FeeBaseMSat.MilliSatoshi, false)
+                    ls.Write(this.FeeProportionalMillionths, false)
+                    ls.Write(this.ExcessData)
 
-                member this.Deserialize(arg1: LightningReaderStream): unit = 
-                    failwith "Not Implemented"
+                member this.Deserialize(ls: LightningReaderStream): unit = 
+                    this.ChainHash <- ls.ReadUInt256(false)
+                    this.ShortChannelId <- ls.ReadUInt64(false) |> ShortChannelId.FromUInt64
+                    this.Timestamp <- ls.ReadUInt32(false)
+                    this.Flags <- ls.ReadUInt16(false)
+                    this.CLTVExpiryDelta <- ls.ReadUInt16(false) |> BlockHeightOffset
+                    this.FeeBaseMSat <- ls.ReadUInt64(false) |> LNMoney.MilliSatoshis
+                    this.FeeProportionalMillionths <- ls.ReadUInt32(false)
+                    this.ExcessData <- match ls.TryReadAll() with | Some v -> v | None -> [||]
 
 
     [<CLIMutable>]
@@ -833,11 +1080,6 @@ module Msgs =
     }
     with
         interface IRoutingMsg
-        static member Init() =
-            {
-                Signature = null
-                Contents = UnsignedChannelUpdate.Init()
-            }
         interface ILightningSerializable<ChannelUpdate> with
             member this.Deserialize(ls) =
                 this.Signature <- ls.ReadECDSACompact()
@@ -858,9 +1100,8 @@ module Msgs =
                     HTLCMinimumMSat = htlcMinimum
                     FeeBaseMSat = feeBase
                     FeeProportionalMillionths = feeProportionalMillionths
-                    ExcessData = [||]
+                    ExcessData = ls.ReadAll()
                 }
-                failwith "Handle Excess data"
             member this.Serialize(ls) =
                 ls.Write(this.Signature)
                 ls.Write(this.Contents.ChainHash, false)
@@ -904,11 +1145,6 @@ module Msgs =
         mutable Code: ErrorCode
     }
         with
-            static member Init() =
-                {
-                    Data = Unknown [||]
-                    Code = ErrorCode 0us
-                }
             interface ILightningSerializable<FailureMsg> with
                 member this.Deserialize(r: LightningReaderStream): unit =
                     let t = r.ReadUInt16(false)
@@ -927,8 +1163,7 @@ module Msgs =
                     | (INVALID_ONION_KEY) ->
                         this.Data <- r.ReadUInt256(false) |> InvalidOnionKey
                     | (TEMPORARY_CHANNEL_FAILURE) ->
-                        let d = ChannelUpdate.Init()
-                        (d :> ILightningSerializable<ChannelUpdate>).Deserialize(r)
+                        let d = ILightningSerializable.deserialize<ChannelUpdate>(r)
                         this.Data <- d |> TemporaryChannelFailure
                     | (PERMANENT_CHANNEL_FAILURE) ->
                         this.Data <- PermanentChannelFailure
@@ -938,31 +1173,28 @@ module Msgs =
                         this.Data <- UnknownNextPeer
                     | (AMOUNT_BELOW_MINIMUM) ->
                         let amountMSat = r.ReadUInt64(false) |> LNMoney.MilliSatoshis
-                        let d = ChannelUpdate.Init()
+                        let d = ILightningSerializable.init<ChannelUpdate>()
                         (d :> ILightningSerializable<ChannelUpdate>).Deserialize(r)
                         this.Data <- (amountMSat, d) |> AmountBelowMinimum
                     | (FEE_INSUFFICIENT) ->
                         let amountMSat = r.ReadUInt64(false) |> LNMoney.MilliSatoshis
-                        let d = ChannelUpdate.Init()
+                        let d = ILightningSerializable.init<ChannelUpdate>()
                         (d :> ILightningSerializable<ChannelUpdate>).Deserialize(r)
                         this.Data <- (amountMSat, d) |> FeeInsufficient
                     | (CHANNEL_DISABLED) ->
                         let flags = r.ReadUInt16(false)
-                        let d = ChannelUpdate.Init()
-                        (d :> ILightningSerializable<ChannelUpdate>).Deserialize(r)
+                        let d = ILightningSerializable.deserialize<ChannelUpdate>(r)
                         this.Data <- (flags, d ) |> ChannelDisabled
                     | (INOCCORRECT_CLTV_EXPIRY) ->
                         let expiry = r.ReadUInt32(false) |> BlockHeight
-                        let d = ChannelUpdate.Init()
-                        (d :> ILightningSerializable<ChannelUpdate>).Deserialize(r)
+                        let d = ILightningSerializable.deserialize<ChannelUpdate>(r)
                         this.Data <- (expiry, d) |> IncorrectCLTVExpiry
                     | (UNKNOWN_PAYMENT_HASH) ->
                         this.Data <- UnknownPaymentHash
                     | (INCORRECT_PAYMENT_AMOUNT) ->
                         this.Data <- IncorrectPaymentAmount
                     | (EXPIRY_TOO_SOON) ->
-                        let d = ChannelUpdate.Init()
-                        (d :> ILightningSerializable<ChannelUpdate>).Deserialize(r)
+                        let d = ILightningSerializable.deserialize<ChannelUpdate>(r)
                         this.Data <- d |> ExpiryTooSoon
                     | FINAL_EXPIRY_TOO_SOON ->
                         this.Data <- FinalExpiryTooSoon
@@ -975,7 +1207,7 @@ module Msgs =
                     | (EXPIRY_TOO_FAR) ->
                         this.Data <- ExpiryTooFar
                     | d ->
-                        this.Data <- failwith "handle unknown case" // Unknown [||]
+                        this.Data <- r.ReadAll() |> Unknown
                 member this.Serialize(w: LightningWriterStream): unit =
                     w.Write(this.Code.Value, false)
                     match this.Data with
@@ -1005,8 +1237,10 @@ module Msgs =
                         w.Write(expiry.Value, false)
                     | FinalIncorrectCLTVAmount (amountMSat) ->
                         w.Write(amountMSat.Value, false)
-                    | Unknown b -> ()
-                    | _ -> ()
+                    | Unknown b ->
+                        w.Write(b)
+                    | _ ->
+                        ()
 
 
 
@@ -1033,7 +1267,7 @@ module Msgs =
                     ls.WriteWithLen(this.Data)
 
             member this.GetFailureMsgData() =
-                failwith ""
+                System.Text.ASCIIEncoding.ASCII.GetString(this.Data)
 
     and WhichChannel =
         | SpecificChannel of ChannelId
@@ -1079,43 +1313,6 @@ module Msgs =
         NodeId: NodeId
         IsPermanent: bool
     }
-
-    [<Struct>]
-    type LightningMsgHeader =
-        | InitType = 16us
-        | ErrorType = 17us
-        | PingType = 18us
-        | PongType = 19us
-        | OpenChannelType = 32us
-        | AcceptChannelType = 33us
-        | FundingCreatedType = 34us
-        | FundingSignedType = 35us
-        | FundingLockedType = 36us
-        | ShutDownType = 38us
-        | ClosingSignedType= 39us
-        | UpdateAddHTLCType= 128us
-        | UpdateFulFillHTLCtype = 130us
-        | UpdateFailHTLCType= 131us
-        | UpdateMalformedHTLCType = 135us
-        | CommitmentSignedType = 132us
-        | RevokeAndACKType = 133us
-        | UpdateFeeType = 134us
-        | ChannelReestablishType = 136us
-        | AnnouncementSignatureType = 259us
-        | ChannelAnnouncementType = 256us
-        | NodeAnnouncementType = 257us
-        | ChannelUpdateType = 258us
-
-
-    let lnMsgType = typeof<LightningMsgHeader>
-
-    /// TODO: use Active Pattern when possible
-    let matchMsgType (f : uint16) =
-        if Enum.IsDefined(lnMsgType, f) then
-            ValueSome (LanguagePrimitives.EnumOfValue f)
-        else
-            ValueNone
-
 
 
     // -----------

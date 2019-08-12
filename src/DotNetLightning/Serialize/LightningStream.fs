@@ -155,7 +155,6 @@ type LightningWriterStream(inner: Stream) =
         | Some d -> this.WriteWithLen(d)
         | None -> ()
 
-
 type LightningReaderStream(inner: Stream) =
     inherit LightningStream(inner)
     do if (not inner.CanRead) then invalidArg "inner" "inner stream must be readable"
@@ -164,6 +163,16 @@ type LightningReaderStream(inner: Stream) =
 
     override this.CanRead = true
     override this.CanWrite = this.Inner.CanWrite
+
+    member this.ReadAll(): byte[] =
+        this.ReadBytes(int32 this.Length - int32 this.Position)
+        // if (this.Length)  t
+
+    member this.TryReadAll(): byte[] option =
+        if (this.Length > this.Position) then
+            this.ReadAll() |> Some
+        else
+            None
 
     member private this.FillBuffer(numBytes: int) =
         if (isNull m_buffer) then
@@ -292,7 +301,7 @@ type LightningReaderStream(inner: Stream) =
         if PubKey.Check(b, true) then
             PubKey(b, true)
         else
-            raise (SerializationException("Invalid Pubkey encoding"))
+            raise (FormatException("Invalid Pubkey encoding"))
 
     member this.ReadECDSACompact() =
         let data = this.ReadBytes(64)
