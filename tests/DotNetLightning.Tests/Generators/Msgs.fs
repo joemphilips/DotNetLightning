@@ -10,10 +10,10 @@ open DotNetLightning.Utils.Primitives
 let (<*>) = Gen.apply
 
 let private globalFeaturesGen =
-    Arb.generate<uint8[]> |> Gen.map GlobalFeatures.Flags
+    Gen.constant ([|0b00000000uy|]) |> Gen.map GlobalFeatures.Flags
 
 let private localFeaturesGen =
-    Arb.generate<uint8[]> |> Gen.map LocalFeatures.Flags
+    Gen.constant ([|0b01010101uy|]) |> Gen.map LocalFeatures.Flags
 
 let initGen =
     Gen.map2 (fun g l -> { GlobalFeatures = g; LocalFeatures = l})
@@ -161,11 +161,11 @@ let closingSignedGen = gen {
 }
 
 let onionPacketGen = gen {
-    let! v = Arb.generate<uint8>
+    // let! v = Arb.generate<uint8>
     let! pk = pubKeyGen |> Gen.map(fun pk -> pk.ToBytes())
-    let! hopData = bytesOfNGen(1366)
+    let! hopData = bytesOfNGen(1300)
     let! hmac = uint256Gen
-    return { Version = v; PublicKey=pk; HopData=hopData; HMAC=hmac }
+    return { Version = 0uy; PublicKey=pk; HopData=hopData; HMAC=hmac }
 }
 
 let updateAddHTLCGen = gen {

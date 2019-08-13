@@ -10,12 +10,12 @@ open Generators
 let config =
     { FsCheckConfig.defaultConfig with
             arbitrary = [ typeof<P2PMsgGenerators>; typeof<PrimitiveGenerators> ]
-            maxTest = 2000
+            maxTest = 300
         }
 
 [<Tests>]
 let testList1 =
-    ptestList "Primitives serialization property tests" [
+    testList "Primitives serialization property tests" [
         testPropertyWithConfig config "ecdsa signature" <| fun (signature: LNECDSASignature) ->
             let actual = LNECDSASignature.FromBytesCompact(signature.ToBytesCompact(), false)
             Expect.equal actual signature (sprintf "failed with actual: %A \n expected: %A" (actual.ToBytesCompact()) (signature.ToBytesCompact()))
@@ -39,10 +39,10 @@ let testList2 =
         testPropertyWithConfig config "accept_channel" <| fun (msg: AcceptChannel) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        ptestPropertyWithConfig config "funding_created" <| fun (msg: FundingCreated) ->
+        testPropertyWithConfig config "funding_created" <| fun (msg: FundingCreated) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        ptestPropertyWithConfig config "funding_signed" <| fun (msg: FundingSigned) ->
+        testPropertyWithConfig config "funding_signed" <| fun (msg: FundingSigned) ->
             Expect.equal (msg.Clone()) (msg) ""
 
         testPropertyWithConfig config "funding_locked" <| fun (msg: FundingLocked) ->
@@ -51,7 +51,10 @@ let testList2 =
         testPropertyWithConfig config "shutdown" <| fun (msg: Shutdown) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        ptestPropertyWithConfig config "closing_signed" <| fun (msg: ClosingSigned) ->
+        testPropertyWithConfig config "closing_signed" <| fun (msg: ClosingSigned) ->
+            Expect.equal (msg.Clone()) (msg) ""
+
+        testPropertyWithConfig config "onion_packet" <| fun (msg: OnionPacket) ->
             Expect.equal (msg.Clone()) (msg) ""
 
         testPropertyWithConfig config "update_add_htlc" <| fun (msg: UpdateAddHTLC) ->
@@ -66,7 +69,7 @@ let testList2 =
         testPropertyWithConfig config "update_fail_malformed_htlc" <| fun (msg: UpdateFailMalformedHTLC) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        ptestPropertyWithConfig config "commitment_signed" <| fun (msg: CommitmentSigned) ->
+        testPropertyWithConfig config "commitment_signed" <| fun (msg: CommitmentSigned) ->
             Expect.equal (msg.Clone()) (msg) ""
 
         testPropertyWithConfig config "revoke_and_ack" <| fun (msg: RevokeAndACK) ->
@@ -78,7 +81,7 @@ let testList2 =
         testPropertyWithConfig config "channel_reestablish" <| fun (msg: ChannelReestablish) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        ptestPropertyWithConfig config "announcement_signatures" <| fun (msg: AnnouncementSignatures) ->
+        testPropertyWithConfig config "announcement_signatures" <| fun (msg: AnnouncementSignatures) ->
             Expect.equal (msg.Clone()) (msg) ""
 
         testPropertyWithConfig config "node_announcement" <| fun (msg: NodeAnnouncement) ->

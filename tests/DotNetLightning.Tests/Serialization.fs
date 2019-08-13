@@ -37,7 +37,30 @@ module SerializationTest =
 
     [<Tests>]
     let tests =
-        testList "SerializationTest" [
+        testList "Serialization unit tests" [
+            ptestCase "channel_announcement" <| fun _ ->
+                let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
+                let sig2 = signMessageWith privKey2 "01010101010101010101010101010101"
+                let sig3 = signMessageWith privKey3 "01010101010101010101010101010101"
+                let sig4 = signMessageWith privKey4 "01010101010101010101010101010101"
+                let msg = { ChannelAnnouncement.NodeSignature1 = sig1;
+                            NodeSignature2 = sig2
+                            BitcoinSignature1 = sig3
+                            BitcoinSignature2 = sig4
+                            Contents = { UnsignedChannelAnnouncement.BitcoinKey1 = pubkey3
+                                         Features = GlobalFeatures.Flags ([|0xffuy; 0xfeuy|])
+                                         ChainHash = uint256.Parse ("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943")
+                                         ShortChannelId = failwith "Not Implemented"
+                                         NodeId1 = failwith "Not Implemented"
+                                         NodeId2 = failwith "Not Implemented"
+                                         BitcoinKey2 = failwith "Not Implemented"
+                                         ExcessData = failwith "Not Implemented" } }
+                ()
+        ]
+
+    [<Tests>]
+    let testsRustLightningSerilization =
+        testList "SerializationTest from rust-lightning" [
             testCase "channel_reestablish no secret" <| fun _ ->
                 let cid = ChannelId (uint256([|4; 0; 0; 0; 0; 0; 0; 0; 5; 0; 0; 0; 0; 0; 0; 0; 6; 0; 0; 0; 0; 0; 0; 0; 7; 0; 0; 0; 0; 0; 0; 0|] |> Array.map((uint8)))) 
                 let cr = {
