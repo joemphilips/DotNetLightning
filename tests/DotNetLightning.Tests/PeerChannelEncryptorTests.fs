@@ -28,7 +28,7 @@ let getOutBoundPeerForInitiatorTestVectors () =
     result
 
 [<Tests>]
-let tests =
+let peerChannelEncryptorTests =
     testList "PeerChannelEncryptorTests" [
         testCase "noise initiator test vectors" <| fun _ ->
             let ourNodeId = Key(hex.DecodeData("1111111111111111111111111111111111111111111111111111111111111111"))
@@ -83,7 +83,7 @@ let tests =
                 Expect.isError(outboundPeer |> PeerChannelEncryptor.processActTwo actTwo ourNodeId |> RResult.rtoResult) ""
             testCase5()
 
-        testCase "noise responder text vectors" <| fun _ ->
+        testCase "noise responder test vectors" <| fun _ ->
             let ourNodeId = hex.DecodeData("2121212121212121212121212121212121212121212121212121212121212121") |> Key
             let ourEphemeral = hex.DecodeData("2222222222222222222222222222222222222222222222222222222222222222") |> Key
 

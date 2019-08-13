@@ -104,8 +104,8 @@ module Primitives =
                 invalidArg "bytes" "ECDSASignature was not specified to have recovery id, but it was not 64 bytes length."
             else
                 let data = if withRecId then bytes.[1..] else bytes
-                let r = NBitcoin.BouncyCastle.Math.BigInteger(data.[0..31])
-                let s = NBitcoin.BouncyCastle.Math.BigInteger(data.[32..63])
+                let r = NBitcoin.BouncyCastle.Math.BigInteger(1, data.[0..31])
+                let s = NBitcoin.BouncyCastle.Math.BigInteger(1, data.[32..63])
                 ECDSASignature(r, s) |> LNECDSASignature
 
         static member op_Implicit(ec: ECDSASignature) =

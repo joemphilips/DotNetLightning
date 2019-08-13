@@ -59,14 +59,14 @@ module rec Msgs =
             member x.RequiresUnknownBits() =
                 x.Value
                 |> Array.indexed
-                |> Array.exists(fun (i, b) -> (i <> 0 && (b &&& 0x55uy) <> 0uy) ||
-                                              (i =  0 && (b &&& 0x14uy) <> 0uy))
+                |> Array.exists(fun (i, b) -> (i <> 0 && (b &&& 0b01010101uy) <> 0uy) ||
+                                              (i =  0 && (b &&& 0b00010100uy) <> 0uy))
 
             member x.SupportsUnknownBits() =
                 x.Value
                 |> Array.indexed
                 |> Array.exists(fun (i, b) -> (i <> 0 && b <> 0uy) ||
-                                              (i =  0 && (b &&& 0xc4uy) <> 0uy))
+                                              (i =  0 && (b &&& 0b11000100uy) <> 0uy))
     [<Struct>]
     type GlobalFeatures =
         Flags of uint8[]
@@ -74,7 +74,7 @@ module rec Msgs =
 
             member x.RequiresUnknownBits() =
                 x.Value
-                |> Array.exists(fun b -> b &&& 0x55uy <> 0uy)
+                |> Array.exists(fun b -> b &&& 0b01010101uy <> 0uy)
             
             member x.SupportsUnknownBits() =
                 x.Value
@@ -326,7 +326,13 @@ module rec Msgs =
         }
         with
 
-            static member LastPacket = ILightningSerializable.init<OnionPacket>()
+            static member LastPacket =
+                let o = ILightningSerializable.init<OnionPacket>()
+                o.Version <- 0uy
+                o.PublicKey <- Array.zeroCreate 33
+                o.HopData <- Array.zeroCreate 1300
+                o.HMAC <- uint256.Zero
+                o
 
             member this.IsLastPacket =
                 this.HMAC = uint256.Zero
@@ -429,7 +435,7 @@ module rec Msgs =
         interface IChannelMsg
         interface ILightningSerializable<OpenChannel> with
             member this.Deserialize(ls) =
-                this.Chainhash <- ls.ReadUInt256(true)
+                this.Chainhash <- ls.ReadUInt256(false)
                 this.TemporaryChannelId <- ChannelId(ls.ReadUInt256(true))
                 this.FundingSatoshis <- Money.Satoshis(ls.ReadInt64(false))
                 this.PushMSat <- LNMoney.MilliSatoshis(ls.ReadUInt64(false))
@@ -447,10 +453,12 @@ module rec Msgs =
                 this.HTLCBasepoint <- ls.ReadPubKey()
                 this.FirstPerCommitmentPoint <- ls.ReadPubKey()
                 this.ChannelFlags <- ls.ReadUInt8()
-                this.ShutdownScriptPubKey <- ls.TryReadAll() |> Option.map(Script)
+                this.ShutdownScriptPubKey <-
+                    if (ls.Position = ls.Length) then None else
+                    ls.ReadWithLen() |> Script |> Some
             member this.Serialize(ls) =
-                ls.Write(this.Chainhash, true)
-                ls.Write(this.TemporaryChannelId.Value.ToBytes())
+                ls.Write(this.Chainhash, false)
+                ls.Write(this.TemporaryChannelId.Value, true)
                 ls.Write(this.FundingSatoshis.Satoshi, false)
                 ls.Write(this.PushMSat.MilliSatoshi, false)
                 ls.Write(this.DustLimitSatoshis.Satoshi, false)
@@ -505,7 +513,9 @@ module rec Msgs =
                 this.DelayedPaymentBasepoint <- ls.ReadPubKey()
                 this.HTLCBasepoint <- ls.ReadPubKey()
                 this.FirstPerCommitmentPoint <- ls.ReadPubKey()
-                this.ShutdownScriptPubKey <- ls.TryReadAll() |> Option.map(Script)
+                this.ShutdownScriptPubKey <-
+                    if (ls.Position = ls.Length) then None else
+                    ls.ReadWithLen() |> Script |> Some
             member this.Serialize(ls) =
                 ls.Write(this.TemporaryChannelId.Value.ToBytes())
                 ls.Write(this.DustLimitSatoshis.Satoshi, false)
@@ -813,6 +823,7 @@ module rec Msgs =
         | IPv6 of IPv4Or6Data
         | OnionV2 of OnionV2EndPoint
         | OnionV3 of OnionV3EndPoint
+
         member this.GetId() =
             match this with
             | IPv4 _ -> 1uy
@@ -828,6 +839,7 @@ module rec Msgs =
                                 | OnionV3 _ -> 37us
 
         member this.WriteTo(ls: LightningWriterStream) =
+            ls.Write(this.GetId())
             match this with
             | IPv4 d ->
                 ls.Write(d.Addr)
@@ -844,21 +856,24 @@ module rec Msgs =
                 ls.Write(d.Version)
                 ls.Write(d.Port, false)
 
-        static member ReadFrom(ls: LightningReaderStream) =
+        static member ReadFrom(ls: LightningReaderStream): NetAdddrSerilizationResult =
             let id = ls.ReadUInt8()
             match id with
             | 1uy ->
                 let addr = ls.ReadBytes(4)
                 let port = ls.ReadUInt16(false)
                 IPv4 { Addr = addr; Port = port }
+                |> Ok
             | 2uy ->
                 let addr = ls.ReadBytes(16)
                 let port = ls.ReadUInt16((false))
                 IPv6 { Addr = addr; Port = port }
+                |> Ok
             | 3uy ->
                 let addr = ls.ReadBytes(10)
                 let port = ls.ReadUInt16(false)
                 OnionV2 { Addr = addr; Port = port }
+                |> Ok
             | 4uy ->
                 let ed25519PK = ls.ReadBytes(32)
                 let checkSum = ls.ReadUInt16(false)
@@ -870,8 +885,9 @@ module rec Msgs =
                     Version = v
                     Port = port
                 }
-            | x ->
-                raise <|  FormatException (sprintf "Unknown NetAddress type %d" x)
+                |> Ok
+            | unknown ->
+                Result.Error (unknown)
     and IPv4Or6Data = {
         /// 4 byte in case of IPv4. 16 byes in case of IPv6
         Addr: byte[]
@@ -879,6 +895,7 @@ module rec Msgs =
     }
 
     and OnionV2EndPoint = {
+        /// 10 bytes
         Addr: byte[]
         Port: uint16
     }
@@ -888,6 +905,8 @@ module rec Msgs =
         Version: uint8
         Port: uint16
     }
+    and NetAdddrSerilizationResult = Result<NetAddress, UnknownNetAddr>
+    and UnknownNetAddr = byte
 
 
     /// Only exposed as broadcast of node_announcement should be filtered by node_id
@@ -911,43 +930,63 @@ module rec Msgs =
                 this.NodeId <- ls.ReadPubKey() |> NodeId
                 this.RGB <- ls.ReadRGB()
                 this.Alias <- ls.ReadUInt256(true)
+                let addrLen = ls.ReadUInt16(false)
+                let mutable addresses: NetAddress list = []
+                let mutable addr_readPos = 0us
+                let mutable foundUnknown = false
+                let mutable excessAddressDataByte = 0uy
                 this.Addresses <-
-                    let addrLen = ls.ReadUInt16(false)
-                    let mutable addresses: NetAddress list = []
-                    let mutable addr_readPos = 0us
-                    while addrLen <= addr_readPos do
+                    while addr_readPos < addrLen && (not foundUnknown) do
                         let addr = NetAddress.ReadFrom ls
                         ignore <| match addr with
-                                  | IPv4 _ ->
+                                  | Ok (IPv4 _) ->
                                       if addresses.Length > 0 then
-                                          raise <| FormatException("Extra Address per type")
-                                  | IPv6 _ ->
+                                          raise <| FormatException(sprintf "Extra Address per type %A" addresses)
+                                  | Ok (IPv6 _) ->
                                       if addresses.Length > 1 || (addresses.Length = 1 && addresses.[0].GetId() <> 1uy) then
-                                          raise <| FormatException("Extra Address per type")
-                                  | OnionV2 _ ->
-                                      if addresses.Length > 2 || (addresses.Length > 0 && addresses.[addresses.Length - 1].GetId() > 2uy) then
-                                          raise <| FormatException("Extra Address per type")
-                                  | OnionV3 _ ->
-                                      if addresses.Length > 3 || (addresses.Length > 0 && addresses.[addresses.Length - 1].GetId() > 3uy) then
-                                          raise <| FormatException("Extra Address per type")
-
-                        addr_readPos <- addr_readPos + (1us + addr.Length)
-                        addresses <- addr :: addresses
+                                          raise <| FormatException(sprintf "Extra Address per type %A" addresses)
+                                  | Ok(OnionV2 _) ->
+                                      if addresses.Length > 2 || (addresses.Length > 0 && addresses.[0].GetId() > 2uy) then
+                                          raise <| FormatException(sprintf "Extra Address per type %A" addresses)
+                                  | Ok(OnionV3 _) ->
+                                      if addresses.Length > 3 || (addresses.Length > 0 && addresses.[0].GetId() > 3uy) then
+                                          raise <| FormatException(sprintf "Extra Address per type %A" addresses)
+                                  | Result.Error v ->
+                                      excessAddressDataByte <- v
+                                      foundUnknown <- true
+                                      addr_readPos <- addr_readPos + 1us
+                        if (not foundUnknown) then
+                            match addr with
+                            | Ok addr ->
+                                addr_readPos <- addr_readPos + (1us + addr.Length)
+                                addresses <- addr :: addresses
+                            | Result.Error _ -> failwith "Unreachable"
                     addresses |> List.rev |> Array.ofList
+                this.ExcessAddressData <-
+                    if addr_readPos < addrLen then
+                        if foundUnknown then
+                            Array.append [|excessAddressDataByte|] (ls.ReadBytes(int (addrLen - addr_readPos)))
+                        else
+                            (ls.ReadBytes(int (addrLen - addr_readPos)))
+                    else
+                        if foundUnknown then
+                            [|excessAddressDataByte|]
+                        else
+                            [||]
 
-                this.ExcessData <- ls.ReadAll()
+                this.ExcessData <- match ls.TryReadAll() with Some b -> b | None -> [||]
             member this.Serialize(ls) =
                 ls.WriteWithLen(this.Features.Value)
                 ls.Write(this.Timestamp, false)
                 ls.Write(this.NodeId.Value)
                 ls.Write(this.RGB)
                 ls.Write(this.Alias, true)
-                let mutable addrLen = (this.Addresses |> Array.sumBy(fun addr -> addr.Length + 1us)) // 1 byte for type field
+                let mutable addrLen:uint16 = (this.Addresses |> Array.sumBy(fun addr -> addr.Length + 1us)) // 1 byte for type field
                 let excessAddrLen = (uint16 this.ExcessAddressData.Length)
                 addrLen <- excessAddrLen + addrLen
                 ls.Write(addrLen, false)
                 this.Addresses
-                    |> Array.iter(fun addr -> ls.Write(addr.GetId()); addr.WriteTo(ls))
+                    |> Array.iter(fun addr -> addr.WriteTo(ls))
                 ls.Write(this.ExcessAddressData)
                 ls.Write(this.ExcessData)
 
@@ -987,16 +1026,16 @@ module rec Msgs =
                         raise <| UnknownRequiredFeatureException(sprintf "Channel Annoucement contains Unknown requied feature %A" g)
                     else
                         g
-                this.ChainHash <- ls.ReadUInt256(true)
+                this.ChainHash <- ls.ReadUInt256(false)
                 this.ShortChannelId <- ls.ReadUInt64(false) |> ShortChannelId.FromUInt64
                 this.NodeId1 <- ls.ReadPubKey() |> NodeId
                 this.NodeId2 <- ls.ReadPubKey() |> NodeId
                 this.BitcoinKey1 <- ls.ReadPubKey()
                 this.BitcoinKey2 <- ls.ReadPubKey()
-                this.ExcessData <- ls.ReadAll()
+                this.ExcessData <- match ls.TryReadAll() with Some b -> b | None -> [||]
             member this.Serialize(ls) =
                 ls.WriteWithLen(this.Features.Value)
-                ls.Write(this.ChainHash, true)
+                ls.Write(this.ChainHash, false)
                 ls.Write(this.ShortChannelId)
                 ls.Write(this.NodeId1.Value)
                 ls.Write(this.NodeId2.Value)
@@ -1042,7 +1081,17 @@ module rec Msgs =
     }
         with
             interface IRoutingMsg
-            interface  ILightningSerializable<ChannelAnnouncement> with
+            interface  ILightningSerializable<UnsignedChannelUpdate> with
+                member this.Deserialize(ls: LightningReaderStream): unit = 
+                    this.ChainHash <- ls.ReadUInt256(false)
+                    this.ShortChannelId <- ls.ReadUInt64(false) |> ShortChannelId.FromUInt64
+                    this.Timestamp <- ls.ReadUInt32(false)
+                    this.Flags <- ls.ReadUInt16(false)
+                    this.CLTVExpiryDelta <- ls.ReadUInt16(false) |> BlockHeightOffset
+                    this.HTLCMinimumMSat <- ls.ReadUInt64(false) |> LNMoney.MilliSatoshis
+                    this.FeeBaseMSat <- ls.ReadUInt32(false) |> uint64 |> LNMoney.MilliSatoshis
+                    this.FeeProportionalMillionths <- ls.ReadUInt32(false)
+                    this.ExcessData <- match ls.TryReadAll() with | Some v -> v | None -> [||]
                 member this.Serialize(ls: LightningWriterStream): unit = 
                     ls.Write(this.ChainHash, false)
                     ls.Write(this.ShortChannelId)
@@ -1050,19 +1099,9 @@ module rec Msgs =
                     ls.Write(this.Flags, false)
                     ls.Write(this.CLTVExpiryDelta.Value, false)
                     ls.Write(this.HTLCMinimumMSat.MilliSatoshi, false)
-                    ls.Write(this.FeeBaseMSat.MilliSatoshi, false)
-                    ls.Write(this.FeeProportionalMillionths, false)
+                    ls.Write(uint32 this.FeeBaseMSat.MilliSatoshi, false)
+                    ls.Write(uint32 this.FeeProportionalMillionths, false)
                     ls.Write(this.ExcessData)
-
-                member this.Deserialize(ls: LightningReaderStream): unit = 
-                    this.ChainHash <- ls.ReadUInt256(true)
-                    this.ShortChannelId <- ls.ReadUInt64(false) |> ShortChannelId.FromUInt64
-                    this.Timestamp <- ls.ReadUInt32(false)
-                    this.Flags <- ls.ReadUInt16(false)
-                    this.CLTVExpiryDelta <- ls.ReadUInt16(false) |> BlockHeightOffset
-                    this.FeeBaseMSat <- ls.ReadUInt64(false) |> LNMoney.MilliSatoshis
-                    this.FeeProportionalMillionths <- ls.ReadUInt32(false)
-                    this.ExcessData <- match ls.TryReadAll() with | Some v -> v | None -> [||]
 
 
     [<CLIMutable>]
@@ -1075,36 +1114,10 @@ module rec Msgs =
         interface ILightningSerializable<ChannelUpdate> with
             member this.Deserialize(ls) =
                 this.Signature <- ls.ReadECDSACompact()
-                let chainHash = ls.ReadUInt256(true)
-                let shortChannelId = ls.ReadUInt64(false) |> ShortChannelId.FromUInt64
-                let ts = ls.ReadUInt32(false)
-                let f = ls.ReadUInt16(false)
-                let cltvE = ls.ReadUInt16(false) |> BlockHeightOffset
-                let htlcMinimum = ls.ReadUInt64(false) |> LNMoney.MilliSatoshis
-                let feeBase = ls.ReadUInt64(false) |> LNMoney.MilliSatoshis
-                let feeProportionalMillionths = ls.ReadUInt32(false)
-                this.Contents <- {
-                    ChainHash = chainHash
-                    ShortChannelId = shortChannelId
-                    Timestamp = ts
-                    Flags = f
-                    CLTVExpiryDelta = cltvE
-                    HTLCMinimumMSat = htlcMinimum
-                    FeeBaseMSat = feeBase
-                    FeeProportionalMillionths = feeProportionalMillionths
-                    ExcessData = ls.ReadAll()
-                }
+                this.Contents <- ILightningSerializable.deserialize<UnsignedChannelUpdate>(ls)
             member this.Serialize(ls) =
                 ls.Write(this.Signature)
-                ls.Write(this.Contents.ChainHash, false)
-                ls.Write(this.Contents.ShortChannelId)
-                ls.Write(this.Contents.Timestamp, false)
-                ls.Write(this.Contents.Flags, false)
-                ls.Write(this.Contents.CLTVExpiryDelta.Value, false)
-                ls.Write(this.Contents.HTLCMinimumMSat.MilliSatoshi, false)
-                ls.Write((uint32) this.Contents.FeeBaseMSat.MilliSatoshi, false)
-                ls.Write((uint32) this.Contents.FeeProportionalMillionths, false)
-                ls.Write(this.Contents.ExcessData)
+                (this.Contents :> ILightningSerializable<UnsignedChannelUpdate>).Serialize(ls)
 
     type FailureMsgData =
         | InvalidRealm
