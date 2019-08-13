@@ -80,6 +80,9 @@ type P2PMsgGenerators =
     static member AnnouncementSignature(): Arbitrary<AnnouncementSignatures> =
         Arb.fromGen(announcementSignaturesGen)
 
+    static member UnsignedNodeAnnouncement(): Arbitrary<UnsignedNodeAnnouncement> =
+        Arb.fromGen unsignedNodeAnnouncementGen
+
     static member NodeAnnouncement(): Arbitrary<NodeAnnouncement> =
         Arb.fromGen nodeAnnouncementGen
 

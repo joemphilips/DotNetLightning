@@ -823,6 +823,7 @@ module rec Msgs =
         | IPv6 of IPv4Or6Data
         | OnionV2 of OnionV2EndPoint
         | OnionV3 of OnionV3EndPoint
+
         member this.GetId() =
             match this with
             | IPv4 _ -> 1uy
@@ -838,6 +839,7 @@ module rec Msgs =
                                 | OnionV3 _ -> 37us
 
         member this.WriteTo(ls: LightningWriterStream) =
+            ls.Write(this.GetId())
             match this with
             | IPv4 d ->
                 ls.Write(d.Addr)
@@ -854,21 +856,24 @@ module rec Msgs =
                 ls.Write(d.Version)
                 ls.Write(d.Port, false)
 
-        static member ReadFrom(ls: LightningReaderStream) =
+        static member ReadFrom(ls: LightningReaderStream): NetAdddrSerilizationResult =
             let id = ls.ReadUInt8()
             match id with
             | 1uy ->
                 let addr = ls.ReadBytes(4)
                 let port = ls.ReadUInt16(false)
                 IPv4 { Addr = addr; Port = port }
+                |> Ok
             | 2uy ->
                 let addr = ls.ReadBytes(16)
                 let port = ls.ReadUInt16((false))
                 IPv6 { Addr = addr; Port = port }
+                |> Ok
             | 3uy ->
                 let addr = ls.ReadBytes(10)
                 let port = ls.ReadUInt16(false)
                 OnionV2 { Addr = addr; Port = port }
+                |> Ok
             | 4uy ->
                 let ed25519PK = ls.ReadBytes(32)
                 let checkSum = ls.ReadUInt16(false)
@@ -880,8 +885,9 @@ module rec Msgs =
                     Version = v
                     Port = port
                 }
-            | x ->
-                raise <|  FormatException (sprintf "Unknown NetAddress type %d" x)
+                |> Ok
+            | unknown ->
+                Result.Error (unknown)
     and IPv4Or6Data = {
         /// 4 byte in case of IPv4. 16 byes in case of IPv6
         Addr: byte[]
@@ -889,6 +895,7 @@ module rec Msgs =
     }
 
     and OnionV2EndPoint = {
+        /// 10 bytes
         Addr: byte[]
         Port: uint16
     }
@@ -898,6 +905,8 @@ module rec Msgs =
         Version: uint8
         Port: uint16
     }
+    and NetAdddrSerilizationResult = Result<NetAddress, UnknownNetAddr>
+    and UnknownNetAddr = byte
 
 
     /// Only exposed as broadcast of node_announcement should be filtered by node_id
@@ -921,29 +930,49 @@ module rec Msgs =
                 this.NodeId <- ls.ReadPubKey() |> NodeId
                 this.RGB <- ls.ReadRGB()
                 this.Alias <- ls.ReadUInt256(true)
+                let addrLen = ls.ReadUInt16(false)
+                let mutable addresses: NetAddress list = []
+                let mutable addr_readPos = 0us
+                let mutable foundUnknown = false
+                let mutable excessAddressDataByte = 0uy
                 this.Addresses <-
-                    let addrLen = ls.ReadUInt16(false)
-                    let mutable addresses: NetAddress list = []
-                    let mutable addr_readPos = 0us
-                    while addr_readPos < addrLen do
+                    while addr_readPos < addrLen && (not foundUnknown) do
                         let addr = NetAddress.ReadFrom ls
                         ignore <| match addr with
-                                  | IPv4 _ ->
+                                  | Ok (IPv4 _) ->
                                       if addresses.Length > 0 then
-                                          raise <| FormatException("Extra Address per type")
-                                  | IPv6 _ ->
+                                          raise <| FormatException(sprintf "Extra Address per type %A" addresses)
+                                  | Ok (IPv6 _) ->
                                       if addresses.Length > 1 || (addresses.Length = 1 && addresses.[0].GetId() <> 1uy) then
-                                          raise <| FormatException("Extra Address per type")
-                                  | OnionV2 _ ->
-                                      if addresses.Length > 2 || (addresses.Length > 0 && addresses.[addresses.Length - 1].GetId() > 2uy) then
-                                          raise <| FormatException("Extra Address per type")
-                                  | OnionV3 _ ->
-                                      if addresses.Length > 3 || (addresses.Length > 0 && addresses.[addresses.Length - 1].GetId() > 3uy) then
-                                          raise <| FormatException("Extra Address per type")
-
-                        addr_readPos <- addr_readPos + (1us + addr.Length)
-                        addresses <- addr :: addresses
+                                          raise <| FormatException(sprintf "Extra Address per type %A" addresses)
+                                  | Ok(OnionV2 _) ->
+                                      if addresses.Length > 2 || (addresses.Length > 0 && addresses.[0].GetId() > 2uy) then
+                                          raise <| FormatException(sprintf "Extra Address per type %A" addresses)
+                                  | Ok(OnionV3 _) ->
+                                      if addresses.Length > 3 || (addresses.Length > 0 && addresses.[0].GetId() > 3uy) then
+                                          raise <| FormatException(sprintf "Extra Address per type %A" addresses)
+                                  | Result.Error v ->
+                                      excessAddressDataByte <- v
+                                      foundUnknown <- true
+                                      addr_readPos <- addr_readPos + 1us
+                        if (not foundUnknown) then
+                            match addr with
+                            | Ok addr ->
+                                addr_readPos <- addr_readPos + (1us + addr.Length)
+                                addresses <- addr :: addresses
+                            | Result.Error _ -> failwith "Unreachable"
                     addresses |> List.rev |> Array.ofList
+                this.ExcessAddressData <-
+                    if addr_readPos < addrLen then
+                        if foundUnknown then
+                            Array.append [|excessAddressDataByte|] (ls.ReadBytes(int (addrLen - addr_readPos)))
+                        else
+                            (ls.ReadBytes(int (addrLen - addr_readPos)))
+                    else
+                        if foundUnknown then
+                            [|excessAddressDataByte|]
+                        else
+                            [||]
 
                 this.ExcessData <- match ls.TryReadAll() with Some b -> b | None -> [||]
             member this.Serialize(ls) =
@@ -952,12 +981,12 @@ module rec Msgs =
                 ls.Write(this.NodeId.Value)
                 ls.Write(this.RGB)
                 ls.Write(this.Alias, true)
-                let mutable addrLen = (this.Addresses |> Array.sumBy(fun addr -> addr.Length + 1us)) // 1 byte for type field
+                let mutable addrLen:uint16 = (this.Addresses |> Array.sumBy(fun addr -> addr.Length + 1us)) // 1 byte for type field
                 let excessAddrLen = (uint16 this.ExcessAddressData.Length)
                 addrLen <- excessAddrLen + addrLen
                 ls.Write(addrLen, false)
                 this.Addresses
-                    |> Array.iter(fun addr -> ls.Write(addr.GetId()); addr.WriteTo(ls))
+                    |> Array.iter(fun addr -> addr.WriteTo(ls))
                 ls.Write(this.ExcessAddressData)
                 ls.Write(this.ExcessData)
 

@@ -84,6 +84,9 @@ let testList2 =
         testPropertyWithConfig config "announcement_signatures" <| fun (msg: AnnouncementSignatures) ->
             Expect.equal (msg.Clone()) (msg) ""
 
+        testPropertyWithConfig config "node_announcement(unsigned contents)" <| fun (msg: UnsignedNodeAnnouncement) ->
+            Expect.equal (msg.Clone()) (msg) ""
+
         testPropertyWithConfig config "node_announcement" <| fun (msg: NodeAnnouncement) ->
             Expect.equal (msg.Clone()) (msg) ""
 
