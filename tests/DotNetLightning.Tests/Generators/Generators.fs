@@ -1,5 +1,6 @@
 module Generators
 
+open NBitcoin
 open NBitcoin.Crypto
 open DotNetLightning.Utils
 open DotNetLightning.Serialize.Msgs
@@ -11,6 +12,9 @@ open MsgGenerators
 type PrimitiveGenerators =
     static member ECDSASignature() : Arbitrary<LNECDSASignature> =
         Arb.fromGen(signatureGen)
+
+    static member UInt256(): Arbitrary<uint256> =
+        Arb.fromGen(uint256Gen)
 
 type P2PMsgGenerators =
     static member Init() : Arbitrary<Init> =
@@ -46,6 +50,9 @@ type P2PMsgGenerators =
     static member ClosingSigned(): Arbitrary<ClosingSigned> =
         Arb.fromGen(closingSignedGen)
 
+    static member OnionPacket(): Arbitrary<OnionPacket> =
+        Arb.fromGen(onionPacketGen)
+
     static member UpdateAddHTLC(): Arbitrary<UpdateAddHTLC> =
         Arb.fromGen(updateAddHTLCGen)
 
@@ -72,6 +79,9 @@ type P2PMsgGenerators =
 
     static member AnnouncementSignature(): Arbitrary<AnnouncementSignatures> =
         Arb.fromGen(announcementSignaturesGen)
+
+    static member UnsignedNodeAnnouncement(): Arbitrary<UnsignedNodeAnnouncement> =
+        Arb.fromGen unsignedNodeAnnouncementGen
 
     static member NodeAnnouncement(): Arbitrary<NodeAnnouncement> =
         Arb.fromGen nodeAnnouncementGen

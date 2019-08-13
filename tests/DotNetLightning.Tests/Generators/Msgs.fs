@@ -10,10 +10,10 @@ open DotNetLightning.Utils.Primitives
 let (<*>) = Gen.apply
 
 let private globalFeaturesGen =
-    Arb.generate<uint8[]> |> Gen.map GlobalFeatures.Flags
+    Gen.constant ([|0b00000000uy|]) |> Gen.map GlobalFeatures.Flags
 
 let private localFeaturesGen =
-    Arb.generate<uint8[]> |> Gen.map LocalFeatures.Flags
+    Gen.constant ([|0b01010101uy|]) |> Gen.map LocalFeatures.Flags
 
 let initGen =
     Gen.map2 (fun g l -> { GlobalFeatures = g; LocalFeatures = l})
@@ -161,11 +161,11 @@ let closingSignedGen = gen {
 }
 
 let onionPacketGen = gen {
-    let! v = Arb.generate<uint8>
+    // let! v = Arb.generate<uint8>
     let! pk = pubKeyGen |> Gen.map(fun pk -> pk.ToBytes())
-    let! hopData = bytesOfNGen(1366)
+    let! hopData = bytesOfNGen(1300)
     let! hmac = uint256Gen
-    return { Version = v; PublicKey=pk; HopData=hopData; HMAC=hmac }
+    return { Version = 0uy; PublicKey=pk; HopData=hopData; HMAC=hmac }
 }
 
 let updateAddHTLCGen = gen {
@@ -284,10 +284,45 @@ let announcementSignaturesGen = gen {
     }
 }
 
-let private netAddressGen: Gen<NetAddress> =
-    Arb.generate<NetAddress>
+let private ipV4AddressGen = gen {
+    let! addr = bytesOfNGen(4)
+    let! port = Arb.generate<uint16>
+    return NetAddress.IPv4 { IPv4Or6Data.Addr = addr; Port = port }
+}
 
-let private unsignedNodeAnnouncementGen = gen {
+let private ipV6AddressGen = gen {
+    let! addr = bytesOfNGen(16)
+    let! port = Arb.generate<uint16>
+    return NetAddress.IPv6 { IPv4Or6Data.Addr = addr; Port = port }
+}
+
+let private onionV2AddressGen = gen {
+    let! addr = bytesOfNGen(10)
+    let! port = Arb.generate<uint16>
+    return NetAddress.OnionV2 { OnionV2EndPoint.Addr = addr; Port = port }
+}
+
+let private onionV3AddressGen = gen {
+    let! cs = Arb.generate<uint16>
+    let! pk = bytesOfNGen(32)
+    let! port = Arb.generate<uint16>
+    let! v = Arb.generate<uint8>
+    return NetAddress.OnionV3 { OnionV3EndPoint.CheckSum = cs
+                                ed25519PubKey = pk
+                                Version = v
+                                Port = port }
+}
+
+
+let private netAddressesGen = gen {
+    let! ipv4 = Gen.optionOf(ipV4AddressGen)
+    let! ipv6 = Gen.optionOf(ipV6AddressGen)
+    let! onionv2 = Gen.optionOf(onionV2AddressGen)
+    let! onionv3 = Gen.optionOf(onionV3AddressGen)
+    return [|ipv4; ipv6; onionv2; onionv3|] 
+} 
+
+let unsignedNodeAnnouncementGen = gen {
     let! f = globalFeaturesGen
     let! t = Arb.generate<uint32>
     let! nodeId = NodeId <!> pubKeyGen
@@ -297,8 +332,8 @@ let private unsignedNodeAnnouncementGen = gen {
                 <*> Arb.generate<uint8>
 
     let! a = uint256Gen
-    let! addrs = Gen.arrayOf(netAddressGen)
-    let! eAddrs = bytesGen
+    let! addrs = netAddressesGen |> Gen.map (Array.choose id)
+    let! eAddrs = bytesGen |> Gen.filter(fun b -> b.Length = 0 || (b.[0] <> 1uy && b.[0] <> 2uy && b.[0] <> 3uy && b.[0] <> 4uy))
     let! ed = bytesGen
 
     return {

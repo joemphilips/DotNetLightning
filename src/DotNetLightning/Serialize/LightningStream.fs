@@ -311,7 +311,7 @@ type LightningReaderStream(inner: Stream) =
 
     member this.ReadScript() =
         let d = this.ReadWithLen()
-        Script(d)
+        Script.FromBytesUnsafe(d)
 
     member this.ReadRGB() =
         let r = this.ReadUInt8()

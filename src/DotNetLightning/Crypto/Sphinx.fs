@@ -235,7 +235,6 @@ module internal Sphinx =
         with
             static member Create (ss: byte[], msg: FailureMsg) =
                 let msgB = msg.ToBytes()
-                printfn "msg to encode is %A" msgB
                 assert (msgB.Length <= MAX_ERROR_PAYLOAD_LENGTH)
                 let um = generateKey("um", ss)
                 let padLen = MAX_ERROR_PAYLOAD_LENGTH - msgB.Length
