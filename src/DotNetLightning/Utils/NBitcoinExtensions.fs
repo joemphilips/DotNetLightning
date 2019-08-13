@@ -29,30 +29,5 @@ module NBitcoinExtensions =
             |> Seq.choose(fun kv -> if kv.Key = pubkey then Some kv.Value else None)
             |> Seq.exactlyOne
 
-    type ECDSASignature with
-
-        /// ** Description **
-        ///
-        /// Bitcoin Layer 1 forces (by consensus) DER encoding for the signatures.
-        /// This is not optimal, but remaining as a rule since changing consensus is not easy.
-        /// However in layer2, there are no such rules. So we use more optimal serialization by
-        /// This function.
-        /// Note it does not include the recovery id. so its always 64 bytes
-        ///
-        /// **Output**
-        ///
-        /// (serialized R value + S value) in byte array.
-        member this.ToBytesCompact() =
-            Array.append (NBitcoin.Utils.BigIntegerToBytes(this.R)) (NBitcoin.Utils.BigIntegerToBytes(this.S))
-
-        static member FromBytesCompact(bytes: byte[], ?withRecId: bool) =
-            let withRecId = defaultArg withRecId false
-            if withRecId && bytes.Length <> 65 then
-                invalidArg "bytes" "ECDSASignature specified to have recovery id, but it was not 65 bytes length"
-            else if not withRecId && bytes.Length <> 64 then
-                invalidArg "bytes" "ECDSASignature was not specified to have recovery id, but it was not 64 bytes length."
-            else
-                let data = if withRecId then bytes.[1..] else bytes
-                let r = NBitcoin.BouncyCastle.Math.BigInteger(data.[0..31])
-                let s = NBitcoin.BouncyCastle.Math.BigInteger(data.[32..63])
-                ECDSASignature(r, s)
+        member this.GetTxId() =
+            this.GetGlobalTransaction().GetTxId()

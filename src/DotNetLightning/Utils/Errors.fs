@@ -20,6 +20,7 @@ type APIError =
     /// An attempt to call add_update_monitor returned Err ( ie you did this!), causing the
     /// attempted action to fail.
     | MonitorUpdateFailed
+
 and FeeRateTooHighContent =  {Msg: string; FeeRate: FeeRatePerKw}
 
 

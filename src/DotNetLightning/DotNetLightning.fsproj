@@ -4,6 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\NSec.Cryptography\NSec.Cryptography.csproj" />
+    <ProjectReference Include="..\Secp256k1.Net\Secp256k1.Net.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
@@ -26,7 +27,7 @@
     <Compile Include="Crypto/CryptoUtils.fs" />
     <Compile Include="Crypto/ShaChain.fs" />
     <Compile Include="Crypto/Sphinx.fs" />
-    <Compile Include="Crypto/OnionUtils.fs" />
+    <Compile Include="Crypto/StreamCipherStream.fs" />
     <Compile Include="Crypto/Generators.fs" />
     <Compile Include="Chain/ChainInterface.fs" />
     <Compile Include="Chain/KeysInterface.fs" />
@@ -35,22 +36,18 @@
     <Compile Include="Transactions/Transactions.fs" />
     <Compile Include="LN/PeerChannelEncryptor.fs" />
     <Compile Include="LN/ChannelUtils.fs" />
-    <Compile Include="LN/ChannelManager.fs" />
+    <Compile Include="LN/HTLCChannelType.fs" />
     <Compile Include="LN/ChannelMonitor.fs" />
     <Compile Include="LN/ChannelConstants.fs" />
+    <Compile Include="LN/ChannelCommands.fs" />
     <Compile Include="LN/Commitments.fs" />
     <Compile Include="LN/ChannelTypes.fs" />
+    <Compile Include="LN/CommitmentsModule.fs" />
     <Compile Include="LN/Channel.fs" />
-    <Compile Include="LN/PeerHandler.fs" />
-    <Compile Include="Library.fs" />
+    <Compile Include="LN/Peer.fs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="System.Net.Sockets" Version="4.3.0" />
-    <PackageReference Include="FSharp.Control.AsyncSeq" Version="2.0.21" />
     <PackageReference Include="FSharp.Core" Version="4.5.4" />
-    <PackageReference Include="NBitcoin" Version="4.1.2.33-joemphilips013" />
-    <PackageReference Include="System.IO.Pipelines" Version="4.5.3" />
-    <PackageReference Include="System.Memory" Version="4.5.2" />
-    <PackageReference Include="System.Reactive" Version="4.1.5" />
+    <PackageReference Include="NBitcoin" Version="4.1.2.33-joemphilips014" />
   </ItemGroup>
 </Project>

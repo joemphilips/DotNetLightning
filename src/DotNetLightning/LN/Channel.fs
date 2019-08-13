@@ -10,9 +10,12 @@ open DotNetLightning.Serialize.Msgs
 open NBitcoin
 open System.Linq
 open System
+open Secp256k1Net
 
-type Channel = internal {
-    Config: UserConfig
+type InternalChannelId = Guid
+type Channel = {
+    InternalChannelId: InternalChannelId
+    Config: ChannelConfig
     UserId: UserId
     ChainListener: IChainListener
     KeysRepository: IKeysRepository
@@ -24,10 +27,13 @@ type Channel = internal {
     State: ChannelState
     CurrentBlockHeight: BlockHeight
     Network: Network
+    Secp256k1Context: Secp256k1
 }
     with
         static member Create (config, userId, logger, chainListener, keysRepo, feeEstimator, remoteNodeId, localNodeSecret, fundingTxProvider, n) =
             {
+                InternalChannelId = new Guid()
+                Secp256k1Context = new Secp256k1()
                 Config = config
                 UserId = userId
                 ChainListener = chainListener
@@ -67,6 +73,31 @@ module Channel =
     let private RRIgnore (msg: string) =
         RRChannelE(ChannelError.Ignore(msg))
 
+    let private hex = NBitcoin.DataEncoders.HexEncoder()
+    let private ascii = System.Text.ASCIIEncoding.ASCII
+    let private dummyPrivKey = Key(hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101"))
+    let private dummyPubKey = dummyPrivKey.PubKey
+    let private dummySig =
+        "01010101010101010101010101010101" |> ascii.GetBytes
+        |> uint256
+        |> fun m -> dummyPrivKey.SignCompact(m ,false)
+        |> fun d -> LNECDSASignature.FromBytesCompact(d, true)
+        |> fun ecdsaSig -> TransactionSignature(ecdsaSig.Value, SigHash.All)
+
+
+    let private checkOrClose left predicate right msg =
+        if predicate left right then
+            sprintf msg left right |> RRClose
+        else
+            Good ()
+
+    let private checkOrIgnore left predicate right msg =
+        if predicate left right then
+            sprintf msg left right |> RRIgnore
+        else
+            Good ()
+
+
     module internal Helpers =
         let deriveOurDustLimitSatoshis(feeEstimator: IFeeEstimator): Money =
             let (FeeRatePerKw atOpenBackGroundFee) = feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background)
@@ -76,13 +107,6 @@ module Channel =
         let getOurChannelReserve (channelValue: Money) =
             let q = channelValue / 100L
             Money.Min(channelValue, Money.Max(q, Money.Satoshis(1L)))
-
-        let buildLocalCommitmentSecret (seed, n) =
-            ChannelUtils.buildCommitmentSecret(seed, n)
-            |> fun sec -> Key(sec.ToBytes())
-
-        let buildLocalCommitmentPoint (seed, n) =
-            buildLocalCommitmentSecret(seed, n) |> fun k -> k.PubKey
 
         let getFundingRedeemScript (ck: ChannelPubKeys) (theirFundingPubKey: PubKey) : Script =
             let ourFundingKey = ck.FundingPubKey
@@ -115,7 +139,7 @@ module Channel =
                 FeeProportionalMillionths = feeProportionalMillionths
                 ExcessData = [||]
             }
-            let signature = unsignedChannelUpdate.ToBytes() |> Crypto.Hashes.SHA256 |> uint256 |> nodeSecret.Sign
+            let signature = unsignedChannelUpdate.ToBytes() |> Crypto.Hashes.SHA256 |> uint256 |> nodeSecret.Sign |> LNECDSASignature
             {
                 ChannelUpdate.Contents = unsignedChannelUpdate
                 Signature = signature
@@ -196,118 +220,57 @@ module Channel =
             else
                 makeFirstCommitTxCore()
 
-        let isAlreadySent (htlc: UpdateAddHTLC) (proposed: IUpdateMsg list) =
-            proposed
-            |> List.exists(fun p -> match p with
-                                    | :? UpdateFulfillHTLC as u -> u.HTLCId = htlc.HTLCId
-                                    | :? UpdateFailHTLC as u -> u.HTLCId = htlc.HTLCId
-                                    | :? UpdateFailMalformedHTLC as u -> u.HTLCId = htlc.HTLCId
-                                    | _ -> false)
         // facades
-        let makeLocalTXs
-            (channelKeys: ChannelPubKeys)
-            (commitTxNumber: uint64)
-            (localParams: LocalParams)
-            (remoteParams: RemoteParams)
-            (commitmentInput: ScriptCoin)
-            (localPerCommitmentPoint: PubKey)
-            (spec: CommitmentSpec)
-            n: RResult<(CommitTx * HTLCTimeoutTx list * HTLCSuccessTx list)> =
-            let pkGen = Generators.derivePubKey localPerCommitmentPoint
-            let localPaymentPK = pkGen channelKeys.PaymentBasePubKey
-            let localDelayedPaymentPK = pkGen channelKeys.DelayedPaymentBasePubKey
-            let localHTLCPK = pkGen channelKeys.HTLCBasePubKey
-            let remotePaymentPK = pkGen remoteParams.PaymentBasePoint
-            let remoteHTLCPK = pkGen remoteParams.HTLCBasePoint
-            let localRevocationPK = pkGen remoteParams.RevocationBasePoint
-            let commitTx =
-                Transactions.makeCommitTx commitmentInput
-                                          commitTxNumber
-                                          channelKeys.PaymentBasePubKey
-                                          remoteParams.PaymentBasePoint
-                                          localParams.IsFunder
-                                          localParams.DustLimitSatoshis
-                                          localRevocationPK
-                                          remoteParams.ToSelfDelay
-                                          localDelayedPaymentPK
-                                          remotePaymentPK
-                                          localHTLCPK
-                                          remoteHTLCPK
-                                          spec n
-            let r =
-                Transactions.makeHTLCTxs (commitTx.Value.GetGlobalTransaction())
-                                         (localParams.DustLimitSatoshis)
-                                         (localRevocationPK)
-                                         (remoteParams.ToSelfDelay)
-                                         (localDelayedPaymentPK)
-                                         (localHTLCPK)
-                                         (remoteHTLCPK)
-                                         (spec)
-                                         (n)
-            r |>> fun (htlcTimeoutTxs, htlcSuccessTxs) ->
-                (commitTx, htlcTimeoutTxs, htlcSuccessTxs)
 
-        let makeRemoteTxs
-            (channelKeys: ChannelKeys)
-            (commitTxNumber: uint64)
-            (localParams: LocalParams)
-            (remoteParams: RemoteParams)
-            (commitmentInput: ScriptCoin)
-            (remotePerCommitmentPoint: PubKey)
-            (spec) (n) =
-            let pkGen = Generators.derivePubKey remotePerCommitmentPoint
-            let localPaymentPK = pkGen (channelKeys.PaymentBaseKey.PubKey)
-            let localHTLCPK = pkGen channelKeys.HTLCBaseKey.PubKey
-            let remotePaymentPK = pkGen (remoteParams.PaymentBasePoint)
-            let remoteDelayedPaymentPK = pkGen (remoteParams.PaymentBasePoint)
-            let remoteHTLCPK = pkGen (remoteParams.HTLCBasePoint)
-            let remoteRevocationPK = pkGen (channelKeys.RevocationBaseKey.PubKey)
-            let commitTx =
-                Transactions.makeCommitTx commitmentInput 
-                                          commitTxNumber
-                                          remoteParams.PaymentBasePoint
-                                          channelKeys.PaymentBaseKey.PubKey
-                                          (not localParams.IsFunder)
-                                          (remoteParams.DustLimitSatoshis)
-                                          (remoteRevocationPK)
-                                          (localParams.ToSelfDelay)
-                                          (remoteDelayedPaymentPK)
-                                          (localPaymentPK)
-                                          (remoteHTLCPK)
-                                          (localHTLCPK)
-                                          (spec)
-                                          (n)
-            Transactions.makeHTLCTxs (commitTx.Value.GetGlobalTransaction())
-                                     (remoteParams.DustLimitSatoshis)
-                                     (remoteRevocationPK)
-                                     (localParams.ToSelfDelay)
-                                     (remoteDelayedPaymentPK)
-                                     (remoteHTLCPK)
-                                     (localHTLCPK)
-                                     (spec) (n)
-            |>> fun (htlcTimeoutTxs, htlcSuccessTxs) ->
-                (commitTx, htlcTimeoutTxs, htlcSuccessTxs)
+        module Closing =
+            let makeClosingTx(keyRepo: IKeysRepository, cm: Commitments, localSpk: Script, remoteSpk: Script, closingFee: Money, localFundingPk, n) =
+                assert (Scripts.isValidFinalScriptPubKey(remoteSpk) && Scripts.isValidFinalScriptPubKey(localSpk))
+                let dustLimitSatoshis = Money.Max(cm.LocalParams.DustLimitSatoshis, cm.RemoteParams.DustLimitSatoshis)
+                Transactions.makeClosingTx(cm.FundingSCoin) (localSpk) (remoteSpk) (cm.LocalParams.IsFunder) (dustLimitSatoshis) (closingFee) (cm.LocalCommit.Spec) n
+                |>> fun closingTx ->
+                    let localSignature, psbtUpdated = keyRepo.GetSignatureFor(closingTx.Value, localFundingPk)
+                    let msg = { ClosingSigned.ChannelId = cm.ChannelId
+                                FeeSatoshis = closingFee
+                                Signature = localSignature.Signature |> LNECDSASignature }
+                    (ClosingTx psbtUpdated, msg)
 
-        let sortBothHTLCs (htlcTimeoutTxs: HTLCTimeoutTx list) (htlcSuccessTxs: HTLCSuccessTx list) =
-            let timeoutTXsV = (htlcTimeoutTxs |> Seq.cast<IHTLCTx>)
-            let successTXsV = (htlcSuccessTxs |> Seq.cast<IHTLCTx>)
-            Seq.append timeoutTXsV successTXsV
-            |> List.ofSeq
-            |> List.sortBy(fun htlc -> htlc.Value.GetGlobalTransaction().Inputs.[htlc.WhichInput].PrevOut.N)
+            let firstClosingFee(cm: Commitments, localSpk: Script, remoteSpk: Script, feeEst: IFeeEstimator, n) =
+                Transactions.makeClosingTx cm.FundingSCoin localSpk remoteSpk cm.LocalParams.IsFunder Money.Zero Money.Zero cm.LocalCommit.Spec n
+                |>> fun dummyClosingTx ->
+                    let tx = dummyClosingTx.Value.GetGlobalTransaction()
+                    tx.Inputs.[0].WitScript <-
+                        let witness = seq [dummySig.ToBytes(); dummySig.ToBytes(); dummyClosingTx.Value.Inputs.[0].WitnessScript.ToBytes()] |> Array.concat
+                        Script(witness).ToWitScript()
+                    let feeRatePerKw = FeeRatePerKw.Max(feeEst.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority), cm.LocalCommit.Spec.FeeRatePerKw)
+                    let vsize = tx.GetVirtualSize()
+                    feeRatePerKw.ToFee(uint64 vsize)
+
+            let makeFirstClosingTx(keyRepo, commitments, localSpk, remoteSpk, feeEst, localFundingPk, n) = 
+                firstClosingFee(commitments, localSpk, remoteSpk, feeEst ,n)
+                >>= fun closingFee ->
+                    makeClosingTx(keyRepo, commitments, localSpk, remoteSpk, closingFee, localFundingPk, n)
+
+            let nextClosingFee(localClosingFee: Money, remoteClosingFee: Money) =
+                ((localClosingFee.Satoshi + remoteClosingFee.Satoshi) / 4L) * 2L
+                |> Money.Satoshis
+
+            let handleMutualClose (closingTx: FinalizedTx, d: Choice<NegotiatingData, ClosingData>) =
+                let nextData =
+                    match d with
+                    | Choice1Of2 negotiating -> 
+                        ClosingData.Create(negotiating.ChannelId, negotiating.Commitments, None, DateTime.Now, (negotiating.ClosingTxProposed |> List.collect id |> List.map(fun tx -> tx.UnsignedTx)), closingTx::[])
+                    | Choice2Of2 closing -> { closing with MutualClosePublished  = closingTx::closing.MutualClosePublished }
+                [ MutualClosePerformed nextData ]
+                |> Good
+
+            let claimCurrentLocalCommitTxOutputs(keyRepo: IKeysRepository, channelPubKeys: ChannelPubKeys, commitments: Commitments, commitTx: CommitTx) =
+                checkOrClose (commitments.LocalCommit.PublishableTxs.CommitTx.Value.GetTxId()) (=) (commitTx.Value.GetTxId()) "txid mismatch. provided txid (%A) does not match current local commit tx (%A)"
+                >>= fun _ ->
+                    let localPerCommitmentPoint = ChannelUtils.buildCommitmentPoint (channelPubKeys.CommitmentSeed, commitments.LocalCommit.Index)
+                    let localRevocationPubKey = Generators.revocationPubKey
+                    failwith ""
 
     module internal Validation =
-
-        let checkOrClose left predicate right msg =
-            if predicate left right then
-                sprintf msg left right |> RRClose
-            else
-                Good ()
-
-        let checkOrIgnore left predicate right msg =
-            if predicate left right then
-                sprintf msg left right |> RRIgnore
-            else
-                Good ()
 
         let checkMaxAcceptedHTLCsInMeaningfulRange (maxAcceptedHTLCs: uint16) =
             if (maxAcceptedHTLCs < 1us) then
@@ -375,9 +338,9 @@ module Channel =
                 else
                     Good ()
 
-            let checkChannelAnnouncementPreferenceAcceptable (config: UserConfig) (msg) =
+            let checkChannelAnnouncementPreferenceAcceptable (config: ChannelConfig) (msg) =
                 let theirAnnounce = (msg.ChannelFlags &&& 1uy) = 1uy
-                if (config.PeerChannelConfigLimits.ForceAnnouncedChannelPreference) && config.ChannelOptions.AnnouncedChannel <> theirAnnounce then
+                if (config.PeerChannelConfigLimits.ForceAnnounceChannelPreference) && config.ChannelOptions.AnnounceChannel <> theirAnnounce then
                     RRClose("Peer tried to open channel but their announcement preference is different from ours")
                 else
                     Good ()
@@ -549,22 +512,6 @@ module Channel =
             *> UpdateAddHTLCValidator.checkWeHaveSufficientFunds state currentSpec
             >>>= fun e -> RRClose(e.Describe())
 
-        module private UpdateFeeValidator =
-            let private feeRateMismatch (FeeRatePerKw remote, FeeRatePerKw local) =
-                (2.0 * float (remote - local) / float (remote + local))
-                |> abs
-            let checkFeeDiffTooHigh (remoteFeeRatePerKw: FeeRatePerKw) (localFeeRatePerKw: FeeRatePerKw) (maxFeeRateMismatchRatio) =
-                let diff = feeRateMismatch(remoteFeeRatePerKw, localFeeRatePerKw)
-                if (diff > maxFeeRateMismatchRatio) then
-                    sprintf "FeeReate Delta is too big. Local: %A ; remote %A ; So it will be %.2f%% higher. But it must be lower than %.2f%%"
-                            (localFeeRatePerKw) (remoteFeeRatePerKw) (diff * 100.0) (maxFeeRateMismatchRatio * 100.0)
-                    |> RRClose
-                else
-                    Good ()
-
-        let checkUpdateFee (config: UserConfig) (msg: UpdateFee) (localFeeRate: FeeRatePerKw) =
-            let maxMismatch = config.ChannelOptions.MaxFeeRateMismatchRatio
-            UpdateFeeValidator.checkFeeDiffTooHigh (msg.FeeRatePerKw) (localFeeRate) (maxMismatch)
 
     let executeCommand (cs: Channel) (command: ChannelCommand): RResult<ChannelEvent list> =
         match cs.State, command with
@@ -575,13 +522,13 @@ module Channel =
             |>> fun _ ->
                 let localParams = state.InitFundee.LocalParams
                 let channelKeys = cs.KeysRepository.GetChannelKeys(true)
-                let localCommitmentSecret = Helpers.buildLocalCommitmentSecret (channelKeys.CommitmentSeed, 0UL)
+                let localCommitmentSecret = ChannelUtils.buildCommitmentSecret (channelKeys.CommitmentSeed, 0UL)
                 let acceptChannel = { AcceptChannel.TemporaryChannelId = msg.TemporaryChannelId
                                       DustLimitSatoshis = localParams.DustLimitSatoshis
                                       MaxHTLCValueInFlightMsat = localParams.MaxHTLCValueInFlightMSat
                                       ChannelReserveSatoshis = localParams.ChannelReserveSatoshis
                                       HTLCMinimumMSat = localParams.HTLCMinimumMSat
-                                      MinimumDepth = cs.Config.OwnChannelConfig.MinimumDepth
+                                      MinimumDepth = cs.Config.ChannelHandshakeConfig.MinimumDepth
                                       ToSelfDelay = localParams.ToSelfDelay
                                       MaxAcceptedHTLCs = localParams.MaxAcceptedHTLCs
                                       FundingPubKey = channelKeys.FundingKey.PubKey
@@ -612,14 +559,14 @@ module Channel =
                 | true ->
                     let s, signedLocalCommitTx =
                         cs.KeysRepository.GetSignatureFor(localCommitTx.Value, state.LocalParams.ChannelPubKeys.FundingPubKey)
-                    let theirSigPair = (state.RemoteParams.FundingPubKey , TransactionSignature(msg.Signature, SigHash.All))
+                    let theirSigPair = (state.RemoteParams.FundingPubKey , TransactionSignature(msg.Signature.Value, SigHash.All))
                     let sigPairs = seq [theirSigPair]
                     Transactions.checkTxFinalized (signedLocalCommitTx) (localCommitTx.WhichInput) sigPairs
                     >>>= fun e -> RRClose(e.Describe())
                     >>= fun finalizedCommitTx ->
                         let localSigOfRemoteCommit, _ = cs.KeysRepository.GetSignatureFor(remoteCommitTx.Value, state.LocalParams.ChannelPubKeys.FundingPubKey)
                         let channelId = OutPoint(msg.FundingTxId.Value, uint32 msg.FundingOutputIndex.Value).ToChannelId()
-                        let msgToSend: FundingSigned = { ChannelId = channelId; Signature = localSigOfRemoteCommit.Signature }
+                        let msgToSend: FundingSigned = { ChannelId = channelId; Signature = !> localSigOfRemoteCommit.Signature }
                         let commitments = { Commitments.LocalParams = state.LocalParams
                                             RemoteParams = state.RemoteParams
                                             ChannelFlags = state.ChannelFlags
@@ -644,7 +591,8 @@ module Channel =
                         let nextState = { WaitForFundingConfirmedData.Commitments = commitments
                                           Deferred = None
                                           LastSent = msgToSend |> Choice2Of2
-                                          InitialFeeRatePerKw = state.InitialFeeRatePerKw }
+                                          InitialFeeRatePerKw = state.InitialFeeRatePerKw
+                                          ChannelId = channelId }
                         [ WeAcceptedFundingCreated (msgToSend, nextState) ]
                         |> Good
 
@@ -671,7 +619,7 @@ module Channel =
                     let nextMsg = { FundingCreated.TemporaryChannelId = msg.TemporaryChannelId
                                     FundingTxId = fundingTx.Value.GetTxId()
                                     FundingOutputIndex = outIndex
-                                    Signature = localSigOfRemoteCommit.Signature }
+                                    Signature = !> localSigOfRemoteCommit.Signature }
 
                     let data = { Data.WaitForFundingSignedData.ChannelId = msg.TemporaryChannelId
                                  LocalParams = localParams
@@ -691,8 +639,8 @@ module Channel =
             let fundingOutIndex = state.LastSent.FundingOutputIndex
             let finalLocalCommitTxRR =
                 let theirFundingPk = state.RemoteParams.FundingPubKey
-                let localSigPairOfLocalTx = (theirFundingPk, TransactionSignature(state.LastSent.Signature, SigHash.All))
-                let remoteSigPairOfLocalTx = (state.LocalParams.ChannelPubKeys.FundingPubKey, TransactionSignature(msg.Signature, SigHash.All))
+                let localSigPairOfLocalTx = (theirFundingPk, TransactionSignature(state.LastSent.Signature.Value, SigHash.All))
+                let remoteSigPairOfLocalTx = (state.LocalParams.ChannelPubKeys.FundingPubKey, TransactionSignature(msg.Signature.Value, SigHash.All))
                 let sigPairs = seq [ remoteSigPairOfLocalTx; localSigPairOfLocalTx ]
                 Transactions.checkTxFinalized state.LocalCommitTx.Value state.LocalCommitTx.WhichInput sigPairs
             finalLocalCommitTxRR
@@ -728,14 +676,15 @@ module Channel =
                 let nextState = { WaitForFundingConfirmedData.Commitments = commitments
                                   Deferred = None
                                   LastSent = Choice1Of2 state.LastSent
-                                  InitialFeeRatePerKw = state.InitialFeeRatePerKw }
+                                  InitialFeeRatePerKw = state.InitialFeeRatePerKw
+                                  ChannelId = msg.ChannelId}
                 [WeAcceptedFundingSigned (state.FundingTx, nextState)]
         | WaitForFundingConfirmed state, ApplyFundingLocked msg ->
             [ TheySentFundingLockedMsgBeforeUs msg ] |> Good
         | WaitForFundingConfirmed state, ApplyFundingConfirmedOnBC (height, txindex, depth) ->
             cs.Logger (LogLevel.Info) (sprintf "ChannelId %A was confirmed at blockheight %A; depth: %A" state.Commitments.ChannelId height.Value depth)
             let nextPerCommitmentPoint =
-                Helpers.buildLocalCommitmentPoint (state.Commitments.LocalParams.ChannelPubKeys.CommitmentSeed, 1UL)
+                ChannelUtils.buildCommitmentPoint (state.Commitments.LocalParams.ChannelPubKeys.CommitmentSeed, 1UL)
             let msgToSend: FundingLocked = { ChannelId = state.Commitments.ChannelId; NextPerCommitmentPoint = nextPerCommitmentPoint }
 
             // This is temporary channel id that we will use in our channel_update message, the goal is to be able to use our channel
@@ -750,18 +699,19 @@ module Channel =
                               OurMessage = msgToSend
                               TheirMessage = None
                               HaveWeSentFundingLocked = false
-                              InitialFeeRatePerKw = state.InitialFeeRatePerKw }
+                              InitialFeeRatePerKw = state.InitialFeeRatePerKw
+                              ChannelId = state.Commitments.ChannelId }
             [ FundingConfirmed nextState ] |> Good
         | WaitForFundingLocked state, ApplyFundingConfirmedOnBC (height, txindex, depth) ->
             if (state.HaveWeSentFundingLocked) then
-                if (cs.Config.OwnChannelConfig.MinimumDepth <= depth) then
+                if (cs.Config.ChannelHandshakeConfig.MinimumDepth <= depth) then
                     [] |> Good 
                 else
                     let msg = sprintf "once confirmed funding tx has become less confirmed than threashold %A! This is probably caused by reorg. current depth is: %A " height depth
                     cs.Logger (LogLevel.Error) (msg)
                     RRClose(msg)
             else
-                if (cs.Config.OwnChannelConfig.MinimumDepth <= depth) then
+                if (cs.Config.ChannelHandshakeConfig.MinimumDepth <= depth) then
                     let nextPerCommitmentPoint =
                         ChannelUtils.buildCommitmentSecret (state.Commitments.LocalParams.ChannelPubKeys.CommitmentSeed, 1UL)
                         |> fun seed -> Key(seed.ToBytes()).PubKey
@@ -779,7 +729,8 @@ module Channel =
                                   ChannelAnnouncement = None
                                   ChannelUpdate = initialCahnnelUpdate
                                   LocalShutdown = None
-                                  RemoteShutdown = None }
+                                  RemoteShutdown = None
+                                  ChannelId = state.ChannelId }
                 [ BothFundingLocked nextState ] |> Good
             else
                 [ TheySentFundingLockedMsgBeforeUs msg ] |> Good
@@ -821,281 +772,55 @@ module Channel =
                 >>= fun reduced ->
                     Validation.checkTheirUpdateAddHTLCIsAcceptableWithCurrentSpec reduced commitments1 msg
                     *> Good [ WeAcceptedUpdateAddHTLC commitments1 ]
+
         | ChannelState.Normal state, FulfillHTLC cmd ->
-            match state.Commitments.GetHTLCCrossSigned(Direction.In, cmd.Id) with
-            | Some htlc when (state.Commitments.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
-                sprintf "We have already sent a fail/fulfill for this htlc: %A" htlc
-                |> RRApiMisuse
-            | Some htlc when (htlc.PaymentHash = cmd.PaymentPreimage.GetHash()) ->
-                let msgToSend: UpdateFulfillHTLC = { ChannelId = state.Commitments.ChannelId; HTLCId = cmd.Id; PaymentPreimage = cmd.PaymentPreimage }
-                let newCommitments = state.Commitments.AddLocalProposal(msgToSend)
-                [ WeAcceptedCMDFulfillHTLC (msgToSend, newCommitments)] |> Good
-            | Some htlc ->
-                sprintf "Invalid HTLC PreImage %A. Hash (%A) does not match the one expected %A"
-                        cmd.PaymentPreimage
-                        (cmd.PaymentPreimage.GetHash())
-                        (htlc.PaymentHash)
-                |> RRApiMisuse
-            | None ->
-                sprintf "Unknown HTLCId (%A)" cmd.Id
-                |> RRApiMisuse
-        | ChannelState.Normal state, ApplyUpdateFulfillHLTC msg ->
-            match state.Commitments.GetHTLCCrossSigned(Direction.Out, msg.HTLCId) with
-            | Some htlc when htlc.PaymentHash = msg.PaymentPreimage.GetHash() ->
-                let commitments = state.Commitments.AddRemoteProposal(msg)
-                let origin = state.Commitments.OriginChannels |> Map.find(msg.HTLCId)
-                [WeAcceptedFulfillHTLC(msg, origin, htlc, commitments)] |> Good
-            | Some htlc ->
-                sprintf "Invalid HTLC PreImage %A. Hash (%A) does not match the one expected %A"
-                        msg.PaymentPreimage
-                        (msg.PaymentPreimage.GetHash())
-                        (htlc.PaymentHash)
-                |> RRClose
-            | None ->
-                sprintf "Unknown HTLCId (%A)" msg.HTLCId
-                |> RRClose
+            state.Commitments |> Commitments.sendFulfill (cmd)
+            |>> fun t -> [ WeAcceptedCMDFulfillHTLC (t) ]
+            >>>= fun e -> RRApiMisuse (e.Describe())
+
+        | ChannelState.Normal state, ChannelCommand.ApplyUpdateFulfillHTLC msg ->
+            state.Commitments |> Commitments.receiveFulfill msg
+            >>>= fun e -> RRClose(e.Describe())
+
         | ChannelState.Normal state, FailHTLC cmd ->
-            match state.Commitments.GetHTLCCrossSigned(Direction.In, cmd.Id) with
-            | Some htlc when  (state.Commitments.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
-                sprintf "We have already sent a fail/fulfill for this htlc: %A" htlc
-                |> RRApiMisuse
-            | Some htlc ->
-                let localKey = cs.LocalNodeSecret
-                let ad = htlc.PaymentHash.ToBytes()
-                let rawPacket = htlc.OnionRoutingPacket.ToBytes()
-                Sphinx.parsePacket localKey ad rawPacket
-                >>= fun ({ SharedSecret = ss}) ->
-                    let reason =
-                        cmd.Reason
-                        |> function Choice1Of2 b -> Sphinx.forwardErrorPacket(b, ss) | Choice2Of2 f -> Sphinx.ErrorPacket.Create(ss, f)
-                    let f = { UpdateFailHTLC.ChannelId = state.Commitments.ChannelId
-                              HTLCId = cmd.Id
-                              Reason = { Data = reason } }
-                    let nextComitments = state.Commitments.AddLocalProposal(f)
-                    [ WeAcceptedCMDFailHTLC(f, nextComitments) ]
-                    |> Good
-                >>>= fun e -> RRApiMisuse(e.Describe())
-            | None ->
-                sprintf "Unknown HTLCId (%A)" cmd.Id
-                |> RRApiMisuse
+            state.Commitments |> Commitments.sendFail cs.LocalNodeSecret cmd
+            >>>= fun e -> RRApiMisuse(e.Describe())
+
         | ChannelState.Normal state, FailMalformedHTLC cmd ->
-            // BADONION bit must be set in failure code
-            if ((cmd.FailureCode.Value &&& Error.BADONION) = 0us) then
-                sprintf "invalid failure code %A" (cmd.FailureCode.GetOnionErrorDescription())
-                |> RRApiMisuse
-            else
-                match state.Commitments.GetHTLCCrossSigned(Direction.In, cmd.Id) with
-                | Some htlc when (state.Commitments.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
-                    sprintf "We have already sent a fail/fulfill for this htlc: %A" htlc
-                    |> RRApiMisuse
-                | Some htlc ->
-                    let msg = { UpdateFailMalformedHTLC.ChannelId = state.Commitments.ChannelId
-                                HTLCId = cmd.Id
-                                Sha256OfOnion = cmd.Sha256OfOnion
-                                FailureCode = cmd.FailureCode }
-                    let nextCommitments = state.Commitments.AddLocalProposal(msg)
-                    [ WeAcceptedCMDFailMalformedHTLC(msg, nextCommitments) ]
-                    |> Good
-                | None ->
-                    sprintf "Unknown HTLCId (%A)" cmd.Id |> RRClose
+            state.Commitments |> Commitments.sendFailMalformed cmd
+            >>>= fun e -> RRApiMisuse(e.Describe())
+
         | ChannelState.Normal state, ApplyUpdateFailHTLC msg ->
-            match state.Commitments.GetHTLCCrossSigned(Direction.Out, msg.HTLCId) with
-            | Some htlc ->
-                match state.Commitments.OriginChannels.TryGetValue(msg.HTLCId) with
-                | true, origin -> Good origin
-                | false, _ -> sprintf "Invalid HTLCId, Unknown Origin. HTLCId (%A)" msg.HTLCId |> RRClose
-                >>= fun o ->
-                    let nextC = state.Commitments.AddRemoteProposal(msg)
-                    [WeAcceptedFailHTLC(o, htlc, nextC)]
-                    |> Good
-            | None ->
-                sprintf "Unknown HTLCId (%A)" msg.HTLCId |> RRClose
+            state.Commitments |> Commitments.receiveFail msg
+            >>>= fun e -> RRClose(e.Describe())
+
         | ChannelState.Normal state, ApplyUpdateFailMalformedHTLC msg ->
-            if msg.FailureCode.Value &&& Error.BADONION = 0us then
-                sprintf "invalid failure code %A" (msg.FailureCode.GetOnionErrorDescription()) |> RRClose
-            else
-                match state.Commitments.GetHTLCCrossSigned(Direction.Out, msg.HTLCId) with
-                | Some htlc ->
-                    match state.Commitments.OriginChannels.TryGetValue(msg.HTLCId) with
-                    | true, o -> Good o
-                    | false, _ -> sprintf "Invalid HTLCId, Unknown Origin. HTLCId(%A)" msg.HTLCId |> RRClose
-                    >>= fun o ->
-                        let nextC = state.Commitments.AddRemoteProposal(msg)
-                        [WeAcceptedFailMalformedHTLC(o, htlc, nextC)]
-                        |> Good
-                | None ->
-                    sprintf "Unknown HTLCId (%A)" msg.HTLCId |> RRClose
+            state.Commitments |> Commitments.receiveFailMalformed msg
+            >>>= fun e -> RRClose(e.Describe())
+
         | ChannelState.Normal state, UpdateFee cmd ->
-            if (not state.Commitments.LocalParams.IsFunder) then
-                "Local is Fundee so it cannot send update fee" |> RRApiMisuse
-            else
-                let fee = { UpdateFee.ChannelId = state.Commitments.ChannelId
-                            FeeRatePerKw = cmd.FeeRatePerKw }
-                let c1 = state.Commitments.AddLocalProposal(fee)
-                c1.RemoteCommit.Spec.Reduce(c1.RemoteChanges.ACKed, c1.LocalChanges.Proposed)
-                >>= fun reduced ->
-                    // A node cannot spend pending incoming htlcs, and need to keep funds above the reserve required by
-                    // the counterparty, after paying the fee, we look from remote'S point of view, so if local is funder
-                    // remote doesn'T pay the fees.
-                    let fees = Transactions.commitTxFee(c1.RemoteParams.DustLimitSatoshis) reduced
-                    let missing = reduced.ToRemote.ToMoney() - c1.RemoteParams.ChannelReserveSatoshis - fees
-                    if (missing < Money.Zero) then
-                        sprintf "Cannot affored fees. Missing Satoshis are: %A . Reserve Satoshis are %A . Fees are %A" (-1 * missing) (c1.LocalParams.ChannelReserveSatoshis) (fees)
-                        |> RRIgnore
-                    else
-                        [ WeAcceptedCMDUpdateFee(fee, c1) ]
-                        |> Good
+            state.Commitments |> Commitments.sendFee cmd
+            >>>= fun e -> e.Describe() |> RRApiMisuse
         | ChannelState.Normal state, ApplyUpdateFee msg ->
-            if (state.Commitments.LocalParams.IsFunder) then
-                "Remote is Fundee so it cannot send update fee" |> RRClose
-            else
-                let localFeerate = cs.FeeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority)
-                Validation.checkUpdateFee (cs.Config) (msg) (localFeerate)
-                >>= fun _ ->
-                    let c1 = state.Commitments.AddRemoteProposal(msg)
-                    c1.LocalCommit.Spec.Reduce(c1.LocalChanges.ACKed, c1.RemoteChanges.Proposed)
-                    >>= fun reduced ->
-                        let fees = Transactions.commitTxFee(c1.RemoteParams.DustLimitSatoshis) reduced
-                        let missing = reduced.ToRemote.ToMoney() - c1.RemoteParams.ChannelReserveSatoshis - fees
-                        if (missing < Money.Zero) then
-                            sprintf "Cannot affored fees. Missing Satoshis are: %A . Reserve Satoshis are %A . Fees are %A" (-1 * missing) (c1.LocalParams.ChannelReserveSatoshis) (fees)
-                            |> RRClose
-                        else
-                            [ WeAcceptedUpdateFee msg ]
-                            |> Good
+            let localFeerate = cs.FeeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority)
+            state.Commitments |> Commitments.receiveFee cs.Config localFeerate msg
+            >>>= fun e -> e.Describe() |> RRClose
+
         | ChannelState.Normal state, SignCommitment ->
             let cm = state.Commitments
             match cm.RemoteNextCommitInfo with
             | _ when (cm.LocalHasChanges() |> not) ->
                 sprintf "Ignoring SignCommitment Command (nothing to sign)" |> RRIgnore
             | Choice2Of2 _ ->
-                match cm.RemoteNextCommitInfo with
-                | Choice2Of2 remoteNextPerCommitmentPoint ->
-                    // remote commitment will include all local changes + remote acked changes
-                    cm.RemoteCommit.Spec.Reduce(cm.RemoteChanges.ACKed, cm.LocalChanges.Proposed)
-                    >>= fun spec ->
-                        let localKeys = cs.KeysRepository.GetChannelKeys(not cm.LocalParams.IsFunder)
-                        Helpers.makeRemoteTxs (localKeys)
-                                              (cm.RemoteCommit.Index + 1UL)
-                                              (cm.LocalParams)
-                                              (cm.RemoteParams)
-                                              (cm.FundingSCoin)
-                                              (remoteNextPerCommitmentPoint)
-                                              (spec) cs.Network
-                        >>= fun (remoteCommitTx, htlcTimeoutTxs, htlcSuccessTxs) ->
-                            let signature,_ = cs.KeysRepository.GetSignatureFor(remoteCommitTx.Value, cm.LocalParams.ChannelPubKeys.FundingPubKey)
-                            let sortedHTLCTXs = Helpers.sortBothHTLCs htlcTimeoutTxs htlcSuccessTxs
-                            let htlcSigs =
-                                sortedHTLCTXs
-                                |> List.map(
-                                        (fun htlc -> cs.KeysRepository.GenerateKeyFromBasePointAndSign(htlc.Value, cm.LocalParams.ChannelPubKeys.HTLCBasePubKey, remoteNextPerCommitmentPoint))
-                                        >> fst
-                                        >> (fun txSig -> txSig.Signature)
-                                        )
-                            let msg = { CommitmentSigned.ChannelId = cm.ChannelId
-                                        Signature = signature.Signature
-                                        HTLCSignatures = htlcSigs }
-                            let nextCommitments =
-                                let nextRemoteCommitInfo = { WaitingForRevocation.NextRemoteCommit =
-                                                                { cm.RemoteCommit
-                                                                    with
-                                                                        Index = 1UL;
-                                                                        RemotePerCommitmentPoint = remoteNextPerCommitmentPoint
-                                                                        TxId = remoteCommitTx.GetTxId() }
-                                                             Sent = msg
-                                                             SentAfterLocalCommitmentIndex = cm.LocalCommit.Index
-                                                             ReAsignASAP = false }
-
-                                { cm with RemoteNextCommitInfo = Choice1Of2(nextRemoteCommitInfo)
-                                          LocalChanges = { cm.LocalChanges with Proposed = []; Signed = cm.LocalChanges.Proposed }
-                                          RemoteChanges = { cm.RemoteChanges with ACKed = []; Signed = cm.RemoteChanges.ACKed } }
-                            [ WeAcceptedCMDSign (msg, nextCommitments) ] |> Good
-
-                | Choice1Of2 _ ->
-                    "Can not sign before Revocation"
-                    |> RRApiMisuse
+                cm |> Commitments.sendCommit (cs.Secp256k1Context) (cs.KeysRepository) (cs.Network)
+                >>>= fun e -> e.Describe() |> RRApiMisuse
             | Choice1Of2 _ ->
                 sprintf "Already in the process of signing."
                 |> RRIgnore
 
         | ChannelState.Normal state, ApplyCommitmentSigned msg ->
-            let cm = state.Commitments
-            if cm.RemoteHasChanges() |> not then
-                sprintf "Remote has sent commitment_signed but we have no pending changes" |> RRClose
-            else
-                let chanKeys = cm.LocalParams.ChannelPubKeys
-                let nextI = cm.LocalCommit.Index + 1UL
-                cm.LocalCommit.Spec.Reduce(cm.LocalChanges.ACKed, cm.RemoteChanges.Proposed)
-                >>= fun spec ->
-                    let localPerCommitmentPoint = Helpers.buildLocalCommitmentPoint (chanKeys.CommitmentSeed, nextI)
-                    Helpers.makeLocalTXs chanKeys (nextI) (cm.LocalParams) (cm.RemoteParams) (cm.FundingSCoin) (localPerCommitmentPoint) spec cs.Network
-                    >>= fun (localCommitTx, htlcTimeoutTxs, htlcSuccessTxs) ->
-                        let signature, signedCommitTx = cs.KeysRepository.GetSignatureFor (localCommitTx.Value, chanKeys.FundingPubKey)
-
-                        let sigPair =
-                            let localSigPair = seq [(chanKeys.FundingPubKey, signature)]
-                            let remoteSigPair = seq[ (cm.RemoteParams.FundingPubKey, TransactionSignature(msg.Signature, SigHash.All)) ]
-                            Seq.append localSigPair remoteSigPair
-                        Transactions.checkTxFinalized signedCommitTx localCommitTx.WhichInput sigPair
-                        >>= fun finalizedCommitTx ->
-                            let sortedHTLCTXs = Helpers.sortBothHTLCs htlcTimeoutTxs htlcSuccessTxs
-                            Validation.checkOrClose sortedHTLCTXs.Length (<>) msg.HTLCSignatures.Length "Number of signatures went from the remote (%A) does not match the number expected (%A)"
-                            >>= fun _ ->
-                                let localHTLCSigs, sortedHTLCTXs =
-                                    let localHtlcSigsAndHTLCTxs = sortedHTLCTXs |> List.map(fun htlc -> cs.KeysRepository.GenerateKeyFromBasePointAndSign(htlc.Value, cm.LocalParams.ChannelPubKeys.HTLCBasePubKey, localPerCommitmentPoint))
-                                    localHtlcSigsAndHTLCTxs |> List.map(fst), localHtlcSigsAndHTLCTxs |> List.map(snd) |> Seq.cast<IHTLCTx> |> List.ofSeq
-
-                                let remoteHTLCPubKey = Generators.derivePubKey(cm.RemoteParams.HTLCBasePoint) (localPerCommitmentPoint)
-
-                                let checkHTLCSig (htlc: IHTLCTx, remoteECDSASig: Crypto.ECDSASignature): RResult<_> =
-                                    let remoteS = TransactionSignature(remoteECDSASig, SigHash.All)
-                                    match htlc with
-                                    | :? HTLCTimeoutTx ->
-                                        (Transactions.checkTxFinalized (htlc.Value) (0) (seq [(remoteHTLCPubKey, remoteS)]))
-                                        |>> box
-                                    // we cannot check that htlc-success tx are spendable because we need the payment preimage; thus we only check the remote sig
-                                    | :? HTLCSuccessTx ->
-                                        (Transactions.checkSigAndAdd (htlc) (remoteS) (remoteHTLCPubKey))
-                                        |>> box
-                                    | _ -> failwith "Unreachable!"
-
-                                List.zip sortedHTLCTXs msg.HTLCSignatures
-                                |> List.map(checkHTLCSig)
-                                |> List.sequenceRResult
-                                >>= fun txList ->
-                                    let successTxs = txList |> List.choose(fun o -> match o with | :? HTLCSuccessTx as tx -> Some tx | _ -> None)
-                                    let finalizedTxs = txList |> List.choose(fun o -> match o with | :? FinalizedTx as tx -> Some tx | _ -> None)
-                                    let localPerCommitmentSecret =
-                                        Helpers.buildLocalCommitmentSecret(cm.LocalParams.ChannelPubKeys.CommitmentSeed, cm.LocalCommit.Index)
-                                    let localNextPerCommitmentPoint =
-                                        Helpers.buildLocalCommitmentPoint(cm.LocalParams.ChannelPubKeys.CommitmentSeed, cm.LocalCommit.Index + 2UL)
-
-                                    let nextMsg = { RevokeAndACK.ChannelId = cm.ChannelId
-                                                    PerCommitmentSecret = localPerCommitmentSecret.ToBytes() |> uint256 |> PaymentPreimage
-                                                    NextPerCommitmentPoint = localNextPerCommitmentPoint }
-                                    
-                                    let nextCommitments =
-                                        let localCommit1 = { LocalCommit.Index = cm.LocalCommit.Index + 1UL
-                                                             Spec = cm.LocalCommit.Spec
-                                                             PublishableTxs = { PublishableTxs.CommitTx = finalizedCommitTx
-                                                                                HTLCTxs = finalizedTxs }
-                                                             PendingHTLCSuccessTxs = successTxs }
-                                        let ourChanges1 = { cm.LocalChanges with ACKed = []}
-                                        let theirChanges1 = { cm.RemoteChanges with Proposed = []; ACKed = (cm.RemoteChanges.ACKed @ cm.RemoteChanges.Proposed) }
-                                        let completedOutgoingHTLCs =
-                                            let t1 = cm.LocalCommit.Spec.HTLCs
-                                                     |> Map.filter(fun k v -> v.Direction = Out)
-                                                     |> Map.toSeq |> Seq.map (fun (k, v) -> k) |> Set.ofSeq
-                                            let t2 = localCommit1.Spec.HTLCs |> Map.filter(fun k v -> v.Direction = Out)
-                                                     |> Map.toSeq |> Seq.map (fun (k, v) -> k) |> Set.ofSeq
-                                            Set.difference t1 t2
-                                        let originChannels1 = cm.OriginChannels |> Map.filter(fun k v -> Set.contains k completedOutgoingHTLCs)
-                                        { cm with LocalCommit = localCommit1
-                                                  LocalChanges = ourChanges1
-                                                  RemoteChanges = theirChanges1
-                                                  OriginChannels = originChannels1 }
-                                    Good ([ WeAcceptedCommitmentSigned(nextMsg, nextCommitments) ;])
-                            >>>= fun e -> RRClose("Something unexpected happend while handling commitment_signed from remote" + e.Describe())
+            state.Commitments |> Commitments.receiveCommit (cs.Secp256k1Context) cs.KeysRepository msg cs.Network
+            >>>= fun e -> RRClose("Something unexpected happend while handling commitment_signed from remote" + e.Describe())
 
         | ChannelState.Normal state, ApplyRevokeAndACK msg ->
             let cm = state.Commitments
@@ -1103,23 +828,205 @@ module Channel =
             | Choice1Of2 _ when (msg.PerCommitmentSecret.ToPubKey() <> cm.RemoteCommit.RemotePerCommitmentPoint) ->
                 sprintf "Invalid revoke_and_ack %A; must be %A" msg.PerCommitmentSecret cm.RemoteCommit.RemotePerCommitmentPoint
                 |> RRClose
+            | Choice2Of2 _ ->
+                sprintf "Unexpected revocation"
+                |> RRClose
             | Choice1Of2 ({ NextRemoteCommit = theirNextCommit }) ->
                 let commitments1 = { cm  with LocalChanges = { cm.LocalChanges with Signed = []; ACKed = cm.LocalChanges.ACKed @ cm.LocalChanges.Signed }
                                               RemoteChanges = { cm.RemoteChanges with Signed = [] }
                                               RemoteCommit = theirNextCommit
                                               RemoteNextCommitInfo = Choice2Of2(msg.NextPerCommitmentPoint)
                                               RemotePerCommitmentSecrets = cm.RemotePerCommitmentSecrets.AddHash(msg.PerCommitmentSecret.ToBytes(), 0xffffffffffffUL - cm.RemoteCommit.Index )}
-                [ WeAcceptedRevokeAndACK (commitments1) ] |> Good
-            | Choice2Of2 _ ->
-                sprintf "Unexpected revocation"
+                let result = [ WeAcceptedRevokeAndACK (commitments1) ]
+                result |> Good
+                failwith "needs update"
+
+
+        | ChannelState.Normal state, ChannelCommand.Close cmd ->
+            let localSPK = cmd.ScriptPubKey |> Option.defaultValue (state.Commitments.LocalParams.DefaultFinalScriptPubKey)
+            if (not <| Scripts.isValidFinalScriptPubKey(localSPK)) then
+                sprintf "Invalid local final ScriptPubKey %O" (localSPK)
+                |> RRIgnore
+            else if (state.LocalShutdown.IsSome) then
+                RRIgnore "shutdown is already in progress"
+            else if (state.Commitments.LocalHasUnsignedOutgoingHTLCs()) then
+                RRIgnore "Cannot close with unsigned outgoing htlcs"
+            else
+                let shutDown = { Shutdown.ChannelId = state.ChannelId
+                                 ScriptPubKey = localSPK }
+                [ AcceptedShutdownCMD shutDown ]
+                |> Good
+        | ChannelState.Normal state, RemoteShutdown msg ->
+            let cm = state.Commitments
+            // They have pending unsigned htlcs => they violated the spec, close the channel
+            // they don't have pending unsigned htlcs
+            //      We have pending unsigned htlcs
+            //          We already sent a shutdown msg => spec violation (we can't send htlcs after having sent shutdown)
+            //          We did not send a shutdown msg
+            //              We are ready to sign => we stop sending further htlcs, we initiate a signature
+            //              We are waiting for a rev => we stop sending further htlcs, we wait for their revocation, will resign immediately after, and then we will send our shutdown msg
+            //      We have no pending unsigned htlcs
+            //          we already sent a shutwodn msg
+            //              There are pensing signed htlcs => send our shutdown msg, go to SHUTDOWN state
+            //              there are no htlcs => send our shutdown msg, goto NEGOTIATING state
+            //          We did not send a shutdown msg
+            //              There are pending signed htlcs => go to SHUTDOWN state
+            //              there are no HTLCs => go to NEGOTIATING state
+            if (not <| Scripts.isValidFinalScriptPubKey(msg.ScriptPubKey)) then
+                sprintf "Invalid remote final ScriptPubKey %O" (msg.ScriptPubKey.ToString())
                 |> RRClose
+            else if (cm.RemoteHasUnsignedOutgoingHTLCs()) then
+                sprintf "They sent shutdown msg (%A) while they have pending unsigned HTLCs, this is protocol violation" msg
+                |> RRClose
+            // Do we have Unsigned Outgoing HTLCs?
+            else if (cm.LocalHasUnsignedOutgoingHTLCs()) then
+                if (state.LocalShutdown.IsSome) then
+                    "can't have pending unsigned outgoing htlcs after having sent Shutdown" |> RRClose
+                else
+                    // Are we in the middle of a signature?
+                    match cm.RemoteNextCommitInfo with
+                    // yes.
+                    | Choice1Of2 waitingForRevocation ->
+                        let nextCommitments = { state.Commitments with
+                                                    RemoteNextCommitInfo = Choice1Of2({ waitingForRevocation with ReSignASAP = true }) }
+                        [ AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs(msg, nextCommitments) ]
+                        |> Good
+                    // No. let's sign right away.
+                    | Choice2Of2 _ ->
+                        [ ChannelStateRequestedSignCommitment; AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs(msg, cm) ] |> Good
+            else
+                let (localShutdown, sendList) = match state.LocalShutdown with
+                                                | Some localShutdown -> (localShutdown, [])
+                                                | None ->
+                                                    let localShutdown = { Shutdown.ChannelId = state.ChannelId
+                                                                          ScriptPubKey = cm.LocalParams.DefaultFinalScriptPubKey }
+                                                    (localShutdown, [localShutdown])
+                if (cm.HasNoPendingHTLCs()) then
+                    // we have to send first closing_signed msg iif we are the funder
+                    if (cm.LocalParams.IsFunder) then
+                        Helpers.Closing.makeFirstClosingTx(cs.KeysRepository, cm, localShutdown.ScriptPubKey, msg.ScriptPubKey, cs.FeeEstimator, cm.LocalParams.ChannelPubKeys.FundingPubKey, cs.Network)
+                        |>> fun (closingTx, closingSignedMsg) ->
+                            let nextState = { NegotiatingData.ChannelId = cm.ChannelId
+                                              Commitments = cm
+                                              LocalShutdown = localShutdown
+                                              RemoteShutdown = msg
+                                              ClosingTxProposed = [[{ ClosingTxProposed.UnsignedTx = closingTx; LocalClosingSigned = closingSignedMsg }]]
+                                              MaybeBestUnpublishedTx = None }
+                            [ AcceptedShutdownWhenNoPendingHTLCs(closingSignedMsg |> Some, nextState) ]
+                    else
+                        let nextState = { NegotiatingData.ChannelId = cm.ChannelId
+                                          Commitments = cm
+                                          LocalShutdown = localShutdown
+                                          RemoteShutdown = msg
+                                          ClosingTxProposed = [[]]
+                                          MaybeBestUnpublishedTx = None }
+                        [ AcceptedShutdownWhenNoPendingHTLCs(None, nextState) ] |> Good
+                else
+                    let nextState = { ShutdownData.Commitments = cm
+                                      LocalShutdown = localShutdown
+                                      RemoteShutdown = msg
+                                      ChannelId = cm.ChannelId }
+                    [ AcceptedShutdownWhenWeHavePendingHTLCs(nextState) ]
+                    |> Good
 
+        // ----------- closing ---------
+        | Shutdown state, FulfillHTLC cmd ->
+            state.Commitments |> Commitments.sendFulfill cmd
+            |>> fun t -> [ WeAcceptedCMDFulfillHTLC (t) ]
+            >>>= fun e -> e.Describe() |> RRApiMisuse
+        | Shutdown state, ApplyUpdateFulfillHTLC msg ->
+            state.Commitments |> Commitments.receiveFulfill msg
+            >>>= fun e -> e.Describe() |> RRClose
+        | Shutdown state, FailHTLC cmd ->
+            state.Commitments |> Commitments.sendFail (cs.LocalNodeSecret) cmd
+            >>>= fun e -> e.Describe() |> RRApiMisuse
+        | Shutdown state, FailMalformedHTLC cmd ->
+            state.Commitments |> Commitments.sendFailMalformed cmd
+            >>>= fun e -> e.Describe() |> RRApiMisuse
+        | Shutdown state, ApplyUpdateFailMalformedHTLC msg ->
+            state.Commitments |> Commitments.receiveFailMalformed msg
+            >>>= fun e -> e.Describe() |> RRClose
+        | Shutdown state, UpdateFee cmd ->
+            state.Commitments |> Commitments.sendFee cmd
+            >>>= fun e -> e.Describe() |> RRApiMisuse
+        | Shutdown state, ApplyUpdateFee  msg ->
+            let localFeerate = cs.FeeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority)
+            state.Commitments |> Commitments.receiveFee cs.Config localFeerate msg
+            >>>= fun e -> e.Describe() |> RRClose
+        | Shutdown state, SignCommitment ->
+            let cm = state.Commitments
+            match cm.RemoteNextCommitInfo with
+            | _ when (not <| cm.LocalHasChanges()) ->
+                sprintf "nothing to sign" |> RRIgnore
+            | Choice2Of2 _ ->
+                cm |> Commitments.sendCommit (cs.Secp256k1Context) (cs.KeysRepository) (cs.Network)
+                >>>= fun e -> e.Describe() |> RRClose
+            | Choice1Of2 waitForRevocation ->
+                sprintf "Already in the process of signing."
+                |> RRIgnore
+        | Shutdown state, ApplyCommitmentSigned msg ->
+            state.Commitments |> Commitments.receiveCommit (cs.Secp256k1Context) (cs.KeysRepository) msg cs.Network
+            >>>= fun e -> e.Describe() |> RRClose
+        | Shutdown state, ApplyRevokeAndACK msg ->
+            failwith "not implemented"
 
-
-
-
-
-
+        | Negotiating state, ApplyClosingSigned msg ->
+            let cm = state.Commitments
+            let lastCommitFeeSatoshi =
+                cm.FundingSCoin.TxOut.Value - (cm.LocalCommit.PublishableTxs.CommitTx.Value.TotalOut)
+            checkOrClose msg.FeeSatoshis (>) lastCommitFeeSatoshi "remote proposed a commit fee higher than the last commitment fee. remoteClosingFee=%A; localCommitTxFee=%A;" 
+            >>= fun _ ->
+                Helpers.Closing.makeClosingTx(cs.KeysRepository, cm, state.LocalShutdown.ScriptPubKey, state.RemoteShutdown.ScriptPubKey, msg.FeeSatoshis, cm.LocalParams.ChannelPubKeys.FundingPubKey, cs.Network)
+                >>= fun (closingTx, closingSignedMsg) ->
+                    Transactions.checkTxFinalized closingTx.Value (closingTx.WhichInput) (seq [cm.RemoteParams.FundingPubKey, TransactionSignature(msg.Signature.Value, SigHash.All)])
+                    >>= fun finalizedTx ->
+                        let maybeLocalFee =
+                            state.ClosingTxProposed
+                            |> List.tryHead
+                            |> Option.bind (List.tryHead)
+                            |> Option.map(fun v -> v.LocalClosingSigned.FeeSatoshis)
+                        let areWeInDeal = Some (msg.FeeSatoshis) = maybeLocalFee
+                        let hasTooManyNegotiationDone =
+                            (state.ClosingTxProposed |> List.collect(id) |> List.length) >= MAX_NEGOTIATION_ITERATIONS
+                        if (areWeInDeal || hasTooManyNegotiationDone) then
+                            Helpers.Closing.handleMutualClose(finalizedTx, Choice1Of2({ state with MaybeBestUnpublishedTx = Some(finalizedTx) }))
+                        else
+                            let lastLocalClosingFee = state.ClosingTxProposed |> List.tryHead |> Option.bind(List.tryHead) |> Option.map(fun txp -> txp.LocalClosingSigned.FeeSatoshis)
+                            let nextClosingFeeRR =
+                                match lastLocalClosingFee with Some v -> Good v | None -> (Helpers.Closing.firstClosingFee(state.Commitments, state.LocalShutdown.ScriptPubKey, state.RemoteShutdown.ScriptPubKey, cs.FeeEstimator, cs.Network))
+                                |>> fun localF ->
+                                    Helpers.Closing.nextClosingFee(localF, msg.FeeSatoshis)
+                            nextClosingFeeRR
+                            >>= fun nextClosingFee ->
+                                if (Some nextClosingFee = lastLocalClosingFee) then
+                                    Helpers.Closing.handleMutualClose(finalizedTx, Choice1Of2({ state with MaybeBestUnpublishedTx = Some(finalizedTx) }))
+                                else if (nextClosingFee = msg.FeeSatoshis) then
+                                    // we have reached on agreement!
+                                    let closingTxProposed1 =
+                                        let newProposed = [{ ClosingTxProposed.UnsignedTx = closingTx
+                                                             LocalClosingSigned = closingSignedMsg }]
+                                        newProposed::state.ClosingTxProposed
+                                    let negoData = { state with ClosingTxProposed = closingTxProposed1
+                                                                MaybeBestUnpublishedTx = Some(finalizedTx) }
+                                    Helpers.Closing.handleMutualClose (finalizedTx, Choice1Of2(negoData))
+                                else
+                                    let closingTxProposed1 =
+                                        let newProposed = [{ ClosingTxProposed.UnsignedTx = closingTx
+                                                             LocalClosingSigned = closingSignedMsg }]
+                                        newProposed::state.ClosingTxProposed
+                                    let nextState = { state with ClosingTxProposed = closingTxProposed1; MaybeBestUnpublishedTx = Some (finalizedTx) }
+                                    [ WeProposedNewClosingSigned(closingSignedMsg, nextState) ]
+                                    |> Good
+            >>>= fun e -> e.Describe() |> RRClose
+        | Closing state, FulfillHTLC cmd ->
+            cs.Logger(LogLevel.Info) (sprintf "got valid payment preimage, recalculating txs to redeem the corresponding htlc on-chain")
+            let cm = state.Commitments
+            cm |> Commitments.sendFulfill cmd
+            >>= fun (msgToSend, newCommitments) ->
+                let localCommitPublished  =
+                    state.LocalCommitPublished
+                    |> Option.map (fun localCommitPublished -> Helpers.Closing.claimCurrentLocalCommitTxOutputs (cs.KeysRepository, newCommitments.LocalParams.ChannelPubKeys, newCommitments, localCommitPublished.CommitTx))
+                failwith ""
 
     let applyEvent c (e: ChannelEvent): Channel =
         match e, c.State with
@@ -1160,7 +1067,8 @@ module Channel =
                               ChannelAnnouncement = None
                               ChannelUpdate = channelUpdate
                               LocalShutdown = None
-                              RemoteShutdown = None }
+                              RemoteShutdown = None
+                              ChannelId = msg.ChannelId }
             { c with State = ChannelState.Normal nextState }
         | WeSentFundingLockedMsgBeforeThem msg, WaitForFundingLocked prevState ->
             { c with State = WaitForFundingLocked { prevState with OurMessage = msg; HaveWeSentFundingLocked = true } }
@@ -1180,7 +1088,39 @@ module Channel =
 
         | WeAcceptedCMDFailHTLC (msg, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
+        | WeAcceptedFailHTLC (origin, msg, newCommitments), ChannelState.Normal d ->
+            { c with State = ChannelState.Normal({ d with Commitments = newCommitments })}
+        
+        | WeAcceptedCMDFailMalformedHTLC(msg, newCommitments), ChannelState.Normal d ->
+            { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
+        | WeAcceptedFailMalformedHTLC(origin, msg, newCommitments), ChannelState.Normal d ->
+            { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
 
+        | WeAcceptedCMDUpdateFee(msg, newCommitments), ChannelState.Normal d ->
+            { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
+        | WeAcceptedUpdateFee(msg), ChannelState.Normal d -> c
+
+        | WeAcceptedCMDSign(msg, newCommitments), ChannelState.Normal d ->
+            { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
+        | WeAcceptedCommitmentSigned(msg, newCommitments), ChannelState.Normal d ->
+            { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
+
+        | WeAcceptedRevokeAndACK(newCommitments), ChannelState.Normal d ->
+            { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
+
+        // -----  closing ------
+        | AcceptedShutdownCMD msg, ChannelState.Normal d ->
+            { c with State = ChannelState.Normal({ d with LocalShutdown = Some msg }) }
+        | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs(remoteShutdown, nextCommitments), ChannelState.Normal d ->
+            { c with State = ChannelState.Normal({ d with RemoteShutdown = Some remoteShutdown; Commitments = nextCommitments })}
+        | AcceptedShutdownWhenNoPendingHTLCs (maybeMsg, nextState), ChannelState.Normal d ->
+            { c with State = Negotiating nextState }
+        | AcceptedShutdownWhenWeHavePendingHTLCs(nextState), ChannelState.Normal d ->
+            { c with State = Shutdown nextState }
+        | MutualClosePerformed nextState, ChannelState.Negotiating d ->
+            { c with State = Closing nextState }
+        | WeProposedNewClosingSigned (msg, nextState), ChannelState.Negotiating d ->
+            { c with State = Negotiating (nextState) }
         // ----- else -----
         | NewBlockVerified height, _ ->
             { c with CurrentBlockHeight = height }

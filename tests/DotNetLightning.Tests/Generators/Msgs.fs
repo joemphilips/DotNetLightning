@@ -106,7 +106,7 @@ let acceptChannelGen =
         <*> lnMoneyGen
         <*> moneyGen
         <*> lnMoneyGen
-        <*> Arb.generate<uint32>
+        <*> (Arb.generate<uint32> |> Gen.map(BlockHeight))
         <*> (BlockHeightOffset <!> Arb.generate<uint16>)
         <*> Arb.generate<uint16>
         <*> pubKeyGen
@@ -188,7 +188,7 @@ let updateAddHTLCGen = gen {
 let updateFulfillHTLCGen = gen {
     let! c = ChannelId <!> uint256Gen
     let! htlc = HTLCId <!> Arb.generate<uint64>
-    let! paymentPreimage = PaymentPreimage <!> uint256Gen
+    let! paymentPreimage = PaymentPreimage <!> bytesOfNGen(32)
     return { ChannelId = c; HTLCId = htlc; PaymentPreimage = paymentPreimage }
 }
 
@@ -220,7 +220,8 @@ let updateFailMalformedHTLCGen = gen {
 let commitmentSignedGen = gen {
     let! c = ChannelId <!> uint256Gen
     let! s = signatureGen
-    let! ss = Gen.listOf signatureGen
+    let! n = Arb.generate<uint16>
+    let! ss = Gen.listOfLength (int n) signatureGen
     return {
         ChannelId = c
         Signature = s
@@ -230,7 +231,7 @@ let commitmentSignedGen = gen {
 
 let revokeAndACKGen = gen {
     let! c = ChannelId <!> uint256Gen
-    let! paymentPreimage = PaymentPreimage <!> uint256Gen
+    let! paymentPreimage = PaymentPreimage <!> bytesOfNGen(32)
     let! pk = pubKeyGen 
     return {
         ChannelId = c
@@ -248,7 +249,7 @@ let updateFeeGen = gen {
 }
 
 let private dataLossProtectGen = gen {
-    let! paymentPreimage = PaymentPreimage <!> uint256Gen
+    let! paymentPreimage = PaymentPreimage <!> bytesOfNGen(32)
     let! pk = pubKeyGen
     return {
         YourLastPerCommitmentSecret = paymentPreimage
@@ -284,7 +285,7 @@ let announcementSignaturesGen = gen {
 }
 
 let private netAddressGen: Gen<NetAddress> =
-    failwith ""
+    Arb.generate<NetAddress>
 
 let private unsignedNodeAnnouncementGen = gen {
     let! f = globalFeaturesGen
@@ -296,7 +297,7 @@ let private unsignedNodeAnnouncementGen = gen {
                 <*> Arb.generate<uint8>
 
     let! a = uint256Gen
-    let! addrs = Gen.listOf(netAddressGen)
+    let! addrs = Gen.arrayOf(netAddressGen)
     let! eAddrs = bytesGen
     let! ed = bytesGen
 

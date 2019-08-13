@@ -1,7 +1,7 @@
 namespace DotNetLightning.Utils
 
 type LogLevel =
-    | Off
+    | Critical
     | Error
     | Warn
     | Info

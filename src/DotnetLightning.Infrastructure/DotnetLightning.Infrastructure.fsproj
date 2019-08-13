@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DotNetLightning\DotNetLightning.fsproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Ply.fs" />
+    <Compile Include="ComputationBuilders.fs" />
+    <Compile Include="Constants.fs" />
+    <Compile Include="Logger.fs" />
+    <Compile Include="Codec.fs" />
+    <Compile Include="DTOs.fs" />
+    <Compile Include="Storage.fs" />
+    <Compile Include="ChainWatcher.fs" />
+    <Compile Include="KeyRepositories.fs" />
+    <Compile Include="Socks5.fs" />
+    <Compile Include="NodeParams.fs" />
+    <Compile Include="PeerManager.fs" />
+    <Compile Include="ChannelService.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="2.2.0" />
+    <PackageReference Include="NBitcoin" Version="4.1.2.33-joemphilips014" />
+  </ItemGroup>
+</Project>

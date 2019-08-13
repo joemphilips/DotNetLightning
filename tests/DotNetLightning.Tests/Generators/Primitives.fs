@@ -4,8 +4,6 @@ open NBitcoin
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils
 open System
-open NBitcoin
-open NBitcoin.Crypto
 
 let byteGen = byte <!> Gen.choose(0, 127)
 let bytesGen = Gen.listOf(byteGen) |> Gen.map(List.toArray)
@@ -19,10 +17,10 @@ let lnMoneyGen = Arb.generate<uint64> |> Gen.map(LNMoney.MilliSatoshis)
 
 let keyGen = Gen.fresh (fun () -> Key())
 let pubKeyGen = keyGen |> Gen.map(fun k -> k.PubKey)
-let signatureGen: Gen<ECDSASignature> = gen {
+let signatureGen: Gen<LNECDSASignature> = gen {
     let! h = uint256Gen
     let! k = keyGen
-    return k.Sign(h, false)
+    return k.Sign(h, false) |> LNECDSASignature
 }
 
 // scripts

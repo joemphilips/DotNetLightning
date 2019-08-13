@@ -1,6 +1,7 @@
 namespace DotNetLightning.Utils
 open System
 open System.Threading.Tasks
+open System.Runtime.CompilerServices
 
 [<AutoOpen>]
 module Utils =
@@ -33,9 +34,18 @@ module Utils =
     let inline curry10 f a b c d e g h i j k = f (a, b, c, d, e, g, h, i, j, k)
     let inline uncurry10 f t = let (a, b, c, d, e, g, h, i, j, k) = t in  f a b c d e g h i j k
 
+    let inline curry11 f a b c d e g h i j k l = f (a, b, c, d, e, g, h, i, j, k, l)
+    let inline uncurry11 f t = let (a, b, c, d, e, g, h, i, j, k, l) = t in  f a b c d e g h i j k l
+
 
     let inline max a b = if b > a then b else a
     let inline min a b = if a > b then b else a
+
+[<Extension>]
+type Extensions()=
+    [<Extension>]
+    static member ToHexString(this: byte[]) =
+        "0x" + BitConverter.ToString(this).Replace("-", "").ToLowerInvariant()
 
 module Async =
     let result = async.Return

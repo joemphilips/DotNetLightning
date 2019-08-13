@@ -1,8 +1,8 @@
 namespace DotNetLightning.Chain
-open Microsoft.Extensions.Logging
 open NBitcoin
 open NBitcoin.Crypto
 open DotNetLightning.Utils.Primitives
+open DotNetLightning.Utils
 open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Crypto
 
@@ -100,7 +100,7 @@ type IKeysRepository =
 
 
 /// `KeyManager` in rust-lightning
-type DefaultKeyRepository(seed: uint256, network: Network, logger: ILogger) =
+type DefaultKeyRepository(seed: uint256, network: Network, logger: Logger) =
     let masterKey = ExtKey(seed.ToBytes())
     let destinationKey = masterKey.Derive(1, true)
     member this.NodeSecret = masterKey.Derive(0, true)
@@ -147,8 +147,9 @@ type DefaultKeyRepository(seed: uint256, network: Network, logger: ILogger) =
             (psbt.GetMatchingSig(priv.PubKey), psbt)
 
         member this.GenerateKeyFromBasePointAndSign(psbt, pubkey, basePoint) =
+            use ctx = new Secp256k1Net.Secp256k1()
             let basepointSecret: Key = this.BasepointToSecretMap |> Map.find pubkey
-            let priv2 = Generators.derivePrivKey basePoint (basepointSecret.ToBytes())
+            let priv2 = Generators.derivePrivKey ctx (basepointSecret)  basePoint 
             psbt.SignWithKeys(priv2) |> ignore
             (psbt.GetMatchingSig(priv2.PubKey), psbt)
 

@@ -18,9 +18,21 @@
     <Compile Include="SerializationPropertyTests.fs" />
     <Compile Include="FunctionalTests.fs" />
     <Compile Include="SphinxTests.fs" />
+    <Compile Include="GeneratorsTests.fs" />
     <Compile Include="TransactionTests.fs" />
     <Compile Include="PeerChannelEncryptorTests.fs" />
-    <Compile Include="ChannelTests.fs" />
+    <Compile Include="Channel/ChannelTestUtils.fs" />
+    <Compile Include="Channel/WaitForAcceptChannelStateTests.fs" />
+    <Compile Include="Channel/WaitForOpenChannelStateTests.fs" />
+    <Compile Include="Channel/WaitForFundingCreatedStateTests.fs" />
+    <Compile Include="Channel/WaitForFundingSignedStateTests.fs" />
+    <Compile Include="Channel/WaitForFundingConfirmedStateTests.fs" />
+    <Compile Include="Channel/WaitForFundingLockedStateTests.fs" />
+    <Compile Include="Channel/NormalStateTests.fs" />
+    <Compile Include="Channel/OfflineStateTests.fs" />
+    <Compile Include="Channel/ShutdownStateTests.fs" />
+    <Compile Include="Channel/NegotiatingStateTests.fs" />
+    <Compile Include="Channel/ClosingStateTests.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
   <ItemGroup>
