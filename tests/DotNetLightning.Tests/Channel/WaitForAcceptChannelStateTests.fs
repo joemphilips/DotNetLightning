@@ -16,7 +16,5 @@ let tests =
     testList "" [
         testCase "" <| fun _ ->
             let aliceChannel = ChannelTestUtils.Constants.alice
-            let aliceInit = { Init.GlobalFeatures = aliceChannel
-                              LocalFeatures = failwith "Not Implemented" }
             ()
     ]

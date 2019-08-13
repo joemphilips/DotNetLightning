@@ -106,7 +106,7 @@ module internal Sphinx =
             sprintf "onion packet length is %d. but it must be %d" rawPacket.Length PACKET_LENGTH
             |> RResult.rmsg
         else
-            let packet = OnionPacket.Init().FromBytes(rawPacket)
+            let packet = ILightningSerializable.fromBytes<OnionPacket>(rawPacket)
             if not (PubKey.Check(packet.PublicKey, true)) then
                 RResult.rmsg "Invalid Public Key from the node"
             else
@@ -227,7 +227,7 @@ module internal Sphinx =
                 |> RResult.rmsg
             else
                 let msg = payload.[2..2 + len - 1]
-                FailureMsg.Init().FromBytes(msg) |> Good
+                ILightningSerializable.fromBytes<FailureMsg>(msg) |> Good
     type ErrorPacket = {
         OriginNode: NodeId
         FailureMsg: FailureMsg

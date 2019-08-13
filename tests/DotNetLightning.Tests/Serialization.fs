@@ -21,7 +21,7 @@ module SerializationTest =
     let ascii = System.Text.ASCIIEncoding.ASCII
     let signMessageWith (privKey: Key) (msgHash: string) =
         let msgBytes = msgHash |> ascii.GetBytes
-        privKey.SignCompact(msgBytes |> uint256, false) |> fun d -> ECDSASignature.FromBytesCompact(d, true)
+        privKey.SignCompact(msgBytes |> uint256, false) |> fun d -> LNECDSASignature.FromBytesCompact(d, true)
     let privKey1 = Key(hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101"))
     let privKey2 = Key(hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202"))
     let privKey3 = Key(hex.DecodeData("0303030303030303030303030303030303030303030303030303030303030303"))
@@ -80,7 +80,8 @@ module SerializationTest =
                 }
                 let expected = hex.DecodeData("040000000000000005000000000000000600000000000000070000000000000000083a840000034dd977cb9b53d93a6ff64bb5f1e158b4094b66e798fb12911168a3ccdf80a83096340a6a95da0ae8d9f776528eecdbb747eb6b545495a4319ed5378e35b21e073acf9953cef4700860f5967838eba2bae89288ad188ebf8b20bf995c3ea53a26df1876d0a3a0e13172ba286a673140190c02ba9da60a2e43a745188c8a83c7f3ef")
                 Expect.equal (actual.ToBytes().Length) expected.Length ""
-                Expect.equal (actual.ToBytes()) expected ""
+                Expect.equal (actual.ToBytes()) (expected) ""
+                CheckArrayEqual (actual.ToBytes()) expected
 
             testCase "channel_announcement" <| fun _ ->
                 let channelAnnouncementTestCore (unknownFeatureBits: bool, nonbitcoinChainHash: bool, excessData: bool) = 
@@ -140,27 +141,28 @@ module SerializationTest =
                         features <- Flags [| 0xFFuy; 0xFFuy |]
                     let mutable addresses = List.Empty
                     if ipv4 then
-                        addresses <- addresses @ [NetAddress.IPv4 (IPEndPoint(IPAddress([|255uy;
-                                                                                          254uy;
-                                                                                          253uy;
-                                                                                          252uy|]), 9735))]
+                        addresses <- addresses @ [NetAddress.IPv4 ({ IPv4Or6Data.Addr = [|255uy;254uy; 253uy; 252uy; |]
+                                                                     Port = 9735us })
+                                                                     ] 
                     if ipv6 then
-                        addresses <- addresses @ [NetAddress.IPv6 (IPEndPoint(IPAddress([|255uy;
-                                                                                          254uy;
-                                                                                          253uy;
-                                                                                          252uy;
-                                                                                          251uy;
-                                                                                          250uy;
-                                                                                          249uy;
-                                                                                          248uy;
-                                                                                          247uy;
-                                                                                          246uy;
-                                                                                          245uy;
-                                                                                          244uy;
-                                                                                          243uy;
-                                                                                          242uy;
-                                                                                          241uy;
-                                                                                          240uy|]), 9735))]
+                        addresses <- addresses @
+                            [NetAddress.IPv6 ({ IPv4Or6Data.Addr = [|255uy;
+                                                                     254uy;
+                                                                     253uy;
+                                                                     252uy;
+                                                                     251uy;
+                                                                     250uy;
+                                                                     249uy;
+                                                                     248uy;
+                                                                     247uy;
+                                                                     246uy;
+                                                                     245uy;
+                                                                     244uy;
+                                                                     243uy;
+                                                                     242uy;
+                                                                     241uy;
+                                                                     240uy; |]
+                                                Port = 9735us })]
                     if onionv2 then
                         addresses <- addresses @ [NetAddress.OnionV2({
                             Addr =[| 255uy
@@ -222,7 +224,7 @@ module SerializationTest =
                         NodeId = NodeId(pubkey1)
                         RGB = {Blue = 32uy; Red = 32uy; Green = 32uy}
                         Alias = uint256([| for _ in 0..31 -> 16uy|])
-                        Addresses = addresses
+                        Addresses = addresses |> Array.ofList
                         ExcessAddressData = if excessAddressData then [|33uy
                                                                         108uy
                                                                         40uy
@@ -485,7 +487,7 @@ module SerializationTest =
                         MaxHTLCValueInFlightMsat = LNMoney.MilliSatoshis(2536655962884945560L)
                         ChannelReserveSatoshis = Money.Satoshis(3608586615801332854L)
                         HTLCMinimumMSat = LNMoney.MilliSatoshis(2316138423780173L)
-                        MinimumDepth = 821716u
+                        MinimumDepth = 821716u |> BlockHeight
                         ToSelfDelay = BlockHeightOffset(49340us)
                         MaxAcceptedHTLCs = 49340us
                         FundingPubKey = pubkey1
@@ -515,7 +517,7 @@ module SerializationTest =
                 }
                 let actual = fundingCreated.ToBytes()
                 let expected = hex.DecodeData("02020202020202020202020202020202020202020202020202020202020202026e96fe9f8b0ddcd729ba03cfafa5a27b050b39d354dd980814268dfa9a44d4c200ffd977cb9b53d93a6ff64bb5f1e158b4094b66e798fb12911168a3ccdf80a83096340a6a95da0ae8d9f776528eecdbb747eb6b545495a4319ed5378e35b21e073a")
-                Expect.equal (fundingCreated.ToBytes()) expected ""
+                // Expect.equal (actual) expected ""
                 CheckArrayEqual actual expected
             testCase "funding_signed" <| fun _ ->
                 let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
@@ -652,7 +654,7 @@ module SerializationTest =
                     let globalFeatures = GlobalFeatures.Flags(flags)
                     let mutable localFeatures = LocalFeatures.Flags([||])
                     if initialRoutingSync then
-                        localFeatures <- localFeatures |> LocalFeatures.setInitialRoutingSync
+                        localFeatures <- localFeatures.SetInitialRoutingSync()
 
                     let init = {
                         GlobalFeatures = globalFeatures

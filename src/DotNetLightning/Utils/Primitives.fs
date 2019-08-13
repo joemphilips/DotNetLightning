@@ -1,5 +1,6 @@
 namespace DotNetLightning.Utils
 open NBitcoin
+open NBitcoin.Crypto
 open System
 open System
 
@@ -48,6 +49,67 @@ module Primitives =
             a.Value + b.Value |> BlockHeightOffset
         static member (-) (a: BlockHeightOffset, b: BlockHeightOffset) =
             a.Value - b.Value |> BlockHeightOffset
+
+    /// Wrapper around NBitcoin's ECDSASignature type for convenience. It has following difference
+    /// 1. It is equatable
+    /// 2. Some Convenience methods for serialization
+    /// 3. ToString
+    [<CustomEquality;NoComparison;StructuredFormatDisplay("{AsString}")>]
+    type LNECDSASignature = LNECDSASignature of ECDSASignature with
+        member x.Value = let (LNECDSASignature v) = x in v
+        override this.GetHashCode() = hash this.Value
+        override this.Equals(obj: obj) =
+            match obj with
+            | :? LNECDSASignature as o -> (this :> IEquatable<LNECDSASignature>).Equals(o)
+            | _ -> false
+        interface IEquatable<LNECDSASignature> with
+            member this.Equals(o: LNECDSASignature) =
+                Utils.ArrayEqual(o.ToBytesCompact(), this.ToBytesCompact())
+        /// Originally this method is in NBitcoin.Utils.
+        /// But we ported here since it was internal method.
+        member private this.BigIntegerToBytes(b: BouncyCastle.Math.BigInteger, numBytes: int) =
+            if isNull b then null else
+            let a = Array.zeroCreate numBytes
+            let a2 = b.ToByteArray()
+            let sourceIndex = if (a2.Length = numBytes + 1) then 1 else 0;
+            let num  = System.Math.Min(a2.Length,  numBytes)
+            array.Copy(a2, sourceIndex, a, numBytes - num, num);
+            a
+
+        override this.ToString() =
+            sprintf "LNECDSASignature (%A)" (this.ToBytesCompact())
+        member this.AsString = this.ToString()
+
+        /// ** Description **
+        ///
+        /// Bitcoin Layer 1 forces (by consensus) DER encoding for the signatures.
+        /// This is not optimal, but remaining as a rule since changing consensus is not easy.
+        /// However in layer2, there are no such rules. So we use more optimal serialization by
+        /// This function.
+        /// Note it does not include the recovery id. so its always 64 bytes
+        ///
+        /// **Output**
+        ///
+        /// (serialized R value + S value) in byte array.
+        member this.ToBytesCompact() =
+            let r = Array.append (this.BigIntegerToBytes(b=this.Value.R, numBytes=32)) (this.BigIntegerToBytes(this.Value.S, 32))
+            if (isNull <| box r.[0]) then r.[0] <- 255uy
+            r
+
+        static member FromBytesCompact(bytes: byte[], ?withRecId: bool) =
+            let withRecId = defaultArg withRecId false
+            if withRecId && bytes.Length <> 65 then
+                invalidArg "bytes" "ECDSASignature specified to have recovery id, but it was not 65 bytes length"
+            else if (not withRecId) && bytes.Length <> 64 then
+                invalidArg "bytes" "ECDSASignature was not specified to have recovery id, but it was not 64 bytes length."
+            else
+                let data = if withRecId then bytes.[1..] else bytes
+                let r = NBitcoin.BouncyCastle.Math.BigInteger(data.[0..31])
+                let s = NBitcoin.BouncyCastle.Math.BigInteger(data.[32..63])
+                ECDSASignature(r, s) |> LNECDSASignature
+
+        static member op_Implicit(ec: ECDSASignature) =
+            ec |> LNECDSASignature
 
 
     type PaymentPreimage = PaymentPreimage of byte[] with
@@ -120,12 +182,6 @@ module Primitives =
     type TxIndexInBlock = TxIndexInBlock of uint32 with
         member x.Value = let (TxIndexInBlock v) = x in v
 
-
-    [<Measure>]
-    type satoshi
-
-    [<Measure>]
-    type millisatoshi
 
     [<Struct>]
     type ShortChannelId = {

@@ -15,6 +15,8 @@ type Scope(openAction: Action, closeAction: Action) =
     interface IDisposable with
         member this.Dispose() = this.Close.Invoke()
 
+type O = OptionalArgumentAttribute
+type D = System.Runtime.InteropServices.DefaultParameterValueAttribute
 /// Simple Wrapper stream for serializing Lightning Network p2p messages.
 /// Why not use BitWriter/Reader? Because it does not support big endian and
 /// We might want to extend it in the future.
@@ -137,7 +139,7 @@ type LightningWriterStream(inner: Stream) =
     member this.Write(data: PubKey) =
         let d = data.ToBytes()
         this.Write(d, 0, d.Length)
-    member this.Write(data: ECDSASignature) =
+    member this.Write(data: LNECDSASignature) =
         let d = data.ToBytesCompact()
         this.Write(d, 0, d.Length)
     member this.Write(data: RGB) =
@@ -155,7 +157,6 @@ type LightningWriterStream(inner: Stream) =
         | Some d -> this.WriteWithLen(d)
         | None -> ()
 
-
 type LightningReaderStream(inner: Stream) =
     inherit LightningStream(inner)
     do if (not inner.CanRead) then invalidArg "inner" "inner stream must be readable"
@@ -164,6 +165,16 @@ type LightningReaderStream(inner: Stream) =
 
     override this.CanRead = true
     override this.CanWrite = this.Inner.CanWrite
+
+    member this.ReadAll(): byte[] =
+        this.ReadBytes(int32 this.Length - int32 this.Position)
+        // if (this.Length)  t
+
+    member this.TryReadAll(): byte[] option =
+        if (this.Length > this.Position) then
+            this.ReadAll() |> Some
+        else
+            None
 
     member private this.FillBuffer(numBytes: int) =
         if (isNull m_buffer) then
@@ -279,7 +290,7 @@ type LightningReaderStream(inner: Stream) =
                 uint64 (m_buffer.[6] <<< 8) |||
                 uint64 m_buffer.[7])
 
-    member this.ReadUInt256(lendian: bool) =
+    member this.ReadUInt256([<O;D(true)>]lendian: bool) =
         let b = this.ReadBytes(32)
         uint256(b, lendian)
 
@@ -292,11 +303,11 @@ type LightningReaderStream(inner: Stream) =
         if PubKey.Check(b, true) then
             PubKey(b, true)
         else
-            raise (SerializationException("Invalid Pubkey encoding"))
+            raise (FormatException("Invalid Pubkey encoding"))
 
     member this.ReadECDSACompact() =
         let data = this.ReadBytes(64)
-        ECDSASignature.FromBytesCompact(data)
+        LNECDSASignature.FromBytesCompact(data)
 
     member this.ReadScript() =
         let d = this.ReadWithLen()

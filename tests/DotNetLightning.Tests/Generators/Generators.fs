@@ -1,9 +1,16 @@
 module Generators
 
+open NBitcoin.Crypto
+open DotNetLightning.Utils
 open DotNetLightning.Serialize.Msgs
 open FsCheck
+open PrimitiveGenerators
 open MsgGenerators
 
+
+type PrimitiveGenerators =
+    static member ECDSASignature() : Arbitrary<LNECDSASignature> =
+        Arb.fromGen(signatureGen)
 
 type P2PMsgGenerators =
     static member Init() : Arbitrary<Init> =
