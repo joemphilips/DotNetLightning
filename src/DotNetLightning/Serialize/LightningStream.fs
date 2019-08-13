@@ -15,6 +15,8 @@ type Scope(openAction: Action, closeAction: Action) =
     interface IDisposable with
         member this.Dispose() = this.Close.Invoke()
 
+type O = OptionalArgumentAttribute
+type D = System.Runtime.InteropServices.DefaultParameterValueAttribute
 /// Simple Wrapper stream for serializing Lightning Network p2p messages.
 /// Why not use BitWriter/Reader? Because it does not support big endian and
 /// We might want to extend it in the future.
@@ -137,7 +139,7 @@ type LightningWriterStream(inner: Stream) =
     member this.Write(data: PubKey) =
         let d = data.ToBytes()
         this.Write(d, 0, d.Length)
-    member this.Write(data: ECDSASignature) =
+    member this.Write(data: LNECDSASignature) =
         let d = data.ToBytesCompact()
         this.Write(d, 0, d.Length)
     member this.Write(data: RGB) =
@@ -288,7 +290,7 @@ type LightningReaderStream(inner: Stream) =
                 uint64 (m_buffer.[6] <<< 8) |||
                 uint64 m_buffer.[7])
 
-    member this.ReadUInt256(lendian: bool) =
+    member this.ReadUInt256([<O;D(true)>]lendian: bool) =
         let b = this.ReadBytes(32)
         uint256(b, lendian)
 
@@ -305,7 +307,7 @@ type LightningReaderStream(inner: Stream) =
 
     member this.ReadECDSACompact() =
         let data = this.ReadBytes(64)
-        ECDSASignature.FromBytesCompact(data)
+        LNECDSASignature.FromBytesCompact(data)
 
     member this.ReadScript() =
         let d = this.ReadWithLen()

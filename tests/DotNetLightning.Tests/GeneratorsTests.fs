@@ -26,7 +26,7 @@ let perCommitmentPoint =
 
 [<Tests>]
 let tests =
-    ftestList "key generator tests" [
+    testList "key generator tests" [
         testCase "derivation key from basepoint and per-commitment-point" <| fun _ ->
             use ctx = new Secp256k1()
             let localkey = derivePubKey ctx (basePoint) (perCommitmentPoint) 
@@ -43,7 +43,7 @@ let tests =
                 |> hex.DecodeData
             Expect.equal (localPrivkey.ToBytes()) (expected) ""
 
-        ftestCase "derivation of revocation key from basepoint and per_commitment_point" <| fun _ ->
+        testCase "derivation of revocation key from basepoint and per_commitment_point" <| fun _ ->
             use ctx = new Secp256k1()
             let revocationKey = revocationPubKey ctx (basePoint) (perCommitmentPoint)
             let expected =

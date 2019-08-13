@@ -81,8 +81,8 @@ module Channel =
         "01010101010101010101010101010101" |> ascii.GetBytes
         |> uint256
         |> fun m -> dummyPrivKey.SignCompact(m ,false)
-        |> fun d -> Crypto.ECDSASignature.FromBytesCompact(d, true)
-        |> fun ecdsaSig -> TransactionSignature(ecdsaSig, SigHash.All)
+        |> fun d -> LNECDSASignature.FromBytesCompact(d, true)
+        |> fun ecdsaSig -> TransactionSignature(ecdsaSig.Value, SigHash.All)
 
 
     let private checkOrClose left predicate right msg =
@@ -139,7 +139,7 @@ module Channel =
                 FeeProportionalMillionths = feeProportionalMillionths
                 ExcessData = [||]
             }
-            let signature = unsignedChannelUpdate.ToBytes() |> Crypto.Hashes.SHA256 |> uint256 |> nodeSecret.Sign
+            let signature = unsignedChannelUpdate.ToBytes() |> Crypto.Hashes.SHA256 |> uint256 |> nodeSecret.Sign |> LNECDSASignature
             {
                 ChannelUpdate.Contents = unsignedChannelUpdate
                 Signature = signature
@@ -231,7 +231,7 @@ module Channel =
                     let localSignature, psbtUpdated = keyRepo.GetSignatureFor(closingTx.Value, localFundingPk)
                     let msg = { ClosingSigned.ChannelId = cm.ChannelId
                                 FeeSatoshis = closingFee
-                                Signature = localSignature.Signature }
+                                Signature = localSignature.Signature |> LNECDSASignature }
                     (ClosingTx psbtUpdated, msg)
 
             let firstClosingFee(cm: Commitments, localSpk: Script, remoteSpk: Script, feeEst: IFeeEstimator, n) =
@@ -559,14 +559,14 @@ module Channel =
                 | true ->
                     let s, signedLocalCommitTx =
                         cs.KeysRepository.GetSignatureFor(localCommitTx.Value, state.LocalParams.ChannelPubKeys.FundingPubKey)
-                    let theirSigPair = (state.RemoteParams.FundingPubKey , TransactionSignature(msg.Signature, SigHash.All))
+                    let theirSigPair = (state.RemoteParams.FundingPubKey , TransactionSignature(msg.Signature.Value, SigHash.All))
                     let sigPairs = seq [theirSigPair]
                     Transactions.checkTxFinalized (signedLocalCommitTx) (localCommitTx.WhichInput) sigPairs
                     >>>= fun e -> RRClose(e.Describe())
                     >>= fun finalizedCommitTx ->
                         let localSigOfRemoteCommit, _ = cs.KeysRepository.GetSignatureFor(remoteCommitTx.Value, state.LocalParams.ChannelPubKeys.FundingPubKey)
                         let channelId = OutPoint(msg.FundingTxId.Value, uint32 msg.FundingOutputIndex.Value).ToChannelId()
-                        let msgToSend: FundingSigned = { ChannelId = channelId; Signature = localSigOfRemoteCommit.Signature }
+                        let msgToSend: FundingSigned = { ChannelId = channelId; Signature = !> localSigOfRemoteCommit.Signature }
                         let commitments = { Commitments.LocalParams = state.LocalParams
                                             RemoteParams = state.RemoteParams
                                             ChannelFlags = state.ChannelFlags
@@ -619,7 +619,7 @@ module Channel =
                     let nextMsg = { FundingCreated.TemporaryChannelId = msg.TemporaryChannelId
                                     FundingTxId = fundingTx.Value.GetTxId()
                                     FundingOutputIndex = outIndex
-                                    Signature = localSigOfRemoteCommit.Signature }
+                                    Signature = !> localSigOfRemoteCommit.Signature }
 
                     let data = { Data.WaitForFundingSignedData.ChannelId = msg.TemporaryChannelId
                                  LocalParams = localParams
@@ -639,8 +639,8 @@ module Channel =
             let fundingOutIndex = state.LastSent.FundingOutputIndex
             let finalLocalCommitTxRR =
                 let theirFundingPk = state.RemoteParams.FundingPubKey
-                let localSigPairOfLocalTx = (theirFundingPk, TransactionSignature(state.LastSent.Signature, SigHash.All))
-                let remoteSigPairOfLocalTx = (state.LocalParams.ChannelPubKeys.FundingPubKey, TransactionSignature(msg.Signature, SigHash.All))
+                let localSigPairOfLocalTx = (theirFundingPk, TransactionSignature(state.LastSent.Signature.Value, SigHash.All))
+                let remoteSigPairOfLocalTx = (state.LocalParams.ChannelPubKeys.FundingPubKey, TransactionSignature(msg.Signature.Value, SigHash.All))
                 let sigPairs = seq [ remoteSigPairOfLocalTx; localSigPairOfLocalTx ]
                 Transactions.checkTxFinalized state.LocalCommitTx.Value state.LocalCommitTx.WhichInput sigPairs
             finalLocalCommitTxRR
@@ -978,7 +978,7 @@ module Channel =
             >>= fun _ ->
                 Helpers.Closing.makeClosingTx(cs.KeysRepository, cm, state.LocalShutdown.ScriptPubKey, state.RemoteShutdown.ScriptPubKey, msg.FeeSatoshis, cm.LocalParams.ChannelPubKeys.FundingPubKey, cs.Network)
                 >>= fun (closingTx, closingSignedMsg) ->
-                    Transactions.checkTxFinalized closingTx.Value (closingTx.WhichInput) (seq [cm.RemoteParams.FundingPubKey, TransactionSignature(msg.Signature, SigHash.All)])
+                    Transactions.checkTxFinalized closingTx.Value (closingTx.WhichInput) (seq [cm.RemoteParams.FundingPubKey, TransactionSignature(msg.Signature.Value, SigHash.All)])
                     >>= fun finalizedTx ->
                         let maybeLocalFee =
                             state.ClosingTxProposed

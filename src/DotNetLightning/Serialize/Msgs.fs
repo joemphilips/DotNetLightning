@@ -307,16 +307,8 @@ module rec Msgs =
             ms.ToArray()
 
         [<Extension>]
-        static member FromBytes(this: ILightningSerializable<'T>, data: byte[]) =
-            use ms = new MemoryStream(data)
-            use ls = new LightningReaderStream(ms)
-            let instance = new 'T()
-            instance.Deserialize(ls)
-            instance
-
-        [<Extension>]
         static member Clone(this: ILightningSerializable<'T>) =
-            this.FromBytes(this.ToBytes())
+            ILightningSerializable.fromBytes<'T>(this.ToBytes())
 
 
     // ---------- network message primitives
@@ -437,7 +429,7 @@ module rec Msgs =
         interface IChannelMsg
         interface ILightningSerializable<OpenChannel> with
             member this.Deserialize(ls) =
-                this.Chainhash <- ls.ReadUInt256(false)
+                this.Chainhash <- ls.ReadUInt256(true)
                 this.TemporaryChannelId <- ChannelId(ls.ReadUInt256(true))
                 this.FundingSatoshis <- Money.Satoshis(ls.ReadInt64(false))
                 this.PushMSat <- LNMoney.MilliSatoshis(ls.ReadUInt64(false))
@@ -457,7 +449,7 @@ module rec Msgs =
                 this.ChannelFlags <- ls.ReadUInt8()
                 this.ShutdownScriptPubKey <- ls.TryReadAll() |> Option.map(Script)
             member this.Serialize(ls) =
-                ls.Write(this.Chainhash, false)
+                ls.Write(this.Chainhash, true)
                 ls.Write(this.TemporaryChannelId.Value.ToBytes())
                 ls.Write(this.FundingSatoshis.Satoshi, false)
                 ls.Write(this.PushMSat.MilliSatoshi, false)
@@ -499,7 +491,7 @@ module rec Msgs =
         interface IChannelMsg
         interface ILightningSerializable<AcceptChannel> with
             member this.Deserialize(ls) =
-                this.TemporaryChannelId <- ChannelId(ls.ReadUInt256(false))
+                this.TemporaryChannelId <- ChannelId(ls.ReadUInt256(true))
                 this.DustLimitSatoshis <- ls.ReadUInt64(false) |> Money.Satoshis
                 this.MaxHTLCValueInFlightMsat <- ls.ReadUInt64(false) |> LNMoney.MilliSatoshis
                 this.ChannelReserveSatoshis <- ls.ReadUInt64(false) |> Money.Satoshis
@@ -536,14 +528,14 @@ module rec Msgs =
         mutable TemporaryChannelId: ChannelId
         mutable FundingTxId: TxId
         mutable FundingOutputIndex: TxOutIndex
-        mutable Signature: ECDSASignature
+        mutable Signature: LNECDSASignature
     }
     with
         interface IChannelMsg
         interface ILightningSerializable<FundingCreated> with
             member this.Deserialize(ls) =
-                this.TemporaryChannelId <- ls.ReadUInt256(false) |> ChannelId
-                this.FundingTxId <- ls.ReadUInt256(false) |> TxId
+                this.TemporaryChannelId <- ls.ReadUInt256(true) |> ChannelId
+                this.FundingTxId <- ls.ReadUInt256(true) |> TxId
                 this.FundingOutputIndex <- ls.ReadUInt16(false) |> TxOutIndex
                 this.Signature <- ls.ReadECDSACompact()
             member this.Serialize(ls) =
@@ -555,13 +547,13 @@ module rec Msgs =
     [<CLIMutable>]
     type FundingSigned = {
         mutable ChannelId: ChannelId
-        mutable Signature: ECDSASignature
+        mutable Signature: LNECDSASignature
     }
     with
         interface IChannelMsg
         interface ILightningSerializable<FundingSigned> with
             member this.Deserialize(ls) =
-                this.ChannelId <- ChannelId(ls.ReadUInt256(false))
+                this.ChannelId <- ChannelId(ls.ReadUInt256(true))
                 this.Signature <- ls.ReadECDSACompact()
             member this.Serialize(ls) =
                 ls.Write(this.ChannelId.Value.ToBytes())
@@ -576,7 +568,7 @@ module rec Msgs =
         interface IChannelMsg
         interface ILightningSerializable<FundingLocked> with
             member this.Deserialize(ls) =
-                this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
+                this.ChannelId <- ls.ReadUInt256(true) |> ChannelId
                 this.NextPerCommitmentPoint <- ls.ReadPubKey()
             member this.Serialize(ls) =
                 ls.Write(this.ChannelId.Value.ToBytes())
@@ -591,7 +583,7 @@ module rec Msgs =
         interface IChannelMsg
         interface ILightningSerializable<Shutdown> with
             member this.Deserialize(ls) =
-                this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
+                this.ChannelId <- ls.ReadUInt256(true) |> ChannelId
                 this.ScriptPubKey <- ls.ReadScript()
             member this.Serialize(ls) =
                 ls.Write(this.ChannelId.Value.ToBytes())
@@ -601,13 +593,13 @@ module rec Msgs =
     type ClosingSigned = {
         mutable ChannelId: ChannelId
         mutable FeeSatoshis: Money
-        mutable Signature: ECDSASignature
+        mutable Signature: LNECDSASignature
     }
     with
         interface IChannelMsg
         interface ILightningSerializable<ClosingSigned> with
             member this.Deserialize(ls) =
-                this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
+                this.ChannelId <- ls.ReadUInt256(true) |> ChannelId
                 this.FeeSatoshis <- ls.ReadUInt64(false) |> Money.Satoshis
                 this.Signature <- ls.ReadECDSACompact()
             member this.Serialize(ls) =
@@ -629,12 +621,12 @@ module rec Msgs =
         interface IUpdateMsg
         interface ILightningSerializable<UpdateAddHTLC> with
             member this.Deserialize(ls) =
-                this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
+                this.ChannelId <- ls.ReadUInt256(true) |> ChannelId
                 this.HTLCId <- ls.ReadUInt64(false) |> HTLCId
                 this.AmountMSat <- ls.ReadUInt64(false) |> LNMoney.MilliSatoshis
-                this.PaymentHash <- ls.ReadUInt256(false) |> PaymentHash
+                this.PaymentHash <- ls.ReadUInt256(true) |> PaymentHash
                 this.CLTVExpiry <- ls.ReadUInt32(false) |> BlockHeight
-                (this.OnionRoutingPacket :> ILightningSerializable<OnionPacket>).Deserialize(ls)
+                this.OnionRoutingPacket <- ILightningSerializable.deserialize<OnionPacket>(ls)
             member this.Serialize(ls) =
                 ls.Write(this.ChannelId.Value.ToBytes())
                 ls.Write(this.HTLCId.Value, false)
@@ -654,7 +646,7 @@ module rec Msgs =
         interface IUpdateMsg
         interface ILightningSerializable<UpdateFulfillHTLC> with
             member this.Deserialize(ls) =
-                this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
+                this.ChannelId <- ls.ReadUInt256(true) |> ChannelId
                 this.HTLCId <- ls.ReadUInt64(false) |> HTLCId
                 this.PaymentPreimage <- PaymentPreimage(ls.ReadBytes(32))
             member this.Serialize(ls) =
@@ -673,7 +665,7 @@ module rec Msgs =
         interface IUpdateMsg
         interface ILightningSerializable<UpdateFailHTLC> with
             member this.Deserialize(ls) =
-                this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
+                this.ChannelId <- ls.ReadUInt256(true) |> ChannelId
                 this.HTLCId <- ls.ReadUInt64(false) |> HTLCId
                 this.Reason <- { Data = ls.ReadWithLen() }
             member this.Serialize(ls) =
@@ -693,31 +685,31 @@ module rec Msgs =
         interface IUpdateMsg
         interface ILightningSerializable<UpdateFailMalformedHTLC> with
             member this.Deserialize(ls) =
-                this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
+                this.ChannelId <- ls.ReadUInt256(true) |> ChannelId
                 this.HTLCId <- ls.ReadUInt64(false) |> HTLCId
-                this.Sha256OfOnion <- ls.ReadUInt256(false)
+                this.Sha256OfOnion <- ls.ReadUInt256(true)
                 this.FailureCode <- ls.ReadUInt16(false) |> ErrorCode
             member this.Serialize(ls) =
                 ls.Write(this.ChannelId.Value.ToBytes())
                 ls.Write(this.HTLCId.Value, false)
-                ls.Write(this.Sha256OfOnion, false)
+                ls.Write(this.Sha256OfOnion, true)
                 ls.Write(this.FailureCode.Value, false)
 
     [<CLIMutable>]
     type CommitmentSigned = {
         mutable ChannelId: ChannelId
-        mutable Signature: ECDSASignature
-        mutable HTLCSignatures: ECDSASignature list
+        mutable Signature: LNECDSASignature
+        mutable HTLCSignatures: LNECDSASignature list
     }
     with
         interface IHTLCMsg
         interface ILightningSerializable<CommitmentSigned> with
             member this.Deserialize(ls) =
-                this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
+                this.ChannelId <- ls.ReadUInt256(true) |> ChannelId
                 this.Signature <- ls.ReadECDSACompact()
                 this.HTLCSignatures <- 
                     let len = ls.ReadUInt16(false)
-                    seq { 0us..len-1us } |> Seq.map(fun _ -> ls.ReadECDSACompact()) |> Seq.toList
+                    [ 1us..len ] |> List.map(fun _ -> ls.ReadECDSACompact())
             member this.Serialize(ls) =
                 ls.Write(this.ChannelId.Value.ToBytes())
                 ls.Write(this.Signature)
@@ -734,7 +726,7 @@ module rec Msgs =
         interface IHTLCMsg
         interface ILightningSerializable<RevokeAndACK> with
             member this.Deserialize(ls) =
-                this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
+                this.ChannelId <- ls.ReadUInt256(true) |> ChannelId
                 this.PerCommitmentSecret <- PaymentPreimage(ls.ReadBytes(32))
                 this.NextPerCommitmentPoint <- ls.ReadPubKey()
             member this.Serialize(ls) =
@@ -752,7 +744,7 @@ module rec Msgs =
         interface IUpdateMsg
         interface ILightningSerializable<UpdateFee> with
             member this.Deserialize(ls) =
-                this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
+                this.ChannelId <- ls.ReadUInt256(true) |> ChannelId
                 this.FeeRatePerKw <- ls.ReadUInt32(false) |> FeeRatePerKw
             member this.Serialize(ls) =
                 ls.Write(this.ChannelId.Value.ToBytes())
@@ -784,7 +776,7 @@ module rec Msgs =
         interface IChannelMsg
         interface ILightningSerializable<ChannelReestablish> with
             member this.Deserialize(ls) =
-                this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
+                this.ChannelId <- ls.ReadUInt256(true) |> ChannelId
                 this.NextLocalCommitmentNumber <- ls.ReadUInt64(false)
                 this.NextRemoteCommitmentNumber <- ls.ReadUInt64(false)
                 this.DataLossProtect <- ls.TryReadAll() |> Option.map ILightningSerializable.fromBytes<DataLossProtect>
@@ -799,14 +791,14 @@ module rec Msgs =
     type AnnouncementSignatures = {
         mutable ChannelId: ChannelId
         mutable ShortChannelId: ShortChannelId
-        mutable NodeSignature: ECDSASignature
-        mutable BitcoinSignature: ECDSASignature
+        mutable NodeSignature: LNECDSASignature
+        mutable BitcoinSignature: LNECDSASignature
     }
     with
         interface IRoutingMsg
         interface ILightningSerializable<AnnouncementSignatures> with
             member this.Deserialize(ls) =
-                this.ChannelId <- ls.ReadUInt256(false) |> ChannelId
+                this.ChannelId <- ls.ReadUInt256(true) |> ChannelId
                 this.ShortChannelId <- ls.ReadUInt64(false) |> ShortChannelId.FromUInt64
                 this.NodeSignature <- ls.ReadECDSACompact()
                 this.BitcoinSignature <- ls.ReadECDSACompact()
@@ -907,7 +899,7 @@ module rec Msgs =
         mutable NodeId: NodeId
         mutable RGB: RGB
         mutable Alias: uint256
-        mutable Addresses: NetAddress list
+        mutable Addresses: NetAddress []
         mutable ExcessAddressData: byte[]
         mutable ExcessData: byte[]
     }
@@ -918,7 +910,7 @@ module rec Msgs =
                 this.Timestamp <- ls.ReadUInt32(false)
                 this.NodeId <- ls.ReadPubKey() |> NodeId
                 this.RGB <- ls.ReadRGB()
-                this.Alias <- ls.ReadUInt256(false)
+                this.Alias <- ls.ReadUInt256(true)
                 this.Addresses <-
                     let addrLen = ls.ReadUInt16(false)
                     let mutable addresses: NetAddress list = []
@@ -941,7 +933,7 @@ module rec Msgs =
 
                         addr_readPos <- addr_readPos + (1us + addr.Length)
                         addresses <- addr :: addresses
-                    addresses |> List.rev
+                    addresses |> List.rev |> Array.ofList
 
                 this.ExcessData <- ls.ReadAll()
             member this.Serialize(ls) =
@@ -950,18 +942,18 @@ module rec Msgs =
                 ls.Write(this.NodeId.Value)
                 ls.Write(this.RGB)
                 ls.Write(this.Alias, true)
-                let mutable addrLen = (this.Addresses |> List.sumBy(fun addr -> addr.Length + 1us)) // 1 byte for type field
+                let mutable addrLen = (this.Addresses |> Array.sumBy(fun addr -> addr.Length + 1us)) // 1 byte for type field
                 let excessAddrLen = (uint16 this.ExcessAddressData.Length)
                 addrLen <- excessAddrLen + addrLen
                 ls.Write(addrLen, false)
                 this.Addresses
-                    |> List.iter(fun addr -> ls.Write(addr.GetId()); addr.WriteTo(ls))
+                    |> Array.iter(fun addr -> ls.Write(addr.GetId()); addr.WriteTo(ls))
                 ls.Write(this.ExcessAddressData)
                 ls.Write(this.ExcessData)
 
     [<CLIMutable>]
     type NodeAnnouncement = {
-        mutable Signature: ECDSASignature
+        mutable Signature: LNECDSASignature
         mutable Contents: UnsignedNodeAnnouncement
     }
     with
@@ -969,7 +961,7 @@ module rec Msgs =
         interface ILightningSerializable<NodeAnnouncement> with
             member this.Deserialize(ls) =
                 this.Signature <- ls.ReadECDSACompact()
-                (this.Contents :> ILightningSerializable<UnsignedNodeAnnouncement>).Deserialize(ls)
+                this.Contents <- ILightningSerializable.deserialize<UnsignedNodeAnnouncement>(ls)
             member this.Serialize(ls) =
                 ls.Write(this.Signature)
                 (this.Contents :> ILightningSerializable<UnsignedNodeAnnouncement>).Serialize(ls)
@@ -995,7 +987,7 @@ module rec Msgs =
                         raise <| UnknownRequiredFeatureException(sprintf "Channel Annoucement contains Unknown requied feature %A" g)
                     else
                         g
-                this.ChainHash <- ls.ReadUInt256(false)
+                this.ChainHash <- ls.ReadUInt256(true)
                 this.ShortChannelId <- ls.ReadUInt64(false) |> ShortChannelId.FromUInt64
                 this.NodeId1 <- ls.ReadPubKey() |> NodeId
                 this.NodeId2 <- ls.ReadPubKey() |> NodeId
@@ -1004,7 +996,7 @@ module rec Msgs =
                 this.ExcessData <- ls.ReadAll()
             member this.Serialize(ls) =
                 ls.WriteWithLen(this.Features.Value)
-                ls.Write(this.ChainHash, false)
+                ls.Write(this.ChainHash, true)
                 ls.Write(this.ShortChannelId)
                 ls.Write(this.NodeId1.Value)
                 ls.Write(this.NodeId2.Value)
@@ -1014,10 +1006,10 @@ module rec Msgs =
 
     [<CLIMutable>]
     type ChannelAnnouncement = {
-        mutable NodeSignature1: ECDSASignature
-        mutable NodeSignature2: ECDSASignature
-        mutable BitcoinSignature1: ECDSASignature
-        mutable BitcoinSignature2: ECDSASignature
+        mutable NodeSignature1: LNECDSASignature
+        mutable NodeSignature2: LNECDSASignature
+        mutable BitcoinSignature1: LNECDSASignature
+        mutable BitcoinSignature2: LNECDSASignature
         mutable Contents: UnsignedChannelAnnouncement
     }
     with
@@ -1028,7 +1020,7 @@ module rec Msgs =
                 this.NodeSignature2 <- ls.ReadECDSACompact()
                 this.BitcoinSignature1 <- ls.ReadECDSACompact()
                 this.BitcoinSignature2 <- ls.ReadECDSACompact()
-                (this.Contents :> ILightningSerializable<UnsignedChannelAnnouncement>).Deserialize(ls)
+                this.Contents <- ILightningSerializable.deserialize<UnsignedChannelAnnouncement>(ls)
             member this.Serialize(ls) =
                 ls.Write(this.NodeSignature1)
                 ls.Write(this.NodeSignature2)
@@ -1063,7 +1055,7 @@ module rec Msgs =
                     ls.Write(this.ExcessData)
 
                 member this.Deserialize(ls: LightningReaderStream): unit = 
-                    this.ChainHash <- ls.ReadUInt256(false)
+                    this.ChainHash <- ls.ReadUInt256(true)
                     this.ShortChannelId <- ls.ReadUInt64(false) |> ShortChannelId.FromUInt64
                     this.Timestamp <- ls.ReadUInt32(false)
                     this.Flags <- ls.ReadUInt16(false)
@@ -1075,7 +1067,7 @@ module rec Msgs =
 
     [<CLIMutable>]
     type ChannelUpdate = {
-        mutable Signature: ECDSASignature
+        mutable Signature: LNECDSASignature
         mutable Contents: UnsignedChannelUpdate
     }
     with
@@ -1083,7 +1075,7 @@ module rec Msgs =
         interface ILightningSerializable<ChannelUpdate> with
             member this.Deserialize(ls) =
                 this.Signature <- ls.ReadECDSACompact()
-                let chainHash = ls.ReadUInt256(false)
+                let chainHash = ls.ReadUInt256(true)
                 let shortChannelId = ls.ReadUInt64(false) |> ShortChannelId.FromUInt64
                 let ts = ls.ReadUInt32(false)
                 let f = ls.ReadUInt16(false)
@@ -1156,12 +1148,12 @@ module rec Msgs =
                     | (PERMANENT_NODE_FAILURE) -> this.Data <- PermanentNodeFailure
                     | (REQUIRED_NODE_FEATURE_MISSING) -> this.Data <- RequiredNodeFeatureMissing
                     | (INVALID_ONION_VERSION) ->
-                        let v = r.ReadUInt256(false)
+                        let v = r.ReadUInt256(true)
                         this.Data <- InvalidOnionVersion(v)
                     | (INVALID_ONION_HMAC) ->
-                        this.Data <- r.ReadUInt256(false) |> InvalidOnionHmac
+                        this.Data <- r.ReadUInt256(true) |> InvalidOnionHmac
                     | (INVALID_ONION_KEY) ->
-                        this.Data <- r.ReadUInt256(false) |> InvalidOnionKey
+                        this.Data <- r.ReadUInt256(true) |> InvalidOnionKey
                     | (TEMPORARY_CHANNEL_FAILURE) ->
                         let d = ILightningSerializable.deserialize<ChannelUpdate>(r)
                         this.Data <- d |> TemporaryChannelFailure
@@ -1254,7 +1246,7 @@ module rec Msgs =
             interface ISetupMsg
             interface ILightningSerializable<ErrorMessage> with
                 member this.Deserialize(ls) =
-                    match ls.ReadUInt256(false) with
+                    match ls.ReadUInt256(true) with
                     | id when id = uint256.Zero ->
                         this.ChannelId <- All
                     | id ->

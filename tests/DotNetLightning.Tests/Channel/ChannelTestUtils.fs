@@ -16,7 +16,7 @@ module Constants =
     type ChannelTestEntity = {
         Seed: uint256
         KeysRepo: IKeysRepository
-        Config: UserConfig
+        Config: ChannelConfig
     }
     let logger level msg = printfn msg
     let alice log =
@@ -25,10 +25,10 @@ module Constants =
             feeRateMismatch
             chargeFeeRate
             forceAnnounceChannelPref = {
-            UserConfig.ChannelOptions = { ChannelConfig.AnnounceChannel = announceChannel
-                                          MaxFeeRateMismatchRatio = feeRateMismatch
-                                          FeeProportionalMillionths = chargeFeeRate }
-            OwnChannelConfig = { ChannelHandshakeConfig.MinimumDepth = BlockHeight(10u) }
+            ChannelConfig.ChannelOptions = { ChannelOptions.AnnounceChannel = announceChannel
+                                             MaxFeeRateMismatchRatio = feeRateMismatch
+                                             FeeProportionalMillionths = chargeFeeRate }
+            ChannelHandshakeConfig = { ChannelHandshakeConfig.MinimumDepth = BlockHeight(10u) }
             PeerChannelConfigLimits = { ChannelHandshakeLimits.ForceAnnounceChannelPreference = forceAnnounceChannelPref
                                         MinFundingSatoshis = 1000L |> Money.Satoshis
                                         MaxHTLCMinimumMSat = 1000L |> LNMoney.MilliSatoshis
@@ -59,12 +59,12 @@ module Constants =
         let bobConfigConstructor
             announceChannel =
                 {
-                    UserConfig.ChannelOptions = {
-                        ChannelConfig.AnnounceChannel = announceChannel
+                    ChannelConfig.ChannelOptions = {
+                        ChannelOptions.AnnounceChannel = announceChannel
                         MaxFeeRateMismatchRatio = failwith "Not Implemented"
                         FeeProportionalMillionths = failwith "Not Implemented"
                     }
-                    OwnChannelConfig = failwith ""
+                    ChannelHandshakeConfig = failwith ""
                     PeerChannelConfigLimits = { ChannelHandshakeLimits.ForceAnnounceChannelPreference = true
                                                 MinFundingSatoshis = failwith "Not Implemented"
                                                 MaxHTLCMinimumMSat = failwith "Not Implemented"

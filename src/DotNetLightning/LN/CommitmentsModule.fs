@@ -309,8 +309,8 @@ module internal Commitments =
                                 >> (fun txSig -> txSig.Signature)
                                 )
                     let msg = { CommitmentSigned.ChannelId = cm.ChannelId
-                                Signature = signature.Signature
-                                HTLCSignatures = htlcSigs }
+                                Signature = !> signature.Signature
+                                HTLCSignatures = htlcSigs |> List.map (!>) }
                     let nextCommitments =
                         let nextRemoteCommitInfo = { WaitingForRevocation.NextRemoteCommit =
                                                         { cm.RemoteCommit
@@ -345,7 +345,7 @@ module internal Commitments =
 
                     let sigPair =
                         let localSigPair = seq [(chanKeys.FundingPubKey, signature)]
-                        let remoteSigPair = seq[ (cm.RemoteParams.FundingPubKey, TransactionSignature(msg.Signature, SigHash.All)) ]
+                        let remoteSigPair = seq[ (cm.RemoteParams.FundingPubKey, TransactionSignature(msg.Signature.Value, SigHash.All)) ]
                         Seq.append localSigPair remoteSigPair
                     Transactions.checkTxFinalized signedCommitTx localCommitTx.WhichInput sigPair
                     >>= fun finalizedCommitTx ->
@@ -358,8 +358,8 @@ module internal Commitments =
 
                             let remoteHTLCPubKey = Generators.derivePubKey ctx (cm.RemoteParams.HTLCBasePoint) (localPerCommitmentPoint)
 
-                            let checkHTLCSig (htlc: IHTLCTx, remoteECDSASig: Crypto.ECDSASignature): RResult<_> =
-                                let remoteS = TransactionSignature(remoteECDSASig, SigHash.All)
+                            let checkHTLCSig (htlc: IHTLCTx, remoteECDSASig: LNECDSASignature): RResult<_> =
+                                let remoteS = TransactionSignature(remoteECDSASig.Value, SigHash.All)
                                 match htlc with
                                 | :? HTLCTimeoutTx ->
                                     (Transactions.checkTxFinalized (htlc.Value) (0) (seq [(remoteHTLCPubKey, remoteS)]))
