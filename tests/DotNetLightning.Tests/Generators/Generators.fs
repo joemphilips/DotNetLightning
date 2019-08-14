@@ -91,3 +91,31 @@ type P2PMsgGenerators =
 
     static member ChannelUpdate(): Arbitrary<ChannelUpdate> =
         Arb.fromGen channelUpdateGen
+
+    static member P2PMsg(): Arbitrary<ILightningMsg> =
+        Gen.oneof [
+            initGen |> Gen.map(fun i -> i :> ILightningMsg)
+            errorMsgGen |> Gen.map(fun i -> i :> ILightningMsg)
+            pingGen |> Gen.map(fun i -> i :> ILightningMsg)
+            pongGen |> Gen.map(fun i -> i :> ILightningMsg)
+            openChannelGen |> Gen.map(fun i -> i :> ILightningMsg)
+            acceptChannelGen |> Gen.map(fun i -> i :> ILightningMsg)
+            fundingCreatedGen |> Gen.map(fun i -> i :> ILightningMsg)
+            fundingSignedGen |> Gen.map(fun i -> i :> ILightningMsg)
+            fundingLockedGen |> Gen.map(fun i -> i :> ILightningMsg)
+            shutdownGen |> Gen.map(fun i -> i :> ILightningMsg)
+            closingSignedGen |> Gen.map(fun i -> i :> ILightningMsg)
+            updateAddHTLCGen |> Gen.map(fun i -> i :> ILightningMsg)
+            updateFulfillHTLCGen |> Gen.map(fun i -> i :> ILightningMsg)
+            updateFailHTLCGen |> Gen.map(fun i -> i :> ILightningMsg)
+            updateFailMalformedHTLCGen |> Gen.map(fun i -> i :> ILightningMsg)
+            commitmentSignedGen |> Gen.map(fun i -> i :> ILightningMsg)
+            revokeAndACKGen |> Gen.map(fun i -> i :> ILightningMsg)
+            updateFeeGen |> Gen.map(fun i -> i :> ILightningMsg)
+            channelReestablishGen |> Gen.map(fun i -> i :> ILightningMsg)
+            announcementSignaturesGen |> Gen.map(fun i -> i :> ILightningMsg)
+            nodeAnnouncementGen |> Gen.map(fun i -> i :> ILightningMsg)
+            channelAnnouncementGen |> Gen.map(fun i -> i :> ILightningMsg)
+            channelUpdateGen |> Gen.map(fun i -> i :> ILightningMsg)
+        ]
+        |> Arb.fromGen

@@ -1,9 +1,11 @@
 module SerializationPropertyTests
 
+open System.IO
 open NBitcoin.Crypto
 open Expecto
 open DotNetLightning.Utils
 open DotNetLightning.Utils.NBitcoinExtensions
+open DotNetLightning.Serialize
 open DotNetLightning.Serialize.Msgs
 open Generators
 
@@ -15,7 +17,7 @@ let config =
 
 [<Tests>]
 let testList1 =
-    testList "Primitives serialization property tests" [
+    testList "PrimitivesSerializationPropertyTests" [
         testPropertyWithConfig config "ecdsa signature" <| fun (signature: LNECDSASignature) ->
             let actual = LNECDSASignature.FromBytesCompact(signature.ToBytesCompact(), false)
             Expect.equal actual signature (sprintf "failed with actual: %A \n expected: %A" (actual.ToBytesCompact()) (signature.ToBytesCompact()))
@@ -95,4 +97,15 @@ let testList2 =
 
         testPropertyWithConfig config "channel_update" <| fun (msg: ChannelUpdate) ->
             Expect.equal (msg.Clone()) (msg) ""
+
+        
+        testPropertyWithConfig config "lightning p2p msg" <| fun (msg: ILightningMsg) ->
+            use ms = new MemoryStream()
+            use lws = new LightningWriterStream(ms)
+            ILightningSerializable.serializeWithFlags (lws) (msg)
+            let b = ms.ToArray()
+            use ms2 = new MemoryStream(b)
+            use lrs = new LightningReaderStream(ms2)
+            let actual = ILightningSerializable.deserializeWithFlag (lrs)
+            Expect.equal (actual) (msg) ""
     ]
