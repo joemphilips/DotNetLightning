@@ -220,7 +220,7 @@ module rec Msgs =
                 ls.Write(TypeFlag.Error, false)
                 (d :> ILightningSerializable<ErrorMessage>).Serialize(ls)
             | :? Ping as d ->
-                ls.Write(TypeFlag.Error, false)
+                ls.Write(TypeFlag.Ping, false)
                 (d :> ILightningSerializable<Ping>).Serialize(ls)
             | :? Pong as d ->
                 ls.Write(TypeFlag.Pong, false)
