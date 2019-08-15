@@ -1,4 +1,4 @@
-namespace DotNetLightning.PeerManager
+namespace DotNetLightning.Infrastructure
 
 open NBitcoin
 
@@ -6,14 +6,21 @@ open DotNetLightning.Utils
 open DotNetLightning.Crypto
 open DotNetLightning.LN
 
+
+type PeerError =
+    | DuplicateConnection
+type IPeerManager =
+    abstract member NewOutboundConnection: theirId: NodeId * peerId: PeerId -> Result<byte[], PeerError>
+    abstract member NewInboundConnection: peerId: PeerId -> Result<byte[], PeerError>
+
 type PeerManager =
     {
-        Peers: Map<ConnectionId, Peer>
+        Peers: Map<PeerId, Peer>
         GetOurNodeSecret: unit -> Key
     }
     with
         member this.NewOutBoundConnection (theirNodeId: NodeId)
-                                          (connId: ConnectionId): RResult<PeerManager * byte[]> =
+                                          (connId: PeerId): RResult<PeerManager * byte[]> =
             let act1, peerEncryptor =
                 PeerChannelEncryptor.newOutBound(theirNodeId)
                 |> PeerChannelEncryptor.getActOne
@@ -34,7 +41,7 @@ type PeerManager =
             else
                 failwith "PeerManager driver duplicated descriptors!"
 
-        member this.NewInboundConnection(connId: ConnectionId) (pm: PeerManager) =
+        member this.NewInboundConnection(connId: PeerId) (pm: PeerManager) =
             let peerEncryptor = PeerChannelEncryptor.newInBound(pm.GetOurNodeSecret())
             let pendingReadBuffer = Array.zeroCreate 50
             let newPeer = {

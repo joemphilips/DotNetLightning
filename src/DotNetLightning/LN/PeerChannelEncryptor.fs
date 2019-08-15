@@ -348,7 +348,7 @@ module PeerChannelEncryptor =
                     let s4 =  updateHWith s3 act.[34..]
                     ((theirPub, tempK), s4)
 
-        let internal getActOne (pce: PeerChannelEncryptor) : byte[] * PeerChannelEncryptor =
+        let getActOne (pce: PeerChannelEncryptor) : byte[] * PeerChannelEncryptor =
             match pce.NoiseState with
             | InProgress { State = state; DirectionalState = dState} ->
                 match dState with
