@@ -388,13 +388,13 @@ module PeerChannelEncryptor =
             | _ ->
                 failwith "Cannot get acg one after noise handshake completes"
 
-        let internal processActOneWithKey (actOne: byte[]) (ourNodeSecret: Key) (pce: PeerChannelEncryptor): RResult<byte[] * _> =
+        let processActOneWithKey (actOne: byte[]) (ourNodeSecret: Key) (pce: PeerChannelEncryptor): RResult<byte[] * _> =
             if (actOne.Length <> 50) then raise <| ArgumentException(sprintf "invalid actOne length: %d" (actOne.Length))
 
             let ephemeralKey = Key()
             processActOneWithEphemeralKey actOne ourNodeSecret ephemeralKey pce
 
-        let internal processActTwo (actTwo: byte[]) (ourNodeSecret: Key) (pce: PeerChannelEncryptor): RResult<(byte[] * NodeId) * PeerChannelEncryptor> = 
+        let processActTwo (actTwo: byte[]) (ourNodeSecret: Key) (pce: PeerChannelEncryptor): RResult<(byte[] * NodeId) * PeerChannelEncryptor> = 
             match pce.NoiseState with
             | InProgress {State = state; DirectionalState = dState } -> 
                 match dState with

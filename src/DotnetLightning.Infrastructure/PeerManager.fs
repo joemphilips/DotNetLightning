@@ -2,62 +2,84 @@ namespace DotNetLightning.Infrastructure
 
 open NBitcoin
 
+open System.Collections.Generic
+open System.Collections.Concurrent
+open System.Threading.Tasks
+
 open DotNetLightning.Utils
+open DotNetLightning.Chain
 open DotNetLightning.Crypto
 open DotNetLightning.LN
 
 
 type PeerError =
-    | DuplicateConnection
+    | DuplicateConnection of PeerId
+    | UnexpectedByteLength of expected: int * actual: int
+
 type IPeerManager =
-    abstract member NewOutboundConnection: theirId: NodeId * peerId: PeerId -> Result<byte[], PeerError>
-    abstract member NewInboundConnection: peerId: PeerId -> Result<byte[], PeerError>
+    abstract member HandleData: PeerId * byte[] -> Task
 
-type PeerManager =
-    {
-        Peers: Map<PeerId, Peer>
-        GetOurNodeSecret: unit -> Key
-    }
-    with
-        member this.NewOutBoundConnection (theirNodeId: NodeId)
-                                          (connId: PeerId): RResult<PeerManager * byte[]> =
-            let act1, peerEncryptor =
-                PeerChannelEncryptor.newOutBound(theirNodeId)
-                |> PeerChannelEncryptor.getActOne
-            let pendingReadBuffer = Array.zeroCreate(50) // Noise act 2 is 50 bytes. 
-            let newPeerMap = this.Peers
-                             |> Map.add connId {
-                                ChannelEncryptor = peerEncryptor
-                                IsOutBound = true
-                                TheirNodeId = None
-                                TheirGlobalFeatures = None
-                                TheirLocalFeatures = None
-                                SyncStatus = InitSyncTracker.NoSyncRequested
-                                PeerId = failwith "Not Implemented"
-                                GetOurNodeSecret = failwith "Not Implemented"
-                                }
-            if true then
-                Good({ this with Peers = newPeerMap }, act1)
-            else
-                failwith "PeerManager driver duplicated descriptors!"
+type PeerManager(keyRepo: IKeysRepository) =
+    member val KnownPeers = ConcurrentDictionary<PeerId, Peer>() with get, set
+    member val OpenedPeers = ConcurrentDictionary<PeerId, Peer>() with get, set
 
-        member this.NewInboundConnection(connId: PeerId) (pm: PeerManager) =
-            let peerEncryptor = PeerChannelEncryptor.newInBound(pm.GetOurNodeSecret())
-            let pendingReadBuffer = Array.zeroCreate 50
+    member this.NewOutBoundConnection (theirNodeId: NodeId, peerId: PeerId): Result<byte[], PeerError> =
+        let act1, peerEncryptor =
+            PeerChannelEncryptor.newOutBound(theirNodeId)
+            |> PeerChannelEncryptor.getActOne
+        let newPeer = {
+                            ChannelEncryptor = peerEncryptor
+                            IsOutBound = true
+                            TheirNodeId = None
+                            TheirGlobalFeatures = None
+                            TheirLocalFeatures = None
+                            SyncStatus = InitSyncTracker.NoSyncRequested
+                            PeerId = peerId
+                            GetOurNodeSecret = keyRepo.GetNodeSecret
+                      }
+        match this.KnownPeers.TryAdd(peerId, newPeer) with
+        | true ->
+            peerId
+            |> DuplicateConnection
+            |> Result.Error
+        | false ->
+            Ok(act1)
+
+    member this.NewInboundConnection(peerId: PeerId, actOne: byte[]): RResult<byte[]> =
+        if (actOne.Length <> 50) then RResult.rbad (RBad.Object(UnexpectedByteLength(50, actOne.Length))) else
+        let secret = keyRepo.GetNodeSecret()
+        let peerEncryptor = PeerChannelEncryptor.newInBound(secret)
+        PeerChannelEncryptor.processActOneWithKey actOne secret peerEncryptor
+        >>= fun (actTwo, pce) ->
             let newPeer = {
-                ChannelEncryptor = peerEncryptor
+                ChannelEncryptor = pce
                 IsOutBound = false
                 TheirNodeId = None
                 TheirGlobalFeatures = None
                 TheirLocalFeatures = None
 
                 SyncStatus = InitSyncTracker.NoSyncRequested
-                PeerId = failwith "Not Implemented"
-                GetOurNodeSecret = failwith "Not Implemented"
+                PeerId = peerId
+                GetOurNodeSecret = keyRepo.GetNodeSecret
             }
-            {
-                this with Peers = this.Peers |> Map.add connId newPeer
-            }
+            match this.KnownPeers.TryAdd(peerId, newPeer) with
+            | true ->
+                peerId
+                |> DuplicateConnection
+                |> box
+                |> RBad.Object
+                |> RResult.rbad
+            | false ->
+                actTwo
+                |> RResult.Good
 
-        member this.DoAttemptWriteData (connId: ConnectionId) (peer: Peer) (pm: PeerManager) =
-            failwith ""
+    member this.GetNextLengthToRead(peerId: PeerId) =
+        match this.KnownPeers.TryGetValue(peerId) with
+        | true, peer ->
+            match peer.ChannelEncryptor.NoiseState with
+            | FinishedNoiseState s ->
+                failwith "TODO"
+        | false, _ ->
+            failwith "unknown peer"
+    member this.DoAttemptWriteData (connId: ConnectionId) (peer: Peer) (pm: PeerManager) =
+        failwith ""
