@@ -2,7 +2,7 @@ namespace DotNetLightning.Utils
 open NBitcoin
 open NBitcoin.Crypto
 open System
-open System
+open System.Net
 
 [<AutoOpen>]
 module Primitives =
@@ -135,7 +135,7 @@ module Primitives =
         member x.Value = let (ChannelId v) = x in v
 
     type ConnectionId = ConnectionId of Guid
-    type PeerId = PeerId of Guid
+    type PeerId = PeerId of EndPoint
 
     [<CustomEquality;CustomComparison>]
     type NodeId = NodeId of PubKey with
