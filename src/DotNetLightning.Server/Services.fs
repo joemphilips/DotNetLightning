@@ -21,10 +21,11 @@ module Services =
         let regF (factory: IServiceProvider -> 'T) = services.AddSingleton<'T>(factory) |> ignore
         regF <| fun _sp -> ServiceBuilder()
         regF <| fun sp ->
-            let mutable channelEventCommand = null
             if (env.IsDevelopment()) then
-                channelEventCommand <- EventCommands.inMemoryEventCommand
+                let cmd = EventCommands.inMemoryEventCommand
+                failwith ""
             else
-                channelEventCommand <- EventCommands.mongoDbEventCommand
+                let cmd = EventCommands.mongoDbEventCommand
+                failwith ""
             sp.GetService<ServiceBuilder>().CreateChannelManagementService()
     ()

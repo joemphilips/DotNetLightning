@@ -8,6 +8,8 @@
   <ItemGroup>
     <Compile Include="Ply.fs" />
     <Compile Include="ComputationBuilders.fs" />
+    <Compile Include="PipelineExtensions.fs" />
+    <Compile Include="RResultExtensions.fs" />
     <Compile Include="Constants.fs" />
     <Compile Include="Logger.fs" />
     <Compile Include="Codec.fs" />
@@ -25,5 +27,6 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="2.2.0" />
     <PackageReference Include="NBitcoin" Version="4.1.2.33-joemphilips014" />
+    <PackageReference Include="System.IO.Pipelines" Version="4.5.3" />
   </ItemGroup>
 </Project>

@@ -1,4 +1,4 @@
-namespace System
+module AssemblyInfo
 
 open System.Reflection
 open System.Runtime.CompilerServices
@@ -11,7 +11,7 @@ open System.Runtime.CompilerServices
 [<assembly:AssemblyMetadataAttribute("ReleaseChannel", "release")>]
 [<assembly:AssemblyDescriptionAttribute("Lightning Network Daemon for DotNet")>]
 [<assembly: InternalsVisibleTo("DotNetLightning.Tests")>]
-[<assembly: InternalsVisibleTo("DotNetLightning.Infrastructure")>]
+[<assembly: System.Runtime.CompilerServices.InternalsVisibleTo("DotNetLightning.Infrastructure")>]
 
 do ()
 
