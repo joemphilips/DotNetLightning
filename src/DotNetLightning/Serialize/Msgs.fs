@@ -285,6 +285,15 @@ module rec Msgs =
             | x -> failwithf "%A is not known lightning message. This should never happen" x
 
     [<Extension>]
+    type ILightningMsgExtension() =
+        [<Extension>]
+        static member ToBytes(this: ILightningMsg) =
+            use ms = new MemoryStream()
+            use ls = new LightningWriterStream(ms)
+            ILightningSerializable.serializeWithFlags ls this
+            ms.ToArray()
+
+    [<Extension>]
     type ILightningSerializableExtension() =
         [<Extension>]
         static member ToBytes(this: ILightningSerializable<'T>) =

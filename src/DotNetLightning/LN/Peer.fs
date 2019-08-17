@@ -29,7 +29,7 @@ type Peer = {
     PeerId: PeerId
     ChannelEncryptor: PeerChannelEncryptor
     IsOutBound : bool
-    TheirNodeId: PubKey option
+    TheirNodeId: NodeId option
     TheirGlobalFeatures: GlobalFeatures option
     TheirLocalFeatures: LocalFeatures option
 
