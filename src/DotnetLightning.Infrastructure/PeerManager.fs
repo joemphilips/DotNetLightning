@@ -18,7 +18,9 @@ open System.Collections.Concurrent
 open System.Threading.Tasks
 
 open DotNetLightning.Utils
+open DotNetLightning.Chain
 open DotNetLightning.Crypto
+open DotNetLightning.Serialize.Msgs
 open DotNetLightning.LN
 
 
