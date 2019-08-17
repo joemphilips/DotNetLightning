@@ -27,12 +27,6 @@ type RouterConfig() =
     member val SearchRatioChannelAge: float = 0.35 with get, set
     member val SearchRatioChannelCapacity: float = 0.5 with get, set
 
-module private Helpers =
-    let getChainHash chain =
-        match chain with
-        | "" ->
-            failwith ""
-        | _ -> failwith ""
 
 /// Our own node's parameter
 type NodeParams() as this =
@@ -44,7 +38,7 @@ type NodeParams() as this =
 
     // ---- infrastructure types -----
     member val WatcherType: SupportedChainWatcherType = Bitcoind(RPC.RPCClient(this.ChainNetwork))
-    member val DBType: SupportedDBType = SupportedDBType.FlatFile(this.DataDirPath)
+    member val DBType: SupportedDBType = SupportedDBType.Null
     member val KeyRepoType: SupportedKeyRepositoryTypes = SupportedKeyRepositoryTypes.FlatFile(this.DataDirPath)
 
     // ---- channel parameters ---

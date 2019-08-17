@@ -72,13 +72,7 @@ module DTO =
             static member Deserialize(json: string) =
                 use jsonDocument = JsonDocument.Parse(json)
                 let root = jsonDocument.RootElement.[0]
-                match root.Type with
-                | JsonValueType.Object as jObj ->
-                    let l = root
-                    failwith ""
-                | d ->
-                    sprintf "First element of the json (%A) must be an object" d
-                    |> RResult.rmsg
+                failwith "not implemented"
 
     [<CLIMutable>]
     type internal ChannelDTO = {
@@ -103,10 +97,10 @@ module DTO =
 
         static member Deserialize(txt: string): RResult<ChannelDTO> =
             try
-                JsonSerializer.Parse<ChannelDTO>(txt)
+                JsonSerializer.Deserialize<ChannelDTO>(txt)
                 |> Good
             with
                 | ex -> RResult.rexn ex
 
         member this.Serialize() =
-            JsonSerializer.ToString<ChannelDTO>(this)
+            JsonSerializer.Serialize<ChannelDTO>(this)

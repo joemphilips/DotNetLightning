@@ -26,17 +26,6 @@ open DotNetLightning.Infrastructure
 type ServerParams() =
     member val P2PIpEndpoint = System.Net.IPEndPoint.Parse("tcp://localhost:127.0.0.1:9735") with get, set
 
-type P2PConnectionHandler(channelManager: ChannelManagementService) =
-    inherit ConnectionHandler()
-
-    override this.OnConnectedAsync(cctx) =
-        let ip = cctx.RemoteEndPoint
-        let inputS = cctx.Transport.Input.AsStream()
-        let rec loop () = task {
-            return ()
-        }
-        loop () :> Task
-
 module Program =
     let exitCode = 0
 
