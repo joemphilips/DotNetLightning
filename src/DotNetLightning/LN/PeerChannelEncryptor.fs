@@ -271,6 +271,15 @@ module PeerChannelEncryptor =
                 | Finished _ -> true
                 | _ -> false
 
+            member this.GetNoiseStep() =
+                match this.NoiseState with
+                | InProgress d -> 
+                    match d.State with
+                    | NoiseStep.PreActOne -> NextNoiseStep.ActOne
+                    | NoiseStep.PostActOne -> NextNoiseStep.ActTwo
+                    | NoiseStep.PostActTwo -> NextNoiseStep.ActThree
+                | Finished _ -> NextNoiseStep.NoiseComplete
+
 
     module PeerChannelEncryptor =
         let newOutBound (NodeId theirNodeId) =
