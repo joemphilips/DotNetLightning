@@ -21,8 +21,8 @@
     <Compile Include="NodeParams.fs" />
     <Compile Include="ChannelMessageHandler.fs" />
     <Compile Include="RoutingMessageHandler.fs" />
+    <Compile Include="ChannelManager.fs" />
     <Compile Include="PeerManager.fs" />
-    <Compile Include="ChannelService.fs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.2.0" />

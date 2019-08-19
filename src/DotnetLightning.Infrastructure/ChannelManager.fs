@@ -16,10 +16,11 @@ open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Chain
 open DotNetLightning.LN
 
-module Helpers =
-    ()
-
-type ChannelManagementService(nodeParams: IOptions<NodeParams>, log: ILogger<ChannelManagementService>, channelEventRepo: IChannelEventRepository, keysRepo: IKeysRepository) =
+type ChannelManagementService(
+        nodeParams: IOptions<NodeParams>,
+        log: ILogger<ChannelManagementService>,
+        channelEventRepo: IChannelEventRepository,
+        keysRepo: IKeysRepository) =
     let np = nodeParams.Value
     let _internalLog = Logger.fromMicrosoftLogger log
 
@@ -59,7 +60,7 @@ type ChannelManagementService(nodeParams: IOptions<NodeParams>, log: ILogger<Cha
                 | Good events ->
                     do! (this.ChannelEventRepo.SetEventsAsync(channel.InternalChannelId, events))
                     let nextChannel = events |> List.fold Channel.applyEvent channel
-                    log.LogDebug(sprintf "Updated channel with is %A" nextChannel)
+                    log.LogDebug(sprintf "Updated channel with %A" nextChannel)
                     match this.KnownChannels.TryUpdate (endPoint, nextChannel, channel) with
                     | true ->
                         return ()
@@ -75,6 +76,5 @@ type ChannelManagementService(nodeParams: IOptions<NodeParams>, log: ILogger<Cha
                 return ()
         } :> Task
 
-
-type PeerManagementService() =
-    member val KnownPeers: ConcurrentDictionary<EndPoint, Peer> = ConcurrentDictionary<_, _>() with get, set
+    member this.AcceptMessageAsync(peerId: PeerId, msg: IChannelMsg) =
+        failwith ""

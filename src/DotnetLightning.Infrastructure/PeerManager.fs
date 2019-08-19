@@ -307,15 +307,11 @@ type PeerManager(keyRepo: IKeysRepository,
                                     return! this.HandleSetupMsgAsync (setupmsg, peer, pipe)
                                 | :? IRoutingMsg as routingMsg ->
                                     do! this.RoutingMsgHandler.HandleMsg(peer.TheirNodeId.Value, routingMsg)
-                                    failwith "Consider ordering of Interface "
+                                    return Good (peer)
                                 | :? IChannelMsg as channelMsg ->
                                     do! this.ChannelMsgHandler.HandleMsg(peer.TheirNodeId.Value, channelMsg)
                                     return Good (peer)
-                                | :? IHTLCMsg as htlcMsg ->
-                                    do! this.ChannelMsgHandler.HandleHTLCMsg(peer.TheirNodeId.Value, htlcMsg)
-                                    return Good (peer)
+                                | msg -> failwithf "Unknown type of message (%A), this should never happen" msg
             | false, _ ->
                 return RResult.rmsg (sprintf "unknown peer %A" peerId)
         }
-    member this.DoAttemptWriteData (connId: ConnectionId) (peer: Peer) (pm: PeerManager) =
-        failwith ""

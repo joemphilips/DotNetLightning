@@ -8,7 +8,6 @@ open DotNetLightning.Serialize.Msgs
 // -----------
 type IChannelMessageHandler =
     abstract member HandleMsg: theirNodeId: NodeId *  data: IChannelMsg -> Task
-    abstract member HandleHTLCMsg: theirNodeId: NodeId *  data: IHTLCMsg -> Task
     abstract member HandleErrorMsg: theirNodeId: NodeId * data: ErrorMessage -> Task
     abstract member PeerDisconnected: theirNodeId: NodeId * noConnectionPossible: bool -> Task
     abstract member PeerConnected: theirNodeId: NodeId -> Task
@@ -20,9 +19,6 @@ type ChannelMessageHandler() =
             match data with
             | :? OpenChannel -> failwith ""
         
-        member this.HandleHTLCMsg(theirNodeId: NodeId, data: IHTLCMsg): Task = 
-            failwith "Not Implemented"
-
         member this.HandleErrorMsg(theirNodeId: NodeId, data: ErrorMessage): Task = 
             failwith "Not Implemented"
 
