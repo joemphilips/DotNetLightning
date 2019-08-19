@@ -1,18 +1,37 @@
 namespace DotNetLightning.Infrastructure
 
+open System.Threading.Tasks
+
 open DotNetLightning.Utils
 open DotNetLightning.Serialize.Msgs
 
 // -----------
 type IChannelMessageHandler =
-    abstract member HandleMsg: data: IChannelMsg -> RResult<unit>
+    abstract member HandleMsg: theirNodeId: NodeId *  data: IChannelMsg -> Task
+    abstract member HandleHTLCMsg: theirNodeId: NodeId *  data: IHTLCMsg -> Task
+    abstract member HandleErrorMsg: theirNodeId: NodeId * data: ErrorMessage -> Task
+    abstract member PeerDisconnected: theirNodeId: NodeId * noConnectionPossible: bool -> Task
+    abstract member PeerConnected: theirNodeId: NodeId -> Task
 
 type ChannelMessageHandler() =
 
     interface IChannelMessageHandler with
-        member this.HandleMsg(data: IChannelMsg): RResult<unit> = 
+        member this.HandleMsg(theirNodeId, data: IChannelMsg) = 
             match data with
             | :? OpenChannel -> failwith ""
+        
+        member this.HandleHTLCMsg(theirNodeId: NodeId, data: IHTLCMsg): Task = 
+            failwith "Not Implemented"
+
+        member this.HandleErrorMsg(theirNodeId: NodeId, data: ErrorMessage): Task = 
+            failwith "Not Implemented"
+
+        member this.PeerDisconnected(theirNodeId, noConnectionPossible) =
+            failwith ""
+
+        member this.PeerConnected(theirNodeId: NodeId): Task =
+            failwith "Not Implemented"
+
 
     (*
     abstract member HandleOpenChannel: (NodeId * OpenChannel) -> RResult<unit>

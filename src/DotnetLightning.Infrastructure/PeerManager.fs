@@ -38,8 +38,9 @@ type PeerManager(keyRepo: IKeysRepository,
                  routingMsgHandler: IRoutingMessageHandler) =
     let _logger = logger
     let _nodeParams = nodeParams.Value
-    let _channelMsgHandler = channelMsgHandler
-    let _routingMsgHandler = routingMsgHandler
+    let ascii = System.Text.ASCIIEncoding.ASCII
+    member val ChannelMsgHandler = channelMsgHandler with get
+    member val RoutingMsgHandler = routingMsgHandler with get
     member val KnownPeers = ConcurrentDictionary<PeerId, Peer>() with get, set
     member val OpenedPeers = ConcurrentDictionary<PeerId, Peer>() with get, set
     member val NodeIdToDescriptor = ConcurrentDictionary<NodeId, PeerId>() with get, set
@@ -113,6 +114,72 @@ type PeerManager(keyRepo: IKeysRepository,
             | false, _ ->
                 sprintf "peerId %A is not in opened peers" peerId
                 |> _logger.LogCritical
+        }
+
+    member private this.HandleSetupMsgAsync(msg: ISetupMsg, peer: Peer, pipe: IDuplexPipe) =
+        vtask {
+            match msg with
+            | :? Init as init ->
+                if (init.GlobalFeatures.RequiresUnknownBits()) then
+                    _logger.LogInformation("Peer global features required unknown version bits")
+                    return RResult.rbad(RBad.Object({ PeerHandleError.NoConnectionPossible = true }))
+                else if (init.LocalFeatures.RequiresUnknownBits()) then
+                    _logger.LogInformation("Peer local features required unknown version bits")
+                    return RResult.rbad(RBad.Object({ PeerHandleError.NoConnectionPossible = true }))
+                else if (peer.TheirGlobalFeatures.IsSome) then
+                    return RResult.rbad(RBad.Object({ PeerHandleError.NoConnectionPossible = false }))
+                else
+                    sprintf "Received peer Init message: data_loss_protect: %s, initial_routing_sync: %s , upfront_shutdown_script: %s, unknown local flags: %s, unknown global flags %s" 
+                        (if init.LocalFeatures.SupportsDataLossProect() then "supported" else "not supported")
+                        (if init.LocalFeatures.InitialRoutingSync() then "supported" else "not supported")
+                        (if init.LocalFeatures.SupportsUpfrontShutdownScript() then "supported" else "not supported")
+                        (if init.LocalFeatures.SupportsUnknownBits() then "present" else "not present")
+                        (if init.GlobalFeatures.SupportsUnknownBits() then "present" else "not present")
+                        |> _logger.LogInformation
+
+                    let peer =
+                        if (init.LocalFeatures.InitialRoutingSync()) then
+                            { peer with SyncStatus = InitSyncTracker.ChannelsSyncing (ChannelId.Zero) }
+                        else
+                            peer
+                        |> fun p -> { p with TheirGlobalFeatures = Some init.GlobalFeatures; TheirLocalFeatures = Some init.LocalFeatures }
+                    if (not peer.IsOutBound) then
+                        let lf = LocalFeatures.Flags([||]).SetInitialRoutingSync()
+                        do! this.EncodeAndSendMsg(peer.PeerId, pipe) ({ Init.GlobalFeatures = GlobalFeatures.Flags([||]); Init.LocalFeatures = lf })
+                        return Good (peer)
+                    else
+                        do! this.ChannelMsgHandler.PeerConnected(peer.TheirNodeId.Value)
+                        return Good (peer)
+            | :? ErrorMessage as e ->
+                let isDataPrintable = e.Data |> Array.exists(fun b -> b < 32uy || b > 126uy) |> not
+                do
+                    if isDataPrintable then
+                        sprintf "Got error message from %A:%A" (peer.TheirNodeId.Value) (ascii.GetString(e.Data))
+                        |> _logger.LogDebug
+                    else
+                        sprintf "Got error message from %A with non-ASCII error message" (peer.TheirNodeId.Value)
+                        |> _logger.LogDebug
+                if (e.ChannelId = WhichChannel.All) then
+                    return
+                        { PeerHandleError.NoConnectionPossible = true }
+                        |> box
+                        |> RBad.Object
+                        |> RResult.rbad
+                else
+                    do! this.ChannelMsgHandler.HandleErrorMsg(peer.TheirNodeId.Value, e)
+                    return Good peer
+            | :? Ping as ping ->
+                sprintf "Received ping from %A" peer.TheirNodeId
+                |> _logger.LogTrace 
+                if (ping.PongLen < 65532us) then
+                    let pong = { Pong.BytesLen = ping.PongLen }
+                    do! this.EncodeAndSendMsg(peer.PeerId, pipe) (pong)
+                    return Good(peer)
+                else
+                    return Good (peer)
+            | :? Pong as pong ->
+                return Good (peer)
+            | _ -> return failwithf "Unknown setup message %A This should never happen" msg
         }
 
     member inline private this.TryPotentialHandleError (peerId, transport: IDuplexPipe) (b: RBad) =
@@ -236,9 +303,16 @@ type PeerManager(keyRepo: IKeysRepository,
                             | Bad b -> return Bad b
                             | Good msg ->
                                 match msg with
+                                | :? ISetupMsg as setupmsg ->
+                                    return! this.HandleSetupMsgAsync (setupmsg, peer, pipe)
                                 | :? IRoutingMsg as routingMsg ->
-                                    failwith ""
+                                    do! this.RoutingMsgHandler.HandleMsg(peer.TheirNodeId.Value, routingMsg)
+                                    failwith "Consider ordering of Interface "
                                 | :? IChannelMsg as channelMsg ->
+                                    do! this.ChannelMsgHandler.HandleMsg(peer.TheirNodeId.Value, channelMsg)
+                                    return Good (peer)
+                                | :? IHTLCMsg as htlcMsg ->
+                                    do! this.ChannelMsgHandler.HandleHTLCMsg(peer.TheirNodeId.Value, htlcMsg)
                                     return Good (peer)
             | false, _ ->
                 return RResult.rmsg (sprintf "unknown peer %A" peerId)
