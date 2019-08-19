@@ -284,6 +284,16 @@ module rec Msgs =
                 (d :> ILightningSerializable<ChannelUpdate>).Serialize(ls)
             | x -> failwithf "%A is not known lightning message. This should never happen" x
 
+    module LightningMsg =
+        let fromBytes<'T when 'T :> ILightningMsg>(b: byte[]) =
+            try
+                use ms = new MemoryStream(b)
+                use ls = new LightningReaderStream(ms)
+                ILightningSerializable.deserializeWithFlag ls
+                |> Good
+            with
+            | x -> RResult.rexn x
+
     [<Extension>]
     type ILightningMsgExtension() =
         [<Extension>]

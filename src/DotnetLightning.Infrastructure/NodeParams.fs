@@ -74,6 +74,7 @@ type NodeParams() as this =
     member val RouterConf: RouterConfig = RouterConfig()
     member val SocksProxy: Socks5Params option = None
     member val MaxPaymentAttempts: int = 5
+    member val RequireInitialRoutingSync: bool = true
     with
     member this.GetChannelConfig() =
         {
