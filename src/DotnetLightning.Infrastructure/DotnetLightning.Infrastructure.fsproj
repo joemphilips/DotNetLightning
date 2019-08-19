@@ -19,8 +19,6 @@
     <Compile Include="KeyRepositories.fs" />
     <Compile Include="Socks5.fs" />
     <Compile Include="NodeParams.fs" />
-    <Compile Include="ChannelMessageHandler.fs" />
-    <Compile Include="RoutingMessageHandler.fs" />
     <Compile Include="ChannelManager.fs" />
     <Compile Include="PeerManager.fs" />
   </ItemGroup>
