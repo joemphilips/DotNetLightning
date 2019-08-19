@@ -23,6 +23,8 @@ open DotNetLightning.Crypto
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.LN
 
+open CustomEventAggregator
+
 
 type PeerError =
     | DuplicateConnection of PeerId
@@ -34,6 +36,7 @@ type IPeerManager =
 type PeerManager(keyRepo: IKeysRepository,
                  logger: ILogger<PeerManager>,
                  nodeParams: IOptions<NodeParams>,
+                 eventAggregator: IEventAggregator,
                  channelManager: IChannelManager) =
     let _logger = logger
     let _nodeParams = nodeParams.Value
@@ -304,7 +307,7 @@ type PeerManager(keyRepo: IKeysRepository,
                                 | :? ISetupMsg as setupmsg ->
                                     return! this.HandleSetupMsgAsync (setupmsg, peer, pipe)
                                 | :? IRoutingMsg as routingMsg ->
-                                    do! this.RoutingMsgHandler.HandleMsg(peer.TheirNodeId.Value, routingMsg)
+                                    //do! this.RoutingMsgHandler.HandleMsg(peer.TheirNodeId.Value, routingMsg)
                                     return Good (peer)
                                 | :? IChannelMsg as channelMsg ->
                                     do! this.ChannelMsgHandler.HandleMsg(peer.TheirNodeId.Value, channelMsg)

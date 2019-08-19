@@ -4,6 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\DotNetLightning\DotNetLightning.fsproj" />
+    <ProjectReference Include="..\EventAggregator\EventAggregator.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Ply.fs" />
