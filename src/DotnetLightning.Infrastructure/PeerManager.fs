@@ -150,7 +150,7 @@ type PeerManager(keyRepo: IKeysRepository,
                         do! this.EncodeAndSendMsg(peer.PeerId, pipe) ({ Init.GlobalFeatures = GlobalFeatures.Flags([||]); Init.LocalFeatures = lf })
                         return Good (peer)
                     else
-                        do! this.ChannelMsgHandler.PeerConnected(peer.TheirNodeId.Value)
+                        this.EventAggregator.Publish<PeerEvent>(Connected peer.TheirNodeId.Value)
                         return Good (peer)
             | :? ErrorMessage as e ->
                 let isDataPrintable = e.Data |> Array.exists(fun b -> b < 32uy || b > 126uy) |> not
@@ -168,7 +168,7 @@ type PeerManager(keyRepo: IKeysRepository,
                         |> RBad.Object
                         |> RResult.rbad
                 else
-                    do! this.ChannelMsgHandler.HandleErrorMsg(peer.TheirNodeId.Value, e)
+                    this.EventAggregator.Publish<PeerEvent>(ReceivedError(peer.TheirNodeId.Value, e))
                     return Good peer
             | :? Ping as ping ->
                 sprintf "Received ping from %A" peer.TheirNodeId
@@ -308,13 +308,12 @@ type PeerManager(keyRepo: IKeysRepository,
                                 | :? ISetupMsg as setupmsg ->
                                     return! this.HandleSetupMsgAsync (setupmsg, peer, pipe)
                                 | :? IRoutingMsg as routingMsg ->
-                                    //do! this.RoutingMsgHandler.HandleMsg(peer.TheirNodeId.Value, routingMsg)
-                                    this.EventAggregator
+                                    this.EventAggregator.Publish<PeerEvent>(ReceivedRoutingMsg (peer.TheirNodeId.Value, routingMsg))
                                     return Good (peer)
                                 | :? IChannelMsg as channelMsg ->
-                                    // do! this.ChannelMsgHandler.HandleMsg(peer.TheirNodeId.Value, channelMsg)
+                                    this.EventAggregator.Publish<PeerEvent>(ReceivedChannelMsg (peer.TheirNodeId.Value, channelMsg))
                                     return Good (peer)
-                                | msg -> failwithf "Unknown type of message (%A), this should never happen" msg
+                                | msg -> return failwithf "Unknown type of message (%A), this should never happen" msg
             | false, _ ->
                 return RResult.rmsg (sprintf "unknown peer %A" peerId)
         }

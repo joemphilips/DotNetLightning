@@ -44,6 +44,7 @@
     <Compile Include="LN/ChannelTypes.fs" />
     <Compile Include="LN/CommitmentsModule.fs" />
     <Compile Include="LN/Channel.fs" />
+    <Compile Include="LN/PeerTypes.fs" />
     <Compile Include="LN/Peer.fs" />
   </ItemGroup>
   <ItemGroup>
