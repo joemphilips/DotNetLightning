@@ -265,3 +265,6 @@ coverage.*.xml
 
 # Paket tool store
 .paket/.store
+
+## others
+.vscode
