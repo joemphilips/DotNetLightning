@@ -133,9 +133,9 @@ module rec Msgs =
     type ILightningMsg = interface end
     type ISetupMsg = inherit ILightningMsg
     type IChannelMsg = inherit ILightningMsg
-    type IHTLCMsg = inherit ILightningMsg
+    type IHTLCMsg = inherit IChannelMsg
+    type IUpdateMsg = inherit IChannelMsg
     type IRoutingMsg = inherit ILightningMsg
-    type IUpdateMsg = inherit ILightningMsg
 
     // #endregion 
 
@@ -283,6 +283,16 @@ module rec Msgs =
                 ls.Write(TypeFlag.ChannelUpdate, false)
                 (d :> ILightningSerializable<ChannelUpdate>).Serialize(ls)
             | x -> failwithf "%A is not known lightning message. This should never happen" x
+
+    module LightningMsg =
+        let fromBytes<'T when 'T :> ILightningMsg>(b: byte[]) =
+            try
+                use ms = new MemoryStream(b)
+                use ls = new LightningReaderStream(ms)
+                ILightningSerializable.deserializeWithFlag ls
+                |> Good
+            with
+            | x -> RResult.rexn x
 
     [<Extension>]
     type ILightningMsgExtension() =
@@ -1328,36 +1338,6 @@ module rec Msgs =
         IsPermanent: bool
     }
 
-
-    // -----------
-    type IChannelMessageHandler =
-        abstract member HandleOpenChannel: (NodeId * OpenChannel) -> RResult<unit>
-        abstract member HandleAcceptChannel: (NodeId * AcceptChannel) -> RResult<unit>
-        abstract member HandleFundingCreated: (NodeId * FundingCreated) -> RResult<unit>
-        abstract member HandleFundingSigned: (NodeId * FundingSigned) -> RResult<unit>
-        abstract member HandleFundingLocked: (NodeId * FundingLocked) -> RResult<unit>
-        abstract member HandleShutdown: (NodeId * Shutdown) -> RResult<unit>
-        abstract member HandleClosingSigned: (NodeId * ClosingSigned) -> RResult<unit>
-        abstract member HandleUpdateAddHTLC: (NodeId * UpdateAddHTLC) -> RResult<unit>
-        abstract member HandleUpdateFulfillHTLC: (NodeId * UpdateFulfillHTLC) -> RResult<unit>
-        abstract member HandleUpdateFailHTLC: (NodeId * UpdateFailHTLC) -> RResult<unit>
-        abstract member HandleUpdateFailMalformedHTLC: (NodeId * UpdateFailMalformedHTLC) -> RResult<unit>
-        abstract member HandleCommitmentSigned: (NodeId * CommitmentSigned) -> RResult<unit>
-        abstract member HandleRevokeAndACK: (NodeId * RevokeAndACK) -> RResult<unit>
-        abstract member HandleUpdateFee: (NodeId * UpdateFee) -> RResult<unit>
-        abstract member HandleAnnouncementSignatures: (NodeId * AnnouncementSignatures) -> RResult<unit>
-        abstract member PeerDisconnected: (NodeId * bool) -> RResult<unit>
-        abstract member PeerConnected: (NodeId) -> RResult<unit>
-        abstract member HandleChannelReestablish: their: NodeId * msg: ChannelReestablish -> RResult<unit>
-        abstract member HandleError: their: NodeId * msg: ErrorMessage -> RResult<unit>
-
-    type IRoutingMessageHandler =
-        abstract member HandleNodeAnnouncement: msg:NodeAnnouncement -> RResult<bool>
-        abstract member HandleChannelAnnouncement: msg:ChannelAnnouncement -> RResult<bool>
-        abstract member HandleChannelUpdate: msg:ChannelUpdate -> RResult<bool>
-        abstract member HandleHTLCFailChannelUpdate: msg:HTLCFailChannelUpdate -> RResult<unit>
-        abstract member GetNextChannelAnnouncements: startingPoint: ShortChannelId * batchAmount: uint8 -> (ChannelAnnouncement * ChannelUpdate * ChannelUpdate) list
-        abstract member GetNextNodeAnnouncements: startingPoint: PubKey option * batchAMount: uint8 -> NodeAnnouncement list
 
     type OnionRealm0HopData = {
         ShortChannelId: ShortChannelId

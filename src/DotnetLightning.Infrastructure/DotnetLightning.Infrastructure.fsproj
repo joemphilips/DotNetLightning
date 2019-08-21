@@ -4,6 +4,8 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\DotNetLightning\DotNetLightning.fsproj" />
+    <ProjectReference Include="..\EventAggregator\EventAggregator.csproj" />
+    <ProjectReference Include="..\EventAggregator\EventAggregator.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Ply.fs" />
@@ -19,8 +21,8 @@
     <Compile Include="KeyRepositories.fs" />
     <Compile Include="Socks5.fs" />
     <Compile Include="NodeParams.fs" />
+    <Compile Include="ChannelManager.fs" />
     <Compile Include="PeerManager.fs" />
-    <Compile Include="ChannelService.fs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.2.0" />
