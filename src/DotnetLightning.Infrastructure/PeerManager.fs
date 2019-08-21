@@ -45,7 +45,7 @@ type PeerManager(keyRepo: IKeysRepository,
     member val KnownPeers = ConcurrentDictionary<PeerId, Peer>() with get, set
     member val OpenedPeers = ConcurrentDictionary<PeerId, Peer>() with get, set
     member val NodeIdToDescriptor = ConcurrentDictionary<NodeId, PeerId>() with get, set
-    member val EventAggregator; IEventAggregator = eventAggregator with get
+    member val EventAggregator: IEventAggregator = eventAggregator with get
 
     member this.NewOutBoundConnection (theirNodeId: NodeId, peerId: PeerId): Result<byte[], PeerError> =
         let act1, peerEncryptor =

@@ -2,8 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
-    <LangVersion>7.3</LangVersion>
-  </PropertyGroup>
+    <LangVersion>7.3</LangVersion> </PropertyGroup>
 
   <PropertyGroup>
     <Description>Provides modern cryptographic algorithm implementations for .NET Core based on libsodium.
@@ -34,4 +33,5 @@ NSec.Cryptography.X25519</Description>
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.2" />
   </ItemGroup>
 
+  <Import Project="$(MSBuildThisFileDirectory)..\NSec.Package.Props" />
 </Project>
