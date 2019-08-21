@@ -45,6 +45,7 @@ type PeerManager(keyRepo: IKeysRepository,
     member val KnownPeers = ConcurrentDictionary<PeerId, Peer>() with get, set
     member val OpenedPeers = ConcurrentDictionary<PeerId, Peer>() with get, set
     member val NodeIdToDescriptor = ConcurrentDictionary<NodeId, PeerId>() with get, set
+    member val EventAggregator; IEventAggregator = eventAggregator with get
 
     member this.NewOutBoundConnection (theirNodeId: NodeId, peerId: PeerId): Result<byte[], PeerError> =
         let act1, peerEncryptor =
@@ -308,9 +309,10 @@ type PeerManager(keyRepo: IKeysRepository,
                                     return! this.HandleSetupMsgAsync (setupmsg, peer, pipe)
                                 | :? IRoutingMsg as routingMsg ->
                                     //do! this.RoutingMsgHandler.HandleMsg(peer.TheirNodeId.Value, routingMsg)
+                                    this.EventAggregator
                                     return Good (peer)
                                 | :? IChannelMsg as channelMsg ->
-                                    do! this.ChannelMsgHandler.HandleMsg(peer.TheirNodeId.Value, channelMsg)
+                                    // do! this.ChannelMsgHandler.HandleMsg(peer.TheirNodeId.Value, channelMsg)
                                     return Good (peer)
                                 | msg -> failwithf "Unknown type of message (%A), this should never happen" msg
             | false, _ ->
