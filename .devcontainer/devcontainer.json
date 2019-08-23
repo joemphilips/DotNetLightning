@@ -1,0 +1,23 @@
+// For format details, see https://aka.ms/vscode-remote/devcontainer.json or the definition README at
+// https://github.com/microsoft/vscode-dev-containers/tree/master/containers/dotnetcore-latest-fsharp
+{
+	"name": "F# (.NET Core Latest)",
+	"dockerFile": "Dockerfile",
+
+	// Uncomment the next line if you want to publish any ports.
+	// "appPort": [],
+
+	// Uncomment the next line to run commands after the container is created.
+	// "postCreateCommand": "dotnet restore",
+
+	// Uncomment the next line to use a non-root user. See https://aka.ms/vscode-remote/containers/non-root-user.
+	// "runArgs": [ "-u", "1000" ],
+
+	"extensions": [
+		"Ionide.Ionide-fsharp",
+		"ms-vscode.csharp"
+	],
+	"settings": {
+		"FSharp.fsacRuntime":"netcore"
+	}
+}
