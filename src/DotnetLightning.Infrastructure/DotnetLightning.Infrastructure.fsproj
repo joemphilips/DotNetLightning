@@ -4,7 +4,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\DotNetLightning\DotNetLightning.fsproj" />
-    <ProjectReference Include="..\EventAggregator\EventAggregator.csproj" />
     <ProjectReference Include="..\EventAggregator\EventAggregator.fsproj" />
   </ItemGroup>
   <ItemGroup>
@@ -28,7 +27,6 @@
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="2.2.0" />
-    <PackageReference Include="NBitcoin" Version="4.1.2.33-joemphilips014" />
     <PackageReference Include="System.IO.Pipelines" Version="4.5.3" />
   </ItemGroup>
 </Project>
