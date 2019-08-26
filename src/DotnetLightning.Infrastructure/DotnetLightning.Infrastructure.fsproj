@@ -9,6 +9,7 @@
   <ItemGroup>
     <Compile Include="Ply.fs" />
     <Compile Include="ComputationBuilders.fs" />
+    <Compile Include="Subject.fs" />
     <Compile Include="PipelineExtensions.fs" />
     <Compile Include="RResultExtensions.fs" />
     <Compile Include="Constants.fs" />
