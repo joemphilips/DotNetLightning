@@ -4,9 +4,6 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\DotNetLightning\DotNetLightning.fsproj" />
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Utils/Utils.fs" />
     <Compile Include="Utils/FromRustLightning.fs" />
@@ -28,6 +25,9 @@
     <PackageReference Include="FSharp.Core" Version="4.*" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="2.2.0" />
     <PackageReference Include="YoloDev.Expecto.TestSdk" Version="0.*" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DotNetLightning.Core\DotNetLightning.Core.fsproj" />
   </ItemGroup>
   <Import Project="..\..\fsc.props" />
   <Import Project="..\..\netfx.props" />

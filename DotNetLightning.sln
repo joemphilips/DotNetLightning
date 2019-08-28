@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{84B95569-6BD8-48B4-A942-CBBC9462B6D4}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DotNetLightning", "src\DotNetLightning\DotNetLightning.fsproj", "{594F2275-AF8E-4AFC-B8DC-7D6048C872CA}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DotNetLightning.Core", "src\DotNetLightning.Core\DotNetLightning.Core.fsproj", "{594F2275-AF8E-4AFC-B8DC-7D6048C872CA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{E6F1DC30-D346-4E86-8F58-20CFAAB19448}"
 EndProject

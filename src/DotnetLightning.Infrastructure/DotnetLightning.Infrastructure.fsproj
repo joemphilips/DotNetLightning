@@ -3,7 +3,7 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DotNetLightning\DotNetLightning.fsproj" />
+    <ProjectReference Include="..\DotNetLightning.Core\DotNetLightning.Core.fsproj" />
     <ProjectReference Include="..\EventAggregator\EventAggregator.fsproj" />
   </ItemGroup>
   <ItemGroup>
