@@ -59,7 +59,7 @@ module DTO =
                 | WaitForOpenChannel d ->
                     WaitForOpenChannelDTO (InitFundeeDTO.FromDomainObject(d.InitFundee))
 
-            member this.ToDomainObject() =
+            member this.ToDomainObject(): RResult<_> =
                 match this with
                 | WaitForOpenChannelDTO dto ->
                     { WaitForOpenChannelData.InitFundee = { InputInitFundee.TemporaryChannelId = dto.TemporaryChannelId
@@ -68,6 +68,7 @@ module DTO =
                                                             ToLocal = failwith "Not Implemented"
                                                             ChannelKeys = failwith "Not Implemented" } }
                     |> ChannelState.WaitForOpenChannel
+                    |> Good
 
             static member Deserialize(json: string) =
                 use jsonDocument = JsonDocument.Parse(json)
@@ -92,7 +93,7 @@ module DTO =
                 State = ChannelState.ChannelStateDTO.FromDomainObject(c.State)
             }
         
-        member this.ToDomainObject() =
+        member this.ToDomainObject(): RResult<_> =
             failwith ""
 
         static member Deserialize(txt: string): RResult<ChannelDTO> =
