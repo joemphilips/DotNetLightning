@@ -17,7 +17,6 @@
     <Compile Include="Utils/Aether.fs" />
     <Compile Include="Utils/TxBuilderMonad.fs" />
     <Compile Include="Utils/Config.fs" />
-    <Compile Include="Utils/TransactionUtils.fs" />
     <Compile Include="Utils/Errors.fs" />
     <Compile Include="Utils/Logger.fs" />
     <Compile Include="Utils/RouteType.fs" />

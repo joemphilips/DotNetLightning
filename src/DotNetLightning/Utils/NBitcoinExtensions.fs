@@ -1,8 +1,6 @@
 namespace DotNetLightning.Utils
+
 open NBitcoin
-open NBitcoin.Crypto
-open NBitcoin.Crypto
-open System.Numerics
 
 module NBitcoinExtensions =
     module FeeRate =

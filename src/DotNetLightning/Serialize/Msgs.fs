@@ -1,12 +1,9 @@
 namespace DotNetLightning.Serialize
 open NBitcoin
 open DotNetLightning.Utils
-open DotNetLightning.Utils.NBitcoinExtensions
 open System
 open System.Runtime.CompilerServices
 open System.IO
-open System.Net
-open NBitcoin.Crypto
 open DotNetLightning.Utils.Error
 
 // #region serialization

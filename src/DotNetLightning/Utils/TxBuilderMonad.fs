@@ -1,10 +1,9 @@
 namespace DotNetLightning.Utils
 open NBitcoin
-open NBitcoin.Crypto
 
 type TxBuildingComputation<'a> =
-    TxBuildingComputation of (TransactionBuilder -> 'a * TransactionBuilder)
-
+    TxBuildingComputation of (TransactionBuilder -> ('a * TransactionBuilder))
+    
 [<RequireQualifiedAccess>]
 module TxBuildingComputation =
     let run (TxBuildingComputation innerFn) state =
@@ -48,12 +47,11 @@ module TxBuilderClient =
         )
 
     let sign (key: Key) =
-        TxBuildingComputation.toComputation(fun state ->
+        TxBuildingComputation.toComputation (fun state ->
             state.AddKeys(key) |> ignore
             let tx = state.BuildTransaction(true)
             let signature = tx.Inputs
-                            |> Seq.collect(fun i -> i.WitScript.Pushes)
-                            |> Seq.choose(fun bs -> if TransactionSignature.IsValid(bs) then Some (TransactionSignature(bs)) else None)
+                            |> Seq.collect (fun i -> i.WitScript.Pushes)
+                            |> Seq.choose (fun bs -> if TransactionSignature.IsValid(bs) then Some(TransactionSignature(bs)) else None)
             signature, state.ContinueToBuild tx
         )
-    ()
