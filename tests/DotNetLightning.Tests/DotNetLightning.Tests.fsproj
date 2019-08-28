@@ -4,9 +4,6 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\DotNetLightning\DotNetLightning.fsproj" />
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Utils/Utils.fs" />
     <Compile Include="Utils/FromRustLightning.fs" />
@@ -20,18 +17,6 @@
     <Compile Include="GeneratorsTests.fs" />
     <Compile Include="TransactionTests.fs" />
     <Compile Include="PeerChannelEncryptorTests.fs" />
-    <Compile Include="Channel/ChannelTestUtils.fs" />
-    <Compile Include="Channel/WaitForAcceptChannelStateTests.fs" />
-    <Compile Include="Channel/WaitForOpenChannelStateTests.fs" />
-    <Compile Include="Channel/WaitForFundingCreatedStateTests.fs" />
-    <Compile Include="Channel/WaitForFundingSignedStateTests.fs" />
-    <Compile Include="Channel/WaitForFundingConfirmedStateTests.fs" />
-    <Compile Include="Channel/WaitForFundingLockedStateTests.fs" />
-    <Compile Include="Channel/NormalStateTests.fs" />
-    <Compile Include="Channel/OfflineStateTests.fs" />
-    <Compile Include="Channel/ShutdownStateTests.fs" />
-    <Compile Include="Channel/NegotiatingStateTests.fs" />
-    <Compile Include="Channel/ClosingStateTests.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
   <ItemGroup>
@@ -40,6 +25,9 @@
     <PackageReference Include="FSharp.Core" Version="4.*" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="2.2.0" />
     <PackageReference Include="YoloDev.Expecto.TestSdk" Version="0.*" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DotNetLightning.Core\DotNetLightning.Core.fsproj" />
   </ItemGroup>
   <Import Project="..\..\fsc.props" />
   <Import Project="..\..\netfx.props" />

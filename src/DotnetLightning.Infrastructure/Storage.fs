@@ -17,6 +17,7 @@ type FlatFileDB(path: string, codec: SupportedCodec) =
         use fs = new FileStream(_path, FileMode.Open)
         use stream = new LightningWriterStream(fs)
         failwith ""
+
 type SupportedDBType =
     | Null
     /// Only for testing

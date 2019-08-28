@@ -3,12 +3,13 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DotNetLightning\DotNetLightning.fsproj" />
+    <ProjectReference Include="..\DotNetLightning.Core\DotNetLightning.Core.fsproj" />
     <ProjectReference Include="..\EventAggregator\EventAggregator.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Ply.fs" />
     <Compile Include="ComputationBuilders.fs" />
+    <Compile Include="Subject.fs" />
     <Compile Include="PipelineExtensions.fs" />
     <Compile Include="RResultExtensions.fs" />
     <Compile Include="Constants.fs" />

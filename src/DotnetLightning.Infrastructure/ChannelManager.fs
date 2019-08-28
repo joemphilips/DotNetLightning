@@ -17,32 +17,31 @@ open DotNetLightning.Chain
 open DotNetLightning.LN
 
 type IChannelManager =
-    abstract member AcceptCommandAsync: peerId: PeerId * cmd: ChannelCommand -> Task
-    abstract member AcceptMessageAsync: peerId: PeerId * msg: IChannelMsg -> Task
+    abstract AcceptCommandAsync: peerId:PeerId * cmd:ChannelCommand -> Task
+    abstract AcceptMessageAsync: peerId:PeerId * msg:IChannelMsg -> Task
 
-type ChannelManagementService(
-        nodeParams: IOptions<NodeParams>,
-        log: ILogger<ChannelManagementService>,
-        channelEventRepo: IChannelEventRepository,
-        keysRepo: IKeysRepository) =
+type ChannelManagementService(nodeParams: IOptions<NodeParams>,
+                              log: ILogger<ChannelManagementService>,
+                              channelEventRepo: IChannelEventRepository,
+                              keysRepo: IKeysRepository) =
     let np = nodeParams.Value
     let _internalLog = Logger.fromMicrosoftLogger log
 
-    member val KnownChannels: ConcurrentDictionary<EndPoint, Channel> = ConcurrentDictionary<_, _>() with get
-    member val ChannelEventRepo = channelEventRepo with get
+    member val KnownChannels: ConcurrentDictionary<EndPoint, Channel> = ConcurrentDictionary<_, _>()
+    member val ChannelEventRepo = channelEventRepo
 
-    member private this.HandleChannelErrorAsync(log: ILogger<ChannelManagementService>) (endPoint: EndPoint) (b: RBad) =
+    member private this.HandleChannelErrorAsync (log: ILogger<ChannelManagementService>) (endPoint: EndPoint) (b: RBad) =
         task {
             match b with
-            | RBad.Exception(ChannelException(ChannelError.Close(msg))) -> 
+            | RBad.Exception(ChannelException(ChannelError.Close(msg))) ->
                 let closeCMD =
                     let spk = keysRepo.GetShutdownPubKey()
-                    ChannelCommand.Close ({ CMDClose.ScriptPubKey = Some spk.WitHash.ScriptPubKey })
+                    ChannelCommand.Close({ CMDClose.ScriptPubKey = Some spk.WitHash.ScriptPubKey })
                 log.LogError(sprintf "Closing a channel for a peer (%A) due to a following error. \n %s" endPoint msg)
                 log.LogError(sprintf "%s" msg)
                 do! this.AcceptCommandAsync(endPoint, closeCMD)
             | RBad.Exception(ChannelException(ChannelError.Ignore(msg))) ->
-                log.LogWarning("Observered a following error in a channel. But ignoring")
+                log.LogWarning("Observed a following error in a channel. But ignoring")
                 log.LogWarning(msg)
             | RBad.Object(o) ->
                 match o with
@@ -51,12 +50,12 @@ type ChannelManagementService(
                     | APIMisuseError msg ->
                         log.LogWarning(sprintf "Channel returned api misuse error. ignoring. %s" msg)
                     | e ->
-                        log.LogCritical (sprintf "Unreachable %A" e)
+                        log.LogCritical(sprintf "Unreachable %A" e)
                 | e -> sprintf "unreachable %A" e |> log.LogCritical
             | o -> sprintf "Observed a following error in a channel %A" o |> log.LogError
         } :> Task
 
-    member this.AcceptCommandAsync(endPoint: EndPoint, cmd: ChannelCommand):Task =
+    member this.AcceptCommandAsync(endPoint: EndPoint, cmd: ChannelCommand): Task =
         task {
             match this.KnownChannels.TryGetValue(endPoint) with
             | true, channel ->
@@ -65,14 +64,14 @@ type ChannelManagementService(
                     do! (this.ChannelEventRepo.SetEventsAsync(channel.InternalChannelId, events))
                     let nextChannel = events |> List.fold Channel.applyEvent channel
                     log.LogDebug(sprintf "Updated channel with %A" nextChannel)
-                    match this.KnownChannels.TryUpdate (endPoint, nextChannel, channel) with
+                    match this.KnownChannels.TryUpdate(endPoint, nextChannel, channel) with
                     | true ->
                         return ()
                     | false ->
                         failwith "Failed to update channel, this should never happen"
                 | Bad ex ->
                     let ex = ex.Flatten()
-                    do! ex |> Array.map(this.HandleChannelErrorAsync log endPoint) |> Task.WhenAll
+                    do! ex |> Array.map (this.HandleChannelErrorAsync log endPoint) |> Task.WhenAll
                     return ()
             | false, _ ->
                 sprintf "unknown peer %A" endPoint
