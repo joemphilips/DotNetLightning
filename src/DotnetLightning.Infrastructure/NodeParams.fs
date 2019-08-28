@@ -1,9 +1,7 @@
 namespace DotNetLightning.Infrastructure
 
-open DotNetLightning.Chain
 open DotNetLightning.Utils
 open DotNetLightning.Serialize.Msgs
-open Microsoft.Extensions.Configuration
 open NBitcoin
 open System
 
@@ -37,18 +35,19 @@ type NodeParams() as this =
     member val Color: RGB = { RGB.Red = 184uy; Green = 69uy; Blue = 252uy } with get, set
 
     // ---- infrastructure types -----
-    member val WatcherType: SupportedChainWatcherType = Bitcoind(RPC.RPCClient(this.ChainNetwork))
-    member val DBType: SupportedDBType = SupportedDBType.Null
-    member val KeyRepoType: SupportedKeyRepositoryTypes = SupportedKeyRepositoryTypes.FlatFile(this.DataDirPath)
+    member val WatcherType: SupportedChainWatcherType = Bitcoind(RPC.RPCClient(this.ChainNetwork)) with get, set
+    member val DBType: SupportedDBType = SupportedDBType.Null with get, set
+    member val KeyRepoType: SupportedKeyRepositoryTypes = SupportedKeyRepositoryTypes.FlatFile(this.DataDirPath) with get, set
+
+    member val PublicAddresses: System.Net.IPEndPoint list = [] with get, set
 
     // ---- channel parameters ---
-    member val PublicAddresses: System.Net.IPEndPoint list = [] with get, set
     member val LocalFeatures: LocalFeatures = LocalFeatures.Flags [||] with get, set
     member val GlobalFeatures: GlobalFeatures = GlobalFeatures.Flags[||] with get, set
     member val DustLimitSatoshis: Money = Money.Satoshis(546L) with get, set
     member val MaxHTLCValueInFlightMSat: LNMoney = LNMoney.MilliSatoshis(5000000000L) with get, set
     member val MaxAcceptedHTLCs: uint16 = 30us with get, set
-    member val ExpirtyDeltaBlocks: BlockHeight = BlockHeight 144u with get, set
+    member val ExpiryDeltaBlocks: BlockHeight = BlockHeight 144u with get, set
     member val HTLCMinimumMSat: LNMoney = LNMoney.MilliSatoshis(1L) with get, set
     member val ToRemoteDelayBlocks: BlockHeight = BlockHeight (720u) with get, set
     member val MaxToLocalDelayBlocks: BlockHeight = BlockHeight(2016u) with get, set
@@ -58,6 +57,7 @@ type NodeParams() as this =
     member val FeeProportionalMillionths: uint32 = 100u with get, set
     // Recommended  in bolt 2
     member val ReserveToFundingRatio: float = -0.01 with get, set
+    member val MaxReserveToFundingRatio = 0.5 with get, set
     member val RevocationTimeout: DateTimeOffset = Unchecked.defaultof<DateTimeOffset> with get, set
     member val PingInterval: DateTimeOffset= Unchecked.defaultof<DateTimeOffset> with get, set
     member val PingTimeout: DateTimeOffset= Unchecked.defaultof<DateTimeOffset> with get, set
@@ -78,7 +78,7 @@ type NodeParams() as this =
     with
     member this.GetChannelConfig() =
         {
-            ChannelConfig.ChannelHandshakeConfig = failwith ""
+            ChannelConfig.ChannelHandshakeConfig = { MinimumDepth = this.MinDepthBlocks }
             PeerChannelConfigLimits = failwith "Not Implemented"
             ChannelOptions = failwith "Not Implemented"
         }
@@ -93,7 +93,7 @@ module private Validation =
             Good ()
  
     /// Currently no needs for check
-    let checkMaxHTLCValueInFlightMSat np =
+    let checkMaxHTLCValueInFlightMSat _ =
         Good ()
 
 type NodeParams with
