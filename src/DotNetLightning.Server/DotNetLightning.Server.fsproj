@@ -7,6 +7,14 @@
   <ItemGroup>
     <Compile Include="Controllers/ValuesController.fs" />
     <Compile Include="Controllers/InfoController.fs" />
+    <Compile Include="P2P\P2PConnectionContext.fs" />
+    <Compile Include="P2P\P2PConnectionFactory.fs" />
+    <Compile Include="P2P\P2PConnectionListener.fs" />
+    <Compile Include="P2P\P2PConnectionListenerFactory.fs" />
+    <Compile Include="P2PPipeline\Core.fs" />
+    <Compile Include="P2PPipeline\ModelBinding.fs" />
+    <Compile Include="P2PPipeline\Middlewares.fs" />
+    <Compile Include="P2PPipeline\AspNetExtensions.fs" />
     <Compile Include="P2PConnectionHandler.fs" />
     <Compile Include="Services.fs" />
     <Compile Include="Startup.fs" />

@@ -18,7 +18,7 @@ module Constants =
         let p = NodeParams()
         p.Alias <- "alice"
         p.Color <- { RGB.Red = 1uy; Green = 2uy; Blue = 3uy }
-        p.PublicAddresses <- [IPEndPoint.Parse("localhost:9731")]
+        p.PublicAddresses <- [IPEndPoint.Parse("127.0.0.1:9731")]
         p.MaxHTLCValueInFlightMSat <- LNMoney.MilliSatoshis(150000000UL)
         p.MaxAcceptedHTLCs <- 100us
         // p.ExpirtyDeltaBlocks <- 144
@@ -35,7 +35,7 @@ module Constants =
         let keyRepoMock = new Mock<IKeysRepository>()
 
         {
-            TestEntity.Seed = [| for _ in 1..31 -> 0uy |] |> uint256
+            TestEntity.Seed = [| for _ in 0..31 -> 0uy |] |> uint256
             KeyRepo = keyRepoMock.Object
             NodeParams = p
         }

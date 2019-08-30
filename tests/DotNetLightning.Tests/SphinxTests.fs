@@ -21,6 +21,7 @@ let privKeys = [ "41414141414141414141414141414141414141414141414141414141414141
                  "4545454545454545454545454545454545454545454545454545454545454545" ]
                 |> List.map(hex.DecodeData >> Key)
 let pubKeys = privKeys |> List.map(fun k -> k.PubKey)
+
 let expectedPubKeys = [ "02eec7245d6b7d2ccb30380bfbe2a3648cd7a942653f5aa340edcea1f283686619"
                         "0324653eac434488002cc06bbfb7f10fe18991e35f9fe4302dbea6d2353dc0ab1c"
                         "027f31ebc5462c1fdce1b737ecff52d37d75dea43ce11c74d25aa297165faa2007"
