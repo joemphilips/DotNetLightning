@@ -9,6 +9,7 @@ open System.Threading.Tasks
 open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Threading.Tasks
+open System.Buffers
 
 
 open FSharp.Control.Tasks
@@ -24,6 +25,7 @@ open DotNetLightning.Serialize.Msgs
 open DotNetLightning.LN
 
 open CustomEventAggregator
+open DotNetLightning.Utils.Aether
 
 
 type PeerError =
@@ -31,7 +33,7 @@ type PeerError =
     | UnexpectedByteLength of expected: int * actual: int
 
 type IPeerManager =
-    abstract member HandleData: PeerId * byte[] -> Task
+    abstract member ReadAsync: PeerId * IDuplexPipe -> Task
 
 type PeerManager(keyRepo: IKeysRepository,
                  logger: ILogger<PeerManager>,
@@ -47,10 +49,17 @@ type PeerManager(keyRepo: IKeysRepository,
     member val NodeIdToDescriptor = ConcurrentDictionary<NodeId, PeerId>() with get, set
     member val EventAggregator: IEventAggregator = eventAggregator with get
 
-    member this.NewOutBoundConnection (theirNodeId: NodeId, peerId: PeerId): Result<byte[], PeerError> =
+    /// Initiate Handshake with peer by sending noise act-one
+    /// `ie` is required only for testing. BOLT specifies specific ephemeral key for handshake
+    member this.NewOutBoundConnection (theirNodeId: NodeId,
+                                       peerId: PeerId,
+                                       pipeWriter: PipeWriter,
+                                       ?ie: Key) = vtask {
         let act1, peerEncryptor =
             PeerChannelEncryptor.newOutBound(theirNodeId)
+            |> fun pce -> if (ie.IsNone) then pce else (Optic.set PeerChannelEncryptor.OutBoundIE_ ie.Value pce)
             |> PeerChannelEncryptor.getActOne
+        printfn "Going to send %A to peer" (act1.ToHexString())
         let newPeer = {
                             ChannelEncryptor = peerEncryptor
                             IsOutBound = true
@@ -62,12 +71,15 @@ type PeerManager(keyRepo: IKeysRepository,
                             GetOurNodeSecret = keyRepo.GetNodeSecret
                       }
         match this.KnownPeers.TryAdd(peerId, newPeer) with
-        | true ->
-            peerId
-            |> DuplicateConnection
-            |> Result.Error
         | false ->
-            Ok(act1)
+            return peerId
+                   |> DuplicateConnection
+                   |> Result.Error
+        | true ->
+            let! _ = pipeWriter.WriteAsync(act1)
+            let! _ = pipeWriter.FlushAsync()
+            return Ok()
+        }
 
     member this.NewInboundConnection(peerId: PeerId, actOne: byte[]): RResult<byte[]> =
         if (actOne.Length <> 50) then RResult.rbad (RBad.Object(UnexpectedByteLength(50, actOne.Length))) else

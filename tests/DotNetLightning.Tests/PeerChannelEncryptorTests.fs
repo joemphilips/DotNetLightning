@@ -40,8 +40,8 @@ let peerChannelEncryptorTests =
                 Expect.isOk (res |> RResult.rtoResult) ""
 
                 let (actual, nodeid), nextPCE = res |> RResult.rderef
-                let expected = hex.DecodeData("00b9e3a702e93e3a9948c2ed6e5fd7590a6e1c3a0344cfc9d5b57357049aa22355361aa02e55a8fc28fef5bd6d71ad0c38228dc68b1c466263b47fdf31e560e139ba")
-                Expect.equal (actual) (expected) ""
+                let expected = "0x00b9e3a702e93e3a9948c2ed6e5fd7590a6e1c3a0344cfc9d5b57357049aa22355361aa02e55a8fc28fef5bd6d71ad0c38228dc68b1c466263b47fdf31e560e139ba"
+                Expect.equal (actual.ToHexString()) (expected) ""
 
                 match nextPCE.NoiseState with
                 | Finished {SK = sk; SN=sn; SCK = sck; RK = rk; RN = rn; RCK = rck } ->
@@ -113,7 +113,7 @@ let peerChannelEncryptorTests =
                     Expect.equal (rck) (hex.DecodeData("919219dbb2920afa8db80f9a51787a840bcf111ed8d588caf9ab4be716e42b01") |> uint256) ""
                 | _ -> failwith ""
 
-            /// Trnansport-responder act1 short read test
+            /// Transport-responder act1 short read test
             let testCase2 =
                 let inboundPeer = PeerChannelEncryptor.newInBound(ourNodeId)
                 let actOne = hex.DecodeData("00036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c")

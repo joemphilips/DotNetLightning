@@ -1,8 +1,9 @@
-namespace DotNetLightning.Infrastructure
+namespace DotNetLightning.Infrastructure.Tests
 
 open NBitcoin
 open DotNetLightning.Utils
 open DotNetLightning.Chain
+open DotNetLightning.Infrastructure
 open System.Net
 open Moq
 

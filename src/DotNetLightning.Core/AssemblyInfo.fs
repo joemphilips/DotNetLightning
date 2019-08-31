@@ -11,7 +11,8 @@ open System.Runtime.CompilerServices
 [<assembly:AssemblyMetadataAttribute("ReleaseChannel", "release")>]
 [<assembly:AssemblyDescriptionAttribute("Lightning Network Daemon for DotNet")>]
 [<assembly: InternalsVisibleTo("DotNetLightning.Tests")>]
-[<assembly: System.Runtime.CompilerServices.InternalsVisibleTo("DotNetLightning.Infrastructure")>]
+[<assembly: InternalsVisibleTo("DotNetLightning.Infrastructure")>]
+[<assembly: InternalsVisibleTo("DotNetLightning.Infrastructure.Tests")>]
 
 do ()
 

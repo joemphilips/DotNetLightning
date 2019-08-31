@@ -1,4 +1,4 @@
-﻿module DotNetLightning.Infrastructure.Tests
+﻿module SampleTest
 open Expecto
 
 [<EntryPoint>]

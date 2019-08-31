@@ -251,7 +251,7 @@ module PeerChannelEncryptor =
             static member internal OutBound_: Prism<_,_> =
                 PeerChannelEncryptor.DState_ >?> DirectionalNoisestate.OutBound_
 
-            static member internal OutBoundIE_: Prism<_,_> =
+            static member OutBoundIE_: Prism<_,_> =
                 PeerChannelEncryptor.OutBound_ >?> OutBound.IE_
 
             static member internal InBound_: Prism<_,_> =
