@@ -1,12 +1,9 @@
 module PeerManagerTests
 
-open Expecto
-
 open DotNetLightning.Chain
 open DotNetLightning.Infrastructure
 open DotNetLightning.Utils
 open DotNetLightning.LN
-open DotNetLightning.Infrastructure
 open CustomEventAggregator
 
 open FSharp.Control.Tasks
@@ -49,22 +46,24 @@ type private PeerManagerEntity = {
     Id: PeerId
 }
 
-type private PeerActors(a, b, pipe) =
+type private PeerActors(a, b) =
+    let pipePair = DuplexPipe.CreatePair()
     member val Initiator: PeerManagerEntity = a
     member val Responder: PeerManagerEntity = b
-    member val Transport: IDuplexPipe = pipe with get
+    member val InitiatorToTransport: IDuplexPipe = pipePair.Transport with get
+    member val ResponderToTransport: IDuplexPipe = pipePair.Application with get
     member val InitiatorTask = null with get, set
     member val ResponderTask = null with get, set
     member this.Launch(nodeIdForResponder: NodeId) = task {
-            let! r = this.Initiator.PM.NewOutBoundConnection(nodeIdForResponder, this.Responder.Id, this.Transport.Output)
+            let! r = this.Initiator.PM.NewOutBoundConnection(nodeIdForResponder, this.Responder.Id, this.InitiatorToTransport.Output)
             match r with Ok r -> () | Result.Error e -> failwithf "%A" e
             this.InitiatorTask <- task {
                 while true do
-                    do! this.Initiator.PM.ProcessMessageAsync(this.Responder.Id, this.Transport)
+                    do! this.Initiator.PM.ProcessMessageAsync(this.Responder.Id, this.InitiatorToTransport)
             }
             this.ResponderTask <- task {
                 while true do
-                    do! this.Responder.PM.ProcessMessageAsync(this.Initiator.Id, this.Transport)
+                    do! this.Responder.PM.ProcessMessageAsync(this.Initiator.Id, this.ResponderToTransport)
             }
         }
     interface IDisposable with
@@ -176,7 +175,7 @@ let tests = testList "PeerManagerTests" [
 
     } |> Async.AwaitTask)
 
-    ftestCaseAsync "2 peers can communicate with each other" <| (task {
+    testCaseAsync "2 peers can communicate with each other" <| (task {
       let alice = { PM = PeerManager(keysRepoMock.Object,
                                loggerMock.Object,
                                aliceNodeParams,
@@ -194,13 +193,12 @@ let tests = testList "PeerManagerTests" [
                             eventAggregatorMock.Object,
                             channelManagerMock.Object)
                   Id = IPEndPoint.Parse("127.0.0.2") :> EndPoint |> PeerId }
-      let dPipe = createPipe()
-      let actors = new PeerActors(alice, bob, dPipe)
+      let actors = new PeerActors(alice, bob)
       
       // this should trigger All handshake process
       let bobNodeId = bobNodeSecret.PubKey |> NodeId
       do! actors.Launch(bobNodeId)
-      do! Task.Delay 2000
+      do! Task.Delay 1000
       
       let _ =
           match actors.Initiator.PM.OpenedPeers.TryGetValue (actors.Responder.Id) with
