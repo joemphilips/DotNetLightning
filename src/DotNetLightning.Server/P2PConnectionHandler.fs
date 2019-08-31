@@ -32,7 +32,7 @@ type P2PConnectionHandler(peerManager: IPeerManager, logger: ILogger<P2PConnecti
             let remoteEndPoint = connectionCtx.RemoteEndPoint
             _logger.LogInformation(connectionCtx.ConnectionId + (sprintf " connected with %A" remoteEndPoint))
             while true do
-                do! peerManager.ReadAsync(PeerId remoteEndPoint, connectionCtx.Transport)
+                do! peerManager.ProcessMessageAsync(PeerId remoteEndPoint, connectionCtx.Transport)
             _logger.LogInformation(connectionCtx.ConnectionId + " disconnected")
 
         }

@@ -39,3 +39,12 @@ let getAliceParam() =
         KeyRepo = keyRepoMock.Object
         NodeParams = p
     }
+    
+let getBobParam() =
+    let p = NodeParams()
+    let keyRepoMock = new Mock<IKeysRepository>()
+    {
+        TestEntity.Seed = [| for _ in 0..31 -> 1uy |] |> uint256
+        KeyRepo = keyRepoMock.Object
+        NodeParams = p
+    }

@@ -34,7 +34,7 @@ type PeerError =
     | EncryptorError of string
 
 type IPeerManager =
-    abstract member ReadAsync: PeerId * IDuplexPipe -> Task
+    abstract member ProcessMessageAsync: PeerId * IDuplexPipe -> ValueTask
 
 type PeerManager(keyRepo: IKeysRepository,
                  logger: ILogger<PeerManager>,
@@ -60,6 +60,8 @@ type PeerManager(keyRepo: IKeysRepository,
             PeerChannelEncryptor.newOutBound(theirNodeId)
             |> fun pce -> if (ie.IsNone) then pce else (Optic.set PeerChannelEncryptor.OutBoundIE_ ie.Value pce)
             |> PeerChannelEncryptor.getActOne
+        sprintf "Going to create outbound peer for %A" peerId
+        |> _logger.LogTrace
         let newPeer = {
                             ChannelEncryptor = peerEncryptor
                             IsOutBound = true
@@ -76,6 +78,7 @@ type PeerManager(keyRepo: IKeysRepository,
                    |> DuplicateConnection
                    |> Result.Error
         | true ->
+            // send act1
             let! _ = pipeWriter.WriteAsync(act1)
             let! _ = pipeWriter.FlushAsync()
             return Ok()
@@ -104,15 +107,18 @@ type PeerManager(keyRepo: IKeysRepository,
                 PeerId = peerId
                 GetOurNodeSecret = keyRepo.GetNodeSecret
             }
-            printfn "new peer created"
+            "new peer created"
+            |> _logger.LogTrace
             match this.KnownPeers.TryAdd(peerId, newPeer) with
             | false ->
-                printfn "duplicate connecition"
+                "duplicate connection"
+                |> _logger.LogTrace
                 return peerId
                 |> DuplicateConnection
                 |> Result.Error
             | true ->
-                printfn "Going to Write act Two to newly created peer"
+                "Going to Write act Two to newly created peer"
+                |> _logger.LogTrace
                 let! _ = pipeWriter.WriteAsync(actTwo)
                 let! _ = pipeWriter.FlushAsync()
                 return Ok (newPeer)
@@ -247,17 +253,23 @@ type PeerManager(keyRepo: IKeysRepository,
 
     member private this.InsertNodeId(nodeId: NodeId, peerId) =
         match this.NodeIdToDescriptor.TryAdd(nodeId, peerId) with
-        | true ->
+        | false ->
             _logger.LogDebug(sprintf "Got second connection with %A , closing." nodeId)
             RResult.rbad(RBad.Object { HandleError.Action = Some IgnoreError ; Error = sprintf "We already have connection with %A. nodeid: is %A" peerId nodeId })
-        | false ->
+        | true ->
             _logger.LogTrace(sprintf "Finished noise handshake for connection with %A" nodeId)
             Good ()
 
-    member this.ReadAsync(peerId: PeerId, pipe: IDuplexPipe) =
+    member this.ProcessMessageAsync(peerId: PeerId, pipe: IDuplexPipe) =
+        this.ProcessMessageAsync(peerId, pipe, Key())
+        
+    /// read from pipe, If the handshake is not completed. proceed with handshaking process
+    /// automatically. If it has been completed. This patch to message handlers
+    /// <param name="ourEphemeral"> Used only for test. usually ephemeral keys can be generated randomly </param>
+    member this.ProcessMessageAsync(peerId: PeerId, pipe: IDuplexPipe, ourEphemeral: Key) =
         let errorHandler: RBad -> Task = this.TryPotentialHandleError(peerId, pipe)
         unitVtask {
-            let! r = this.ReadAsyncCore(peerId, pipe)
+            let! r = this.ReadAsyncCore(peerId, pipe, ourEphemeral)
             let r: RResult<_> =  r // compiler complains about type annotation without this
             do! r.RBadIterAsync(errorHandler)
             match r with
@@ -269,15 +281,17 @@ type PeerManager(keyRepo: IKeysRepository,
         
     // I wanted to use a bind (>>=) as we do in Channel, but we had to prepare monad-transformer.
     // so instead decided to just use match expression.
-    member private this.ReadAsyncCore(peerId: PeerId, pipe: IDuplexPipe) =
+    member private this.ReadAsyncCore(peerId: PeerId, pipe: IDuplexPipe, ourEphemeral) =
         vtask {
             match this.KnownPeers.TryGetValue(peerId) with
             | false, _ ->
-                printfn "Going to create new inbound peer"
+                sprintf "Going to create new inbound peer against %A" (peerId)
+                |> Console.WriteLine // _logger.LogTrace 
                 let! actOne = pipe.Input.ReadExactAsync(50, true)
-                printfn "Read act 1 from peer"
-                let! r = this.NewInboundConnection(peerId, actOne, pipe.Output)
-                printfn "result for creating new inbound peer is %A" r
+                "Read act 1 from peer"
+                |> Console.WriteLine // _logger.LogTrace 
+                let! r = this.NewInboundConnection(peerId, actOne, pipe.Output, ourEphemeral)
+                _logger.LogTrace (sprintf "result for creating new inbound peer is %A" r)
                 match r with
                 | Ok p -> return Good p
                 | Result.Error e -> return (e |> box |> RBad.Object |> RResult.rbad)
@@ -286,7 +300,8 @@ type PeerManager(keyRepo: IKeysRepository,
             // 2. peer has not sent act1 yet.
             // TODO: Remove?
             | true, peer when peer.ChannelEncryptor.GetNoiseStep() = ActOne ->
-                printfn "Going to read from act one peer"
+                sprintf "Going to read from act one from peer %A" peerId
+                |> Console.WriteLine // _logger.LogTrace 
                 let! actOne = pipe.Input.ReadExactAsync(50)
                 match peer.ChannelEncryptor |> PeerChannelEncryptor.processActOneWithKey actOne (keyRepo.GetNodeSecret()) with
                 | Bad rbad -> return Bad rbad
@@ -295,12 +310,14 @@ type PeerManager(keyRepo: IKeysRepository,
                     return Good ({ peer with ChannelEncryptor = nextPCE })
             | true, peer when peer.ChannelEncryptor.GetNoiseStep() = ActTwo ->
                 let! actTwo = pipe.Input.ReadExactAsync(50)
+                sprintf "processing act two from %A" peerId
+                |> Console.WriteLine
                 match peer.ChannelEncryptor |> PeerChannelEncryptor.processActTwo(actTwo) (keyRepo.GetNodeSecret()) with
                 | Bad rbad -> return Bad rbad
                 | Good ((actThree, theirNodeId), newPCE) ->
                     do! pipe.Output.WriteAsync(actThree)
                     let newPeer = { peer with TheirNodeId = Some theirNodeId; ChannelEncryptor = newPCE }
-                    // necessary for sending first init data by `EncodeAndSengMsg`
+                    // it is necessary to  update peer here for sending first init data by `EncodeAndSendMsg`
                     this.UpdatePeerWith(peerId, newPeer)
                     match this.InsertNodeId(theirNodeId, peerId) with
                     | Bad rbad -> return Bad rbad
@@ -338,8 +355,8 @@ type PeerManager(keyRepo: IKeysRepository,
                         | Bad b -> return Bad b
                         | Good msg ->
                             match msg with
-                            | :? ISetupMsg as setupmsg ->
-                                return! this.HandleSetupMsgAsync (setupmsg, peer, pipe)
+                            | :? ISetupMsg as setupMsg ->
+                                return! this.HandleSetupMsgAsync (setupMsg, peer, pipe)
                             | :? IRoutingMsg as routingMsg ->
                                 this.EventAggregator.Publish<PeerEvent>(ReceivedRoutingMsg (peer.TheirNodeId.Value, routingMsg))
                                 return Good (peer)
@@ -349,3 +366,6 @@ type PeerManager(keyRepo: IKeysRepository,
                             | msg -> return failwithf "Unknown type of message (%A), this should never happen" msg
             | _ -> return failwith "unreachable"
         }
+        
+    interface IPeerManager with
+        member this.ProcessMessageAsync(peerId, pipe) = this.ProcessMessageAsync(peerId, pipe)
