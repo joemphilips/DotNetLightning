@@ -31,6 +31,7 @@ open DotNetLightning.Utils.Aether
 type PeerError =
     | DuplicateConnection of PeerId
     | UnexpectedByteLength of expected: int * actual: int
+    | EncryptorError of string
 
 type IPeerManager =
     abstract member ReadAsync: PeerId * IDuplexPipe -> Task
@@ -59,7 +60,6 @@ type PeerManager(keyRepo: IKeysRepository,
             PeerChannelEncryptor.newOutBound(theirNodeId)
             |> fun pce -> if (ie.IsNone) then pce else (Optic.set PeerChannelEncryptor.OutBoundIE_ ie.Value pce)
             |> PeerChannelEncryptor.getActOne
-        printfn "Going to send %A to peer" (act1.ToHexString())
         let newPeer = {
                             ChannelEncryptor = peerEncryptor
                             IsOutBound = true
@@ -81,12 +81,18 @@ type PeerManager(keyRepo: IKeysRepository,
             return Ok()
         }
 
-    member this.NewInboundConnection(peerId: PeerId, actOne: byte[]): RResult<byte[]> =
-        if (actOne.Length <> 50) then RResult.rbad (RBad.Object(UnexpectedByteLength(50, actOne.Length))) else
+    member this.NewInboundConnection(peerId: PeerId, actOne: byte[], pipeWriter: PipeWriter, ?ourEphemeral) = vtask {
+        if (actOne.Length <> 50) then return (UnexpectedByteLength(50, actOne.Length) |> Result.Error) else
         let secret = keyRepo.GetNodeSecret()
         let peerEncryptor = PeerChannelEncryptor.newInBound(secret)
-        PeerChannelEncryptor.processActOneWithKey actOne secret peerEncryptor
-        >>= fun (actTwo, pce) ->
+        let r =
+            if (ourEphemeral.IsSome) then
+                (PeerChannelEncryptor.processActOneWithEphemeralKey actOne secret ourEphemeral.Value peerEncryptor)
+            else
+                (PeerChannelEncryptor.processActOneWithKey actOne secret peerEncryptor)
+        match r with
+        | Bad b -> return (b.Describe() |> PeerError.EncryptorError |> Result.Error)
+        | Good (actTwo, pce) ->
             let newPeer = {
                 ChannelEncryptor = pce
                 IsOutBound = false
@@ -98,16 +104,19 @@ type PeerManager(keyRepo: IKeysRepository,
                 PeerId = peerId
                 GetOurNodeSecret = keyRepo.GetNodeSecret
             }
+            printfn "new peer created"
             match this.KnownPeers.TryAdd(peerId, newPeer) with
-            | true ->
-                peerId
-                |> DuplicateConnection
-                |> box
-                |> RBad.Object
-                |> RResult.rbad
             | false ->
-                actTwo
-                |> RResult.Good
+                printfn "duplicate connecition"
+                return peerId
+                |> DuplicateConnection
+                |> Result.Error
+            | true ->
+                printfn "Going to Write act Two to newly created peer"
+                let! _ = pipeWriter.WriteAsync(actTwo)
+                let! _ = pipeWriter.FlushAsync()
+                return Ok (newPeer)
+        }
 
     member private this.UpdatePeerWith(peerId, newPeer: Peer) =
         ignore <| this.KnownPeers.AddOrUpdate(peerId, newPeer, (fun pId exisintgPeer -> newPeer))
@@ -263,69 +272,80 @@ type PeerManager(keyRepo: IKeysRepository,
     member private this.ReadAsyncCore(peerId: PeerId, pipe: IDuplexPipe) =
         vtask {
             match this.KnownPeers.TryGetValue(peerId) with
-            | true, peer ->
-                match peer.ChannelEncryptor.GetNoiseStep() with
-                | NextNoiseStep.ActOne ->
-                    let! actOne = pipe.Input.ReadExactAsync(50)
-                    match peer.ChannelEncryptor |> PeerChannelEncryptor.processActOneWithKey actOne (keyRepo.GetNodeSecret()) with
-                    | Bad rbad -> return Bad rbad
-                    | Good (actTwo, nextPCE) ->
-                        do! pipe.Output.WriteAsync(actTwo)
-                        return Good ({ peer with ChannelEncryptor = nextPCE })
-                | ActTwo ->
-                    let! actTwo = pipe.Input.ReadExactAsync(50)
-                    match peer.ChannelEncryptor |> PeerChannelEncryptor.processActTwo(actTwo) (keyRepo.GetNodeSecret()) with
-                    | Bad rbad -> return Bad rbad
-                    | Good ((actThree, theirNodeId), newPCE) ->
-                        do! pipe.Output.WriteAsync(actThree)
-                        let newPeer = { peer with TheirNodeId = Some theirNodeId; ChannelEncryptor = newPCE }
-                        // necessary for sending first init data by `EncodeAndSengMsg`
-                        this.UpdatePeerWith(peerId, newPeer)
-                        match this.InsertNodeId(theirNodeId, peerId) with
-                        | Bad rbad -> return Bad rbad
-                        | Good _ -> 
-                            let localFeatures = 
-                                let lf = (LocalFeatures.Flags [||])
-                                if _nodeParams.RequireInitialRoutingSync then
-                                    lf.SetInitialRoutingSync()
-                                else
-                                    lf
-                            do!
-                                this.EncodeAndSendMsg (peerId, pipe)
-                                    ({ Init.GlobalFeatures = GlobalFeatures.Flags [||]; LocalFeatures = localFeatures })
-                            return Good (newPeer)
-                | ActThree ->
-                    let! actThree = pipe.Input.ReadExactAsync(66)
-                    match peer.ChannelEncryptor |> PeerChannelEncryptor.processActThree actThree with
-                    | Bad rbad -> return Bad rbad
-                    | Good (theirNodeId, newPCE) ->
-                        match this.InsertNodeId(theirNodeId, peerId) with
-                        | Bad b -> return Bad b
-                        | Good _ -> return Good ({ peer with ChannelEncryptor = newPCE; TheirNodeId = Some theirNodeId })
-                | NoiseComplete ->
-                    let! lengthHeader = pipe.Input.ReadExactAsync(18)
-                    match peer.ChannelEncryptor |> PeerChannelEncryptor.decryptLengthHeader (_logger.LogTrace) lengthHeader with
-                    | Bad b -> return Bad b
-                    | Good (length, newPCE) -> 
-                        let peer = { peer with ChannelEncryptor = newPCE }
-                        let! cipherTextWithMAC = pipe.Input.ReadExactAsync(int length + 16)
-                        match peer.ChannelEncryptor |> PeerChannelEncryptor.decryptMessage (_logger.LogTrace) cipherTextWithMAC with
-                        | Bad b -> return Bad b
-                        | Good (data, newPCE) ->
-                            let peer = { peer with ChannelEncryptor = newPCE }
-                            match LightningMsg.fromBytes data with
-                            | Bad b -> return Bad b
-                            | Good msg ->
-                                match msg with
-                                | :? ISetupMsg as setupmsg ->
-                                    return! this.HandleSetupMsgAsync (setupmsg, peer, pipe)
-                                | :? IRoutingMsg as routingMsg ->
-                                    this.EventAggregator.Publish<PeerEvent>(ReceivedRoutingMsg (peer.TheirNodeId.Value, routingMsg))
-                                    return Good (peer)
-                                | :? IChannelMsg as channelMsg ->
-                                    this.EventAggregator.Publish<PeerEvent>(ReceivedChannelMsg (peer.TheirNodeId.Value, channelMsg))
-                                    return Good (peer)
-                                | msg -> return failwithf "Unknown type of message (%A), this should never happen" msg
             | false, _ ->
-                return RResult.rmsg (sprintf "unknown peer %A" peerId)
+                printfn "Going to create new inbound peer"
+                let! actOne = pipe.Input.ReadExactAsync(50, true)
+                printfn "Read act 1 from peer"
+                let! r = this.NewInboundConnection(peerId, actOne, pipe.Output)
+                printfn "result for creating new inbound peer is %A" r
+                match r with
+                | Ok p -> return Good p
+                | Result.Error e -> return (e |> box |> RBad.Object |> RResult.rbad)
+            // This case might be unnecessary. Since probably there is no way these are both true
+            // 1. We know the peer
+            // 2. peer has not sent act1 yet.
+            // TODO: Remove?
+            | true, peer when peer.ChannelEncryptor.GetNoiseStep() = ActOne ->
+                printfn "Going to read from act one peer"
+                let! actOne = pipe.Input.ReadExactAsync(50)
+                match peer.ChannelEncryptor |> PeerChannelEncryptor.processActOneWithKey actOne (keyRepo.GetNodeSecret()) with
+                | Bad rbad -> return Bad rbad
+                | Good (actTwo, nextPCE) ->
+                    do! pipe.Output.WriteAsync(actTwo)
+                    return Good ({ peer with ChannelEncryptor = nextPCE })
+            | true, peer when peer.ChannelEncryptor.GetNoiseStep() = ActTwo ->
+                let! actTwo = pipe.Input.ReadExactAsync(50)
+                match peer.ChannelEncryptor |> PeerChannelEncryptor.processActTwo(actTwo) (keyRepo.GetNodeSecret()) with
+                | Bad rbad -> return Bad rbad
+                | Good ((actThree, theirNodeId), newPCE) ->
+                    do! pipe.Output.WriteAsync(actThree)
+                    let newPeer = { peer with TheirNodeId = Some theirNodeId; ChannelEncryptor = newPCE }
+                    // necessary for sending first init data by `EncodeAndSengMsg`
+                    this.UpdatePeerWith(peerId, newPeer)
+                    match this.InsertNodeId(theirNodeId, peerId) with
+                    | Bad rbad -> return Bad rbad
+                    | Good _ -> 
+                        let localFeatures = 
+                            let lf = (LocalFeatures.Flags [||])
+                            if _nodeParams.RequireInitialRoutingSync then
+                                lf.SetInitialRoutingSync()
+                            else
+                                lf
+                        do!
+                            this.EncodeAndSendMsg (peerId, pipe)
+                                ({ Init.GlobalFeatures = GlobalFeatures.Flags [||]; LocalFeatures = localFeatures })
+                        return Good (newPeer)
+            | true, peer when peer.ChannelEncryptor.GetNoiseStep() = ActThree ->
+                let! actThree = pipe.Input.ReadExactAsync(66)
+                match peer.ChannelEncryptor |> PeerChannelEncryptor.processActThree actThree with
+                | Bad rbad -> return Bad rbad
+                | Good (theirNodeId, newPCE) ->
+                    match this.InsertNodeId(theirNodeId, peerId) with
+                    | Bad b -> return Bad b
+                    | Good _ -> return Good ({ peer with ChannelEncryptor = newPCE; TheirNodeId = Some theirNodeId })
+            | true, peer when peer.ChannelEncryptor.GetNoiseStep() = NoiseComplete ->
+                let! lengthHeader = pipe.Input.ReadExactAsync(18)
+                match peer.ChannelEncryptor |> PeerChannelEncryptor.decryptLengthHeader (_logger.LogTrace) lengthHeader with
+                | Bad b -> return Bad b
+                | Good (length, newPCE) -> 
+                    let peer = { peer with ChannelEncryptor = newPCE }
+                    let! cipherTextWithMAC = pipe.Input.ReadExactAsync(int length + 16)
+                    match peer.ChannelEncryptor |> PeerChannelEncryptor.decryptMessage (_logger.LogTrace) cipherTextWithMAC with
+                    | Bad b -> return Bad b
+                    | Good (data, newPCE) ->
+                        let peer = { peer with ChannelEncryptor = newPCE }
+                        match LightningMsg.fromBytes data with
+                        | Bad b -> return Bad b
+                        | Good msg ->
+                            match msg with
+                            | :? ISetupMsg as setupmsg ->
+                                return! this.HandleSetupMsgAsync (setupmsg, peer, pipe)
+                            | :? IRoutingMsg as routingMsg ->
+                                this.EventAggregator.Publish<PeerEvent>(ReceivedRoutingMsg (peer.TheirNodeId.Value, routingMsg))
+                                return Good (peer)
+                            | :? IChannelMsg as channelMsg ->
+                                this.EventAggregator.Publish<PeerEvent>(ReceivedChannelMsg (peer.TheirNodeId.Value, channelMsg))
+                                return Good (peer)
+                            | msg -> return failwithf "Unknown type of message (%A), this should never happen" msg
+            | _ -> return failwith "unreachable"
         }
