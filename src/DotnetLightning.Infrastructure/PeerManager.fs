@@ -129,19 +129,19 @@ type PeerManager(keyRepo: IKeysRepository,
         if newPeer.ChannelEncryptor.IsReadyForEncryption() then
             ignore <| this.OpenedPeers.AddOrUpdate(peerId, newPeer, fun pId existingPeer -> newPeer)
 
-    member private this.EncodeAndSendMsg(peerId: PeerId, transport: IDuplexPipe) (msg: ILightningMsg) =
+    member private this.EncodeAndSendMsg(theirPeerId: PeerId, transport: IDuplexPipe) (msg: ILightningMsg) =
         unitVtask {
-            match this.OpenedPeers.TryGetValue(peerId) with
+            match this.OpenedPeers.TryGetValue(theirPeerId) with
             | true, peer ->
                 sprintf "Encoding and sending message of type %A to %A "  msg (peer.TheirNodeId)
                 |> _logger.LogTrace
                 let msgEncrypted, newPCE =
                     peer.ChannelEncryptor |> PeerChannelEncryptor.encryptMessage (_logger.LogTrace) (msg.ToBytes())
-                this.UpdatePeerWith(peerId, { peer with ChannelEncryptor = newPCE })
+                this.UpdatePeerWith(theirPeerId, { peer with ChannelEncryptor = newPCE })
                 let! _ = transport.Output.WriteAsync(ReadOnlyMemory(msgEncrypted))
                 return ()
             | false, _ ->
-                sprintf "peerId %A is not in opened peers" peerId
+                sprintf "peerId %A is not in opened peers" theirPeerId
                 |> _logger.LogCritical
         }
 

@@ -202,10 +202,12 @@ let tests = testList "PeerManagerTests" [
       
       let _ =
           match actors.Initiator.PM.OpenedPeers.TryGetValue (actors.Responder.Id) with
-          | true, _ -> ()
+          | true, p ->
+            Expect.equal (p.ChannelEncryptor.GetNoiseStep()) (NextNoiseStep.NoiseComplete) "Noise State should be completed"
           | false, _ -> failwith "bob is not in alice's OpenedPeer"
           match actors.Responder.PM.OpenedPeers.TryGetValue (actors.Initiator.Id) with
-          | true, _ -> ()
+          | true, p ->
+            Expect.equal (p.ChannelEncryptor.GetNoiseStep()) (NextNoiseStep.NoiseComplete) "Noise State should be completed"
           | false, _ -> failwith "alice is not in bob's OpenedPeer"
           
       return ()
