@@ -1,5 +1,6 @@
 module PeerManagerTests
 
+open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Chain
 open DotNetLightning.Infrastructure
 open DotNetLightning.Utils
@@ -176,10 +177,12 @@ let tests = testList "PeerManagerTests" [
     } |> Async.AwaitTask)
 
     testCaseAsync "2 peers can communicate with each other" <| (task {
+      let aliceEventAggregatorMock = Mock<IEventAggregator>()
+      let bobEventAggregatorMock = Mock<IEventAggregator>()
       let alice = { PM = PeerManager(keysRepoMock.Object,
                                loggerMock.Object,
                                aliceNodeParams,
-                               eventAggregatorMock.Object,
+                               aliceEventAggregatorMock.Object,
                                channelManagerMock.Object)
                     Id = IPEndPoint.Parse("127.0.0.3") :> EndPoint |> PeerId }
       let bobNodeSecret =
@@ -190,7 +193,7 @@ let tests = testList "PeerManagerTests" [
       let bob = { PM = PeerManager(keyRepoBob.Object,
                             loggerMock.Object,
                             Options.Create<NodeParams>(new NodeParams()),
-                            eventAggregatorMock.Object,
+                            bobEventAggregatorMock.Object,
                             channelManagerMock.Object)
                   Id = IPEndPoint.Parse("127.0.0.2") :> EndPoint |> PeerId }
       let actors = new PeerActors(alice, bob)
@@ -210,6 +213,8 @@ let tests = testList "PeerManagerTests" [
             Expect.equal (p.ChannelEncryptor.GetNoiseStep()) (NextNoiseStep.NoiseComplete) "Noise State should be completed"
           | false, _ -> failwith "alice is not in bob's OpenedPeer"
           
+      // aliceEventAggregatorMock.Verify(fun agg -> agg.Publish<PeerEvent>(It.Is(fun e -> match e with | PeerEvent.Connected _ -> true | _ -> false)), Times.Once)
+      // bobEventAggregatorMock.Verify(fun agg -> agg.Publish(), Times.Once)
       return ()
     } |> Async.AwaitTask)
   ]
