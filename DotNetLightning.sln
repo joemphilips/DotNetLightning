@@ -29,6 +29,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.SystemTextJson", "sr
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DotNetLightning.Integration.Tests", "tests\DotNetLightning.Integration.Tests\DotNetLightning.Integration.Tests.fsproj", "{154AFD1C-DE6C-44B3-8C5D-8160B46CBA9C}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DotNetLightning.Infrastructure.Tests", "tests\DotNetLightning.Infrastructure.Tests\DotNetLightning.Infrastructure.Tests.fsproj", "{B69A385C-D742-4432-9D1E-065FD79F2640}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -174,6 +176,18 @@ Global
 		{154AFD1C-DE6C-44B3-8C5D-8160B46CBA9C}.Release|x64.Build.0 = Release|Any CPU
 		{154AFD1C-DE6C-44B3-8C5D-8160B46CBA9C}.Release|x86.ActiveCfg = Release|Any CPU
 		{154AFD1C-DE6C-44B3-8C5D-8160B46CBA9C}.Release|x86.Build.0 = Release|Any CPU
+		{B69A385C-D742-4432-9D1E-065FD79F2640}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B69A385C-D742-4432-9D1E-065FD79F2640}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B69A385C-D742-4432-9D1E-065FD79F2640}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B69A385C-D742-4432-9D1E-065FD79F2640}.Debug|x64.Build.0 = Debug|Any CPU
+		{B69A385C-D742-4432-9D1E-065FD79F2640}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B69A385C-D742-4432-9D1E-065FD79F2640}.Debug|x86.Build.0 = Debug|Any CPU
+		{B69A385C-D742-4432-9D1E-065FD79F2640}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B69A385C-D742-4432-9D1E-065FD79F2640}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B69A385C-D742-4432-9D1E-065FD79F2640}.Release|x64.ActiveCfg = Release|Any CPU
+		{B69A385C-D742-4432-9D1E-065FD79F2640}.Release|x64.Build.0 = Release|Any CPU
+		{B69A385C-D742-4432-9D1E-065FD79F2640}.Release|x86.ActiveCfg = Release|Any CPU
+		{B69A385C-D742-4432-9D1E-065FD79F2640}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{594F2275-AF8E-4AFC-B8DC-7D6048C872CA} = {84B95569-6BD8-48B4-A942-CBBC9462B6D4}
@@ -187,5 +201,6 @@ Global
 		{721CE279-93C3-4015-8288-9B6FE847B321} = {84B95569-6BD8-48B4-A942-CBBC9462B6D4}
 		{2F74B619-3635-4407-88AC-3804A22D9C95} = {84B95569-6BD8-48B4-A942-CBBC9462B6D4}
 		{154AFD1C-DE6C-44B3-8C5D-8160B46CBA9C} = {E6F1DC30-D346-4E86-8F58-20CFAAB19448}
+		{B69A385C-D742-4432-9D1E-065FD79F2640} = {E6F1DC30-D346-4E86-8F58-20CFAAB19448}
 	EndGlobalSection
 EndGlobal

@@ -13,6 +13,7 @@ open System.Net
 open System
 
 module SerializationTest =
+
     open Utils
     /// helper for more clean error message
 

@@ -251,7 +251,7 @@ module PeerChannelEncryptor =
             static member internal OutBound_: Prism<_,_> =
                 PeerChannelEncryptor.DState_ >?> DirectionalNoisestate.OutBound_
 
-            static member internal OutBoundIE_: Prism<_,_> =
+            static member OutBoundIE_: Prism<_,_> =
                 PeerChannelEncryptor.OutBound_ >?> OutBound.IE_
 
             static member internal InBound_: Prism<_,_> =
@@ -371,7 +371,7 @@ module PeerChannelEncryptor =
                 | _ -> failwith "Wrong Direction for Act"
             | _ -> failwith "Cannot get act one after noise  handshake completes"
 
-        let internal processActOneWithEphemeralKey (actOne: byte[]) (ourNodeSecret: Key) (ourEphemeral: Key) (pce: PeerChannelEncryptor): RResult<byte[] * _> =
+        let processActOneWithEphemeralKey (actOne: byte[]) (ourNodeSecret: Key) (ourEphemeral: Key) (pce: PeerChannelEncryptor): RResult<byte[] * _> =
             match pce.NoiseState with
             | InProgress { State = state; DirectionalState = dState; BidirectionalState = bState1} ->
                 match dState with

@@ -34,10 +34,12 @@ type NodeParams() as this =
     // refs: https://github.com/ozh/github-colors
     member val Color: RGB = { RGB.Red = 184uy; Green = 69uy; Blue = 252uy } with get, set
 
+    member val ChainNetwork: Network = Network.RegTest with get
+    
     // ---- infrastructure types -----
-    member val WatcherType: SupportedChainWatcherType = Bitcoind(RPC.RPCClient(this.ChainNetwork)) with get, set
+    member val WatcherType: SupportedChainWatcherType = Bitcoind(RPC.RPCClient(Network.RegTest)) with get, set
     member val DBType: SupportedDBType = SupportedDBType.Null with get, set
-    member val KeyRepoType: SupportedKeyRepositoryTypes = SupportedKeyRepositoryTypes.FlatFile(this.DataDirPath) with get, set
+    member val KeyRepoType: SupportedKeyRepositoryTypes = SupportedKeyRepositoryTypes.FlatFile(Constants.homePath) with get, set
 
     member val PublicAddresses: System.Net.IPEndPoint list = [] with get, set
 
@@ -67,7 +69,6 @@ type NodeParams() as this =
     member val AutoReconnect: bool = true with get, set
     member val InitialRandomReconnectDelay: DateTimeOffset= Unchecked.defaultof<DateTimeOffset> with get, set
     member val MaxReconnectionInterval: DateTimeOffset= Unchecked.defaultof<DateTimeOffset> with get, set
-    member val ChainNetwork: Network = Network.RegTest
     member val ChannelFlags: uint8 = 1uy
     member val PaymentRequestExpiry: DateTimeOffset= Unchecked.defaultof<DateTimeOffset> with get, set
     member val MinFundingSatoshis: Money = Money.Satoshis(100000L)

@@ -16,6 +16,11 @@ open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Chain
 open DotNetLightning.LN
 
+type ChannelMsgHandler = IChannelMsg -> Task
+
+module internal ChannelHelper =
+    ()
+    
 type IChannelManager =
     abstract AcceptCommandAsync: peerId:PeerId * cmd:ChannelCommand -> Task
     abstract AcceptMessageAsync: peerId:PeerId * msg:IChannelMsg -> Task
