@@ -206,7 +206,8 @@ let tests = testList "PeerManagerTests" [
           | false, _ -> failwith "alice is not in bob's OpenedPeer"
           
       Mock.Verify(<@ aliceEventAggregatorMock.Publish<PeerEvent>(It.Is(fun e -> match e with | PeerEvent.Connected _ -> true | _ -> false)) @>, once)
-      // bobEventAggregatorMock.Verify(fun agg -> agg.Publish(), Times.Once)
+      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEvent>(It.Is(fun e -> match e with | PeerEvent.Connected _ -> true | _ -> false)) @>, once)
+      
       return ()
     } |> Async.AwaitTask)
   ]

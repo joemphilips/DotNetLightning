@@ -337,7 +337,9 @@ type PeerManager(keyRepo: IKeysRepository,
                 | Good (theirNodeId, newPCE) ->
                     match this.InsertNodeId(theirNodeId, peerId) with
                     | Bad b -> return Bad b
-                    | Good _ -> return Good ({ peer with ChannelEncryptor = newPCE; TheirNodeId = Some theirNodeId })
+                    | Good _ ->
+                        this.EventAggregator.Publish<PeerEvent>(Connected theirNodeId)
+                        return Good ({ peer with ChannelEncryptor = newPCE; TheirNodeId = Some theirNodeId })
             | true, peer when peer.ChannelEncryptor.GetNoiseStep() = NoiseComplete ->
                 let! lengthHeader = pipe.Input.ReadExactAsync(18)
                 match peer.ChannelEncryptor |> PeerChannelEncryptor.decryptLengthHeader (_logger.LogTrace) lengthHeader with
