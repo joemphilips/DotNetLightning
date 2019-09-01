@@ -23,7 +23,7 @@ steps:
     includePreviewVersions: true
     # version: '3.0.100-preview8-013656'
     version: '3.0.100-preview8-013656'
-- bash: ./restore.sh
+- script: dotnet restore
 - task: NuGetToolInstaller@1
 
 - task: NuGetCommand@2
@@ -33,3 +33,4 @@ steps:
 - script: dotnet build -c Release
 
 - script: dotnet run --project tests/DotNetLightning.Tests
+- script: dotnet run --project tests/DotNetLightning.Infrastructure.Tests
