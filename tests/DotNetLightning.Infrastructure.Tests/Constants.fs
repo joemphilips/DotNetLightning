@@ -5,7 +5,7 @@ open DotNetLightning.Utils
 open DotNetLightning.Chain
 open DotNetLightning.Infrastructure
 open System.Net
-open Moq
+open Foq
 
 type TestEntity =
     {
@@ -36,7 +36,7 @@ let getAliceParam() =
 
     {
         TestEntity.Seed = [| for _ in 0..31 -> 0uy |] |> uint256
-        KeyRepo = keyRepoMock.Object
+        KeyRepo = keyRepoMock.Create()
         NodeParams = p
     }
     
@@ -45,6 +45,6 @@ let getBobParam() =
     let keyRepoMock = new Mock<IKeysRepository>()
     {
         TestEntity.Seed = [| for _ in 0..31 -> 1uy |] |> uint256
-        KeyRepo = keyRepoMock.Object
+        KeyRepo = keyRepoMock.Create()
         NodeParams = p
     }

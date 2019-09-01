@@ -39,12 +39,10 @@ type IPeerManager =
 type PeerManager(keyRepo: IKeysRepository,
                  logger: ILogger<PeerManager>,
                  nodeParams: IOptions<NodeParams>,
-                 eventAggregator: IEventAggregator,
-                 channelManager: IChannelManager) =
+                 eventAggregator: IEventAggregator) =
     let _logger = logger
     let _nodeParams = nodeParams.Value
     let ascii = System.Text.ASCIIEncoding.ASCII
-    member val ChannelManager = channelManager with get
     member val KnownPeers = ConcurrentDictionary<PeerId, Peer>() with get, set
     member val OpenedPeers = ConcurrentDictionary<PeerId, Peer>() with get, set
     member val NodeIdToDescriptor = ConcurrentDictionary<NodeId, PeerId>() with get, set
