@@ -8,6 +8,7 @@ type PeerEvent =
     | ReceivedError of theirNodeId: NodeId * error: ErrorMessage
     | ReceivedPing of theirNodeId: NodeId * ping: Ping
     | ReceivedPong of theirNodeId: NodeId * ping: Pong
+    | ReceivedInit of theirNodeId: NodeId * init: Init
     | ReceivedRoutingMsg of theirNodeId: NodeId * msg: IRoutingMsg
     | ReceivedChannelMsg of theirNodeId: NodeId * msg: IChannelMsg
 

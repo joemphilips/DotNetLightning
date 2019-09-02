@@ -78,7 +78,6 @@ module DTO =
     [<CLIMutable>]
     type internal ChannelDTO = {
         RemoteNodeId: NodeId
-        UserId: UserId
         Config: ChannelConfig
         LocalNodeSecret: Key
         State: ChannelState.ChannelStateDTO
@@ -87,7 +86,6 @@ module DTO =
         static member FromDomainObject (c: Channel) =
             {
                 ChannelDTO.RemoteNodeId = c.RemoteNodeId
-                UserId = c.UserId
                 Config = c.Config
                 LocalNodeSecret = c.LocalNodeSecret
                 State = ChannelState.ChannelStateDTO.FromDomainObject(c.State)

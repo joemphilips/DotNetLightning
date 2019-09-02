@@ -177,13 +177,14 @@ type PeerManager(keyRepo: IKeysRepository,
                         (if init.LocalFeatures.SupportsUnknownBits() then "present" else "not present")
                         (if init.GlobalFeatures.SupportsUnknownBits() then "present" else "not present")
                         |> _logger.LogInformation
-
+                    this.EventAggregator.Publish<PeerEvent>(ReceivedInit (peer.TheirNodeId.Value, init))
                     let peer =
-                        if (init.LocalFeatures.InitialRoutingSync()) then
-                            { peer with SyncStatus = InitSyncTracker.ChannelsSyncing (ChannelId.Zero) }
-                        else
-                            peer
-                        |> fun p -> { p with TheirGlobalFeatures = Some init.GlobalFeatures; TheirLocalFeatures = Some init.LocalFeatures }
+                        let p =
+                            if (init.LocalFeatures.InitialRoutingSync()) then
+                                { peer with SyncStatus = InitSyncTracker.ChannelsSyncing (ChannelId.Zero) }
+                            else
+                                peer
+                        { p with TheirGlobalFeatures = Some init.GlobalFeatures; TheirLocalFeatures = Some init.LocalFeatures }
                     this.UpdatePeerWith(peerId, peer)
                     if (not peer.IsOutBound) then
                         let lf = LocalFeatures.Flags([||]).SetInitialRoutingSync()

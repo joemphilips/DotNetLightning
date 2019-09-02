@@ -197,32 +197,31 @@ let tests = testList "PeerManagerTests" [
             Expect.equal (p.ChannelEncryptor.GetNoiseStep()) (NextNoiseStep.NoiseComplete) "Noise State should be completed"
           | false, _ -> failwith "alice is not in bob's OpenedPeer"
           
-      Mock.Verify(<@ aliceEventAggregatorMock.Publish<PeerEvent>(It.Is(fun e -> match e with | PeerEvent.Connected _ -> true | _ -> false)) @>, once)
-      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEvent>(It.Is(fun e -> match e with | PeerEvent.Connected _ -> true | _ -> false)) @>, once)
+      Mock.Verify(<@ aliceEventAggregatorMock.Publish<PeerEvent>(It.Is(function | PeerEvent.Connected _ -> true | _ -> false)) @>, once)
+      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEvent>(It.Is(function | PeerEvent.Connected _ -> true | _ -> false)) @>, once)
       
       // --- ping from initiator ---
       do! actors.Initiator.PM.AcceptCommand(PeerCommand.SendPing(actors.Responder.Id, { Ping.BytesLen = 22us;
                                                                                         PongLen = 32us }))
       do! Task.Delay 200
-      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEvent>(It.Is(fun e -> match e with | ReceivedPing _ -> true | _ -> false)) @>, once)
-      Mock.Verify(<@ aliceEventAggregatorMock.Publish<PeerEvent>(It.Is(fun e -> match e with | ReceivedPong _ -> true | _ -> false)) @>, once)
+      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEvent>(It.Is(function | ReceivedPing _ -> true | _ -> false)) @>, once)
+      Mock.Verify(<@ aliceEventAggregatorMock.Publish<PeerEvent>(It.Is(function | ReceivedPong _ -> true | _ -> false)) @>, once)
 
       // --- ping from responder ---
       do! actors.Responder.PM.AcceptCommand(PeerCommand.SendPing(actors.Initiator.Id, { Ping.BytesLen = 22us;
                                                                                         PongLen = 32us }))
       do! Task.Delay 200
-      Mock.Verify(<@ aliceEventAggregatorMock.Publish<PeerEvent>(It.Is(fun e -> match e with | ReceivedPing _ -> true | _ -> false)) @>, once)
-      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEvent>(It.Is(fun e -> match e with | ReceivedPong _ -> true | _ -> false)) @>, once)
+      Mock.Verify(<@ aliceEventAggregatorMock.Publish<PeerEvent>(It.Is(function | ReceivedPing _ -> true | _ -> false)) @>, once)
+      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEvent>(It.Is(function | ReceivedPong _ -> true | _ -> false)) @>, once)
       
       // --- ping from initiator again ---
       do! actors.Initiator.PM.AcceptCommand(PeerCommand.SendPing(actors.Responder.Id, { Ping.BytesLen = 22us;
                                                                                         PongLen = 32us }))
       do! Task.Delay 200
-      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEvent>(It.Is(fun e -> match e with | ReceivedPing _ -> true | _ -> false)) @>, exactly(2))
-      Mock.Verify(<@ aliceEventAggregatorMock.Publish<PeerEvent>(It.Is(fun e -> match e with | ReceivedPong _ -> true | _ -> false)) @>, exactly(2))
+      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEvent>(It.Is(function | ReceivedPing _ -> true | _ -> false)) @>, exactly(2))
+      Mock.Verify(<@ aliceEventAggregatorMock.Publish<PeerEvent>(It.Is(function | ReceivedPong _ -> true | _ -> false)) @>, exactly(2))
 
-
-      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEvent>(It.Is(fun e -> match e with | ReceivedError _ -> true | _ -> false)) @>, never)
+      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEvent>(It.Is(function | ReceivedError _ -> true | _ -> false)) @>, never)
       return ()
     } |> Async.AwaitTask)
   ]

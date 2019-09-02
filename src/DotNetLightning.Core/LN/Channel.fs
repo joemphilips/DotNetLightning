@@ -16,7 +16,6 @@ type InternalChannelId = Guid
 type Channel = {
     InternalChannelId: InternalChannelId
     Config: ChannelConfig
-    UserId: UserId
     ChainListener: IChainListener
     KeysRepository: IKeysRepository
     FeeEstimator: IFeeEstimator
@@ -30,12 +29,11 @@ type Channel = {
     Secp256k1Context: Secp256k1
  }
         with
-        static member Create(config, userId, logger, chainListener, keysRepo, feeEstimator, remoteNodeId, localNodeSecret, fundingTxProvider, n) =
+        static member Create(config, logger, chainListener, keysRepo, feeEstimator, localNodeSecret, fundingTxProvider, n, remoteNodeId) =
             {
                 InternalChannelId = new Guid()
                 Secp256k1Context = new Secp256k1()
                 Config = config
-                UserId = userId
                 ChainListener = chainListener
                 KeysRepository = keysRepo
                 FeeEstimator = feeEstimator
@@ -47,7 +45,7 @@ type Channel = {
                 CurrentBlockHeight = BlockHeight.Zero
                 Network = n
             }
-        static member CreateCurried = curry10 (Channel.Create)
+        static member CreateCurried = curry9 (Channel.Create)
 
 type ChannelError =
     | Ignore of string
