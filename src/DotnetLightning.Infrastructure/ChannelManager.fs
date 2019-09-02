@@ -54,14 +54,14 @@ type ChannelManagementService(nodeParams: IOptions<NodeParams>,
             (_keysRepository.GetNodeSecret())
             (_fundingTxProvider.ConstructFundingTx)
             _nodeParams.ChainNetwork
+    let _peerEventObservable = eventAggregator.GetObservable<PeerEvent>()
     do
-        this.PeerEventObservable.Add(this.PeerEventListener)
+        _peerEventObservable.Add(this.PeerEventListener)
 
     member val KnownChannels: ConcurrentDictionary<NodeId, Channel> = ConcurrentDictionary<_, _>() with get
     member val EventAggregator: IEventAggregator = eventAggregator with get
     
     member val ChannelEventRepo = channelEventRepo with get
-    member val PeerEventObservable: IObservable<_> = this.EventAggregator.GetObservable<PeerEvent>() with get
     member this.PeerEventListener e =
         match e with
         | PeerEvent.ReceivedChannelMsg (nodeId, msg) ->

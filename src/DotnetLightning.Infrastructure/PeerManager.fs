@@ -40,10 +40,14 @@ type IPeerManager =
 type PeerManager(keyRepo: IKeysRepository,
                  logger: ILogger<PeerManager>,
                  nodeParams: IOptions<NodeParams>,
-                 eventAggregator: IEventAggregator) =
+                 eventAggregator: IEventAggregator) as this =
     let _logger = logger
     let _nodeParams = nodeParams.Value
     let ascii = System.Text.ASCIIEncoding.ASCII
+    
+    let _channelEventObservable = eventAggregator.GetObservable<ChannelEvent>()
+    do
+        _channelEventObservable.Add(this.ChannelEventListener)
     member val KnownPeers = ConcurrentDictionary<PeerId, Peer>() with get, set
     
     member val OpenedPeers = ConcurrentDictionary<PeerId, Peer>() with get, set
@@ -52,6 +56,11 @@ type PeerManager(keyRepo: IKeysRepository,
     member val NodeIdToDescriptor = ConcurrentDictionary<NodeId, PeerId>() with get, set
     
     member val EventAggregator: IEventAggregator = eventAggregator with get
+    member private this.ChannelEventListener e =
+        match e with
+        | ChannelEvent.NewOutboundChannelStarted(msg, _) ->
+            failwith "TODO: Send message here"
+            
     member private this.RememberPeersTransport(peerId: PeerId, pipe: PipeWriter) =
         match this.PeerIdToTransport.TryAdd(peerId, pipe) with
         | true -> ()
