@@ -13,46 +13,6 @@ open NBitcoin
     based on eclair's channel state management
 *)
 
-type InputInitFunder = {
-    TemporaryChannelId: ChannelId
-    FundingSatoshis: Money
-    PushMSat: LNMoney
-    InitFeeRatePerKw: FeeRatePerKw
-    FundingTxFeeRatePerKw: FeeRatePerKw
-    LocalParams: LocalParams
-    RemoteInit: Init
-    ChannelFlags: uint8
-    ChannelKeys: ChannelKeys
-}
-    with
-        static member FromOpenChannel (localParams) (remoteInit) (channelKeys) (o: OpenChannel) =
-            {
-                InputInitFunder.TemporaryChannelId = o.TemporaryChannelId
-                FundingSatoshis = o.FundingSatoshis
-                PushMSat = o.PushMSat
-                InitFeeRatePerKw = o.FeeRatePerKw
-                FundingTxFeeRatePerKw = o.FeeRatePerKw
-                LocalParams = localParams
-                RemoteInit = remoteInit
-                ChannelFlags = o.ChannelFlags
-                ChannelKeys = channelKeys
-            }
-
-        member this.DeriveCommitmentSpec() =
-            CommitmentSpec.Create this.ToLocal this.PushMSat this.FundingTxFeeRatePerKw
-
-        member this.ToLocal =
-            this.FundingSatoshis.ToLNMoney() - this.PushMSat
-
-and InputInitFundee = {
-    TemporaryChannelId: ChannelId
-    LocalParams: LocalParams
-    RemoteInit: Init
-    ToLocal: LNMoney
-    ChannelKeys: ChannelKeys
-}
-
-
 //    8888888b.        d8888 88888888888     d8888
 //    888  "Y88b      d88888     888        d88888
 //    888    888     d88P888     888       d88P888
@@ -292,10 +252,12 @@ module Data =
 type ChannelEvent =
     // --- ln events ---
     // --------- init fundee --------
+    | NewInboundChannelStarted of nextState: Data.WaitForOpenChannelData
     | WeAcceptedOpenChannel of nextMsg: AcceptChannel * nextState: Data.WaitForFundingCreatedData
     | WeAcceptedFundingCreated of nextMsg: FundingSigned * nextState: Data.WaitForFundingConfirmedData
 
     // --------- init fender --------
+    | NewOutboundChannelStarted of nextMsg: OpenChannel * nextState: Data.WaitForAcceptChannelData
     | WeAcceptedAcceptChannel of nextMsg: FundingCreated * nextState: Data.WaitForFundingSignedData
     | WeAcceptedFundingSigned of txToPublish: FinalizedTx * nextState: Data.WaitForFundingConfirmedData
     | OpenChannelFromSelf of InputInitFunder

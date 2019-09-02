@@ -119,7 +119,6 @@ type ChannelManagementService(nodeParams: IOptions<NodeParams>,
                     _logger.LogCritical(sprintf "Unreachable %A" e)
             | e -> sprintf "unreachable %A" e |> _logger.LogCritical
         | o -> sprintf "Observed a following error in a channel %A" o |> _logger.LogError
-
     member this.AcceptCommand(nodeId: NodeId, cmd: ChannelCommand) =
         match this.KnownChannels.TryGetValue(nodeId) with
         | true, channel ->
@@ -139,12 +138,14 @@ type ChannelManagementService(nodeParams: IOptions<NodeParams>,
                 ()
         | false, _ ->
             match cmd with
-            | ApplyOpenChannel msg ->
-                failwith "TODO"
-            | ApplyAcceptChannel msg ->
+            | CreateInbound fundeeParameters ->
                 let c = _createChannel nodeId
                 this.KnownChannels.TryAdd(nodeId, c) |> ignore
-                this.AcceptCommand(nodeId, ApplyAcceptChannel msg)
+                this.AcceptCommand(nodeId, CreateInbound fundeeParameters)
+            | CreateOutbound funderParameters ->
+                let c = _createChannel nodeId
+                this.KnownChannels.TryAdd(nodeId, c) |> ignore
+                this.AcceptCommand(nodeId, CreateOutbound funderParameters)
             | _ ->
                 sprintf "Cannot handle command type (%A) for unknown peer %A" (cmd) nodeId
                 |> log.LogError

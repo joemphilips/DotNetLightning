@@ -105,6 +105,8 @@ and ChannelOptions = {
     // As the node which funds a channel picks this value this will only apply for new outbound channels unless
     // `ChannelHandshakeLimits.ForceAnnouncedChannelPreferences` is set.
     AnnounceChannel: bool
+    
+    ShutdownScriptPubKey: Script option
  }
     with
 
@@ -113,6 +115,7 @@ and ChannelOptions = {
             FeeProportionalMillionths = 0u
             AnnounceChannel = false
             MaxFeeRateMismatchRatio = 0.
+            ShutdownScriptPubKey = None
         }
 
     static member FeeProportionalMillionths_: Lens<_, _> =
