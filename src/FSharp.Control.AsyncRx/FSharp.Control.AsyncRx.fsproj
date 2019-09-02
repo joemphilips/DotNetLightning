@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.1</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="Ply.fs" />
+        <Compile Include="ComputationBuilders.fs" />
+        <Compile Include="Types.fs" />
+        <Compile Include="AsyncDisposable.fs" />
+        <Compile Include="AsyncObserver.fs" />
+        <Compile Include="Core.fs" />
+        <Compile Include="Create.fs" />
+        <Compile Include="Leave.fs" />
+        <Compile Include="Filter.fs" />
+        <Compile Include="Aggregate.fs" />
+        <Compile Include="Combine.fs" />
+        <Compile Include="Transform.fs" />
+    </ItemGroup>
+
+</Project>
