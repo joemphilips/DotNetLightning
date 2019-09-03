@@ -26,6 +26,7 @@ open DotNetLightning.LN
 
 open CustomEventAggregator
 open DotNetLightning.Utils.Aether
+open FSharp.Control.Reactive
 
 
 type PeerError =
@@ -40,14 +41,17 @@ type IPeerManager =
 type PeerManager(keyRepo: IKeysRepository,
                  logger: ILogger<PeerManager>,
                  nodeParams: IOptions<NodeParams>,
-                 eventAggregator: IEventAggregator) as this =
+                 eventAggregator: IEventAggregator,
+                 broadCaster: IBroadCaster) as this =
     let _logger = logger
     let _nodeParams = nodeParams.Value
     let ascii = System.Text.ASCIIEncoding.ASCII
+    let _broadCaster = broadCaster
     
-    let _channelEventObservable = eventAggregator.GetObservable<ChannelEvent>()
-    do
-        _channelEventObservable.Add(this.ChannelEventListener)
+    let _channelEventObservable =
+        eventAggregator.GetObservable<NodeId * ChannelEvent>()
+        |> Observable.flatmapAsync(this.ChannelEventListener)
+        
     member val KnownPeers = ConcurrentDictionary<PeerId, Peer>() with get, set
     
     member val OpenedPeers = ConcurrentDictionary<PeerId, Peer>() with get, set
@@ -56,10 +60,32 @@ type PeerManager(keyRepo: IKeysRepository,
     member val NodeIdToDescriptor = ConcurrentDictionary<NodeId, PeerId>() with get, set
     
     member val EventAggregator: IEventAggregator = eventAggregator with get
-    member private this.ChannelEventListener e =
-        match e with
-        | ChannelEvent.NewOutboundChannelStarted(msg, _) ->
-            failwith "TODO: Send message here"
+    member private this.ChannelEventListener (nodeId, e): Async<unit> =
+        let vt = vtask {
+            let peerId = this.NodeIdToDescriptor.TryGet(nodeId)
+            let transport = this.PeerIdToTransport.TryGet(peerId)
+            match e with
+            | ChannelEvent.WeAcceptedOpenChannel(msg, _) ->
+                return! this.EncodeAndSendMsg(peerId, transport) msg
+            | ChannelEvent.WeAcceptedFundingCreated(msg, _) ->
+                return! this.EncodeAndSendMsg(peerId, transport) msg
+            | ChannelEvent.NewOutboundChannelStarted(msg, _) ->
+                return! this.EncodeAndSendMsg(peerId, transport) (msg)
+            | ChannelEvent.WeAcceptedAcceptChannel(msg, _) ->
+                return! this.EncodeAndSendMsg(peerId, transport) (msg)
+            | ChannelEvent.WeAcceptedFundingSigned(finalizedTx, _) ->
+                match _broadCaster.BroadCastTransaction(finalizedTx.Value) with
+                | Ok _ -> return ()
+                | Result.Error str ->
+                    str |> _logger.LogCritical
+                    this.EventAggregator.Publish<PeerEvent>(FailedToBroadcastTransaction(nodeId, finalizedTx.Value))
+                    return ()
+            | ChannelEvent.WeAcceptedCMDAddHTLC (msg, _) ->
+                return! this.EncodeAndSendMsg(peerId, transport) (msg)
+            | ChannelEvent.WeAcceptedCMDFulfillHTLC (msg, _) ->
+                return! this.EncodeAndSendMsg(peerId, transport) (msg)
+        }
+        vt.AsTask() |> Async.AwaitTask
             
     member private this.RememberPeersTransport(peerId: PeerId, pipe: PipeWriter) =
         match this.PeerIdToTransport.TryAdd(peerId, pipe) with

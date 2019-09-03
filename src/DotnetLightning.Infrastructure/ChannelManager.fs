@@ -96,7 +96,10 @@ type ChannelManagementService(nodeParams: IOptions<NodeParams>,
                 this.AcceptCommand(nodeId, ChannelCommand.ApplyUpdateFee m)
             | m ->
                     failwithf "Unknown Channel Message (%A). This should never happen" m
-
+        | PeerEvent.FailedToBroadcastTransaction(nodeId, tx) ->
+            ()
+        | e -> ()
+        
     member private this.HandleChannelError (nodeId: NodeId) (b: RBad) =
         match b with
         | RBad.Exception(ChannelException(ChannelError.Close(msg))) ->
@@ -125,7 +128,7 @@ type ChannelManagementService(nodeParams: IOptions<NodeParams>,
             match Channel.executeCommand channel cmd with
             | Good events ->
                 let nextChannel = events |> List.fold Channel.applyEvent channel
-                events |> List.iter this.EventAggregator.Publish<ChannelEvent>
+                events |> List.zip(List.replicate (events.Length) nodeId) |> List.iter this.EventAggregator.Publish<NodeId * ChannelEvent>
                 _logger.LogDebug(sprintf "Updated channel with %A" nextChannel)
                 match this.KnownChannels.TryUpdate(nodeId, nextChannel, channel) with
                 | true ->

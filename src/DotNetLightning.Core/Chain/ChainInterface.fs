@@ -21,7 +21,7 @@ type IChainWatcher =
     abstract member RegisterListener: IChainListener -> bool
 
 type IBroadCaster =
-    abstract member BroadCastTransction: (Transaction) -> Result<unit, string>
+    abstract member BroadCastTransaction: (Transaction) -> Result<unit, string>
 
 type ConfirmationTarget =
     | Background

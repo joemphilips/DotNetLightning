@@ -25,6 +25,7 @@
     <Compile Include="PeerManager.fs" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="FSharp.Control.Reactive" Version="4.2.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="2.2.0" />
