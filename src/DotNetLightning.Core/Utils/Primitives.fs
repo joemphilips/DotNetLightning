@@ -34,6 +34,7 @@ module Primitives =
 
         static member (-) (a: BlockHeight, b: BlockHeightOffset) =
             a.Value - (uint32 b.Value) |> BlockHeight
+
     /// **Description**
     ///
     /// Relative block height used for `OP_CSV` locks,

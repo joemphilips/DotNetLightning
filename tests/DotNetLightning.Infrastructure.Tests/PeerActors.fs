@@ -6,12 +6,15 @@ open System.IO.Pipelines
 
 open FSharp.Control.Tasks
 
+open CustomEventAggregator
 open DotNetLightning.Infrastructure
 open DotNetLightning.Utils.Primitives
 
 type internal PeerManagerEntity = {
     PM: PeerManager
     Id: PeerId
+    CM: IChannelManager
+    EventAggregator: IEventAggregator
 }
 
 type internal PeerActors(a, b) =

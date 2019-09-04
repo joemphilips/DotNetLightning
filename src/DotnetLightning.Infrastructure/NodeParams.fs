@@ -51,8 +51,8 @@ type NodeParams() as this =
     member val MaxAcceptedHTLCs: uint16 = 30us with get, set
     member val ExpiryDeltaBlocks: BlockHeight = BlockHeight 144u with get, set
     member val HTLCMinimumMSat: LNMoney = LNMoney.MilliSatoshis(1L) with get, set
-    member val ToRemoteDelayBlocks: BlockHeight = BlockHeight (720u) with get, set
-    member val MaxToLocalDelayBlocks: BlockHeight = BlockHeight(2016u) with get, set
+    member val ToRemoteDelayBlocks: BlockHeightOffset = BlockHeightOffset(720us) with get, set
+    member val MaxToLocalDelayBlocks: BlockHeightOffset = BlockHeightOffset(2016us) with get, set
     member val MinDepthBlocks: BlockHeight = BlockHeight(3u) with get, set
     // member val SmartFeeNBlocks: BlockHeight
     member val FeeBaseMSat: LNMoney = LNMoney.MilliSatoshis(1000L) with get, set

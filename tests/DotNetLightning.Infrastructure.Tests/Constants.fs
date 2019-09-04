@@ -14,6 +14,9 @@ type TestEntity =
         NodeParams: NodeParams
     }
 
+let fundingSatoshis = 1000000L |> Money.Satoshis
+let pushMsat = 200000000L |> LNMoney.MilliSatoshis
+let feeratePerKw = 10000u |> FeeRatePerKw 
 let getAliceParam() =
     let p = NodeParams()
     p.Alias <- "alice"
@@ -25,8 +28,8 @@ let getAliceParam() =
     p.HTLCMinimumMSat <- LNMoney.Zero
     p.MinDepthBlocks <- 3u |> BlockHeight
     // p.SmartFeeNBlocks <- 3
-    p.ToRemoteDelayBlocks <- BlockHeight 720u
-    p.MaxToLocalDelayBlocks <- BlockHeight 1000u
+    p.ToRemoteDelayBlocks <- BlockHeightOffset 720us
+    p.MaxToLocalDelayBlocks <- BlockHeightOffset 1000us
     p.FeeBaseMSat <- 546000UL |> LNMoney.MilliSatoshis
     p.FeeProportionalMillionths <- 10u
     p.ReserveToFundingRatio <- 0.01

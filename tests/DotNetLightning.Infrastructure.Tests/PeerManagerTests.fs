@@ -20,6 +20,7 @@ open NBitcoin
 open Expecto
 open Expecto.Logging
 open Expecto.Logging.Message
+open Microsoft.Extensions.DependencyInjection
 
 let hex = NBitcoin.DataEncoders.HexEncoder()
 
@@ -85,7 +86,7 @@ let tests = testList "PeerManagerTests" [
       let! _ = peerManager.ProcessMessageAsync(theirPeerId, dPipe)
 
       Expect.isTrue (peerManager.OpenedPeers.ContainsKey(theirPeerId)) ""
-      let actualPeerId = (peerManager.NodeIdToDescriptor.TryGetValue(theirNodeId) |> snd)
+      let actualPeerId = (peerManager.NodeIdToPeerId.TryGetValue(theirNodeId) |> snd)
       Expect.equal (actualPeerId) (theirPeerId) ""
       let _ = match peerManager.OpenedPeers.TryGetValue(theirPeerId) with
               | true, p -> p
@@ -134,7 +135,7 @@ let tests = testList "PeerManagerTests" [
 
       // also, we can query the peer id with node id
       let peerIdRetrieved =
-          match peerManager.NodeIdToDescriptor.TryGetValue theirNodeIdActual with
+          match peerManager.NodeIdToPeerId.TryGetValue theirNodeIdActual with
           | true, p -> p
           | false, _ -> failwith "peer id is not set to NodeId -> PeerId Dict"
       Expect.equal (peerIdRetrieved) (theirPeerId) ""
@@ -150,7 +151,9 @@ let tests = testList "PeerManagerTests" [
                                      aliceEventAggregatorMock,
                                      chainWatcherMock,
                                      broadCasterMock)
-                    Id = IPEndPoint.Parse("127.0.0.3") :> EndPoint |> PeerId }
+                    CM = Mock<IChannelManager>().Create()
+                    Id = IPEndPoint.Parse("127.0.0.3") :> EndPoint |> PeerId
+                    EventAggregator = aliceEventAggregatorMock }
       let bobNodeSecret =
         Key(hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202"))
       let keyRepoBob = 
@@ -161,7 +164,9 @@ let tests = testList "PeerManagerTests" [
                                    bobEventAggregatorMock,
                                    chainWatcherMock,
                                    broadCasterMock)
-                  Id = IPEndPoint.Parse("127.0.0.2") :> EndPoint |> PeerId }
+                  CM = Mock<IChannelManager>().Create()
+                  Id = IPEndPoint.Parse("127.0.0.2") :> EndPoint |> PeerId
+                  EventAggregator = bobEventAggregatorMock }
       let actors = new PeerActors(alice, bob)
       
       // this should trigger All handshake process

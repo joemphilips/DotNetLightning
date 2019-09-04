@@ -14,7 +14,7 @@ type ChannelService() =
 
 type ServiceBuilder() =
     member __.CreateChannelManagementService() =
-        ChannelManagementService
+        ChannelManager
 
 module Services =
     let register(services: IServiceCollection, env: IHostEnvironment) =

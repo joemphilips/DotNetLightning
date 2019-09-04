@@ -20,21 +20,20 @@ open DotNetLightning.LN
 open DotNetLightning.Transactions
 
 type IChannelManager =
-    abstract AcceptCommandAsync: peerId:PeerId * cmd:ChannelCommand -> Task
+    abstract AcceptCommand: nodeId:NodeId * cmd:ChannelCommand -> unit
     abstract ChannelEventListener: IObserver<ChannelEvent> with get
     abstract ChannelEventObservable: IObservable<ChannelEvent> with get
-    abstract ChannelEventRepo : IChannelEventRepository with get
+    abstract KeysRepository : IKeysRepository with get
 type IFundingTxProvider =
     abstract member ConstructFundingTx :  IDestination * Money * FeeRatePerKw -> RResult<FinalizedTx * TxOutIndex>
-type ChannelManagementService(nodeParams: IOptions<NodeParams>,
-                              log: ILogger<ChannelManagementService>,
-                              eventAggregator: IEventAggregator,
-                              channelEventRepo: IChannelEventRepository,
-                              chainListener: IChainListener,
-                              keysRepository: IKeysRepository,
-                              feeEstimator: IFeeEstimator,
-                              fundingTxProvider: IFundingTxProvider,
-                              keysRepo: IKeysRepository) as this =
+type ChannelManager(nodeParams: IOptions<NodeParams>,
+                    log: ILogger<ChannelManager>,
+                    eventAggregator: IEventAggregator,
+                    channelEventRepo: IChannelEventRepository,
+                    chainListener: IChainListener,
+                    keysRepository: IKeysRepository,
+                    feeEstimator: IFeeEstimator,
+                    fundingTxProvider: IFundingTxProvider) as this =
     let _nodeParams = nodeParams.Value
     let _internalLog = Logger.fromMicrosoftLogger log
     let _logger = log
@@ -58,6 +57,7 @@ type ChannelManagementService(nodeParams: IOptions<NodeParams>,
     do
         _peerEventObservable.Add(this.PeerEventListener)
 
+    member val KeysRepository = _keysRepository
     member val KnownChannels: ConcurrentDictionary<NodeId, Channel> = ConcurrentDictionary<_, _>() with get
     member val EventAggregator: IEventAggregator = eventAggregator with get
     
@@ -104,7 +104,7 @@ type ChannelManagementService(nodeParams: IOptions<NodeParams>,
         match b with
         | RBad.Exception(ChannelException(ChannelError.Close(msg))) ->
             let closeCMD =
-                let spk = keysRepo.GetShutdownPubKey()
+                let spk = _keysRepository.GetShutdownPubKey()
                 ChannelCommand.Close({ CMDClose.ScriptPubKey = Some spk.WitHash.ScriptPubKey })
             _logger.LogError(sprintf "Closing a channel for a node (%A) due to a following error. \n %s" nodeId msg)
             _logger.LogError(sprintf "%s" msg)
@@ -153,3 +153,10 @@ type ChannelManagementService(nodeParams: IOptions<NodeParams>,
                 sprintf "Cannot handle command type (%A) for unknown peer %A" (cmd) nodeId
                 |> log.LogError
                 ()
+                
+    interface IChannelManager with
+        member this.AcceptCommand(nodeId, cmd:ChannelCommand): unit =
+            this.AcceptCommand(nodeId, cmd)
+        member val ChannelEventListener: IObserver<ChannelEvent> = null with get
+        member val ChannelEventObservable: IObservable<ChannelEvent> = null with get
+        member val KeysRepository = this.KeysRepository with get
