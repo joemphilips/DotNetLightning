@@ -88,14 +88,12 @@ type ChainWatchInterfaceUtil = {
 }
 with
     interface IChainWatcher with
-        member this.InstallWatchTx(arg1: uint256 * Script): bool = 
-            let (txid, scriptPubKey) = arg1
-            this.Watched <- this.Watched |> ChainWatchedUtil.regsiterTx (TxId txid) (scriptPubKey)
+        member this.InstallWatchTx(txHash: uint256, scriptPubKey: Script): bool = 
+            this.Watched <- this.Watched |> ChainWatchedUtil.regsiterTx (TxId txHash) (scriptPubKey)
             true
 
-        member this.InstallWatchOutPoint(arg1: OutPoint * Script): bool = 
-            let (outP, scriptPubKey) = arg1
-            this.Watched <- this.Watched |> ChainWatchedUtil.registerOutpoint outP
+        member this.InstallWatchOutPoint(outPoint: OutPoint, scriptPubKey: Script): bool = 
+            this.Watched <- this.Watched |> ChainWatchedUtil.registerOutpoint outPoint
             true
 
         member this.RegisterListener(arg1: IChainListener): bool = 

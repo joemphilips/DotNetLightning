@@ -1,7 +1,9 @@
 module ChannelInitializationTests
 
 open FSharp.Control.Reactive
-open System.Reactive
+open System.Reactive.Threading.Tasks
+open System.Reactive.Linq
+open System.Reactive.Linq
 open DotNetLightning.Utils.Primitives
 open Expecto
 open NBitcoin
@@ -31,6 +33,8 @@ module internal Helper =
         let actors = new PeerActors(getAlice(), b)
         return! actors.Launch(bobNodeId) |> Async.AwaitTask
         let! _ = eventAggregator.GetObservable<PeerEvent>()
+                     |> Observable.first
+                     |> fun o -> o.ToTask() |> Async.AwaitTask
         return ()
     }
     
