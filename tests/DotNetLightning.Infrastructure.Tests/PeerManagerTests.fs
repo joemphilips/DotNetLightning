@@ -13,7 +13,6 @@ open System.Net
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Options
 
-open System
 open System.Threading.Tasks
 open DotNetLightning.Utils.Aether
 open Foq
@@ -35,40 +34,15 @@ let eventAggregatorMock = new Mock<IEventAggregator>()
 let ourNodeSecret = Key(hex.DecodeData("1111111111111111111111111111111111111111111111111111111111111111"))
 let keysRepoMock = Mock<IKeysRepository>.Method(fun repo -> <@ repo.GetNodeSecret @>).Returns(ourNodeSecret)
 
+let broadCasterMock = Mock<IBroadCaster>().Create()
+
+let chainWatcherMock = Mock<IChainWatcher>().Create()
+
 let loggerMock = new Mock<ILogger<PeerManager>>()
 let loggerInternal = Logger.fromMicrosoftLogger (loggerMock.Create())
 let aliceNodeParams = Options.Create<NodeParams>(TestConstants.getAliceParam().NodeParams)
 let bobNodeParams = Options.Create<NodeParams>(TestConstants.getBobParam().NodeParams)
 
-type private PeerManagerEntity = {
-    PM: PeerManager
-    Id: PeerId
-}
-
-type private PeerActors(a, b) =
-    let pipePair = DuplexPipe.CreatePair()
-    member val Initiator: PeerManagerEntity = a
-    member val Responder: PeerManagerEntity = b
-    member val InitiatorToTransport: IDuplexPipe = pipePair.Transport with get
-    member val ResponderToTransport: IDuplexPipe = pipePair.Application with get
-    member val InitiatorTask = null with get, set
-    member val ResponderTask = null with get, set
-    member this.Launch(nodeIdForResponder: NodeId) = task {
-            let! r = this.Initiator.PM.NewOutBoundConnection(nodeIdForResponder, this.Responder.Id, this.InitiatorToTransport.Output)
-            match r with Ok r -> () | Result.Error e -> failwithf "%A" e
-            this.InitiatorTask <- task {
-                while true do
-                    do! this.Initiator.PM.ProcessMessageAsync(this.Responder.Id, this.InitiatorToTransport)
-            }
-            this.ResponderTask <- task {
-                while true do
-                    do! this.Responder.PM.ProcessMessageAsync(this.Initiator.Id, this.ResponderToTransport)
-            }
-        }
-    interface IDisposable with
-        member this.Dispose() =
-            ()
-            
 
 let createPipe() =
     let pipe = System.IO.Pipelines.Pipe()
@@ -93,7 +67,9 @@ let tests = testList "PeerManagerTests" [
       let peerManager = PeerManager (keysRepoMock,
                                     loggerMock.Create(),
                                     aliceNodeParams,
-                                    eventAggregatorMock.Create())
+                                    eventAggregatorMock.Create(),
+                                    chainWatcherMock,
+                                    broadCasterMock)
       let! read = peerManager.NewOutBoundConnection(theirNodeId, theirPeerId, dPipe.Output, ie)
       let _ = read |> function | Ok b -> b | Result.Error e -> failwithf "%A" e
       updateIEForTestVector (peerManager, theirPeerId)
@@ -126,7 +102,9 @@ let tests = testList "PeerManagerTests" [
       let peerManager = PeerManager (keyRepoMock,
                                     loggerMock.Create(),
                                     aliceNodeParams,
-                                    eventAggregatorMock.Create())
+                                    eventAggregatorMock.Create(),
+                                    chainWatcherMock,
+                                    broadCasterMock)
 
       // processing act 1 ...
       let act1 = hex.DecodeData ("00036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6a")
@@ -167,18 +145,22 @@ let tests = testList "PeerManagerTests" [
       let aliceEventAggregatorMock = Mock<IEventAggregator>().Create()
       let bobEventAggregatorMock = Mock<IEventAggregator>().Create()
       let alice = { PM = PeerManager(keysRepoMock,
-                               loggerMock.Create(),
-                               aliceNodeParams,
-                               aliceEventAggregatorMock)
+                                     loggerMock.Create(),
+                                     aliceNodeParams,
+                                     aliceEventAggregatorMock,
+                                     chainWatcherMock,
+                                     broadCasterMock)
                     Id = IPEndPoint.Parse("127.0.0.3") :> EndPoint |> PeerId }
       let bobNodeSecret =
         Key(hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202"))
       let keyRepoBob = 
         Mock<IKeysRepository>.Method(fun repo -> <@ repo.GetNodeSecret @>).Returns(bobNodeSecret)
       let bob = { PM = PeerManager(keyRepoBob,
-                            loggerMock.Create(),
-                            Options.Create<NodeParams>(new NodeParams()),
-                            bobEventAggregatorMock)
+                                   loggerMock.Create(),
+                                   Options.Create<NodeParams>(new NodeParams()),
+                                   bobEventAggregatorMock,
+                                   chainWatcherMock,
+                                   broadCasterMock)
                   Id = IPEndPoint.Parse("127.0.0.2") :> EndPoint |> PeerId }
       let actors = new PeerActors(alice, bob)
       

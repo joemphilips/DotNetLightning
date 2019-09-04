@@ -1,15 +1,9 @@
 namespace DotNetLightning.Infrastructure
 
 
-open System
 open System.IO.Pipelines
-open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Threading.Tasks
-open System.Collections.Generic
-open System.Collections.Concurrent
-open System.Threading.Tasks
-open System.Buffers
 
 
 open FSharp.Control.Tasks
@@ -20,7 +14,6 @@ open Microsoft.Extensions.Options
 open NBitcoin
 open DotNetLightning.Utils
 open DotNetLightning.Chain
-open DotNetLightning.Crypto
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.LN
 
@@ -42,10 +35,13 @@ type PeerManager(keyRepo: IKeysRepository,
                  logger: ILogger<PeerManager>,
                  nodeParams: IOptions<NodeParams>,
                  eventAggregator: IEventAggregator,
+                 chainWatcher: IChainWatcher,
                  broadCaster: IBroadCaster) as this =
     let _logger = logger
     let _nodeParams = nodeParams.Value
     let ascii = System.Text.ASCIIEncoding.ASCII
+    
+    let _chainWatcher = chainWatcher
     let _broadCaster = broadCaster
     
     let _channelEventObservable =
@@ -73,16 +69,39 @@ type PeerManager(keyRepo: IKeysRepository,
                 return! this.EncodeAndSendMsg(peerId, transport) (msg)
             | ChannelEvent.WeAcceptedAcceptChannel(msg, _) ->
                 return! this.EncodeAndSendMsg(peerId, transport) (msg)
-            | ChannelEvent.WeAcceptedFundingSigned(finalizedTx, _) ->
-                match _broadCaster.BroadCastTransaction(finalizedTx.Value) with
-                | Ok _ -> return ()
+            | ChannelEvent.WeAcceptedFundingSigned(finalizedFundingTx, _) ->
+                match _broadCaster.BroadCastTransaction(finalizedFundingTx.Value) with
+                | Ok _ ->
+                    let spk1 = finalizedFundingTx.Value.Outputs.[0].ScriptPubKey
+                    let spk2 = finalizedFundingTx.Value.Outputs.[1].ScriptPubKey
+                    let txHash = finalizedFundingTx.Value.GetHash()
+                    match ([spk1; spk2]
+                          |> List.map(fun spk -> _chainWatcher.InstallWatchTx(txHash, spk))
+                          |> List.forall(id)) with
+                    | true ->
+                        _logger.LogInformation(sprintf "Waiting for funding tx (%A) to get confirmed..." txHash )
+                        return ()
+                    | false ->
+                        _logger.LogCritical(sprintf "Failed to install watching tx (%A)" txHash)
+                        this.EventAggregator.Publish<PeerEvent>(FailedToBroadcastTransaction(nodeId, finalizedFundingTx.Value))
+                        return ()
                 | Result.Error str ->
                     str |> _logger.LogCritical
-                    this.EventAggregator.Publish<PeerEvent>(FailedToBroadcastTransaction(nodeId, finalizedTx.Value))
+                    this.EventAggregator.Publish<PeerEvent>(FailedToBroadcastTransaction(nodeId, finalizedFundingTx.Value))
                     return ()
+            // The one which includes `CMD` in its names is the one started by us.
+            // So there are no need to think about routing, just send it to specified peer.
             | ChannelEvent.WeAcceptedCMDAddHTLC (msg, _) ->
                 return! this.EncodeAndSendMsg(peerId, transport) (msg)
             | ChannelEvent.WeAcceptedCMDFulfillHTLC (msg, _) ->
+                return! this.EncodeAndSendMsg(peerId, transport) (msg)
+            | ChannelEvent.WeAcceptedCMDFailHTLC(msg, _) ->
+                return! this.EncodeAndSendMsg(peerId, transport) (msg)
+            | ChannelEvent.WeAcceptedCMDFailMalformedHTLC(msg, _) ->
+                return! this.EncodeAndSendMsg(peerId, transport) (msg)
+            | ChannelEvent.WeAcceptedCMDUpdateFee(msg, _) ->
+                return! this.EncodeAndSendMsg(peerId, transport) (msg)
+            | ChannelEvent.WeAcceptedCMDSign (msg, _) ->
                 return! this.EncodeAndSendMsg(peerId, transport) (msg)
         }
         vt.AsTask() |> Async.AwaitTask

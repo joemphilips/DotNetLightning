@@ -9,7 +9,9 @@
   <ItemGroup>
     <Compile Include="Constants.fs" />
     <Compile Include="DuplexPipe.fs" />
+    <Compile Include="PeerActors.fs" />
     <Compile Include="PeerManagerTests.fs" />
+    <Compile Include="ChannelInitializationTests.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
 

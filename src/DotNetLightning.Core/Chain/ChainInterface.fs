@@ -11,12 +11,12 @@ type ChainError =
 
 
 type IChainListener =
-    abstract member BlockConnected: (BlockHeader * BlockHeight * (uint32 * Transaction) list) -> unit
+    abstract member BlockConnected: BlockHeader * BlockHeight * (uint32 * Transaction) list -> unit
     abstract member BlockDisconnected: BlockHeader -> bool
 
 type IChainWatcher =
-    abstract member InstallWatchTx: (uint256 * Script) -> bool
-    abstract member InstallWatchOutPoint: (OutPoint * Script) -> bool
+    abstract member InstallWatchTx: txHash: uint256 * scriptPubKey: Script -> bool
+    abstract member InstallWatchOutPoint: OutPoint * Script -> bool
     abstract member WatchAllTxn: unit -> bool
     abstract member RegisterListener: IChainListener -> bool
 

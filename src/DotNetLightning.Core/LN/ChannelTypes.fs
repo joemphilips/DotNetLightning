@@ -249,6 +249,7 @@ module Data =
 //     8888888888     Y8P     8888888888 888    Y888     888     "Y8888P"
 
 
+/// The one include `CMD` in its name is the event which we are the initiator
 type ChannelEvent =
     // --- ln events ---
     // --------- init fundee --------

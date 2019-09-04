@@ -1057,22 +1057,22 @@ module Channel =
 
     let applyEvent c (e: ChannelEvent): Channel =
         match e, c.State with
-        | NewOutboundChannelStarted(openChannel, data), WaitForInitInternal ->
+        | NewOutboundChannelStarted(_, data), WaitForInitInternal ->
             { c with State = (WaitForAcceptChannel data) }
         | NewInboundChannelStarted(data), WaitForInitInternal ->
             { c with State = (WaitForOpenChannel data) }
         // --------- init fundee -----
-        | WeAcceptedOpenChannel(nextMsg, data), WaitForOpenChannel _ ->
+        | WeAcceptedOpenChannel(_, data), WaitForOpenChannel _ ->
             let state = WaitForFundingCreated data
             { c with State = state }
-        | WeAcceptedFundingCreated(nextMsg, data), WaitForFundingCreated _ ->
+        | WeAcceptedFundingCreated(_, data), WaitForFundingCreated _ ->
             let state = WaitForFundingConfirmed data
             { c with State = state }
 
         // --------- init funder -----
-        | WeAcceptedAcceptChannel(nextMsg, data), WaitForAcceptChannel _ ->
+        | WeAcceptedAcceptChannel(_, data), WaitForAcceptChannel _ ->
             { c with State = WaitForFundingSigned data }
-        | WeAcceptedFundingSigned(txToPublish, data), WaitForFundingSigned _ ->
+        | WeAcceptedFundingSigned(_, data), WaitForFundingSigned _ ->
             { c with State = WaitForFundingConfirmed data }
 
         // --------- init both ------
@@ -1103,37 +1103,37 @@ module Channel =
             { c with State = ChannelState.Normal nextState }
         | WeSentFundingLockedMsgBeforeThem msg, WaitForFundingLocked prevState ->
             { c with State = WaitForFundingLocked { prevState with OurMessage = msg; HaveWeSentFundingLocked = true } }
-        | BothFundingLocked data, WaitForFundingSigned s ->
+        | BothFundingLocked data, WaitForFundingSigned _s ->
             { c with State = ChannelState.Normal data }
 
         // ----- normal operation --------
-        | WeAcceptedCMDAddHTLC(msg, newCommitments), ChannelState.Normal d ->
+        | WeAcceptedCMDAddHTLC(_, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
         | WeAcceptedUpdateAddHTLC(newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
 
-        | WeAcceptedCMDFulfillHTLC(msg, newCommitments), ChannelState.Normal d ->
+        | WeAcceptedCMDFulfillHTLC(_, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
-        | WeAcceptedFulfillHTLC(msg, origin, htlc, newCommitments), ChannelState.Normal d ->
-            { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
-
-        | WeAcceptedCMDFailHTLC(msg, newCommitments), ChannelState.Normal d ->
-            { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
-        | WeAcceptedFailHTLC(origin, msg, newCommitments), ChannelState.Normal d ->
+        | WeAcceptedFulfillHTLC(_msg, _origin, _htlc, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
 
-        | WeAcceptedCMDFailMalformedHTLC(msg, newCommitments), ChannelState.Normal d ->
+        | WeAcceptedCMDFailHTLC(_msg, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
-        | WeAcceptedFailMalformedHTLC(origin, msg, newCommitments), ChannelState.Normal d ->
+        | WeAcceptedFailHTLC(_origin, _msg, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
 
-        | WeAcceptedCMDUpdateFee(msg, newCommitments), ChannelState.Normal d ->
+        | WeAcceptedCMDFailMalformedHTLC(_msg, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
-        | WeAcceptedUpdateFee(msg), ChannelState.Normal d -> c
+        | WeAcceptedFailMalformedHTLC(_origin, _msg, newCommitments), ChannelState.Normal d ->
+            { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
 
-        | WeAcceptedCMDSign(msg, newCommitments), ChannelState.Normal d ->
+        | WeAcceptedCMDUpdateFee(_msg, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
-        | WeAcceptedCommitmentSigned(msg, newCommitments), ChannelState.Normal d ->
+        | WeAcceptedUpdateFee(_msg), ChannelState.Normal _d -> c
+
+        | WeAcceptedCMDSign(_msg, newCommitments), ChannelState.Normal d ->
+            { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
+        | WeAcceptedCommitmentSigned(_msg, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
 
         | WeAcceptedRevokeAndACK(newCommitments), ChannelState.Normal d ->
@@ -1144,13 +1144,13 @@ module Channel =
             { c with State = ChannelState.Normal({ d with LocalShutdown = Some msg }) }
         | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs(remoteShutdown, nextCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal ({ d with RemoteShutdown = Some remoteShutdown; Commitments = nextCommitments }) }
-        | AcceptedShutdownWhenNoPendingHTLCs(maybeMsg, nextState), ChannelState.Normal d ->
+        | AcceptedShutdownWhenNoPendingHTLCs(_maybeMsg, nextState), ChannelState.Normal _d ->
             { c with State = Negotiating nextState }
-        | AcceptedShutdownWhenWeHavePendingHTLCs(nextState), ChannelState.Normal d ->
+        | AcceptedShutdownWhenWeHavePendingHTLCs(nextState), ChannelState.Normal _d ->
             { c with State = Shutdown nextState }
-        | MutualClosePerformed nextState, ChannelState.Negotiating d ->
+        | MutualClosePerformed nextState, ChannelState.Negotiating _d ->
             { c with State = Closing nextState }
-        | WeProposedNewClosingSigned(msg, nextState), ChannelState.Negotiating d ->
+        | WeProposedNewClosingSigned(_msg, nextState), ChannelState.Negotiating _d ->
             { c with State = Negotiating(nextState) }
         // ----- else -----
         | NewBlockVerified height, _ ->
