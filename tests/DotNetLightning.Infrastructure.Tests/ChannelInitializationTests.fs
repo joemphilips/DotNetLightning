@@ -14,6 +14,7 @@ open Expecto
 open Foq
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Logging
+open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Options
 
 type internal ActorCreator =
@@ -31,8 +32,8 @@ type internal ActorCreator =
     
     static member getAlice(?keyRepo: IKeysRepository, ?nodeParams, ?chainWatcher, ?broadCaster) =
         let keyRepo = defaultArg keyRepo (Mock<IKeysRepository>.Method(fun repo -> <@ repo.GetNodeSecret @>).Returns(ActorCreator.aliceNodeSecret))
-        let peerLogger = (Mock<ILogger<PeerManager>>().Create())
-        let channelLogger = (Mock<ILogger<ChannelManager>>().Create())
+        let peerLogger = TestLogger.create<PeerManager>()
+        let channelLogger = TestLogger.create<ChannelManager>()
         let nodeParams = defaultArg nodeParams (Options.Create<NodeParams>(TestConstants.getAliceParam().NodeParams))
         let chainWatcher = defaultArg chainWatcher (Mock<IChainWatcher>().Create())
         let broadCaster = defaultArg broadCaster (Mock<IBroadCaster>().Create())
@@ -65,8 +66,8 @@ type internal ActorCreator =
     
     static member getBob(?keyRepo: IKeysRepository, ?nodeParams, ?chainWatcher, ?broadCaster) =
         let keyRepo = defaultArg keyRepo (Mock<IKeysRepository>.Method(fun repo -> <@ repo.GetNodeSecret @>).Returns(ActorCreator.bobNodeSecret))
-        let peerLogger = (Mock<ILogger<PeerManager>>().Create())
-        let channelLogger = (Mock<ILogger<ChannelManager>>().Create())
+        let peerLogger = TestLogger.create<PeerManager>()
+        let channelLogger = TestLogger.create<ChannelManager>()
         let nodeParams = defaultArg nodeParams (Options.Create<NodeParams>(TestConstants.getBobParam().NodeParams))
         let chainWatcher = defaultArg chainWatcher (Mock<IChainWatcher>().Create())
         let broadCaster = defaultArg broadCaster (Mock<IBroadCaster>().Create())

@@ -39,8 +39,6 @@ let broadCasterMock = Mock<IBroadCaster>().Create()
 
 let chainWatcherMock = Mock<IChainWatcher>().Create()
 
-let loggerMock = new Mock<ILogger<PeerManager>>()
-let loggerInternal = Logger.fromMicrosoftLogger (loggerMock.Create())
 let aliceNodeParams = Options.Create<NodeParams>(TestConstants.getAliceParam().NodeParams)
 let bobNodeParams = Options.Create<NodeParams>(TestConstants.getBobParam().NodeParams)
 
@@ -66,7 +64,7 @@ let tests = testList "PeerManagerTests" [
       let theirPeerId = IPEndPoint.Parse("127.0.0.2") :> EndPoint |> PeerId
       let theirNodeId = PubKey("028d7500dd4c12685d1f568b4c2b5048e8534b873319f3a8daa612b469132ec7f7") |> NodeId
       let peerManager = PeerManager (keysRepoMock,
-                                    loggerMock.Create(),
+                                    TestLogger.create(),
                                     aliceNodeParams,
                                     eventAggregatorMock,
                                     chainWatcherMock,
@@ -101,7 +99,7 @@ let tests = testList "PeerManagerTests" [
           let ourNodeSecret = hex.DecodeData ("2121212121212121212121212121212121212121212121212121212121212121") |> Key
           Mock<IKeysRepository>.Method(fun repo -> <@ repo.GetNodeSecret @>).Returns(ourNodeSecret)
       let peerManager = PeerManager (keyRepoMock,
-                                    loggerMock.Create(),
+                                    TestLogger.create(),
                                     aliceNodeParams,
                                     eventAggregatorMock,
                                     chainWatcherMock,
@@ -150,7 +148,7 @@ let tests = testList "PeerManagerTests" [
           Mock<IEventAggregator>.Method(fun ea -> <@ ea.GetObservable<NodeId * ChannelEvent> @> )
               .Returns(Observable.empty)
       let alice = { PM = PeerManager(keysRepoMock,
-                                     loggerMock.Create(),
+                                     TestLogger.create(),
                                      aliceNodeParams,
                                      aliceEventAggregatorMock,
                                      chainWatcherMock,
@@ -164,7 +162,7 @@ let tests = testList "PeerManagerTests" [
         Mock<IKeysRepository>.Method(fun repo -> <@ repo.GetNodeSecret @>).Returns(bobNodeSecret)
         
       let bob = { PM = PeerManager(keyRepoBob,
-                                   loggerMock.Create(),
+                                   TestLogger.create(),
                                    Options.Create<NodeParams>(new NodeParams()),
                                    bobEventAggregatorMock,
                                    chainWatcherMock,
