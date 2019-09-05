@@ -49,10 +49,10 @@ type ChannelHandshakeLimits = {
     /// Set to force the incoming channel to match our announced channel preference in ChannelConfig.
     /// Defaults to true to make the default that no announced channels are possible (which is
     /// appropriate for any nodes which are not online very reliably)
-    ForceAnnounceChannelPreference: bool
+    ForceChannelAnnouncementPreference: bool
 
     /// We don't exchange more than this many signatures when negotiating the closing fee
-    MaxNegotiationIterations: int32
+    MaxClosingNegotiationIterations: int32
  }
 
     with
@@ -66,8 +66,8 @@ type ChannelHandshakeLimits = {
             MinDustLimitSatoshis = Money.Satoshis(546m)
             MaxDustLimitSatoshis = Money.Coins(21_000_000m)
             MaxMinimumDepth = 144u |> BlockHeight
-            ForceAnnounceChannelPreference = true
-            MaxNegotiationIterations = 20
+            ForceChannelAnnouncementPreference = true
+            MaxClosingNegotiationIterations = 20
         }
 
 

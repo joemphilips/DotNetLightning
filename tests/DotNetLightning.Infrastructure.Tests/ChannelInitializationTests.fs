@@ -110,7 +110,7 @@ type internal ActorCreator =
 [<Tests>]
 let tests =
     testList "Basic Channel handling between 2 peers" [
-        testAsync "Channel Initialization" {
+        ptestAsync "Channel Initialization" {
             let alice = ActorCreator.getAlice()
             let bob = ActorCreator.getBob()
             let! actors = ActorCreator.initiateActor(alice, bob)

@@ -21,8 +21,6 @@ open DotNetLightning.Transactions
 
 type IChannelManager =
     abstract AcceptCommand: nodeId:NodeId * cmd:ChannelCommand -> unit
-    abstract ChannelEventListener: IObserver<ChannelEvent> with get
-    abstract ChannelEventObservable: IObservable<ChannelEvent> with get
     abstract KeysRepository : IKeysRepository with get
 type IFundingTxProvider =
     abstract member ConstructFundingTx :  IDestination * Money * FeeRatePerKw -> RResult<FinalizedTx * TxOutIndex>
@@ -104,8 +102,8 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
         match b with
         | RBad.Exception(ChannelException(ChannelError.Close(msg))) ->
             let closeCMD =
-                let spk = _keysRepository.GetShutdownPubKey()
-                ChannelCommand.Close({ CMDClose.ScriptPubKey = Some spk.WitHash.ScriptPubKey })
+                let spk = _nodeParams.ShutdownScriptPubKey |> Option.defaultValue (_keysRepository.GetShutdownPubKey().WitHash.ScriptPubKey)
+                ChannelCommand.Close({ CMDClose.ScriptPubKey = Some spk })
             _logger.LogError(sprintf "Closing a channel for a node (%A) due to a following error. \n %s" nodeId msg)
             _logger.LogError(sprintf "%s" msg)
             this.AcceptCommand(nodeId, closeCMD)
@@ -157,6 +155,4 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
     interface IChannelManager with
         member this.AcceptCommand(nodeId, cmd:ChannelCommand): unit =
             this.AcceptCommand(nodeId, cmd)
-        member val ChannelEventListener: IObserver<ChannelEvent> = null with get
-        member val ChannelEventObservable: IObservable<ChannelEvent> = null with get
-        member val KeysRepository = this.KeysRepository with get
+        member val KeysRepository = _keysRepository with get

@@ -8,6 +8,7 @@ open DotNetLightning.LN
 open CustomEventAggregator
 
 open FSharp.Control.Tasks
+open FSharp.Control.Reactive
 open System.IO.Pipelines
 open System.Net
 open Microsoft.Extensions.Logging
@@ -20,7 +21,6 @@ open NBitcoin
 open Expecto
 open Expecto.Logging
 open Expecto.Logging.Message
-open Microsoft.Extensions.DependencyInjection
 
 let hex = NBitcoin.DataEncoders.HexEncoder()
 
@@ -30,7 +30,7 @@ let log (logLevel) =
     logCore
     //fun s -> () //printfn "%s"
 
-let eventAggregatorMock = new Mock<IEventAggregator>()
+let eventAggregatorMock = new ReactiveEventAggregator()
 
 let ourNodeSecret = Key(hex.DecodeData("1111111111111111111111111111111111111111111111111111111111111111"))
 let keysRepoMock = Mock<IKeysRepository>.Method(fun repo -> <@ repo.GetNodeSecret @>).Returns(ourNodeSecret)
@@ -68,7 +68,7 @@ let tests = testList "PeerManagerTests" [
       let peerManager = PeerManager (keysRepoMock,
                                     loggerMock.Create(),
                                     aliceNodeParams,
-                                    eventAggregatorMock.Create(),
+                                    eventAggregatorMock,
                                     chainWatcherMock,
                                     broadCasterMock)
       let! read = peerManager.NewOutBoundConnection(theirNodeId, theirPeerId, dPipe.Output, ie)
@@ -103,7 +103,7 @@ let tests = testList "PeerManagerTests" [
       let peerManager = PeerManager (keyRepoMock,
                                     loggerMock.Create(),
                                     aliceNodeParams,
-                                    eventAggregatorMock.Create(),
+                                    eventAggregatorMock,
                                     chainWatcherMock,
                                     broadCasterMock)
 
@@ -143,8 +143,12 @@ let tests = testList "PeerManagerTests" [
     } |> Async.AwaitTask)
 
     testCaseAsync "2 peers can communicate with each other" <| (task {
-      let aliceEventAggregatorMock = Mock<IEventAggregator>().Create()
-      let bobEventAggregatorMock = Mock<IEventAggregator>().Create()
+      let aliceEventAggregatorMock =
+          Mock<IEventAggregator>.Method(fun ea -> <@ ea.GetObservable<NodeId * ChannelEvent> @> )
+              .Returns(Observable.empty)
+      let bobEventAggregatorMock =
+          Mock<IEventAggregator>.Method(fun ea -> <@ ea.GetObservable<NodeId * ChannelEvent> @> )
+              .Returns(Observable.empty)
       let alice = { PM = PeerManager(keysRepoMock,
                                      loggerMock.Create(),
                                      aliceNodeParams,
@@ -158,6 +162,7 @@ let tests = testList "PeerManagerTests" [
         Key(hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202"))
       let keyRepoBob = 
         Mock<IKeysRepository>.Method(fun repo -> <@ repo.GetNodeSecret @>).Returns(bobNodeSecret)
+        
       let bob = { PM = PeerManager(keyRepoBob,
                                    loggerMock.Create(),
                                    Options.Create<NodeParams>(new NodeParams()),

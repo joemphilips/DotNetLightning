@@ -33,7 +33,6 @@ let getAliceParam() =
     p.FeeBaseMSat <- 546000UL |> LNMoney.MilliSatoshis
     p.FeeProportionalMillionths <- 10u
     p.ReserveToFundingRatio <- 0.01
-    p.MaxReserveToFundingRatio <- 0.05
     p.DBType <- SupportedDBType.Null
     let keyRepoMock = new Mock<IKeysRepository>()
 

@@ -35,7 +35,6 @@ module ChannelConstants =
 
     let MAX_CLTV_EXPIRY = BREAKDOWN_TIMEOUT
 
-    let [<Literal>] MAX_NEGOTIATION_ITERATIONS = 20
 
     // ------------ weights ----------
 

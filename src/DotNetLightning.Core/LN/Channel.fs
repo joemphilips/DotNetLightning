@@ -337,7 +337,7 @@ module Channel =
 
             let checkChannelAnnouncementPreferenceAcceptable (config: ChannelConfig) (msg) =
                 let theirAnnounce = (msg.ChannelFlags &&& 1uy) = 1uy
-                if (config.PeerChannelConfigLimits.ForceAnnounceChannelPreference) && config.ChannelOptions.AnnounceChannel <> theirAnnounce then
+                if (config.PeerChannelConfigLimits.ForceChannelAnnouncementPreference) && config.ChannelOptions.AnnounceChannel <> theirAnnounce then
                     RRClose("Peer tried to open channel but their announcement preference is different from ours")
                 else
                     Good()
@@ -561,7 +561,7 @@ module Channel =
                                       DelayedPaymentBasepoint = channelKeys.DelayedPaymentBaseKey.PubKey
                                       HTLCBasepoint = channelKeys.HTLCBaseKey.PubKey
                                       FirstPerCommitmentPoint = localCommitmentSecret.PubKey
-                                      ShutdownScriptPubKey = None }
+                                      ShutdownScriptPubKey = cs.Config.ChannelOptions.ShutdownScriptPubKey }
 
                 let remoteParams = RemoteParams.FromOpenChannel cs.RemoteNodeId state.InitFundee.RemoteInit msg
                 let data = Data.WaitForFundingCreatedData.Create localParams remoteParams msg acceptChannel
@@ -1011,7 +1011,7 @@ module Channel =
                             |> Option.map (fun v -> v.LocalClosingSigned.FeeSatoshis)
                         let areWeInDeal = Some(msg.FeeSatoshis) = maybeLocalFee
                         let hasTooManyNegotiationDone =
-                            (state.ClosingTxProposed |> List.collect (id) |> List.length) >= MAX_NEGOTIATION_ITERATIONS
+                            (state.ClosingTxProposed |> List.collect (id) |> List.length) >= cs.Config.PeerChannelConfigLimits.MaxClosingNegotiationIterations
                         if (areWeInDeal || hasTooManyNegotiationDone) then
                             Helpers.Closing.handleMutualClose (finalizedTx, Choice1Of2({ state with MaybeBestUnpublishedTx = Some(finalizedTx) }))
                         else
