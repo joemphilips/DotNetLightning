@@ -100,25 +100,30 @@ type internal ActorCreator =
     
     static member initiateActor(alice, bob) = async {
         let actors = new PeerActors(alice, bob)
-        do! actors.Launch(ActorCreator.bobNodeId) |> Async.AwaitTask
-        let! _ = alice.EventAggregator.GetObservable<PeerEvent>()
+        let t = actors.Initiator.PM.EventAggregator.GetObservable<PeerEvent>()
                      |> Observable.filter(function PeerEvent.Connected _ -> true | _ -> false)
                      |> Observable.first
                      |> fun o -> o.ToTask() |> Async.AwaitTask
+        do! actors.Launch(ActorCreator.bobNodeId) |> Async.AwaitTask
+        let! _ = t
         return actors
     }
     
 [<Tests>]
 let tests =
     testList "Basic Channel handling between 2 peers" [
-        ptestAsync "Channel Initialization" {
+        ftestAsync "Channel Initialization" {
             let alice = ActorCreator.getAlice()
             let bob = ActorCreator.getBob()
+            let bobInitTask = alice.EventAggregator.GetObservable<PeerEvent>()
+                              |> Observable.choose(function | ReceivedInit(nodeId, init) -> Some init | _ -> None)
+                              |> Observable.first
+                              |> fun o -> o.ToTask()
+                              |> Async.AwaitTask
             let! actors = ActorCreator.initiateActor(alice, bob)
-            let! bobInit = alice.EventAggregator.GetObservable<PeerEvent>()
-                            |> Observable.choose(function | ReceivedInit(nodeId, init) -> Some init | _ -> None)
-                            |> fun o -> o.ToTask()
-                            |> Async.AwaitTask
+            printfn "actor started"
+            let! bobInit = bobInitTask
+            printfn "bob init is %A" bobInit
             let initFunder = { InputInitFunder.PushMSat = TestConstants.pushMsat
                                TemporaryChannelId = Key().ToBytes() |> uint256 |> ChannelId
                                FundingSatoshis = TestConstants.fundingSatoshis
@@ -131,7 +136,9 @@ let tests =
                                ChannelFlags = 0x00uy
                                ChannelKeys =  alice.CM.KeysRepository.GetChannelKeys(false) }
             alice.CM.AcceptCommand(ActorCreator.bobNodeId, ChannelCommand.CreateOutbound(initFunder))
+            printfn "Creating outbound channel ..."
             let! e = alice.EventAggregator.GetObservable<ChannelEvent>().ToTask() |> Async.AwaitTask
+            printfn "result is %A" e
             match e with
             | ChannelEvent.NewOutboundChannelStarted _ -> ()
             | e -> failwithf "%A" e

@@ -206,8 +206,6 @@ type PeerManager(keyRepo: IKeysRepository,
         unitVtask {
             match this.OpenedPeers.TryGetValue(theirPeerId) with
             | true, peer ->
-                sprintf "Encoding and sending message of type %A to %A "  msg (peer.TheirNodeId)
-                |> _logger.LogTrace
                 let msgEncrypted, newPCE =
                     peer.ChannelEncryptor |> PeerChannelEncryptor.encryptMessage (_logger.LogTrace) (msg.ToBytes())
                 this.UpdatePeerWith(theirPeerId, { peer with ChannelEncryptor = newPCE })
@@ -274,7 +272,7 @@ type PeerManager(keyRepo: IKeysRepository,
                     return Good (Some peer)
             | :? Ping as ping ->
                 this.EventAggregator.Publish<PeerEvent>(ReceivedPing (peer.TheirNodeId.Value, ping))
-                sprintf "Received ping from %A" peer.TheirNodeId
+                sprintf "Received ping from %A" peer.TheirNodeId.Value
                 |> _logger.LogDebug
                 if (ping.PongLen < 65532us) then
                     let pong = { Pong.BytesLen = ping.PongLen }
@@ -432,7 +430,7 @@ type PeerManager(keyRepo: IKeysRepository,
                         match LightningMsg.fromBytes data with
                         | Bad b -> return Bad b
                         | Good msg ->
-                            sprintf "Decrypted msg %A from %A" msg peerId |> _logger.LogDebug
+                            // sprintf "Decrypted msg %A from %A" msg peerId |> _logger.LogDebug
                             match msg with
                             | :? ISetupMsg as setupMsg ->
                                 return! this.HandleSetupMsgAsync (peerId, setupMsg, peer, pipe)

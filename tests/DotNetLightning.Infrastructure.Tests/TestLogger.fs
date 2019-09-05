@@ -9,7 +9,7 @@ open Expecto.Logging.Message
 
 
 type ExpectoLogger<'T>() =
-    let _output: string -> unit = Console.WriteLine
+    let _output: string -> unit = fun str -> ()// Console.WriteLine
         // let logger = Log.create "Expecto ILogger"
         // let logCore = eventX >> logger.info
         // (logCore)
