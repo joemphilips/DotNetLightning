@@ -8,4 +8,8 @@
     <Compile Include="EventAggregator.fs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="System.Reactive" Version="4.1.6" />
+  </ItemGroup>
+
 </Project>

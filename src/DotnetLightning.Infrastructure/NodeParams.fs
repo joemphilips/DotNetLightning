@@ -2,6 +2,7 @@ namespace DotNetLightning.Infrastructure
 
 open DotNetLightning.Utils
 open DotNetLightning.Serialize.Msgs
+open DotNetLightning.LN
 open NBitcoin
 open System
 
@@ -132,6 +133,22 @@ type NodeParams() as this =
                                MaxFeeRateMismatchRatio = this.MaxFeeRateMismatch
                                FeeProportionalMillionths = this.FeeProportionalMillionths
                                ShutdownScriptPubKey = this.ShutdownScriptPubKey }
+        }
+        
+    member this.MakeLocalParams(ourNodeId, channelPubKeys, defaultFinalScriptPubKey: Script, isFunder: bool, fundingSatoshis: Money) =
+        {
+            LocalParams.NodeId = ourNodeId
+            ChannelPubKeys = channelPubKeys
+            DustLimitSatoshis = this.DustLimitSatoshis
+            MaxHTLCValueInFlightMSat = this.MaxHTLCValueInFlightMSat
+            ChannelReserveSatoshis = (this.ReserveToFundingRatio * (float fundingSatoshis.Satoshi)) |> int64 |> Money.Satoshis
+            HTLCMinimumMSat = this.HTLCMinimumMSat
+            ToSelfDelay = this.ToRemoteDelayBlocks
+            MaxAcceptedHTLCs = this.MaxAcceptedHTLCs
+            IsFunder = isFunder
+            DefaultFinalScriptPubKey = defaultFinalScriptPubKey
+            GlobalFeatures = this.GlobalFeatures
+            LocalFeatures = this.LocalFeatures
         }
 
 module private Validation =

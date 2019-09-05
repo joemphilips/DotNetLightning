@@ -1,11 +1,15 @@
 namespace DotNetLightning.Infrastructure
+open DotNetLightning.Utils
+open DotNetLightning.LN
+
+type ChannelEventWithContext = {
+    NodeId: NodeId
+    ChannelEvent: ChannelEvent
+}
 
 module DTO =
     open System.Text.Json
-    open System.Text.Json.Serialization
-    open DotNetLightning.Utils
     open DotNetLightning.Serialize.Msgs
-    open DotNetLightning.LN
     open NBitcoin
 
     let inline private serializeWithName (name: string, data) =

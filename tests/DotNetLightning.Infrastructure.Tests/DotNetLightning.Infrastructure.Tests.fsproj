@@ -8,6 +8,8 @@
 
   <ItemGroup>
     <Compile Include="Constants.fs" />
+    <Compile Include="Observable.fs" />
+    <Compile Include="TestEventAggregator.fs" />
     <Compile Include="TestLogger.fs" />
     <Compile Include="DuplexPipe.fs" />
     <Compile Include="PeerActors.fs" />

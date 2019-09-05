@@ -4,6 +4,7 @@ namespace DotNetLightning.Infrastructure
 open System.IO.Pipelines
 open System.Collections.Concurrent
 open System.Threading.Tasks
+open System.Reactive.Linq
 
 
 open FSharp.Control.Tasks
@@ -50,8 +51,9 @@ type PeerManager(keyRepo: IKeysRepository,
     let _keyRepo = keyRepo
     
     let _channelEventObservable =
-        eventAggregator.GetObservable<NodeId * ChannelEvent>()
+        eventAggregator.GetObservable<ChannelEventWithContext>()
         |> Observable.flatmapAsync(this.ChannelEventListener)
+        |> Observable.subscribe id
         
     member val KnownPeers = ConcurrentDictionary<PeerId, Peer>() with get, set
     
@@ -63,11 +65,12 @@ type PeerManager(keyRepo: IKeysRepository,
     member val NodeIdToPeerId = ConcurrentDictionary<NodeId, PeerId>() with get, set
     
     member val EventAggregator: IEventAggregator = eventAggregator with get
-    member private this.ChannelEventListener (nodeId, e): Async<unit> =
+    member private this.ChannelEventListener (contextEvent): Async<unit> =
         let vt = vtask {
+            let nodeId = contextEvent.NodeId
             let peerId = this.NodeIdToPeerId.TryGet(nodeId)
             let transport = this.PeerIdToTransport.TryGet(peerId)
-            match e with
+            match contextEvent.ChannelEvent with
             | ChannelEvent.WeAcceptedOpenChannel(msg, _) ->
                 return! this.EncodeAndSendMsg(peerId, transport) msg
             | ChannelEvent.WeAcceptedFundingCreated(msg, _) ->
@@ -430,7 +433,7 @@ type PeerManager(keyRepo: IKeysRepository,
                         match LightningMsg.fromBytes data with
                         | Bad b -> return Bad b
                         | Good msg ->
-                            // sprintf "Decrypted msg %A from %A" msg peerId |> _logger.LogDebug
+                            sprintf "Decrypted msg %A from %A" msg peerId |> _logger.LogDebug
                             match msg with
                             | :? ISetupMsg as setupMsg ->
                                 return! this.HandleSetupMsgAsync (peerId, setupMsg, peer, pipe)
@@ -459,21 +462,8 @@ type PeerManager(keyRepo: IKeysRepository,
     }
     
     member this.MakeLocalParams(defaultFinalScriptPubKey: Script, isFunder: bool, fundingSatoshis: Money) =
-        {
-            LocalParams.NodeId = this.OurNodeId
-            ChannelPubKeys = _keyRepo.GetChannelKeys(not isFunder).ToChannelPubKeys()
-            DustLimitSatoshis = _nodeParams.DustLimitSatoshis
-            MaxHTLCValueInFlightMSat = _nodeParams.MaxHTLCValueInFlightMSat
-            ChannelReserveSatoshis = (_nodeParams.ReserveToFundingRatio * (float fundingSatoshis.Satoshi)) |> int64 |> Money.Satoshis
-            HTLCMinimumMSat = _nodeParams.HTLCMinimumMSat
-            ToSelfDelay = _nodeParams.ToRemoteDelayBlocks
-            MaxAcceptedHTLCs = _nodeParams.MaxAcceptedHTLCs
-            IsFunder = isFunder
-            DefaultFinalScriptPubKey = defaultFinalScriptPubKey
-            GlobalFeatures = _nodeParams.GlobalFeatures
-            LocalFeatures = _nodeParams.LocalFeatures
-        }
-
+        let channelPubKeys = _keyRepo.GetChannelKeys(not isFunder).ToChannelPubKeys()
+        _nodeParams.MakeLocalParams(this.OurNodeId, channelPubKeys, defaultFinalScriptPubKey, isFunder, fundingSatoshis)
         
     interface IPeerManager with
         member this.ProcessMessageAsync(peerId, pipe) = this.ProcessMessageAsync(peerId, pipe)

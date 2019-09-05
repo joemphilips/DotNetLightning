@@ -8,8 +8,10 @@ open CustomEventAggregator
 open DotNetLightning.LN
 open DotNetLightning.Infrastructure
 
+open System
 open System.Net
 open DotNetLightning.Chain
+open DotNetLightning.Utils.Primitives
 open Expecto
 open Foq
 open Microsoft.Extensions.DependencyInjection
@@ -20,21 +22,13 @@ open Microsoft.Extensions.Options
 type internal ActorCreator =
     static member hex = NBitcoin.DataEncoders.HexEncoder()
     
-    static member aliceNodeSecret = 
-        Key(ActorCreator.hex.DecodeData("1111111111111111111111111111111111111111111111111111111111111111"))
-        
-    static member aliceNodeId = ActorCreator.aliceNodeSecret.PubKey |> NodeId
-      
-    static member bobNodeSecret =
-        Key(ActorCreator.hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202"))
-    static member bobNodeId = ActorCreator.bobNodeSecret.PubKey |> NodeId
-    
     
     static member getAlice(?keyRepo: IKeysRepository, ?nodeParams, ?chainWatcher, ?broadCaster) =
-        let keyRepo = defaultArg keyRepo (Mock<IKeysRepository>.Method(fun repo -> <@ repo.GetNodeSecret @>).Returns(ActorCreator.aliceNodeSecret))
+        let aliceParam = TestConstants.getAliceParam()
+        let keyRepo = defaultArg keyRepo (aliceParam.KeyRepo)
         let peerLogger = TestLogger.create<PeerManager>()
         let channelLogger = TestLogger.create<ChannelManager>()
-        let nodeParams = defaultArg nodeParams (Options.Create<NodeParams>(TestConstants.getAliceParam().NodeParams))
+        let nodeParams = defaultArg nodeParams (Options.Create<NodeParams>(aliceParam.NodeParams))
         let chainWatcher = defaultArg chainWatcher (Mock<IChainWatcher>().Create())
         let broadCaster = defaultArg broadCaster (Mock<IBroadCaster>().Create())
         let eventAggregator = ReactiveEventAggregator() :> IEventAggregator
@@ -50,7 +44,8 @@ type internal ActorCreator =
             CM =
                 let channelEventRepo = Mock<IChannelEventRepository>().Create()
                 let chainListener = Mock<IChainListener>().Create()
-                let feeEstimator = Mock<IFeeEstimator>().Create()
+                let feeEstimator =
+                    Mock<IFeeEstimator>.Method(fun x -> <@ x.GetEstSatPer1000Weight @>).Returns(1000u |> FeeRatePerKw)
                 let fundingTxProvider = Mock<IFundingTxProvider>().Create()
                 ChannelManager(nodeParams,
                                channelLogger,
@@ -65,10 +60,11 @@ type internal ActorCreator =
         }
     
     static member getBob(?keyRepo: IKeysRepository, ?nodeParams, ?chainWatcher, ?broadCaster) =
-        let keyRepo = defaultArg keyRepo (Mock<IKeysRepository>.Method(fun repo -> <@ repo.GetNodeSecret @>).Returns(ActorCreator.bobNodeSecret))
+        let bobParam = TestConstants.getBobParam()
+        let keyRepo = defaultArg keyRepo (bobParam.KeyRepo)
         let peerLogger = TestLogger.create<PeerManager>()
         let channelLogger = TestLogger.create<ChannelManager>()
-        let nodeParams = defaultArg nodeParams (Options.Create<NodeParams>(TestConstants.getBobParam().NodeParams))
+        let nodeParams = defaultArg nodeParams (Options.Create<NodeParams>(bobParam.NodeParams))
         let chainWatcher = defaultArg chainWatcher (Mock<IChainWatcher>().Create())
         let broadCaster = defaultArg broadCaster (Mock<IBroadCaster>().Create())
         let eventAggregator = ReactiveEventAggregator() :> IEventAggregator
@@ -84,7 +80,8 @@ type internal ActorCreator =
             CM =
                 let channelEventRepo = Mock<IChannelEventRepository>().Create()
                 let chainListener = Mock<IChainListener>().Create()
-                let feeEstimator = Mock<IFeeEstimator>().Create()
+                let feeEstimator =
+                    Mock<IFeeEstimator>.Method(fun x -> <@ x.GetEstSatPer1000Weight @>).Returns(1000u |> FeeRatePerKw)
                 let fundingTxProvider = Mock<IFundingTxProvider>().Create()
                 ChannelManager(nodeParams,
                                channelLogger,
@@ -101,10 +98,9 @@ type internal ActorCreator =
     static member initiateActor(alice, bob) = async {
         let actors = new PeerActors(alice, bob)
         let t = actors.Initiator.PM.EventAggregator.GetObservable<PeerEvent>()
-                     |> Observable.filter(function PeerEvent.Connected _ -> true | _ -> false)
-                     |> Observable.first
-                     |> fun o -> o.ToTask() |> Async.AwaitTask
-        do! actors.Launch(ActorCreator.bobNodeId) |> Async.AwaitTask
+                     |> Observable.awaitFirst(function PeerEvent.Connected _ -> Some () | _ -> None)
+        let bobNodeId = bob.CM.KeysRepository.GetNodeSecret().PubKey |> NodeId
+        do! actors.Launch(bobNodeId) |> Async.AwaitTask
         let! _ = t
         return actors
     }
@@ -115,15 +111,14 @@ let tests =
         ftestAsync "Channel Initialization" {
             let alice = ActorCreator.getAlice()
             let bob = ActorCreator.getBob()
+            let mutable bobInit = None
             let bobInitTask = alice.EventAggregator.GetObservable<PeerEvent>()
                               |> Observable.choose(function | ReceivedInit(nodeId, init) -> Some init | _ -> None)
-                              |> Observable.first
-                              |> fun o -> o.ToTask()
-                              |> Async.AwaitTask
+                              |> Observable.subscribe(fun i -> bobInit <- Some i)
             let! actors = ActorCreator.initiateActor(alice, bob)
-            printfn "actor started"
-            let! bobInit = bobInitTask
-            printfn "bob init is %A" bobInit
+            Console.WriteLine "actors started"
+            
+            do! Async.Sleep 100
             let initFunder = { InputInitFunder.PushMSat = TestConstants.pushMsat
                                TemporaryChannelId = Key().ToBytes() |> uint256 |> ChannelId
                                FundingSatoshis = TestConstants.fundingSatoshis
@@ -132,20 +127,31 @@ let tests =
                                LocalParams =
                                    let defaultFinalScriptPubKey = Key().PubKey.WitHash.ScriptPubKey
                                    alice.PM.MakeLocalParams(defaultFinalScriptPubKey, true, TestConstants.fundingSatoshis)
-                               RemoteInit = bobInit
+                               RemoteInit = bobInit.Value
                                ChannelFlags = 0x00uy
                                ChannelKeys =  alice.CM.KeysRepository.GetChannelKeys(false) }
-            alice.CM.AcceptCommand(ActorCreator.bobNodeId, ChannelCommand.CreateOutbound(initFunder))
-            printfn "Creating outbound channel ..."
-            let! e = alice.EventAggregator.GetObservable<ChannelEvent>().ToTask() |> Async.AwaitTask
-            printfn "result is %A" e
-            match e with
+            Console.WriteLine "Creating outbound channel ..."
+            let aliceChannelEventFuture =
+                alice.EventAggregator.GetObservable<ChannelEventWithContext>()
+                |> Observable.map(fun cc -> cc.ChannelEvent)
+                |> Observable.awaitFirst(fun e -> Some e)
+            let bobChannelEventFuture =
+                bob.EventAggregator.GetObservable<ChannelEventWithContext>()
+                |> Observable.map(fun cc -> cc.ChannelEvent)
+                |> Observable.awaitFirst(Some)
+            
+            let bobNodeId = bob.CM.KeysRepository.GetNodeSecret().PubKey |> NodeId
+            alice.CM.AcceptCommand(bobNodeId, ChannelCommand.CreateOutbound(initFunder))
+            
+            match! aliceChannelEventFuture  with
             | ChannelEvent.NewOutboundChannelStarted _ -> ()
             | e -> failwithf "%A" e
-            let! e = bob.EventAggregator.GetObservable<ChannelEvent>().ToTask() |> Async.AwaitTask
-            match e with
-            | ChannelEvent.WeAcceptedOpenChannel _ -> ()
-            | e -> failwithf "%A" e
+            
+            match! bobChannelEventFuture with
+            | NewInboundChannelStarted _ -> ()
+            | e -> failwith "%A" e
+            
+            do! Async.Sleep 100
             return ()
         }
     ]

@@ -142,10 +142,10 @@ let tests = testList "PeerManagerTests" [
 
     testCaseAsync "2 peers can communicate with each other" <| (task {
       let aliceEventAggregatorMock =
-          Mock<IEventAggregator>.Method(fun ea -> <@ ea.GetObservable<NodeId * ChannelEvent> @> )
+          Mock<IEventAggregator>.Method(fun ea -> <@ ea.GetObservable<ChannelEventWithContext> @> )
               .Returns(Observable.empty)
       let bobEventAggregatorMock =
-          Mock<IEventAggregator>.Method(fun ea -> <@ ea.GetObservable<NodeId * ChannelEvent> @> )
+          Mock<IEventAggregator>.Method(fun ea -> <@ ea.GetObservable<ChannelEventWithContext> @> )
               .Returns(Observable.empty)
       let alice = { PM = PeerManager(keysRepoMock,
                                      TestLogger.create(),

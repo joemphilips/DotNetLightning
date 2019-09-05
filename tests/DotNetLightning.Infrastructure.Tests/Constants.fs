@@ -17,6 +17,22 @@ type TestEntity =
 let fundingSatoshis = 1000000L |> Money.Satoshis
 let pushMsat = 200000000L |> LNMoney.MilliSatoshis
 let feeratePerKw = 10000u |> FeeRatePerKw 
+let hex = NBitcoin.DataEncoders.HexEncoder()
+let aliceNodeSecret = 
+    Key(hex.DecodeData("1111111111111111111111111111111111111111111111111111111111111111"))
+        
+let aliceChannelKeysSeed = 
+    hex.DecodeData("2222222222222222222222222222222222222222222222222222222222222222")
+    |> uint256
+      
+let bobNodeSecret =
+    Key(hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202"))
+    // Key(hex.DecodeData("3333333333333333333333333333333333333333333333333333333333333333"))
+    
+let bobChannelKeysSeed =
+    hex.DecodeData("4444444444444444444444444444444444444444444444444444444444444444")
+    |> uint256
+    
 let getAliceParam() =
     let p = NodeParams()
     p.Alias <- "alice"
@@ -34,19 +50,19 @@ let getAliceParam() =
     p.FeeProportionalMillionths <- 10u
     p.ReserveToFundingRatio <- 0.01
     p.DBType <- SupportedDBType.Null
-    let keyRepoMock = new Mock<IKeysRepository>()
-
+    let keyRepo =
+        DefaultKeyRepository(aliceChannelKeysSeed)
     {
         TestEntity.Seed = [| for _ in 0..31 -> 0uy |] |> uint256
-        KeyRepo = keyRepoMock.Create()
+        KeyRepo = keyRepo
         NodeParams = p
     }
     
 let getBobParam() =
     let p = NodeParams()
-    let keyRepoMock = new Mock<IKeysRepository>()
+    let keyRepo = DefaultKeyRepository(bobChannelKeysSeed)
     {
         TestEntity.Seed = [| for _ in 0..31 -> 1uy |] |> uint256
-        KeyRepo = keyRepoMock.Create()
+        KeyRepo = keyRepo
         NodeParams = p
     }

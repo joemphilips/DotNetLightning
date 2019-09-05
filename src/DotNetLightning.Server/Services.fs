@@ -22,10 +22,8 @@ module Services =
         regF <| fun _sp -> ServiceBuilder()
         regF <| fun sp ->
             if (env.IsDevelopment()) then
-                let cmd = EventCommands.inMemoryEventCommand
                 failwith ""
             else
-                let cmd = EventCommands.mongoDbEventCommand
                 failwith ""
             sp.GetService<ServiceBuilder>().CreateChannelManagementService()
     ()

@@ -18,6 +18,7 @@ open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Chain
 open DotNetLightning.LN
 open DotNetLightning.Transactions
+open FSharp.Control.Reactive
 
 type IChannelManager =
     abstract AcceptCommand: nodeId:NodeId * cmd:ChannelCommand -> unit
@@ -37,6 +38,8 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
     let _logger = log
     let _chainListener = chainListener
     
+    let _eventAggregator = eventAggregator
+    
     let _keysRepository = keysRepository
     let _feeEstimator = feeEstimator
     let _fundingTxProvider = fundingTxProvider
@@ -51,20 +54,36 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
             (_keysRepository.GetNodeSecret())
             (_fundingTxProvider.ConstructFundingTx)
             _nodeParams.ChainNetwork
-    let _peerEventObservable = eventAggregator.GetObservable<PeerEvent>()
-    do
-        _peerEventObservable.Add(this.PeerEventListener)
+    let _peerEventObservable =
+        _eventAggregator.GetObservable<PeerEvent>()
+        
+    let _ = _peerEventObservable
+            |> Observable.subscribe(this.PeerEventListener)
 
+    let _ourNodeId = _keysRepository.GetNodeSecret().PubKey |> NodeId
     member val KeysRepository = _keysRepository
     member val KnownChannels: ConcurrentDictionary<NodeId, Channel> = ConcurrentDictionary<_, _>() with get
-    member val EventAggregator: IEventAggregator = eventAggregator with get
+    member val EventAggregator: IEventAggregator = _eventAggregator with get
     
     member val ChannelEventRepo = channelEventRepo with get
+    member val RemoteInits = ConcurrentDictionary<_,_>() with get
     member this.PeerEventListener e =
         match e with
         | PeerEvent.ReceivedChannelMsg (nodeId, msg) ->
+            _logger.LogDebug(sprintf "Received Channel msg %A" msg)
             match msg with
             | :? OpenChannel as m ->
+                let remoteInit = this.RemoteInits.TryGet(nodeId)
+                let initFundee = { InputInitFundee.LocalParams =
+                                       let channelPubKeys = _keysRepository.GetChannelKeys(true).ToChannelPubKeys()
+                                       let spk = _nodeParams.ShutdownScriptPubKey |> Option.defaultValue (_keysRepository.GetShutdownPubKey().WitHash.ScriptPubKey)
+                                       _nodeParams.MakeLocalParams(_ourNodeId, channelPubKeys, spk, false, m.FundingSatoshis)
+                                   TemporaryChannelId = m.TemporaryChannelId
+                                   RemoteInit = remoteInit
+                                   ToLocal = m.PushMSat
+                                   ChannelKeys = _keysRepository.GetChannelKeys(true) }
+                this.AcceptCommand(nodeId, ChannelCommand.CreateInbound(initFundee))
+                _logger.LogDebug("finished creating inbound so next we are going to apply open_channel")
                 this.AcceptCommand(nodeId, ChannelCommand.ApplyOpenChannel m)
             | :? AcceptChannel as m ->
                 this.AcceptCommand(nodeId, ChannelCommand.ApplyAcceptChannel m)
@@ -94,6 +113,8 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
                 this.AcceptCommand(nodeId, ChannelCommand.ApplyUpdateFee m)
             | m ->
                     failwithf "Unknown Channel Message (%A). This should never happen" m
+        | PeerEvent.ReceivedInit(nodeId, init) ->
+            this.RemoteInits.AddOrReplace(nodeId, init)
         | PeerEvent.FailedToBroadcastTransaction(nodeId, tx) ->
             ()
         | e -> ()
@@ -125,14 +146,21 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
         | true, channel ->
             match Channel.executeCommand channel cmd with
             | Good events ->
+                _logger.LogDebug(sprintf "Applying events %A" events)
                 let nextChannel = events |> List.fold Channel.applyEvent channel
-                events |> List.zip(List.replicate (events.Length) nodeId) |> List.iter this.EventAggregator.Publish<NodeId * ChannelEvent>
-                _logger.LogDebug(sprintf "Updated channel with %A" nextChannel)
+                _logger.LogDebug(sprintf "Going to update channel with %A" nextChannel.State)
+                let contextEvents = events |> List.map(fun e -> { ChannelEventWithContext.ChannelEvent = e; NodeId = nodeId })
+                contextEvents
+                   |> List.map(fun e -> printfn "publishing %A from channelman" e; e)
+                   |> List.map this.EventAggregator.Publish<ChannelEventWithContext>
+                   |> ignore
+                _logger.LogDebug("Lets see we can update channel")
                 match this.KnownChannels.TryUpdate(nodeId, nextChannel, channel) with
                 | true ->
+                    _logger.LogDebug(sprintf "Update channel %A" nextChannel.State)
                     ()
                 | false ->
-                    failwith "Failed to update channel, this should never happen"
+                    _logger.LogDebug(sprintf "Dit not update channel %A" nextChannel.State)
             | Bad ex ->
                 let ex = ex.Flatten()
                 ex |> Array.map (this.HandleChannelError nodeId) |> ignore
@@ -151,7 +179,6 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
                 sprintf "Cannot handle command type (%A) for unknown peer %A" (cmd) nodeId
                 |> log.LogError
                 ()
-                
     interface IChannelManager with
         member this.AcceptCommand(nodeId, cmd:ChannelCommand): unit =
             this.AcceptCommand(nodeId, cmd)

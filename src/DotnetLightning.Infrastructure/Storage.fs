@@ -5,6 +5,7 @@ open System.IO
 open System.Threading.Tasks
 open System.Collections.Concurrent
 
+open DTO
 open DotNetLightning.Serialize
 open DotNetLightning.Crypto
 open DotNetLightning.LN
@@ -25,47 +26,26 @@ type SupportedDBType =
     | MongoDB of connectionString: string
 
 type IChannelEventRepository =
-    abstract member SetEventsAsync: id: InternalChannelId * events: ChannelEvent seq -> Task
-    abstract member GetEventsAsync: id: InternalChannelId * since: DateTimeOffset -> Task<ChannelEvent list>
+    abstract member SetEventsAsync: events: ChannelEventWithContext seq -> Task
+    abstract member GetEventsAsync: since: DateTimeOffset -> Task<ChannelEventWithContext list>
 
 type O = OptionalArgumentAttribute
 type D = System.Runtime.InteropServices.DefaultParameterValueAttribute
 
 type InMemoryChannelEventRepository() =
-    member val Dict = ConcurrentDictionary<InternalChannelId, (DateTimeOffset * ChannelEvent) list>() with get
+    member val List = ConcurrentBag<(DateTimeOffset * ChannelEventWithContext)>() with get, set
     interface IChannelEventRepository with
-        member this.GetEventsAsync(id: InternalChannelId, [<O;D(null)>] since: DateTimeOffset): Task<ChannelEvent list> = 
-            match this.Dict.TryGetValue id with
-            | true, e ->
-                (e |> List.filter(fun (time, e) -> if not <| isNull (box since) then time > since else true) |> List.map snd)
+        member this.GetEventsAsync([<O;D(null)>] since: DateTimeOffset): Task<ChannelEventWithContext list> =
+            this.List :> seq<_>
+                |> Seq.filter(fun (time, e) -> if not <| isNull (box since) then time > since else true)
+                |> Seq.toList
+                |> List.sortBy(fst)
+                |> List.map snd
                 |> Task.FromResult 
-            | false, _ -> failwith "not found id"
-        member this.SetEventsAsync(id: InternalChannelId, events: ChannelEvent seq): Task = 
+        member this.SetEventsAsync(events: ChannelEventWithContext seq): Task = 
             let now = DateTimeOffset.UtcNow
-            let d = events |> List.ofSeq |> List.map(fun e -> now, e)
-            match this.Dict.TryAdd(id, d) with
-            | true -> Task.CompletedTask
-            | false ->
-                failwith "Failed to set event"
+            events
+                |> Seq.map(fun e -> now, e)
+                |> Seq.iter(this.List.Add)
+            Task.CompletedTask
 
-
-// --- same things with simple function type ----
-
-type ChannelEventCommand = InternalChannelId * ChannelEvent seq -> Task
-module EventCommands =
-    let inMemoryEventCommand: ChannelEventCommand =
-        let dict = ConcurrentDictionary<InternalChannelId, (DateTimeOffset * ChannelEvent) list>()
-        let innerFn (id: InternalChannelId, events: ChannelEvent seq) =
-            let now = DateTimeOffset.UtcNow
-            let d = events |> List.ofSeq |> List.map(fun e -> now, e)
-            match dict.TryAdd (id, d) with
-            | true -> Task.CompletedTask
-            | false ->
-                failwith "Failed to set event"
-        innerFn
-
-    let nullEventCommand: ChannelEventCommand =
-        fun (id, events) -> Task.CompletedTask
-
-    let mongoDbEventCommand: ChannelEventCommand =
-        failwith "not implemented"

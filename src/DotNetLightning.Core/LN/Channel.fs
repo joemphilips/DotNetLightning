@@ -11,9 +11,7 @@ open NBitcoin
 open System
 open Secp256k1Net
 
-type InternalChannelId = Guid
 type Channel = {
-    InternalChannelId: InternalChannelId
     Config: ChannelConfig
     ChainListener: IChainListener
     KeysRepository: IKeysRepository
@@ -30,7 +28,6 @@ type Channel = {
         with
         static member Create(config, logger, chainListener, keysRepo, feeEstimator, localNodeSecret, fundingTxProvider, n, remoteNodeId) =
             {
-                InternalChannelId = new Guid()
                 Secp256k1Context = new Secp256k1()
                 Config = config
                 ChainListener = chainListener
@@ -174,7 +171,7 @@ module Channel =
                 let fees = Transactions.commitTxFee remoteParams.DustLimitSatoshis remoteSpec
                 let missing = toRemote.ToMoney() - localParams.ChannelReserveSatoshis - fees
                 if missing < Money.Zero then
-                    RResult.rmsg (sprintf "they are funder but cannot affored there fee. to_remote output is: %A; actual fee is %A; channel_reserve_satoshis: %A" toRemote fees localParams.ChannelReserveSatoshis)
+                    RResult.rmsg (sprintf "they are funder but cannot afford their fee. to_remote output is: %A; actual fee is %A; channel_reserve_satoshis is: %A" toRemote fees localParams.ChannelReserveSatoshis)
                 else
                     Good()
             let makeFirstCommitTxCore() =
