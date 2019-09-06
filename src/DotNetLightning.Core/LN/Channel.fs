@@ -11,12 +11,14 @@ open NBitcoin
 open System
 open Secp256k1Net
 
+
+type ProvideFundingTx = IDestination * Money * FeeRatePerKw -> RResult<FinalizedTx * TxOutIndex> 
 type Channel = {
     Config: ChannelConfig
     ChainListener: IChainListener
     KeysRepository: IKeysRepository
     FeeEstimator: IFeeEstimator
-    FundingTxProvider: IDestination * Money * FeeRatePerKw -> RResult<FinalizedTx * TxOutIndex>
+    FundingTxProvider:ProvideFundingTx
     Logger: Logger
     RemoteNodeId: NodeId
     LocalNodeSecret: Key

@@ -5,32 +5,6 @@ open DotNetLightning.Crypto
 open NBitcoin
 open NBitcoin.Crypto
 
-type TxCreationKeys = {
-    PerCommitmentPoint: PubKey
-    RevocationKey: PubKey
-    AHTLCKey: PubKey
-    BHTLCKey: PubKey
-    ADelayedPaymentKey: PubKey
-    BPaymentKey: PubKey
-}
-    with
-        static member Create(ctx: Secp256k1Net.Secp256k1,
-                             perCommitmentPoint: PubKey,
-                             a_DelayedPaymentBase: PubKey,
-                             a_HTLCBase: PubKey,
-                             b_RevocationBase: PubKey,
-                             b_PaymentBase: PubKey,
-                             b_HTLCBase: PubKey) =
-            let helper = Generators.derivePubKey ctx (perCommitmentPoint)
-            {
-                TxCreationKeys.PerCommitmentPoint = perCommitmentPoint
-                RevocationKey = Generators.revocationPubKey ctx (perCommitmentPoint) (b_RevocationBase)
-                AHTLCKey = helper (a_HTLCBase)
-                BHTLCKey = helper (b_HTLCBase)
-                ADelayedPaymentKey = helper (a_DelayedPaymentBase)
-                BPaymentKey = helper (b_PaymentBase)
-            }
-
 /// It has three ways to spend.
 /// 1. Use old commitment tx
 /// 2. revoke after timeout
@@ -110,9 +84,6 @@ module ChannelUtils =
                               (aHTLCKey.ToHex())
                               (encodeInt htlc.CLTVExpiry)
             Script(str)
-    let getHTLCRedeemScript (htlc: HTLCOutputInCommitment) (keys: TxCreationKeys): Script =
-        getHTLCRedeemScriptWithExplicitKeys htlc keys.AHTLCKey keys.BHTLCKey keys.RevocationKey
-
     let public getHTLCTransaction (prevHash: TxId)
                                   (feeRatePerKw: Money)
                                   (toSelfDelay: BlockHeightOffset)

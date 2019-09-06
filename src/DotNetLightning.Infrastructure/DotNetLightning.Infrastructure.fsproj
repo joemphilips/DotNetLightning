@@ -15,6 +15,7 @@
     <Compile Include="RResultExtensions.fs" />
     <Compile Include="Constants.fs" />
     <Compile Include="Logger.fs" />
+    <Compile Include="FundingTxProvider.fs" />
     <Compile Include="Codec.fs" />
     <Compile Include="DTOs.fs" />
     <Compile Include="Storage.fs" />

@@ -23,8 +23,6 @@ open FSharp.Control.Reactive
 type IChannelManager =
     abstract AcceptCommandAsync: nodeId:NodeId * cmd:ChannelCommand -> Task
     abstract KeysRepository : IKeysRepository with get
-type IFundingTxProvider =
-    abstract member ConstructFundingTx :  IDestination * Money * FeeRatePerKw -> RResult<FinalizedTx * TxOutIndex>
 type ChannelManager(nodeParams: IOptions<NodeParams>,
                     log: ILogger<ChannelManager>,
                     eventAggregator: IEventAggregator,
@@ -52,16 +50,17 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
             _keysRepository
             _feeEstimator
             (_keysRepository.GetNodeSecret())
-            (_fundingTxProvider.ConstructFundingTx)
+            (_fundingTxProvider.ProvideFundingTx)
             _nodeParams.ChainNetwork
     let _peerEventObservable =
         _eventAggregator.GetObservable<PeerEvent>()
         
-    let _ = _peerEventObservable
-            |> Observable.flatmapAsync(this.PeerEventListener)
-            |> Observable.subscribeWithError
-                   (id)
-                   ((sprintf "Channel Manager got error in PeerEvent Observable: %A") >> _logger.LogCritical)
+    let _ =
+        _peerEventObservable
+        |> Observable.flatmapAsync(this.PeerEventListener)
+        |> Observable.subscribeWithError
+               (id)
+               ((sprintf "Channel Manager got error while Observing PeerEvent: %A") >> _logger.LogCritical)
 
     let _ourNodeId = _keysRepository.GetNodeSecret().PubKey |> NodeId
     member val KeysRepository = _keysRepository

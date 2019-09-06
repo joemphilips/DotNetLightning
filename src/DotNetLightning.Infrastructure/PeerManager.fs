@@ -55,7 +55,7 @@ type PeerManager(keyRepo: IKeysRepository,
         |> Observable.flatmapAsync(this.ChannelEventListener)
         |> Observable.subscribeWithError
                (id)
-               ((sprintf "PeerManager got error from ChannelEvent Observable: %A") >> _logger.LogCritical)
+               ((sprintf "PeerManager got error while Observing ChannelEvent: %A") >> _logger.LogCritical)
         
     member val KnownPeers = ConcurrentDictionary<PeerId, Peer>() with get, set
     

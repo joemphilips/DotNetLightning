@@ -161,6 +161,9 @@ module Primitives =
 
         member this.ToFee(weight) =
             Money.Satoshis((uint64 this.Value) * weight / 1000UL)
+            
+        member this.AsNBitcoinFeeRate() =
+            this.Value |> uint64 |> Money.Satoshis |> FeeRate
 
         static member Max(a: FeeRatePerKw, b: FeeRatePerKw) =
             if (a.Value >= b.Value) then a else b

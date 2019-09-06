@@ -19,6 +19,7 @@ open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Options
+open TestConstants
 
 type internal ActorCreator =
     static member hex = NBitcoin.DataEncoders.HexEncoder()
@@ -49,7 +50,7 @@ type internal ActorCreator =
                 let chainListener = Mock<IChainListener>().Create()
                 let feeEstimator =
                     Mock<IFeeEstimator>.Method(fun x -> <@ x.GetEstSatPer1000Weight @>).Returns(5000u |> FeeRatePerKw)
-                let fundingTxProvider = Mock<IFundingTxProvider>().Create()
+                let fundingTxProvider = DummyFundingTxProvider(aliceParam.NodeParams.ChainNetwork)
                 ChannelManager(nodeParams,
                                channelLogger,
                                eventAggregator,
@@ -91,7 +92,7 @@ type internal ActorCreator =
                 let chainListener = Mock<IChainListener>().Create()
                 let feeEstimator =
                     Mock<IFeeEstimator>.Method(fun x -> <@ x.GetEstSatPer1000Weight @>).Returns(5000u |> FeeRatePerKw)
-                let fundingTxProvider = Mock<IFundingTxProvider>().Create()
+                let fundingTxProvider = DummyFundingTxProvider(bobParam.NodeParams.ChainNetwork)
                 ChannelManager(nodeParams,
                                channelLogger,
                                eventAggregator,
