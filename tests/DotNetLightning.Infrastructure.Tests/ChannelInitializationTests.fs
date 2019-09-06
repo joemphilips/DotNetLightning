@@ -45,7 +45,7 @@ type internal ActorCreator =
                 let channelEventRepo = Mock<IChannelEventRepository>().Create()
                 let chainListener = Mock<IChainListener>().Create()
                 let feeEstimator =
-                    Mock<IFeeEstimator>.Method(fun x -> <@ x.GetEstSatPer1000Weight @>).Returns(1000u |> FeeRatePerKw)
+                    Mock<IFeeEstimator>.Method(fun x -> <@ x.GetEstSatPer1000Weight @>).Returns(5000u |> FeeRatePerKw)
                 let fundingTxProvider = Mock<IFundingTxProvider>().Create()
                 ChannelManager(nodeParams,
                                channelLogger,
@@ -81,7 +81,7 @@ type internal ActorCreator =
                 let channelEventRepo = Mock<IChannelEventRepository>().Create()
                 let chainListener = Mock<IChainListener>().Create()
                 let feeEstimator =
-                    Mock<IFeeEstimator>.Method(fun x -> <@ x.GetEstSatPer1000Weight @>).Returns(1000u |> FeeRatePerKw)
+                    Mock<IFeeEstimator>.Method(fun x -> <@ x.GetEstSatPer1000Weight @>).Returns(5000u |> FeeRatePerKw)
                 let fundingTxProvider = Mock<IFundingTxProvider>().Create()
                 ChannelManager(nodeParams,
                                channelLogger,
@@ -108,17 +108,15 @@ type internal ActorCreator =
 [<Tests>]
 let tests =
     testList "Basic Channel handling between 2 peers" [
-        ftestAsync "Channel Initialization" {
+        testAsync "Channel Initialization" {
             let alice = ActorCreator.getAlice()
             let bob = ActorCreator.getBob()
-            let mutable bobInit = None
             let bobInitTask = alice.EventAggregator.GetObservable<PeerEvent>()
-                              |> Observable.choose(function | ReceivedInit(nodeId, init) -> Some init | _ -> None)
-                              |> Observable.subscribe(fun i -> bobInit <- Some i)
+                              |> Observable.awaitFirst(function | ReceivedInit(nodeId, init) -> Some init | _ -> None)
             let! actors = ActorCreator.initiateActor(alice, bob)
-            Console.WriteLine "actors started"
             
-            do! Async.Sleep 100
+            let! bobInit = bobInitTask
+            
             let initFunder = { InputInitFunder.PushMSat = TestConstants.pushMsat
                                TemporaryChannelId = Key().ToBytes() |> uint256 |> ChannelId
                                FundingSatoshis = TestConstants.fundingSatoshis
@@ -127,18 +125,21 @@ let tests =
                                LocalParams =
                                    let defaultFinalScriptPubKey = Key().PubKey.WitHash.ScriptPubKey
                                    alice.PM.MakeLocalParams(defaultFinalScriptPubKey, true, TestConstants.fundingSatoshis)
-                               RemoteInit = bobInit.Value
+                               RemoteInit = bobInit
                                ChannelFlags = 0x00uy
                                ChannelKeys =  alice.CM.KeysRepository.GetChannelKeys(false) }
-            Console.WriteLine "Creating outbound channel ..."
             let aliceChannelEventFuture =
                 alice.EventAggregator.GetObservable<ChannelEventWithContext>()
                 |> Observable.map(fun cc -> cc.ChannelEvent)
                 |> Observable.awaitFirst(fun e -> Some e)
-            let bobChannelEventFuture =
+            let bobChannelEventFuture1 =
                 bob.EventAggregator.GetObservable<ChannelEventWithContext>()
                 |> Observable.map(fun cc -> cc.ChannelEvent)
-                |> Observable.awaitFirst(Some)
+                |> Observable.awaitFirst(function | ChannelEvent.NewInboundChannelStarted state -> Some state | _ -> None)
+            let bobChannelEventFuture2 =
+                bob.EventAggregator.GetObservable<ChannelEventWithContext>()
+                |> Observable.map(fun cc -> cc.ChannelEvent)
+                |> Observable.awaitFirst(function | ChannelEvent.WeAcceptedOpenChannel(acceptChannel, _state) -> Some acceptChannel | _ -> None)
             
             let bobNodeId = bob.CM.KeysRepository.GetNodeSecret().PubKey |> NodeId
             alice.CM.AcceptCommand(bobNodeId, ChannelCommand.CreateOutbound(initFunder))
@@ -147,11 +148,9 @@ let tests =
             | ChannelEvent.NewOutboundChannelStarted _ -> ()
             | e -> failwithf "%A" e
             
-            match! bobChannelEventFuture with
-            | NewInboundChannelStarted _ -> ()
-            | e -> failwith "%A" e
+            let! _ = bobChannelEventFuture1
+            let! _ = bobChannelEventFuture2
             
-            do! Async.Sleep 100
             return ()
         }
     ]

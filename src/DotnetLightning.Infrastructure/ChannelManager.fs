@@ -151,7 +151,6 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
                 _logger.LogDebug(sprintf "Going to update channel with %A" nextChannel.State)
                 let contextEvents = events |> List.map(fun e -> { ChannelEventWithContext.ChannelEvent = e; NodeId = nodeId })
                 contextEvents
-                   |> List.map(fun e -> printfn "publishing %A from channelman" e; e)
                    |> List.map this.EventAggregator.Publish<ChannelEventWithContext>
                    |> ignore
                 _logger.LogDebug("Lets see we can update channel")

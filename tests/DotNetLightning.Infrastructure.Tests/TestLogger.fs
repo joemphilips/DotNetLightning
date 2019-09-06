@@ -15,7 +15,8 @@ type ExpectoLogger<'T>() =
     /// NullReference Exception. So we are using just simple printfn
     let _lockObj = new obj()
     let _output: string -> unit =
-        lock _lockObj (fun () -> printfn "%s")
+        fun _ -> ()
+        // lock _lockObj (fun () -> printfn "%s")
         
     interface ILogger<'T> with
         member this.Log<'TState>(logLevel, eventId, state: 'TState, except, formatter) =

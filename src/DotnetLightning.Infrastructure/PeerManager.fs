@@ -76,6 +76,7 @@ type PeerManager(keyRepo: IKeysRepository,
             | ChannelEvent.WeAcceptedFundingCreated(msg, _) ->
                 return! this.EncodeAndSendMsg(peerId, transport) msg
             | ChannelEvent.NewOutboundChannelStarted(msg, _) ->
+                _logger.LogDebug(sprintf "new outbound started, so we are going to send open_channel msg %A" msg)
                 return! this.EncodeAndSendMsg(peerId, transport) (msg)
             | ChannelEvent.WeAcceptedAcceptChannel(msg, _) ->
                 return! this.EncodeAndSendMsg(peerId, transport) (msg)
