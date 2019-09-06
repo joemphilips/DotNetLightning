@@ -29,7 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\DotNetLightning.Infrastructure\DotNetLightning.Infrastructure.fsproj" />
     <ProjectReference Include="..\..\src\EventAggregator\EventAggregator.fsproj" />
-    <ProjectReference Include="..\..\src\DotnetLightning.Infrastructure\DotnetLightning.Infrastructure.fsproj" />
   </ItemGroup>
 </Project>
