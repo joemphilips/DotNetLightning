@@ -10,6 +10,7 @@ open DotNetLightning.Infrastructure
 
 open System
 open System.Net
+open System.Threading.Tasks
 open DotNetLightning.Chain
 open DotNetLightning.Utils.Primitives
 open Expecto
@@ -42,7 +43,9 @@ type internal ActorCreator =
                              broadCaster
                              )
             CM =
-                let channelEventRepo = Mock<IChannelEventRepository>().Create()
+                let channelEventRepo =
+                    Mock<IChannelEventRepository>
+                        .Method(fun x -> <@ x.SetEventsAsync @>).Returns(Task.CompletedTask)
                 let chainListener = Mock<IChainListener>().Create()
                 let feeEstimator =
                     Mock<IFeeEstimator>.Method(fun x -> <@ x.GetEstSatPer1000Weight @>).Returns(5000u |> FeeRatePerKw)
@@ -78,7 +81,9 @@ type internal ActorCreator =
                              broadCaster
                              )
             CM =
-                let channelEventRepo = Mock<IChannelEventRepository>().Create()
+                let channelEventRepo =
+                    Mock<IChannelEventRepository>
+                        .Method(fun x -> <@ x.SetEventsAsync @>).Returns(Task.CompletedTask)
                 let chainListener = Mock<IChainListener>().Create()
                 let feeEstimator =
                     Mock<IFeeEstimator>.Method(fun x -> <@ x.GetEstSatPer1000Weight @>).Returns(5000u |> FeeRatePerKw)
@@ -142,7 +147,7 @@ let tests =
                 |> Observable.awaitFirst(function | ChannelEvent.WeAcceptedOpenChannel(acceptChannel, _state) -> Some acceptChannel | _ -> None)
             
             let bobNodeId = bob.CM.KeysRepository.GetNodeSecret().PubKey |> NodeId
-            alice.CM.AcceptCommand(bobNodeId, ChannelCommand.CreateOutbound(initFunder))
+            do! alice.CM.AcceptCommandAsync(bobNodeId, ChannelCommand.CreateOutbound(initFunder)) |> Async.AwaitTask
             
             match! aliceChannelEventFuture  with
             | ChannelEvent.NewOutboundChannelStarted _ -> ()

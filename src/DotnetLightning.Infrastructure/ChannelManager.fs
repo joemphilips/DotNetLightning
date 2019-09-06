@@ -21,7 +21,7 @@ open DotNetLightning.Transactions
 open FSharp.Control.Reactive
 
 type IChannelManager =
-    abstract AcceptCommand: nodeId:NodeId * cmd:ChannelCommand -> unit
+    abstract AcceptCommandAsync: nodeId:NodeId * cmd:ChannelCommand -> Task
     abstract KeysRepository : IKeysRepository with get
 type IFundingTxProvider =
     abstract member ConstructFundingTx :  IDestination * Money * FeeRatePerKw -> RResult<FinalizedTx * TxOutIndex>
@@ -58,7 +58,8 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
         _eventAggregator.GetObservable<PeerEvent>()
         
     let _ = _peerEventObservable
-            |> Observable.subscribe(this.PeerEventListener)
+            |> Observable.flatmapAsync(this.PeerEventListener)
+            |> Observable.subscribe(id)
 
     let _ourNodeId = _keysRepository.GetNodeSecret().PubKey |> NodeId
     member val KeysRepository = _keysRepository
@@ -68,80 +69,85 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
     member val ChannelEventRepo = channelEventRepo with get
     member val RemoteInits = ConcurrentDictionary<_,_>() with get
     member this.PeerEventListener e =
-        match e with
-        | PeerEvent.ReceivedChannelMsg (nodeId, msg) ->
-            _logger.LogDebug(sprintf "Received Channel msg %A" msg)
-            match msg with
-            | :? OpenChannel as m ->
-                let remoteInit = this.RemoteInits.TryGet(nodeId)
-                let initFundee = { InputInitFundee.LocalParams =
-                                       let channelPubKeys = _keysRepository.GetChannelKeys(true).ToChannelPubKeys()
-                                       let spk = _nodeParams.ShutdownScriptPubKey |> Option.defaultValue (_keysRepository.GetShutdownPubKey().WitHash.ScriptPubKey)
-                                       _nodeParams.MakeLocalParams(_ourNodeId, channelPubKeys, spk, false, m.FundingSatoshis)
-                                   TemporaryChannelId = m.TemporaryChannelId
-                                   RemoteInit = remoteInit
-                                   ToLocal = m.PushMSat
-                                   ChannelKeys = _keysRepository.GetChannelKeys(true) }
-                this.AcceptCommand(nodeId, ChannelCommand.CreateInbound(initFundee))
-                _logger.LogDebug("finished creating inbound so next we are going to apply open_channel")
-                this.AcceptCommand(nodeId, ChannelCommand.ApplyOpenChannel m)
-            | :? AcceptChannel as m ->
-                this.AcceptCommand(nodeId, ChannelCommand.ApplyAcceptChannel m)
-            | :? FundingCreated as m ->
-                this.AcceptCommand(nodeId, ChannelCommand.ApplyFundingCreated m)
-            | :? FundingSigned as m ->
-                this.AcceptCommand(nodeId, ChannelCommand.ApplyFundingSigned m)
-            | :? FundingLocked as m ->
-                this.AcceptCommand(nodeId, ChannelCommand.ApplyFundingLocked m)
-            | :? Shutdown as m ->
-                this.AcceptCommand(nodeId, ChannelCommand.RemoteShutdown m)
-            | :? ClosingSigned as m ->
-                this.AcceptCommand(nodeId, ChannelCommand.ApplyClosingSigned m)
-            | :? UpdateAddHTLC as m ->
-                this.AcceptCommand(nodeId, ChannelCommand.ApplyUpdateAddHTLC m)
-            | :? UpdateFulfillHTLC as m ->
-                this.AcceptCommand(nodeId, ChannelCommand.ApplyUpdateFulfillHTLC m)
-            | :? UpdateFailHTLC as m ->
-                this.AcceptCommand(nodeId, ChannelCommand.ApplyUpdateFailHTLC m)
-            | :? UpdateFailMalformedHTLC as m ->
-                this.AcceptCommand(nodeId, ChannelCommand.ApplyUpdateFailMalformedHTLC m)
-            | :? CommitmentSigned as m ->
-                this.AcceptCommand(nodeId, ChannelCommand.ApplyCommitmentSigned m)
-            | :? RevokeAndACK as m ->
-                this.AcceptCommand(nodeId, ChannelCommand.ApplyRevokeAndACK m)
-            | :? UpdateFee as m ->
-                this.AcceptCommand(nodeId, ChannelCommand.ApplyUpdateFee m)
-            | m ->
-                    failwithf "Unknown Channel Message (%A). This should never happen" m
-        | PeerEvent.ReceivedInit(nodeId, init) ->
-            this.RemoteInits.AddOrReplace(nodeId, init)
-        | PeerEvent.FailedToBroadcastTransaction(nodeId, tx) ->
-            ()
-        | e -> ()
+        let t = unitTask {
+            match e with
+            | PeerEvent.ReceivedChannelMsg (nodeId, msg) ->
+                _logger.LogDebug(sprintf "Received Channel msg %A" msg)
+                match msg with
+                | :? OpenChannel as m ->
+                    let remoteInit = this.RemoteInits.TryGet(nodeId)
+                    let initFundee = { InputInitFundee.LocalParams =
+                                           let channelPubKeys = _keysRepository.GetChannelKeys(true).ToChannelPubKeys()
+                                           let spk = _nodeParams.ShutdownScriptPubKey |> Option.defaultValue (_keysRepository.GetShutdownPubKey().WitHash.ScriptPubKey)
+                                           _nodeParams.MakeLocalParams(_ourNodeId, channelPubKeys, spk, false, m.FundingSatoshis)
+                                       TemporaryChannelId = m.TemporaryChannelId
+                                       RemoteInit = remoteInit
+                                       ToLocal = m.PushMSat
+                                       ChannelKeys = _keysRepository.GetChannelKeys(true) }
+                    do! this.AcceptCommandAsync(nodeId, ChannelCommand.CreateInbound(initFundee))
+                    _logger.LogDebug("finished creating inbound so next we are going to apply open_channel")
+                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyOpenChannel m)
+                | :? AcceptChannel as m ->
+                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyAcceptChannel m)
+                | :? FundingCreated as m ->
+                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyFundingCreated m)
+                | :? FundingSigned as m ->
+                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyFundingSigned m)
+                | :? FundingLocked as m ->
+                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyFundingLocked m)
+                | :? Shutdown as m ->
+                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.RemoteShutdown m)
+                | :? ClosingSigned as m ->
+                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyClosingSigned m)
+                | :? UpdateAddHTLC as m ->
+                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyUpdateAddHTLC m)
+                | :? UpdateFulfillHTLC as m ->
+                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyUpdateFulfillHTLC m)
+                | :? UpdateFailHTLC as m ->
+                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyUpdateFailHTLC m)
+                | :? UpdateFailMalformedHTLC as m ->
+                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyUpdateFailMalformedHTLC m)
+                | :? CommitmentSigned as m ->
+                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyCommitmentSigned m)
+                | :? RevokeAndACK as m ->
+                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyRevokeAndACK m)
+                | :? UpdateFee as m ->
+                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyUpdateFee m)
+                | m ->
+                        return failwithf "Unknown Channel Message (%A). This should never happen" m
+            | PeerEvent.ReceivedInit(nodeId, init) ->
+                this.RemoteInits.AddOrReplace(nodeId, init)
+                return ()
+            | PeerEvent.FailedToBroadcastTransaction(_nodeId, _tx) ->
+                return ()
+            | _ -> return ()
+        }
+        t |> Async.AwaitTask
         
-    member private this.HandleChannelError (nodeId: NodeId) (b: RBad) =
-        match b with
-        | RBad.Exception(ChannelException(ChannelError.Close(msg))) ->
-            let closeCMD =
-                let spk = _nodeParams.ShutdownScriptPubKey |> Option.defaultValue (_keysRepository.GetShutdownPubKey().WitHash.ScriptPubKey)
-                ChannelCommand.Close({ CMDClose.ScriptPubKey = Some spk })
-            _logger.LogError(sprintf "Closing a channel for a node (%A) due to a following error. \n %s" nodeId msg)
-            _logger.LogError(sprintf "%s" msg)
-            this.AcceptCommand(nodeId, closeCMD)
-        | RBad.Exception(ChannelException(ChannelError.Ignore(msg))) ->
-            _logger.LogWarning("Observed a following error in a channel. But ignoring")
-            _logger.LogWarning(msg)
-        | RBad.Object(o) ->
-            match o with
-            | :? APIError as apiError ->
-                match apiError with
-                | APIMisuseError msg ->
-                    _logger.LogWarning(sprintf "Channel returned api misuse error. ignoring. %s" msg)
-                | e ->
-                    _logger.LogCritical(sprintf "Unreachable %A" e)
-            | e -> sprintf "unreachable %A" e |> _logger.LogCritical
-        | o -> sprintf "Observed a following error in a channel %A" o |> _logger.LogError
-    member this.AcceptCommand(nodeId: NodeId, cmd: ChannelCommand) =
+    member private this.HandleChannelError (nodeId: NodeId) (b: RBad) = unitTask {
+            match b with
+            | RBad.Exception(ChannelException(ChannelError.Close(msg))) ->
+                let closeCMD =
+                    let spk = _nodeParams.ShutdownScriptPubKey |> Option.defaultValue (_keysRepository.GetShutdownPubKey().WitHash.ScriptPubKey)
+                    ChannelCommand.Close({ CMDClose.ScriptPubKey = Some spk })
+                _logger.LogError(sprintf "Closing a channel for a node (%A) due to a following error. \n %s" nodeId msg)
+                _logger.LogError(sprintf "%s" msg)
+                return! this.AcceptCommandAsync(nodeId, closeCMD)
+            | RBad.Exception(ChannelException(ChannelError.Ignore(msg))) ->
+                _logger.LogWarning("Observed a following error in a channel. But ignoring")
+                _logger.LogWarning(msg)
+            | RBad.Object(o) ->
+                match o with
+                | :? APIError as apiError ->
+                    match apiError with
+                    | APIMisuseError msg ->
+                        _logger.LogWarning(sprintf "Channel returned api misuse error. ignoring. %s" msg)
+                    | e ->
+                        _logger.LogCritical(sprintf "Unreachable %A" e)
+                | e -> sprintf "unreachable %A" e |> _logger.LogCritical
+            | o -> sprintf "Observed a following error in a channel %A" o |> _logger.LogError
+        }
+    member this.AcceptCommandAsync(nodeId: NodeId, cmd: ChannelCommand): Task = unitTask {
         match this.KnownChannels.TryGetValue(nodeId) with
         | true, channel ->
             match Channel.executeCommand channel cmd with
@@ -150,6 +156,7 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
                 let nextChannel = events |> List.fold Channel.applyEvent channel
                 _logger.LogDebug(sprintf "Going to update channel with %A" nextChannel.State)
                 let contextEvents = events |> List.map(fun e -> { ChannelEventWithContext.ChannelEvent = e; NodeId = nodeId })
+                do! this.ChannelEventRepo.SetEventsAsync(contextEvents)
                 contextEvents
                    |> List.map this.EventAggregator.Publish<ChannelEventWithContext>
                    |> ignore
@@ -169,16 +176,17 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
             | CreateInbound fundeeParameters ->
                 let c = _createChannel nodeId
                 this.KnownChannels.TryAdd(nodeId, c) |> ignore
-                this.AcceptCommand(nodeId, CreateInbound fundeeParameters)
+                return! this.AcceptCommandAsync(nodeId, CreateInbound fundeeParameters)
             | CreateOutbound funderParameters ->
                 let c = _createChannel nodeId
                 this.KnownChannels.TryAdd(nodeId, c) |> ignore
-                this.AcceptCommand(nodeId, CreateOutbound funderParameters)
+                return! this.AcceptCommandAsync(nodeId, CreateOutbound funderParameters)
             | _ ->
                 sprintf "Cannot handle command type (%A) for unknown peer %A" (cmd) nodeId
                 |> log.LogError
                 ()
+        }
     interface IChannelManager with
-        member this.AcceptCommand(nodeId, cmd:ChannelCommand): unit =
-            this.AcceptCommand(nodeId, cmd)
+        member this.AcceptCommandAsync(nodeId, cmd:ChannelCommand): Task =
+            this.AcceptCommandAsync(nodeId, cmd)
         member val KeysRepository = _keysRepository with get
