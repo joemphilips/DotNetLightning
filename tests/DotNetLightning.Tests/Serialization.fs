@@ -492,6 +492,7 @@ module SerializationTest =
                     if shutdown then
                         expected <- Array.append expected (hex.DecodeData("001976a91479b000887626b294a914501a4cd226b58b23598388ac"))
                     CheckArrayEqual actual expected
+                    Expect.equal (openChannel.Clone()) openChannel ""
                 openChannelTestCore(false, false, false)
                 openChannelTestCore(true, false, false)
                 openChannelTestCore(false, true, false)

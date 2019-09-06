@@ -267,12 +267,15 @@ module Channel =
     module internal Validation =
 
         let checkMaxAcceptedHTLCsInMeaningfulRange (maxAcceptedHTLCs: uint16) =
-            if (maxAcceptedHTLCs < 1us) then
-                RRClose("max_accepted_htlcs must be not 0")
-            else if (maxAcceptedHTLCs < 483us) then
-                RRClose("max_accepted_htlcs must be less than 483")
-            else
-                Good()
+            let check1 =
+                checkOrClose
+                    maxAcceptedHTLCs (<) 1us
+                    "max_accepted_htlcs was %A must be larger than %A"
+            let check2 =
+                checkOrClose
+                    maxAcceptedHTLCs (>) 483us
+                    "max_accepted_htlcs was (%A). But it must be less than %A"
+            check1 *> check2
 
         module private OpenChannelRequest =
             let checkFundingSatoshisLessThanMax (msg: OpenChannel) =
@@ -300,37 +303,52 @@ module Channel =
                     Good()
 
             let checkRemoteFee (feeEstimator: IFeeEstimator) (feeRate: FeeRatePerKw) =
-                if (feeRate) < feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background) then
-                    RRClose("Peer's feerate much too low")
-                else if (feeRate.Value > feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority).Value * 2u) then
-                    RRClose("Peer's feerate much too high")
-                else
-                    Good()
+                let check1 =
+                    checkOrClose
+                        feeRate (<) (feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background))
+                        "Peer's feerate much too low. it was %A but it must be higher than %A"
+                let check2 =
+                    checkOrClose
+                        feeRate (>) (feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority) * 2u)
+                        "Peer's feerate much too high. it was %A but it must be lower than %A"
+                check1 *> check2
 
             let checkToSelfDelayIsInAcceptableRange (msg: OpenChannel) =
-                if (msg.ToSelfDelay > MAX_LOCAL_BREAKDOWN_TIMEOUT) then
-                    RRClose("They wanted our payments to be delayed by a needlessly long period")
-                else
-                    Good()
+                checkOrClose
+                    msg.ToSelfDelay (>) (MAX_LOCAL_BREAKDOWN_TIMEOUT)
+                    "They wanted our payments to be delayed by a needlessly long period %A . But our max %A"
 
             let checkConfigPermits (config: ChannelHandshakeLimits) (msg: OpenChannel) =
 
-                if (msg.FundingSatoshis < config.MinFundingSatoshis) then
-                    RRClose (sprintf "funding satoshis is less than the user specified limit. received: %A; limit: %A" msg.FundingSatoshis config.MinFundingSatoshis)
-                else if (msg.HTLCMinimumMsat.ToMoney() > config.MinFundingSatoshis) then
-                    RRClose (sprintf "htlc minimum msat is higher than the users specified limit. received %A; limit: %A" msg.FundingSatoshis config.MaxHTLCMinimumMSat)
-                else if (msg.MaxHTLCValueInFlightMsat < config.MinMaxHTLCValueInFlightMSat) then
-                    RRClose("max htlc value in light msat is less than the user specified limit")
-                else if (msg.ChannelReserveSatoshis > config.MaxChannelReserveSatoshis) then
-                    RRClose (sprintf "channel reserve satoshis is higher than the user specified limit. received %A; limit: %A" msg.ChannelReserveSatoshis msg.ChannelReserveSatoshis)
-                else if (msg.MaxAcceptedHTLCs < config.MinMaxAcceptedHTLCs) then
-                    RRClose (sprintf "max accepted htlcs is less than the user specified limit. received: %A; limit: %A" msg.MaxAcceptedHTLCs config.MinMaxAcceptedHTLCs)
-                else if (msg.DustLimitSatoshis < config.MinDustLimitSatoshis) then
-                    RRClose (sprintf "dust_limit_satoshis is less than the user specified limit. received: %A; limit: %A" msg.DustLimitSatoshis config.MinDustLimitSatoshis)
-                else if (msg.DustLimitSatoshis > config.MaxDustLimitSatoshis) then
-                    RRClose (sprintf "dust_limit_satoshis is greater than the user specified limit. received: %A; limit: %A" msg.DustLimitSatoshis config.MaxDustLimitSatoshis)
-                else
-                    Good()
+                let check1 =
+                    checkOrClose
+                        msg.FundingSatoshis (<) config.MinFundingSatoshis
+                        "funding satoshis is less than the user specified limit. received: %A; limit: %A"
+                let check2 =
+                    checkOrClose
+                        (msg.HTLCMinimumMsat.ToMoney()) (>) (config.MinFundingSatoshis)
+                        "htlc minimum msat is higher than the users specified limit. received %A; limit: %A"
+                let check3 =
+                    checkOrClose
+                        msg.MaxHTLCValueInFlightMsat (<) config.MinMaxHTLCValueInFlightMSat
+                        "max htlc value in light msat is less than the user specified limit. received: %A; limit %A"
+                let check4 =
+                    checkOrClose
+                        msg.ChannelReserveSatoshis (>) config.MaxChannelReserveSatoshis
+                        "channel reserve satoshis is higher than the user specified limit. received %A; limit: %A"
+                let check5 =
+                    checkOrClose
+                        msg.MaxAcceptedHTLCs (<) config.MinMaxAcceptedHTLCs
+                         "max accepted htlcs is less than the user specified limit. received: %A; limit: %A"
+                let check6 =
+                    checkOrClose
+                        msg.DustLimitSatoshis (<) config.MinDustLimitSatoshis
+                        "dust_limit_satoshis is less than the user specified limit. received: %A; limit: %A"
+                let check7 =
+                    checkOrClose
+                        msg.DustLimitSatoshis (>) config.MaxDustLimitSatoshis
+                        "dust_limit_satoshis is greater than the user specified limit. received: %A; limit: %A"
+                check1 *> check2 *> check3 *> check4 *> check5 *> check6 *> check7
 
             let checkChannelAnnouncementPreferenceAcceptable (config: ChannelConfig) (msg) =
                 let theirAnnounce = (msg.ChannelFlags &&& 1uy) = 1uy
@@ -756,7 +774,7 @@ module Channel =
             else
                 [ TheySentFundingLockedMsgBeforeUs msg ] |> Good
 
-        // ---------- notmal operation ---------
+        // ---------- normal operation ---------
         | ChannelState.Normal state, AddHTLC cmd when state.LocalShutdown.IsSome || state.RemoteShutdown.IsSome ->
             sprintf "Could not add new HTLC %A since shutdown is already in progress." cmd
             |> RRIgnore

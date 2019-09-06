@@ -453,9 +453,9 @@ module rec Msgs =
             member this.Deserialize(ls) =
                 this.Chainhash <- ls.ReadUInt256(false)
                 this.TemporaryChannelId <- ChannelId(ls.ReadUInt256(true))
-                this.FundingSatoshis <- Money.Satoshis(ls.ReadInt64(false))
+                this.FundingSatoshis <- Money.Satoshis(ls.ReadUInt64(false))
                 this.PushMSat <- LNMoney.MilliSatoshis(ls.ReadUInt64(false))
-                this.DustLimitSatoshis <- Money.Satoshis(ls.ReadInt64(false))
+                this.DustLimitSatoshis <- Money.Satoshis(ls.ReadUInt64(false))
                 this.MaxHTLCValueInFlightMsat <- LNMoney.MilliSatoshis(ls.ReadInt64(false))
                 this.ChannelReserveSatoshis <- Money.Satoshis(ls.ReadInt64(false))
                 this.HTLCMinimumMsat <- LNMoney.MilliSatoshis(ls.ReadInt64(false))
