@@ -5,6 +5,10 @@ open DotNetLightning.Utils
 
 
 module Scripts =
+
+    let inline private encodeInt (n) =
+        Op.GetPushOp(int64 n).ToString()
+
     let multiSig (sort) (pks) =
         PayToMultiSigTemplate.Instance.GenerateScriptPubKey(2, sort, pks)
 
