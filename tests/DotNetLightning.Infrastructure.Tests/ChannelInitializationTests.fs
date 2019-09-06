@@ -117,8 +117,8 @@ let tests =
             let alice = ActorCreator.getAlice()
             let bob = ActorCreator.getBob()
             let bobInitTask = alice.EventAggregator.GetObservable<PeerEvent>()
-                              |> Observable.awaitFirst(function | ReceivedInit(nodeId, init) -> Some init | _ -> None)
-            let! actors = ActorCreator.initiateActor(alice, bob)
+                              |> Observable.awaitFirst(function | ReceivedInit(_nodeId, init) -> Some init | _ -> None)
+            let! _actors = ActorCreator.initiateActor(alice, bob)
             
             let! bobInit = bobInitTask
             
@@ -130,7 +130,7 @@ let tests =
                                LocalParams =
                                    let defaultFinalScriptPubKey = Key().PubKey.WitHash.ScriptPubKey
                                    alice.PM.MakeLocalParams(defaultFinalScriptPubKey, true, TestConstants.fundingSatoshis)
-                               RemoteInit = bobInit
+                               RemoteInit = bobInit.Value
                                ChannelFlags = 0x00uy
                                ChannelKeys =  alice.CM.KeysRepository.GetChannelKeys(false) }
             let aliceChannelEventFuture =
@@ -149,12 +149,12 @@ let tests =
             let bobNodeId = bob.CM.KeysRepository.GetNodeSecret().PubKey |> NodeId
             do! alice.CM.AcceptCommandAsync(bobNodeId, ChannelCommand.CreateOutbound(initFunder)) |> Async.AwaitTask
             
-            match! aliceChannelEventFuture  with
-            | ChannelEvent.NewOutboundChannelStarted _ -> ()
-            | e -> failwithf "%A" e
-            
-            let! _ = bobChannelEventFuture1
-            let! _ = bobChannelEventFuture2
+            let! r = aliceChannelEventFuture
+            Expect.isSome r "timeout"
+            let! r = bobChannelEventFuture1
+            Expect.isSome (r) "timeout"
+            let! r = bobChannelEventFuture2
+            Expect.isSome (r) "timeout"
             
             return ()
         }

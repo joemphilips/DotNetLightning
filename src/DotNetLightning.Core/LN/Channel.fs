@@ -360,14 +360,19 @@ module Channel =
             let checkIsAcceptableByCurrentFeeRate (feeEstimator: IFeeEstimator) msg =
                 let ourDustLimit = Helpers.deriveOurDustLimitSatoshis feeEstimator
                 let ourChannelReserve = Helpers.getOurChannelReserve (msg.FundingSatoshis)
-                if (ourChannelReserve < ourDustLimit) then
-                    RRClose("Suitable channel reserve not found. Aborting")
-                else if (msg.ChannelReserveSatoshis < ourDustLimit) then
-                    RRClose (sprintf "channel_reserve_satoshis too small. It was: %A; dust_limit: %A" msg.ChannelReserveSatoshis ourDustLimit)
-                else if (ourChannelReserve < msg.DustLimitSatoshis) then
-                    RRClose (sprintf "Dust limit too high for our channel reserve. our channel reserve: %A received dust limit: %A" ourChannelReserve msg.DustLimitSatoshis)
-                else
-                    Good()
+                let check1 =
+                    checkOrClose
+                        ourChannelReserve (<) ourDustLimit
+                        "Suitable channel reserve not found. Aborting. (our channel reserve was (%A). and our dust limit was(%A))"
+                let check2 =
+                    checkOrClose
+                        msg.ChannelReserveSatoshis (<) ourDustLimit
+                        "channel_reserve_satoshis too small. It was: %A; dust_limit: %A"
+                let check3 =
+                    checkOrClose
+                        ourChannelReserve (<) msg.DustLimitSatoshis
+                        "Dust limit too high for our channel reserve. our channel reserve: %A received dust limit: %A"
+                check1 *> check2 *> check3
 
             let checkIfFundersAmountSufficient (feeEst: IFeeEstimator) msg =
                 let fundersAmount = LNMoney.Satoshis(msg.FundingSatoshis.Satoshi) - msg.PushMSat
