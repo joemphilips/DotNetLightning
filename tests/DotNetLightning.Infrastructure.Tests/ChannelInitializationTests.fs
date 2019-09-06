@@ -65,8 +65,12 @@ type internal ActorCreator =
     static member getBob(?keyRepo: IKeysRepository, ?nodeParams, ?chainWatcher, ?broadCaster) =
         let bobParam = TestConstants.getBobParam()
         let keyRepo = defaultArg keyRepo (bobParam.KeyRepo)
-        let peerLogger = TestLogger.create<PeerManager>()
-        let channelLogger = TestLogger.create<ChannelManager>()
+        let peerLogger =
+            // Mock<ILogger<PeerManager>>().Create()
+            TestLogger.create<PeerManager>()
+        let channelLogger =
+            // Mock<ILogger<ChannelManager>>().Create()
+            TestLogger.create<ChannelManager>()
         let nodeParams = defaultArg nodeParams (Options.Create<NodeParams>(bobParam.NodeParams))
         let chainWatcher = defaultArg chainWatcher (Mock<IChainWatcher>().Create())
         let broadCaster = defaultArg broadCaster (Mock<IBroadCaster>().Create())
@@ -134,17 +138,14 @@ let tests =
                                ChannelFlags = 0x00uy
                                ChannelKeys =  alice.CM.KeysRepository.GetChannelKeys(false) }
             let aliceChannelEventFuture =
-                alice.EventAggregator.GetObservable<ChannelEventWithContext>()
-                |> Observable.map(fun cc -> cc.ChannelEvent)
-                |> Observable.awaitFirst(fun e -> Some e)
+                alice.EventAggregator.AwaitChannelEvent()
             let bobChannelEventFuture1 =
-                bob.EventAggregator.GetObservable<ChannelEventWithContext>()
-                |> Observable.map(fun cc -> cc.ChannelEvent)
-                |> Observable.awaitFirst(function | ChannelEvent.NewInboundChannelStarted state -> Some state | _ -> None)
+                bob.EventAggregator.AwaitChannelEvent(function NewInboundChannelStarted msg -> Some msg | _ -> None)
             let bobChannelEventFuture2 =
-                bob.EventAggregator.GetObservable<ChannelEventWithContext>()
-                |> Observable.map(fun cc -> cc.ChannelEvent)
-                |> Observable.awaitFirst(function | ChannelEvent.WeAcceptedOpenChannel(acceptChannel, _state) -> Some acceptChannel | _ -> None)
+                bob.EventAggregator.AwaitChannelEvent(function WeAcceptedOpenChannel(acceptChannel, _state) -> Some acceptChannel | _ -> None)
+                
+            let aliceReceivedAcceptChannel =
+                alice.EventAggregator.AwaitChannelEvent(function WeAcceptedAcceptChannel(i, _) -> Some i | _ -> None)
             
             let bobNodeId = bob.CM.KeysRepository.GetNodeSecret().PubKey |> NodeId
             do! alice.CM.AcceptCommandAsync(bobNodeId, ChannelCommand.CreateOutbound(initFunder)) |> Async.AwaitTask
@@ -155,6 +156,9 @@ let tests =
             Expect.isSome (r) "timeout"
             let! r = bobChannelEventFuture2
             Expect.isSome (r) "timeout"
+            
+            let! r = aliceReceivedAcceptChannel
+            Expect.isSome r "timeout"
             
             return ()
         }

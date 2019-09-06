@@ -59,7 +59,9 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
         
     let _ = _peerEventObservable
             |> Observable.flatmapAsync(this.PeerEventListener)
-            |> Observable.subscribe(id)
+            |> Observable.subscribeWithError
+                   (id)
+                   ((sprintf "Channel Manager got error in PeerEvent Observable: %A") >> _logger.LogCritical)
 
     let _ourNodeId = _keysRepository.GetNodeSecret().PubKey |> NodeId
     member val KeysRepository = _keysRepository
@@ -72,7 +74,6 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
         let t = unitTask {
             match e with
             | PeerEvent.ReceivedChannelMsg (nodeId, msg) ->
-                _logger.LogDebug(sprintf "Received Channel msg %A" msg)
                 match msg with
                 | :? OpenChannel as m ->
                     let remoteInit = this.RemoteInits.TryGet(nodeId)
@@ -85,7 +86,6 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
                                        ToLocal = m.PushMSat
                                        ChannelKeys = _keysRepository.GetChannelKeys(true) }
                     do! this.AcceptCommandAsync(nodeId, ChannelCommand.CreateInbound(initFundee))
-                    _logger.LogDebug("finished creating inbound so next we are going to apply open_channel")
                     return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyOpenChannel m)
                 | :? AcceptChannel as m ->
                     return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyAcceptChannel m)
@@ -152,21 +152,18 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
         | true, channel ->
             match Channel.executeCommand channel cmd with
             | Good events ->
-                _logger.LogDebug(sprintf "Applying events %A" events)
+                _logger.LogTrace(sprintf "Applying events %A" events)
                 let nextChannel = events |> List.fold Channel.applyEvent channel
-                _logger.LogDebug(sprintf "Going to update channel with %A" nextChannel.State)
-                let contextEvents = events |> List.map(fun e -> { ChannelEventWithContext.ChannelEvent = e; NodeId = nodeId })
+                let contextEvents =
+                    events |> List.map(fun e -> { ChannelEventWithContext.ChannelEvent = e; NodeId = nodeId })
                 do! this.ChannelEventRepo.SetEventsAsync(contextEvents)
-                contextEvents
-                   |> List.map this.EventAggregator.Publish<ChannelEventWithContext>
-                   |> ignore
-                _logger.LogDebug("Lets see we can update channel")
                 match this.KnownChannels.TryUpdate(nodeId, nextChannel, channel) with
                 | true ->
-                    _logger.LogDebug(sprintf "Update channel %A" nextChannel.State)
-                    ()
+                    _logger.LogTrace(sprintf "Update channel %A" nextChannel.State)
                 | false ->
-                    _logger.LogDebug(sprintf "Dit not update channel %A" nextChannel.State)
+                    _logger.LogTrace(sprintf "Did not update channel %A" nextChannel.State)
+                contextEvents
+                   |> List.iter this.EventAggregator.Publish<ChannelEventWithContext>
             | Bad ex ->
                 let ex = ex.Flatten()
                 ex |> Array.map (this.HandleChannelError nodeId) |> ignore

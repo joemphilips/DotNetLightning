@@ -261,8 +261,6 @@ type ChannelEvent =
     | NewOutboundChannelStarted of nextMsg: OpenChannel * nextState: Data.WaitForAcceptChannelData
     | WeAcceptedAcceptChannel of nextMsg: FundingCreated * nextState: Data.WaitForFundingSignedData
     | WeAcceptedFundingSigned of txToPublish: FinalizedTx * nextState: Data.WaitForFundingConfirmedData
-    | OpenChannelFromSelf of InputInitFunder
-
 
     /// -------- init both -----
     | FundingConfirmed of nextState: Data.WaitForFundingLockedData

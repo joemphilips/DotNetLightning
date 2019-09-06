@@ -53,7 +53,9 @@ type PeerManager(keyRepo: IKeysRepository,
     let _channelEventObservable =
         eventAggregator.GetObservable<ChannelEventWithContext>()
         |> Observable.flatmapAsync(this.ChannelEventListener)
-        |> Observable.subscribe id
+        |> Observable.subscribeWithError
+               (id)
+               ((sprintf "PeerManager got error from ChannelEvent Observable: %A") >> _logger.LogCritical)
         
     member val KnownPeers = ConcurrentDictionary<PeerId, Peer>() with get, set
     
@@ -71,12 +73,13 @@ type PeerManager(keyRepo: IKeysRepository,
             let peerId = this.NodeIdToPeerId.TryGet(nodeId)
             let transport = this.PeerIdToTransport.TryGet(peerId)
             match contextEvent.ChannelEvent with
+            | ChannelEvent.NewInboundChannelStarted _ ->
+                ()
             | ChannelEvent.WeAcceptedOpenChannel(msg, _) ->
                 return! this.EncodeAndSendMsg(peerId, transport) msg
             | ChannelEvent.WeAcceptedFundingCreated(msg, _) ->
                 return! this.EncodeAndSendMsg(peerId, transport) msg
             | ChannelEvent.NewOutboundChannelStarted(msg, _) ->
-                _logger.LogDebug(sprintf "new outbound started, so we are going to send open_channel msg %A" msg)
                 return! this.EncodeAndSendMsg(peerId, transport) (msg)
             | ChannelEvent.WeAcceptedAcceptChannel(msg, _) ->
                 return! this.EncodeAndSendMsg(peerId, transport) (msg)
@@ -100,6 +103,17 @@ type PeerManager(keyRepo: IKeysRepository,
                     str |> _logger.LogCritical
                     this.EventAggregator.Publish<PeerEvent>(FailedToBroadcastTransaction(nodeId, finalizedFundingTx.Value))
                     return ()
+            | FundingConfirmed _ 
+            | TheySentFundingLockedMsgBeforeUs _
+            | WeSentFundingLockedMsgBeforeThem _
+            | BothFundingLocked _
+            | WeAcceptedUpdateAddHTLC _
+            | WeAcceptedFulfillHTLC _
+            | WeAcceptedFailHTLC _ -> ()
+            | WeAcceptedFailMalformedHTLC _ -> ()
+            | WeAcceptedUpdateFee _ -> ()
+            | WeAcceptedCommitmentSigned  _ -> failwith "TODO: route"
+            | WeAcceptedRevokeAndACK _ -> failwith "TODO: route"
             // The one which includes `CMD` in its names is the one started by us.
             // So there are no need to think about routing, just send it to specified peer.
             | ChannelEvent.WeAcceptedCMDAddHTLC (msg, _) ->
@@ -114,6 +128,21 @@ type PeerManager(keyRepo: IKeysRepository,
                 return! this.EncodeAndSendMsg(peerId, transport) (msg)
             | ChannelEvent.WeAcceptedCMDSign (msg, _) ->
                 return! this.EncodeAndSendMsg(peerId, transport) (msg)
+            | AcceptedShutdownCMD (_) ->
+                failwith "TODO "
+            | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs _ ->
+                failwith "TODO "
+            /// We have to send closing_signed to initiate the negotiation only when if we are the funder
+            | AcceptedShutdownWhenNoPendingHTLCs _ ->
+                failwith "TODO"
+            | AcceptedShutdownWhenWeHavePendingHTLCs _ ->
+                failwith "TODO"
+            | MutualClosePerformed _ -> failwith "todo"
+            | WeProposedNewClosingSigned _ -> failwith "todo"
+            | ChannelEvent.Closed _ -> failwith "TODO"
+            | Disconnected _ -> failwith "TODO"
+            | NewBlockVerified _ -> ()
+            | ChannelStateRequestedSignCommitment _ -> failwith "TODO"
         }
         vt.AsTask() |> Async.AwaitTask
             
@@ -207,6 +236,7 @@ type PeerManager(keyRepo: IKeysRepository,
             ignore <| this.OpenedPeers.AddOrUpdate(theirPeerId, newPeer, fun pId existingPeer -> newPeer)
 
     member private this.EncodeAndSendMsg(theirPeerId: PeerId, pipeWriter: PipeWriter) (msg: ILightningMsg) =
+        _logger.LogTrace(sprintf "encoding and sending msg %A to peer %A" msg theirPeerId)
         unitVtask {
             match this.OpenedPeers.TryGetValue(theirPeerId) with
             | true, peer ->
@@ -302,13 +332,13 @@ type PeerManager(keyRepo: IKeysRepository,
                         match he.Action with
                         | Some(DisconnectPeer _) ->
                             sprintf "disconnecting peer because %A" he.Error
-                            |> _logger.LogTrace
+                            |> _logger.LogInformation
                         | Some(IgnoreError) ->
                             sprintf "ignoring the error because %A" he.Error
-                            |> _logger.LogTrace
+                            |> _logger.LogDebug
                         | Some(SendErrorMessage msg) ->
                             sprintf "sending error message because %A" he.Error
-                            |> _logger.LogTrace
+                            |> _logger.LogDebug
                             let! _ = this.EncodeAndSendMsg(peerId, transport.Output) msg
                             return ()
                         | None ->
@@ -368,10 +398,7 @@ type PeerManager(keyRepo: IKeysRepository,
                 sprintf "Going to create new inbound peer against %A" (peerId)
                 |>  _logger.LogTrace 
                 let! actOne = pipe.Input.ReadExactAsync(50, true)
-                "Read act 1 from peer"
-                |> _logger.LogTrace 
                 let! r = this.NewInboundConnection(peerId, actOne, pipe.Output, ourEphemeral)
-                _logger.LogTrace (sprintf "result for creating new inbound peer is %A" r)
                 match r with
                 | Ok p -> return Good (Some p)
                 | Result.Error e -> return (e |> box |> RBad.Object |> RResult.rbad)
@@ -380,8 +407,6 @@ type PeerManager(keyRepo: IKeysRepository,
             // 2. peer has not sent act1 yet.
             // TODO: Remove?
             | true, peer when peer.ChannelEncryptor.GetNoiseStep() = ActOne ->
-                sprintf "Going to read from act one from peer %A" peerId
-                |>  _logger.LogTrace 
                 let! actOne = pipe.Input.ReadExactAsync(50)
                 match peer.ChannelEncryptor |> PeerChannelEncryptor.processActOneWithKey actOne (_keyRepo.GetNodeSecret()) with
                 | Bad rbad -> return Bad rbad
@@ -434,7 +459,7 @@ type PeerManager(keyRepo: IKeysRepository,
                         match LightningMsg.fromBytes data with
                         | Bad b -> return Bad b
                         | Good msg ->
-                            sprintf "Decrypted msg %A from %A" msg peerId |> _logger.LogDebug
+                            _logger.LogTrace(sprintf "Peer Decrypted msg %A" msg)
                             match msg with
                             | :? ISetupMsg as setupMsg ->
                                 return! this.HandleSetupMsgAsync (peerId, setupMsg, peer, pipe)
