@@ -8,15 +8,15 @@ open DotNetLightning.LN
 open CustomEventAggregator
 
 open FSharp.Control.Tasks
+open FSharp.Control.Reactive
 open System.IO.Pipelines
 open System.Net
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Options
 
-open System
 open System.Threading.Tasks
 open DotNetLightning.Utils.Aether
-open Moq
+open Foq
 open NBitcoin
 open Expecto
 open Expecto.Logging
@@ -30,47 +30,18 @@ let log (logLevel) =
     logCore
     //fun s -> () //printfn "%s"
 
-let channelManagerMock = new Mock<IChannelManager>()
-let eventAggregatorMock = new Mock<IEventAggregator>()
-let keysRepoMock = new Mock<IKeysRepository>()
+let eventAggregatorMock = new ReactiveEventAggregator()
 
 let ourNodeSecret = Key(hex.DecodeData("1111111111111111111111111111111111111111111111111111111111111111"))
-ignore <| keysRepoMock.Setup(fun repo -> repo.GetNodeSecret()).Returns(ourNodeSecret)
+let keysRepoMock = Mock<IKeysRepository>.Method(fun repo -> <@ repo.GetNodeSecret @>).Returns(ourNodeSecret)
 
-let loggerMock = new Mock<ILogger<PeerManager>>()
-let loggerInternal = Logger.fromMicrosoftLogger (loggerMock.Object)
+let broadCasterMock = Mock<IBroadCaster>().Create()
+
+let chainWatcherMock = Mock<IChainWatcher>().Create()
+
 let aliceNodeParams = Options.Create<NodeParams>(TestConstants.getAliceParam().NodeParams)
 let bobNodeParams = Options.Create<NodeParams>(TestConstants.getBobParam().NodeParams)
 
-type private PeerManagerEntity = {
-    PM: PeerManager
-    Id: PeerId
-}
-
-type private PeerActors(a, b) =
-    let pipePair = DuplexPipe.CreatePair()
-    member val Initiator: PeerManagerEntity = a
-    member val Responder: PeerManagerEntity = b
-    member val InitiatorToTransport: IDuplexPipe = pipePair.Transport with get
-    member val ResponderToTransport: IDuplexPipe = pipePair.Application with get
-    member val InitiatorTask = null with get, set
-    member val ResponderTask = null with get, set
-    member this.Launch(nodeIdForResponder: NodeId) = task {
-            let! r = this.Initiator.PM.NewOutBoundConnection(nodeIdForResponder, this.Responder.Id, this.InitiatorToTransport.Output)
-            match r with Ok r -> () | Result.Error e -> failwithf "%A" e
-            this.InitiatorTask <- task {
-                while true do
-                    do! this.Initiator.PM.ProcessMessageAsync(this.Responder.Id, this.InitiatorToTransport)
-            }
-            this.ResponderTask <- task {
-                while true do
-                    do! this.Responder.PM.ProcessMessageAsync(this.Initiator.Id, this.ResponderToTransport)
-            }
-        }
-    interface IDisposable with
-        member this.Dispose() =
-            ()
-            
 
 let createPipe() =
     let pipe = System.IO.Pipelines.Pipe()
@@ -92,11 +63,12 @@ let tests = testList "PeerManagerTests" [
       let dPipe = createPipe()
       let theirPeerId = IPEndPoint.Parse("127.0.0.2") :> EndPoint |> PeerId
       let theirNodeId = PubKey("028d7500dd4c12685d1f568b4c2b5048e8534b873319f3a8daa612b469132ec7f7") |> NodeId
-      let peerManager = PeerManager (keysRepoMock.Object,
-                                    loggerMock.Object,
+      let peerManager = PeerManager (keysRepoMock,
+                                    TestLogger.create(),
                                     aliceNodeParams,
-                                    eventAggregatorMock.Object,
-                                    channelManagerMock.Object)
+                                    eventAggregatorMock,
+                                    chainWatcherMock,
+                                    broadCasterMock)
       let! read = peerManager.NewOutBoundConnection(theirNodeId, theirPeerId, dPipe.Output, ie)
       let _ = read |> function | Ok b -> b | Result.Error e -> failwithf "%A" e
       updateIEForTestVector (peerManager, theirPeerId)
@@ -112,20 +84,12 @@ let tests = testList "PeerManagerTests" [
       let! _ = peerManager.ProcessMessageAsync(theirPeerId, dPipe)
 
       Expect.isTrue (peerManager.OpenedPeers.ContainsKey(theirPeerId)) ""
-      let actualPeerId = (peerManager.NodeIdToDescriptor.TryGetValue(theirNodeId) |> snd)
+      let actualPeerId = (peerManager.NodeIdToPeerId.TryGetValue(theirNodeId) |> snd)
       Expect.equal (actualPeerId) (theirPeerId) ""
-      let p = match peerManager.OpenedPeers.TryGetValue(theirPeerId) with
+      let _ = match peerManager.OpenedPeers.TryGetValue(theirPeerId) with
               | true, p -> p
               | false, _ -> failwith "Peer not opened"
-      match p.ChannelEncryptor.NoiseState with
-      | Finished { SK = sk; SN = sn; SCK = sck; RK = rk; RN = rn; RCK = rck } ->
-          Expect.equal (sk.ToBytes().ToHexString()) ("0x969ab31b4d288cedf6218839b27a3e2140827047f2c0f01bf5c04435d43511a9") ""
-          Expect.equal (sn) (0UL) ""
-          Expect.equal (sck.ToBytes().ToHexString()) ("0x919219dbb2920afa8db80f9a51787a840bcf111ed8d588caf9ab4be716e42b01") ""
-          Expect.equal (rk.ToBytes().ToHexString()) ("0xbb9020b8965f4df047e07f955f3c4b88418984aadc5cdb35096b9ea8fa5c3442") ""
-          Expect.equal (rn) (0UL) ""
-          Expect.equal (rck.ToBytes().ToHexString()) ("0x919219dbb2920afa8db80f9a51787a840bcf111ed8d588caf9ab4be716e42b01") ""
-      | s -> failwithf "not in finished state %A" s
+      return ()
     } |> Async.AwaitTask)
 
     testCaseAsync "PeerManager can initiate inbound connection" <| (task {
@@ -133,13 +97,13 @@ let tests = testList "PeerManagerTests" [
       let theirPeerId = IPEndPoint.Parse("127.0.0.2") :> EndPoint |> PeerId
       let keyRepoMock =
           let ourNodeSecret = hex.DecodeData ("2121212121212121212121212121212121212121212121212121212121212121") |> Key
-          new Mock<IKeysRepository>()
-          |> fun m -> m.Setup(fun repo -> repo.GetNodeSecret()).Returns(ourNodeSecret) |> ignore; m
-      let peerManager = PeerManager (keyRepoMock.Object,
-                                    loggerMock.Object,
+          Mock<IKeysRepository>.Method(fun repo -> <@ repo.GetNodeSecret @>).Returns(ourNodeSecret)
+      let peerManager = PeerManager (keyRepoMock,
+                                    TestLogger.create(),
                                     aliceNodeParams,
-                                    eventAggregatorMock.Object,
-                                    channelManagerMock.Object)
+                                    eventAggregatorMock,
+                                    chainWatcherMock,
+                                    broadCasterMock)
 
       // processing act 1 ...
       let act1 = hex.DecodeData ("00036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6a")
@@ -169,7 +133,7 @@ let tests = testList "PeerManagerTests" [
 
       // also, we can query the peer id with node id
       let peerIdRetrieved =
-          match peerManager.NodeIdToDescriptor.TryGetValue theirNodeIdActual with
+          match peerManager.NodeIdToPeerId.TryGetValue theirNodeIdActual with
           | true, p -> p
           | false, _ -> failwith "peer id is not set to NodeId -> PeerId Dict"
       Expect.equal (peerIdRetrieved) (theirPeerId) ""
@@ -177,25 +141,35 @@ let tests = testList "PeerManagerTests" [
     } |> Async.AwaitTask)
 
     testCaseAsync "2 peers can communicate with each other" <| (task {
-      let aliceEventAggregatorMock = Mock<IEventAggregator>()
-      let bobEventAggregatorMock = Mock<IEventAggregator>()
-      let alice = { PM = PeerManager(keysRepoMock.Object,
-                               loggerMock.Object,
-                               aliceNodeParams,
-                               aliceEventAggregatorMock.Object,
-                               channelManagerMock.Object)
-                    Id = IPEndPoint.Parse("127.0.0.3") :> EndPoint |> PeerId }
+      let aliceEventAggregatorMock =
+          Mock<IEventAggregator>.Method(fun ea -> <@ ea.GetObservable<ChannelEventWithContext> @> )
+              .Returns(Observable.empty)
+      let bobEventAggregatorMock =
+          Mock<IEventAggregator>.Method(fun ea -> <@ ea.GetObservable<ChannelEventWithContext> @> )
+              .Returns(Observable.empty)
+      let alice = { PM = PeerManager(keysRepoMock,
+                                     TestLogger.create(),
+                                     aliceNodeParams,
+                                     aliceEventAggregatorMock,
+                                     chainWatcherMock,
+                                     broadCasterMock)
+                    CM = Mock<IChannelManager>().Create()
+                    Id = IPEndPoint.Parse("127.0.0.3") :> EndPoint |> PeerId
+                    EventAggregator = aliceEventAggregatorMock }
       let bobNodeSecret =
         Key(hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202"))
       let keyRepoBob = 
-        new Mock<IKeysRepository>()
-        |> fun m -> m.Setup(fun repo -> repo.GetNodeSecret()).Returns(bobNodeSecret) |> ignore; m
-      let bob = { PM = PeerManager(keyRepoBob.Object,
-                            loggerMock.Object,
-                            Options.Create<NodeParams>(new NodeParams()),
-                            bobEventAggregatorMock.Object,
-                            channelManagerMock.Object)
-                  Id = IPEndPoint.Parse("127.0.0.2") :> EndPoint |> PeerId }
+        Mock<IKeysRepository>.Method(fun repo -> <@ repo.GetNodeSecret @>).Returns(bobNodeSecret)
+        
+      let bob = { PM = PeerManager(keyRepoBob,
+                                   TestLogger.create(),
+                                   Options.Create<NodeParams>(new NodeParams()),
+                                   bobEventAggregatorMock,
+                                   chainWatcherMock,
+                                   broadCasterMock)
+                  CM = Mock<IChannelManager>().Create()
+                  Id = IPEndPoint.Parse("127.0.0.2") :> EndPoint |> PeerId
+                  EventAggregator = bobEventAggregatorMock }
       let actors = new PeerActors(alice, bob)
       
       // this should trigger All handshake process
@@ -213,8 +187,31 @@ let tests = testList "PeerManagerTests" [
             Expect.equal (p.ChannelEncryptor.GetNoiseStep()) (NextNoiseStep.NoiseComplete) "Noise State should be completed"
           | false, _ -> failwith "alice is not in bob's OpenedPeer"
           
-      // aliceEventAggregatorMock.Verify(fun agg -> agg.Publish<PeerEvent>(It.Is(fun e -> match e with | PeerEvent.Connected _ -> true | _ -> false)), Times.Once)
-      // bobEventAggregatorMock.Verify(fun agg -> agg.Publish(), Times.Once)
+      Mock.Verify(<@ aliceEventAggregatorMock.Publish<PeerEvent>(It.Is(function | PeerEvent.Connected _ -> true | _ -> false)) @>, once)
+      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEvent>(It.Is(function | PeerEvent.Connected _ -> true | _ -> false)) @>, once)
+      
+      // --- ping from initiator ---
+      do! actors.Initiator.PM.AcceptCommand(PeerCommand.SendPing(actors.Responder.Id, { Ping.BytesLen = 22us;
+                                                                                        PongLen = 32us }))
+      do! Task.Delay 200
+      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEvent>(It.Is(function | ReceivedPing _ -> true | _ -> false)) @>, once)
+      Mock.Verify(<@ aliceEventAggregatorMock.Publish<PeerEvent>(It.Is(function | ReceivedPong _ -> true | _ -> false)) @>, once)
+
+      // --- ping from responder ---
+      do! actors.Responder.PM.AcceptCommand(PeerCommand.SendPing(actors.Initiator.Id, { Ping.BytesLen = 22us;
+                                                                                        PongLen = 32us }))
+      do! Task.Delay 200
+      Mock.Verify(<@ aliceEventAggregatorMock.Publish<PeerEvent>(It.Is(function | ReceivedPing _ -> true | _ -> false)) @>, once)
+      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEvent>(It.Is(function | ReceivedPong _ -> true | _ -> false)) @>, once)
+      
+      // --- ping from initiator again ---
+      do! actors.Initiator.PM.AcceptCommand(PeerCommand.SendPing(actors.Responder.Id, { Ping.BytesLen = 22us;
+                                                                                        PongLen = 32us }))
+      do! Task.Delay 200
+      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEvent>(It.Is(function | ReceivedPing _ -> true | _ -> false)) @>, exactly(2))
+      Mock.Verify(<@ aliceEventAggregatorMock.Publish<PeerEvent>(It.Is(function | ReceivedPong _ -> true | _ -> false)) @>, exactly(2))
+
+      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEvent>(It.Is(function | ReceivedError _ -> true | _ -> false)) @>, never)
       return ()
     } |> Async.AwaitTask)
   ]

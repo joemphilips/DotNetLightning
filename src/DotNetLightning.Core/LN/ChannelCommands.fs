@@ -2,8 +2,11 @@ namespace DotNetLightning.LN
 
 open NBitcoin
 open DotNetLightning.Utils
+open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Utils.Error
 open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Chain
+open DotNetLightning.Transactions
 
 //       .d8888b.   .d88888b.  888b     d888 888b     d888        d8888 888b    888 8888888b.   .d8888b.
 //      d88P  Y88b d88P" "Y88b 8888b   d8888 8888b   d8888       d88888 8888b   888 888  "Y88b d88P  Y88b
@@ -58,20 +61,130 @@ type CMDUpdateFee = {
 type CMDClose = { ScriptPubKey: Script option }
 
 
+type LocalParams = {
+    NodeId: NodeId
+    ChannelPubKeys: ChannelPubKeys
+    DustLimitSatoshis: Money
+    MaxHTLCValueInFlightMSat: LNMoney
+    ChannelReserveSatoshis: Money
+    HTLCMinimumMSat: LNMoney
+    ToSelfDelay: BlockHeightOffset
+    MaxAcceptedHTLCs: uint16
+    IsFunder: bool
+    DefaultFinalScriptPubKey: Script
+    GlobalFeatures: GlobalFeatures
+    LocalFeatures: LocalFeatures
+}
+
+type RemoteParams = {
+    NodeId: NodeId
+    DustLimitSatoshis: Money
+    MaxHTLCValueInFlightMSat: LNMoney
+    ChannelReserveSatoshis: Money
+    HTLCMinimumMSat: LNMoney
+    ToSelfDelay: BlockHeightOffset
+    MaxAcceptedHTLCs: uint16
+    PaymentBasePoint: PubKey
+    FundingPubKey: PubKey
+    RevocationBasePoint: PubKey
+    DelayedPaymentBasePoint: PubKey
+    HTLCBasePoint: PubKey
+    GlobalFeatures: GlobalFeatures
+    LocalFeatures: LocalFeatures
+}
+    with
+        static member FromAcceptChannel nodeId (remoteInit: Init) (msg: AcceptChannel) =
+            {
+                NodeId = nodeId
+                DustLimitSatoshis = msg.DustLimitSatoshis
+                MaxHTLCValueInFlightMSat = msg.MaxHTLCValueInFlightMsat
+                ChannelReserveSatoshis = msg.ChannelReserveSatoshis
+                HTLCMinimumMSat = msg.HTLCMinimumMSat
+                ToSelfDelay = msg.ToSelfDelay
+                MaxAcceptedHTLCs = msg.MaxAcceptedHTLCs
+                PaymentBasePoint = msg.PaymentBasepoint
+                FundingPubKey = msg.FundingPubKey
+                RevocationBasePoint = msg.RevocationBasepoint
+                DelayedPaymentBasePoint = msg.DelayedPaymentBasepoint
+                HTLCBasePoint = msg.HTLCBasepoint
+                GlobalFeatures = remoteInit.GlobalFeatures
+                LocalFeatures = remoteInit.LocalFeatures
+            }
+
+        static member FromOpenChannel (nodeId) (remoteInit: Init) (msg: OpenChannel) =
+            {
+                NodeId = nodeId
+                DustLimitSatoshis = msg.DustLimitSatoshis
+                MaxHTLCValueInFlightMSat = msg.MaxHTLCValueInFlightMsat
+                ChannelReserveSatoshis = msg.ChannelReserveSatoshis
+                HTLCMinimumMSat = msg.HTLCMinimumMsat
+                ToSelfDelay = msg.ToSelfDelay
+                MaxAcceptedHTLCs = msg.MaxAcceptedHTLCs
+                PaymentBasePoint = msg.PaymentBasepoint
+                FundingPubKey = msg.FundingPubKey
+                RevocationBasePoint = msg.RevocationBasepoint
+                DelayedPaymentBasePoint = msg.DelayedPaymentBasepoint
+                HTLCBasePoint = msg.HTLCBasepoint
+                GlobalFeatures = remoteInit.GlobalFeatures
+                LocalFeatures = remoteInit.LocalFeatures
+            }
+
+type InputInitFunder = {
+    TemporaryChannelId: ChannelId
+    FundingSatoshis: Money
+    PushMSat: LNMoney
+    InitFeeRatePerKw: FeeRatePerKw
+    FundingTxFeeRatePerKw: FeeRatePerKw
+    LocalParams: LocalParams
+    RemoteInit: Init
+    ChannelFlags: uint8
+    ChannelKeys: ChannelKeys
+}
+    with
+        static member FromOpenChannel (localParams) (remoteInit) (channelKeys) (o: OpenChannel) =
+            {
+                InputInitFunder.TemporaryChannelId = o.TemporaryChannelId
+                FundingSatoshis = o.FundingSatoshis
+                PushMSat = o.PushMSat
+                InitFeeRatePerKw = o.FeeRatePerKw
+                FundingTxFeeRatePerKw = o.FeeRatePerKw
+                LocalParams = localParams
+                RemoteInit = remoteInit
+                ChannelFlags = o.ChannelFlags
+                ChannelKeys = channelKeys
+            }
+
+        member this.DeriveCommitmentSpec() =
+            CommitmentSpec.Create this.ToLocal this.PushMSat this.FundingTxFeeRatePerKw
+
+        member this.ToLocal =
+            this.FundingSatoshis.ToLNMoney() - this.PushMSat
+
+and InputInitFundee = {
+    TemporaryChannelId: ChannelId
+    LocalParams: LocalParams
+    RemoteInit: Init
+    ToLocal: LNMoney
+    ChannelKeys: ChannelKeys
+}
+
+
 /// possible input to the channel. Command prefixed from `Apply` is passive. i.e.
 /// it has caused by the outside world and not by the user. Mostly this is a message sent
 /// from this channel's remote peer.
 /// others are active commands which is caused by the user.
-/// However, hese two kinds of command has no difference from architectural viewpoint.
+/// However, these two kinds of command has no difference from architectural viewpoint.
 /// It is just an input to the state.
 type ChannelCommand =
     // open: funder
+    | CreateOutbound of InputInitFunder
     | ApplyAcceptChannel of AcceptChannel
     | ApplyFundingSigned of FundingSigned
     | ApplyFundingLocked of FundingLocked
     | ApplyFundingConfirmedOnBC of height: BlockHeight * txIndex: TxIndexInBlock * depth: BlockHeight
 
     // open: fundee
+    | CreateInbound of InputInitFundee
     | ApplyOpenChannel of OpenChannel
     | ApplyFundingCreated of FundingCreated
 

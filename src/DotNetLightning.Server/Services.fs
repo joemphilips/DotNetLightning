@@ -14,7 +14,7 @@ type ChannelService() =
 
 type ServiceBuilder() =
     member __.CreateChannelManagementService() =
-        ChannelManagementService
+        ChannelManager
 
 module Services =
     let register(services: IServiceCollection, env: IHostEnvironment) =
@@ -22,10 +22,8 @@ module Services =
         regF <| fun _sp -> ServiceBuilder()
         regF <| fun sp ->
             if (env.IsDevelopment()) then
-                let cmd = EventCommands.inMemoryEventCommand
                 failwith ""
             else
-                let cmd = EventCommands.mongoDbEventCommand
                 failwith ""
             sp.GetService<ServiceBuilder>().CreateChannelManagementService()
     ()

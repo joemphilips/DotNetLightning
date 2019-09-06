@@ -100,7 +100,7 @@ type IKeysRepository =
 
 
 /// `KeyManager` in rust-lightning
-type DefaultKeyRepository(seed: uint256, network: Network, logger: Logger) =
+type DefaultKeyRepository(seed: uint256) =
     let masterKey = ExtKey(seed.ToBytes())
     let destinationKey = masterKey.Derive(1, true)
     member this.NodeSecret = masterKey.Derive(0, true)

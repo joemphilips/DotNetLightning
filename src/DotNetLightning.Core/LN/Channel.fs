@@ -8,15 +8,11 @@ open DotNetLightning.Crypto
 open DotNetLightning.Transactions
 open DotNetLightning.Serialize.Msgs
 open NBitcoin
-open System.Linq
 open System
 open Secp256k1Net
 
-type InternalChannelId = Guid
 type Channel = {
-    InternalChannelId: InternalChannelId
     Config: ChannelConfig
-    UserId: UserId
     ChainListener: IChainListener
     KeysRepository: IKeysRepository
     FeeEstimator: IFeeEstimator
@@ -30,12 +26,10 @@ type Channel = {
     Secp256k1Context: Secp256k1
  }
         with
-        static member Create(config, userId, logger, chainListener, keysRepo, feeEstimator, remoteNodeId, localNodeSecret, fundingTxProvider, n) =
+        static member Create(config, logger, chainListener, keysRepo, feeEstimator, localNodeSecret, fundingTxProvider, n, remoteNodeId) =
             {
-                InternalChannelId = new Guid()
                 Secp256k1Context = new Secp256k1()
                 Config = config
-                UserId = userId
                 ChainListener = chainListener
                 KeysRepository = keysRepo
                 FeeEstimator = feeEstimator
@@ -47,7 +41,7 @@ type Channel = {
                 CurrentBlockHeight = BlockHeight.Zero
                 Network = n
             }
-        static member CreateCurried = curry10 (Channel.Create)
+        static member CreateCurried = curry9 (Channel.Create)
 
 type ChannelError =
     | Ignore of string
@@ -177,7 +171,7 @@ module Channel =
                 let fees = Transactions.commitTxFee remoteParams.DustLimitSatoshis remoteSpec
                 let missing = toRemote.ToMoney() - localParams.ChannelReserveSatoshis - fees
                 if missing < Money.Zero then
-                    RResult.rmsg (sprintf "they are funder but cannot affored there fee. to_remote output is: %A; actual fee is %A; channel_reserve_satoshis: %A" toRemote fees localParams.ChannelReserveSatoshis)
+                    RResult.rmsg (sprintf "they are funder but cannot afford their fee. to_remote output is: %A; actual fee is %A; channel_reserve_satoshis is: %A" toRemote fees localParams.ChannelReserveSatoshis)
                 else
                     Good()
             let makeFirstCommitTxCore() =
@@ -273,12 +267,15 @@ module Channel =
     module internal Validation =
 
         let checkMaxAcceptedHTLCsInMeaningfulRange (maxAcceptedHTLCs: uint16) =
-            if (maxAcceptedHTLCs < 1us) then
-                RRClose("max_accepted_htlcs must be not 0")
-            else if (maxAcceptedHTLCs < 483us) then
-                RRClose("max_accepted_htlcs must be less than 483")
-            else
-                Good()
+            let check1 =
+                checkOrClose
+                    maxAcceptedHTLCs (<) 1us
+                    "max_accepted_htlcs was %A must be larger than %A"
+            let check2 =
+                checkOrClose
+                    maxAcceptedHTLCs (>) 483us
+                    "max_accepted_htlcs was (%A). But it must be less than %A"
+            check1 *> check2
 
         module private OpenChannelRequest =
             let checkFundingSatoshisLessThanMax (msg: OpenChannel) =
@@ -306,41 +303,56 @@ module Channel =
                     Good()
 
             let checkRemoteFee (feeEstimator: IFeeEstimator) (feeRate: FeeRatePerKw) =
-                if (feeRate) < feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background) then
-                    RRClose("Peer's feerate much too low")
-                else if (feeRate.Value > feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority).Value * 2u) then
-                    RRClose("Peer's feerate much too high")
-                else
-                    Good()
+                let check1 =
+                    checkOrClose
+                        feeRate (<) (feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background))
+                        "Peer's feerate much too low. it was %A but it must be higher than %A"
+                let check2 =
+                    checkOrClose
+                        feeRate (>) (feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority) * 2u)
+                        "Peer's feerate much too high. it was %A but it must be lower than %A"
+                check1 *> check2
 
             let checkToSelfDelayIsInAcceptableRange (msg: OpenChannel) =
-                if (msg.ToSelfDelay > MAX_LOCAL_BREAKDOWN_TIMEOUT) then
-                    RRClose("They wanted our payments to be delayed by a needlessly long period")
-                else
-                    Good()
+                checkOrClose
+                    msg.ToSelfDelay (>) (MAX_LOCAL_BREAKDOWN_TIMEOUT)
+                    "They wanted our payments to be delayed by a needlessly long period %A . But our max %A"
 
             let checkConfigPermits (config: ChannelHandshakeLimits) (msg: OpenChannel) =
 
-                if (msg.FundingSatoshis < config.MinFundingSatoshis) then
-                    RRClose (sprintf "funding satoshis is less than the user specified limit. received: %A; limit: %A" msg.FundingSatoshis config.MinFundingSatoshis)
-                else if (msg.HTLCMinimumMsat.ToMoney() > config.MinFundingSatoshis) then
-                    RRClose (sprintf "htlc minimum msat is higher than the users specified limit. received %A; limit: %A" msg.FundingSatoshis config.MaxHTLCMinimumMSat)
-                else if (msg.MaxHTLCValueInFlightMsat < config.MinMaxHTLCValueInFlightMSat) then
-                    RRClose("max htlc value in light msat is less than the user specified limit")
-                else if (msg.ChannelReserveSatoshis > config.MaxChannelReserveSatoshis) then
-                    RRClose (sprintf "channel reserve satoshis is higher than the user specified limit. received %A; limit: %A" msg.ChannelReserveSatoshis msg.ChannelReserveSatoshis)
-                else if (msg.MaxAcceptedHTLCs < config.MinMaxAcceptedHTLCs) then
-                    RRClose (sprintf "max accepted htlcs is less than the user specified limit. received: %A; limit: %A" msg.MaxAcceptedHTLCs config.MinMaxAcceptedHTLCs)
-                else if (msg.DustLimitSatoshis < config.MinDustLimitSatoshis) then
-                    RRClose (sprintf "dust_limit_satoshis is less than the user specified limit. received: %A; limit: %A" msg.DustLimitSatoshis config.MinDustLimitSatoshis)
-                else if (msg.DustLimitSatoshis > config.MaxDustLimitSatoshis) then
-                    RRClose (sprintf "dust_limit_satoshis is greater than the user specified limit. received: %A; limit: %A" msg.DustLimitSatoshis config.MaxDustLimitSatoshis)
-                else
-                    Good()
+                let check1 =
+                    checkOrClose
+                        msg.FundingSatoshis (<) config.MinFundingSatoshis
+                        "funding satoshis is less than the user specified limit. received: %A; limit: %A"
+                let check2 =
+                    checkOrClose
+                        (msg.HTLCMinimumMsat.ToMoney()) (>) (config.MinFundingSatoshis)
+                        "htlc minimum msat is higher than the users specified limit. received %A; limit: %A"
+                let check3 =
+                    checkOrClose
+                        msg.MaxHTLCValueInFlightMsat (<) config.MinMaxHTLCValueInFlightMSat
+                        "max htlc value in light msat is less than the user specified limit. received: %A; limit %A"
+                let check4 =
+                    checkOrClose
+                        msg.ChannelReserveSatoshis (>) config.MaxChannelReserveSatoshis
+                        "channel reserve satoshis is higher than the user specified limit. received %A; limit: %A"
+                let check5 =
+                    checkOrClose
+                        msg.MaxAcceptedHTLCs (<) config.MinMaxAcceptedHTLCs
+                         "max accepted htlcs is less than the user specified limit. received: %A; limit: %A"
+                let check6 =
+                    checkOrClose
+                        msg.DustLimitSatoshis (<) config.MinDustLimitSatoshis
+                        "dust_limit_satoshis is less than the user specified limit. received: %A; limit: %A"
+                let check7 =
+                    checkOrClose
+                        msg.DustLimitSatoshis (>) config.MaxDustLimitSatoshis
+                        "dust_limit_satoshis is greater than the user specified limit. received: %A; limit: %A"
+                check1 *> check2 *> check3 *> check4 *> check5 *> check6 *> check7
 
             let checkChannelAnnouncementPreferenceAcceptable (config: ChannelConfig) (msg) =
                 let theirAnnounce = (msg.ChannelFlags &&& 1uy) = 1uy
-                if (config.PeerChannelConfigLimits.ForceAnnounceChannelPreference) && config.ChannelOptions.AnnounceChannel <> theirAnnounce then
+                if (config.PeerChannelConfigLimits.ForceChannelAnnouncementPreference) && config.ChannelOptions.AnnounceChannel <> theirAnnounce then
                     RRClose("Peer tried to open channel but their announcement preference is different from ours")
                 else
                     Good()
@@ -515,7 +527,34 @@ module Channel =
 
     let executeCommand (cs: Channel) (command: ChannelCommand): RResult<ChannelEvent list> =
         match cs.State, command with
-
+        | WaitForInitInternal, CreateOutbound inputInitFunder ->
+            let openChannelMsgToSend = {
+                OpenChannel.Chainhash = cs.Network.Consensus.HashGenesisBlock
+                TemporaryChannelId = inputInitFunder.TemporaryChannelId
+                FundingSatoshis = inputInitFunder.FundingSatoshis
+                PushMSat = inputInitFunder.PushMSat
+                DustLimitSatoshis = inputInitFunder.LocalParams.DustLimitSatoshis
+                MaxHTLCValueInFlightMsat = inputInitFunder.LocalParams.MaxHTLCValueInFlightMSat
+                ChannelReserveSatoshis = inputInitFunder.LocalParams.ChannelReserveSatoshis
+                HTLCMinimumMsat = inputInitFunder.LocalParams.HTLCMinimumMSat
+                FeeRatePerKw = inputInitFunder.InitFeeRatePerKw
+                ToSelfDelay = inputInitFunder.LocalParams.ToSelfDelay
+                MaxAcceptedHTLCs = inputInitFunder.LocalParams.MaxAcceptedHTLCs
+                FundingPubKey = inputInitFunder.ChannelKeys.FundingKey.PubKey
+                RevocationBasepoint = inputInitFunder.ChannelKeys.RevocationBaseKey.PubKey
+                PaymentBasepoint = inputInitFunder.ChannelKeys.PaymentBaseKey.PubKey
+                DelayedPaymentBasepoint = inputInitFunder.ChannelKeys.DelayedPaymentBaseKey.PubKey
+                HTLCBasepoint = inputInitFunder.ChannelKeys.HTLCBaseKey.PubKey
+                FirstPerCommitmentPoint =  ChannelUtils.buildCommitmentPoint(inputInitFunder.ChannelKeys.CommitmentSeed, 0UL)
+                ChannelFlags = inputInitFunder.ChannelFlags
+                ShutdownScriptPubKey = cs.Config.ChannelOptions.ShutdownScriptPubKey
+            }
+            [ NewOutboundChannelStarted(openChannelMsgToSend, { InputInitFunder = inputInitFunder;
+                                                                LastSent = openChannelMsgToSend }) ]
+            |> Good
+        | WaitForInitInternal, CreateInbound inputInitFundee ->
+            [ NewInboundChannelStarted({ InitFundee = inputInitFundee }) ] |> Good
+            
         // --------------- open channel procedure: case we are fundee -------------
         | WaitForOpenChannel state, ApplyOpenChannel msg ->
             Validation.checkOpenChannelMsgAcceptable cs msg
@@ -537,7 +576,7 @@ module Channel =
                                       DelayedPaymentBasepoint = channelKeys.DelayedPaymentBaseKey.PubKey
                                       HTLCBasepoint = channelKeys.HTLCBaseKey.PubKey
                                       FirstPerCommitmentPoint = localCommitmentSecret.PubKey
-                                      ShutdownScriptPubKey = None }
+                                      ShutdownScriptPubKey = cs.Config.ChannelOptions.ShutdownScriptPubKey }
 
                 let remoteParams = RemoteParams.FromOpenChannel cs.RemoteNodeId state.InitFundee.RemoteInit msg
                 let data = Data.WaitForFundingCreatedData.Create localParams remoteParams msg acceptChannel
@@ -735,7 +774,7 @@ module Channel =
             else
                 [ TheySentFundingLockedMsgBeforeUs msg ] |> Good
 
-        // ---------- notmal operation ---------
+        // ---------- normal operation ---------
         | ChannelState.Normal state, AddHTLC cmd when state.LocalShutdown.IsSome || state.RemoteShutdown.IsSome ->
             sprintf "Could not add new HTLC %A since shutdown is already in progress." cmd
             |> RRIgnore
@@ -987,7 +1026,7 @@ module Channel =
                             |> Option.map (fun v -> v.LocalClosingSigned.FeeSatoshis)
                         let areWeInDeal = Some(msg.FeeSatoshis) = maybeLocalFee
                         let hasTooManyNegotiationDone =
-                            (state.ClosingTxProposed |> List.collect (id) |> List.length) >= MAX_NEGOTIATION_ITERATIONS
+                            (state.ClosingTxProposed |> List.collect (id) |> List.length) >= cs.Config.PeerChannelConfigLimits.MaxClosingNegotiationIterations
                         if (areWeInDeal || hasTooManyNegotiationDone) then
                             Helpers.Closing.handleMutualClose (finalizedTx, Choice1Of2({ state with MaybeBestUnpublishedTx = Some(finalizedTx) }))
                         else
@@ -1027,21 +1066,28 @@ module Channel =
                     state.LocalCommitPublished
                     |> Option.map (fun localCommitPublished -> Helpers.Closing.claimCurrentLocalCommitTxOutputs (cs.KeysRepository, newCommitments.LocalParams.ChannelPubKeys, newCommitments, localCommitPublished.CommitTx))
                 failwith ""
+        | state, cmd ->
+            sprintf "DotNetLightning does not know how to handle command (%A) while in state (%A)" cmd state
+            |> RRApiMisuse
 
     let applyEvent c (e: ChannelEvent): Channel =
         match e, c.State with
+        | NewOutboundChannelStarted(_, data), WaitForInitInternal ->
+            { c with State = (WaitForAcceptChannel data) }
+        | NewInboundChannelStarted(data), WaitForInitInternal ->
+            { c with State = (WaitForOpenChannel data) }
         // --------- init fundee -----
-        | WeAcceptedOpenChannel(nextMsg, data), WaitForOpenChannel _ ->
+        | WeAcceptedOpenChannel(_, data), WaitForOpenChannel _ ->
             let state = WaitForFundingCreated data
             { c with State = state }
-        | WeAcceptedFundingCreated(nextMsg, data), WaitForFundingCreated _ ->
+        | WeAcceptedFundingCreated(_, data), WaitForFundingCreated _ ->
             let state = WaitForFundingConfirmed data
             { c with State = state }
 
         // --------- init funder -----
-        | WeAcceptedAcceptChannel(nextMsg, data), WaitForAcceptChannel _ ->
+        | WeAcceptedAcceptChannel(_, data), WaitForAcceptChannel _ ->
             { c with State = WaitForFundingSigned data }
-        | WeAcceptedFundingSigned(txToPublish, data), WaitForFundingSigned _ ->
+        | WeAcceptedFundingSigned(_, data), WaitForFundingSigned _ ->
             { c with State = WaitForFundingConfirmed data }
 
         // --------- init both ------
@@ -1072,37 +1118,37 @@ module Channel =
             { c with State = ChannelState.Normal nextState }
         | WeSentFundingLockedMsgBeforeThem msg, WaitForFundingLocked prevState ->
             { c with State = WaitForFundingLocked { prevState with OurMessage = msg; HaveWeSentFundingLocked = true } }
-        | BothFundingLocked data, WaitForFundingSigned s ->
+        | BothFundingLocked data, WaitForFundingSigned _s ->
             { c with State = ChannelState.Normal data }
 
         // ----- normal operation --------
-        | WeAcceptedCMDAddHTLC(msg, newCommitments), ChannelState.Normal d ->
+        | WeAcceptedCMDAddHTLC(_, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
         | WeAcceptedUpdateAddHTLC(newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
 
-        | WeAcceptedCMDFulfillHTLC(msg, newCommitments), ChannelState.Normal d ->
+        | WeAcceptedCMDFulfillHTLC(_, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
-        | WeAcceptedFulfillHTLC(msg, origin, htlc, newCommitments), ChannelState.Normal d ->
-            { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
-
-        | WeAcceptedCMDFailHTLC(msg, newCommitments), ChannelState.Normal d ->
-            { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
-        | WeAcceptedFailHTLC(origin, msg, newCommitments), ChannelState.Normal d ->
+        | WeAcceptedFulfillHTLC(_msg, _origin, _htlc, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
 
-        | WeAcceptedCMDFailMalformedHTLC(msg, newCommitments), ChannelState.Normal d ->
+        | WeAcceptedCMDFailHTLC(_msg, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
-        | WeAcceptedFailMalformedHTLC(origin, msg, newCommitments), ChannelState.Normal d ->
+        | WeAcceptedFailHTLC(_origin, _msg, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
 
-        | WeAcceptedCMDUpdateFee(msg, newCommitments), ChannelState.Normal d ->
+        | WeAcceptedCMDFailMalformedHTLC(_msg, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
-        | WeAcceptedUpdateFee(msg), ChannelState.Normal d -> c
+        | WeAcceptedFailMalformedHTLC(_origin, _msg, newCommitments), ChannelState.Normal d ->
+            { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
 
-        | WeAcceptedCMDSign(msg, newCommitments), ChannelState.Normal d ->
+        | WeAcceptedCMDUpdateFee(_msg, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
-        | WeAcceptedCommitmentSigned(msg, newCommitments), ChannelState.Normal d ->
+        | WeAcceptedUpdateFee(_msg), ChannelState.Normal _d -> c
+
+        | WeAcceptedCMDSign(_msg, newCommitments), ChannelState.Normal d ->
+            { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
+        | WeAcceptedCommitmentSigned(_msg, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
 
         | WeAcceptedRevokeAndACK(newCommitments), ChannelState.Normal d ->
@@ -1113,13 +1159,13 @@ module Channel =
             { c with State = ChannelState.Normal({ d with LocalShutdown = Some msg }) }
         | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs(remoteShutdown, nextCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal ({ d with RemoteShutdown = Some remoteShutdown; Commitments = nextCommitments }) }
-        | AcceptedShutdownWhenNoPendingHTLCs(maybeMsg, nextState), ChannelState.Normal d ->
+        | AcceptedShutdownWhenNoPendingHTLCs(_maybeMsg, nextState), ChannelState.Normal _d ->
             { c with State = Negotiating nextState }
-        | AcceptedShutdownWhenWeHavePendingHTLCs(nextState), ChannelState.Normal d ->
+        | AcceptedShutdownWhenWeHavePendingHTLCs(nextState), ChannelState.Normal _d ->
             { c with State = Shutdown nextState }
-        | MutualClosePerformed nextState, ChannelState.Negotiating d ->
+        | MutualClosePerformed nextState, ChannelState.Negotiating _d ->
             { c with State = Closing nextState }
-        | WeProposedNewClosingSigned(msg, nextState), ChannelState.Negotiating d ->
+        | WeProposedNewClosingSigned(_msg, nextState), ChannelState.Negotiating _d ->
             { c with State = Negotiating(nextState) }
         // ----- else -----
         | NewBlockVerified height, _ ->

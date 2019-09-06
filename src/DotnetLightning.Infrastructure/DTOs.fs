@@ -1,11 +1,15 @@
 namespace DotNetLightning.Infrastructure
+open DotNetLightning.Utils
+open DotNetLightning.LN
+
+type ChannelEventWithContext = {
+    NodeId: NodeId
+    ChannelEvent: ChannelEvent
+}
 
 module DTO =
     open System.Text.Json
-    open System.Text.Json.Serialization
-    open DotNetLightning.Utils
     open DotNetLightning.Serialize.Msgs
-    open DotNetLightning.LN
     open NBitcoin
 
     let inline private serializeWithName (name: string, data) =
@@ -78,7 +82,6 @@ module DTO =
     [<CLIMutable>]
     type internal ChannelDTO = {
         RemoteNodeId: NodeId
-        UserId: UserId
         Config: ChannelConfig
         LocalNodeSecret: Key
         State: ChannelState.ChannelStateDTO
@@ -87,7 +90,6 @@ module DTO =
         static member FromDomainObject (c: Channel) =
             {
                 ChannelDTO.RemoteNodeId = c.RemoteNodeId
-                UserId = c.UserId
                 Config = c.Config
                 LocalNodeSecret = c.LocalNodeSecret
                 State = ChannelState.ChannelStateDTO.FromDomainObject(c.State)

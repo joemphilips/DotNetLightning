@@ -11,17 +11,17 @@ type ChainError =
 
 
 type IChainListener =
-    abstract member BlockConnected: (BlockHeader * BlockHeight * (uint32 * Transaction) list) -> unit
+    abstract member BlockConnected: BlockHeader * BlockHeight * (uint32 * Transaction) list -> unit
     abstract member BlockDisconnected: BlockHeader -> bool
 
 type IChainWatcher =
-    abstract member InstallWatchTx: (uint256 * Script) -> bool
-    abstract member InstallWatchOutPoint: (OutPoint * Script) -> bool
+    abstract member InstallWatchTx: txHash: uint256 * scriptPubKey: Script -> bool
+    abstract member InstallWatchOutPoint: OutPoint * Script -> bool
     abstract member WatchAllTxn: unit -> bool
     abstract member RegisterListener: IChainListener -> bool
 
 type IBroadCaster =
-    abstract member BroadCastTransction: (Transaction) -> Result<unit, string>
+    abstract member BroadCastTransaction: (Transaction) -> Result<unit, string>
 
 type ConfirmationTarget =
     | Background
@@ -88,14 +88,12 @@ type ChainWatchInterfaceUtil = {
 }
 with
     interface IChainWatcher with
-        member this.InstallWatchTx(arg1: uint256 * Script): bool = 
-            let (txid, scriptPubKey) = arg1
-            this.Watched <- this.Watched |> ChainWatchedUtil.regsiterTx (TxId txid) (scriptPubKey)
+        member this.InstallWatchTx(txHash: uint256, scriptPubKey: Script): bool = 
+            this.Watched <- this.Watched |> ChainWatchedUtil.regsiterTx (TxId txHash) (scriptPubKey)
             true
 
-        member this.InstallWatchOutPoint(arg1: OutPoint * Script): bool = 
-            let (outP, scriptPubKey) = arg1
-            this.Watched <- this.Watched |> ChainWatchedUtil.registerOutpoint outP
+        member this.InstallWatchOutPoint(outPoint: OutPoint, scriptPubKey: Script): bool = 
+            this.Watched <- this.Watched |> ChainWatchedUtil.registerOutpoint outPoint
             true
 
         member this.RegisterListener(arg1: IChainListener): bool = 

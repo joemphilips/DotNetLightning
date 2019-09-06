@@ -218,77 +218,83 @@ type LightningReaderStream(inner: Stream) =
     member this.ReadInt16(lendian: bool) =
         this.FillBuffer(2)
         if lendian then
-            ((int16 m_buffer.[0]) ||| int16 (m_buffer.[1] <<< 8))
+            ((int16 m_buffer.[0]) ||| (int16 m_buffer.[1] <<< 8))
         else
-            ((int16 m_buffer.[0]) <<< 8 ||| int16 (m_buffer.[1]))
+            ((int16 m_buffer.[0]) <<< 8 ||| (int16 m_buffer.[1]))
 
     member this.ReadUInt16(lendian: bool) =
         this.FillBuffer(2)
         if lendian then
-            ((uint16 m_buffer.[0]) ||| uint16 (m_buffer.[1] <<< 8))
+            ((uint16 m_buffer.[0]) ||| (uint16 m_buffer.[1] <<< 8))
         else
-            ((uint16 m_buffer.[0]) <<< 8 ||| uint16 (m_buffer.[1]))
+            ((uint16 m_buffer.[0]) <<< 8 ||| (uint16 m_buffer.[1]))
 
     member this.ReadInt32(lendian: bool) =
         this.FillBuffer(4)
         if lendian then
             ((int32 m_buffer.[0]) |||
-                int32 (m_buffer.[1] <<< 8) |||
-                int32 (m_buffer.[2] <<< 16) |||
-                int32 (m_buffer.[3] <<< 24))
+                (int32 m_buffer.[1] <<< 8) |||
+                (int32 m_buffer.[2] <<< 16) |||
+                (int32 m_buffer.[3] <<< 24))
         else
-            ((int32 m_buffer.[0]) <<< 24 |||
-                int32 (m_buffer.[1] <<< 16) |||
-                int32 (m_buffer.[2] <<< 8) |||
-                int32 m_buffer.[3])
+            ((int32 m_buffer.[0] <<< 24) |||
+                (int32 m_buffer.[1] <<< 16) |||
+                (int32 m_buffer.[2] <<< 8) |||
+                (int32 m_buffer.[3]))
 
     member this.ReadUInt32(lendian: bool) =
         this.FillBuffer(4)
         if lendian then
-            ((uint32 m_buffer.[0]) ||| uint32 (m_buffer.[1] <<< 8) ||| uint32 (m_buffer.[2] <<< 16) ||| uint32 (m_buffer.[3] <<< 24))
+            ((uint32 m_buffer.[0]) |||
+             (uint32 m_buffer.[1] <<< 8) |||
+             (uint32 m_buffer.[2] <<< 16) |||
+             (uint32 m_buffer.[3] <<< 24))
         else
-            ((uint32 m_buffer.[0]) <<< 24 ||| uint32 (m_buffer.[1] <<< 16) ||| (uint32 (m_buffer.[2]) <<< 8) ||| (uint32 (m_buffer.[3])))
+            ((uint32 m_buffer.[0] <<< 24) |||
+             (uint32 m_buffer.[1] <<< 16) |||
+             (uint32 m_buffer.[2] <<< 8) |||
+             (uint32 m_buffer.[3]))
     member this.ReadInt64(lendian: bool) =
         this.FillBuffer(8)
         if lendian then
             ((int64 m_buffer.[0]) |||
-                int64 (m_buffer.[1] <<< 8) |||
-                int64 (m_buffer.[2] <<< 16) |||
-                int64 (m_buffer.[3] <<< 24) |||
-                int64 (m_buffer.[4] <<< 32) |||
-                int64 (m_buffer.[5] <<< 40) |||
-                int64 (m_buffer.[6] <<< 48) |||
-                int64 (m_buffer.[7] <<< 56))
+                (int64 m_buffer.[1] <<< 8) |||
+                (int64 m_buffer.[2] <<< 16) |||
+                (int64 m_buffer.[3] <<< 24) |||
+                (int64 m_buffer.[4] <<< 32) |||
+                (int64 m_buffer.[5] <<< 40) |||
+                (int64 m_buffer.[6] <<< 48) |||
+                (int64 m_buffer.[7] <<< 56))
         else
             ((int64 m_buffer.[0]) <<< 56 |||
-                int64 (m_buffer.[1] <<< 48) |||
-                int64 (m_buffer.[2] <<< 40) |||
-                int64 (m_buffer.[3] <<< 32) |||
-                int64 (m_buffer.[4] <<< 24) |||
-                int64 (m_buffer.[5] <<< 16) |||
-                int64 (m_buffer.[6] <<< 8) |||
-                int64 m_buffer.[7])
+                (int64 m_buffer.[1] <<< 48) |||
+                (int64 m_buffer.[2] <<< 40) |||
+                (int64 m_buffer.[3] <<< 32) |||
+                (int64 m_buffer.[4] <<< 24) |||
+                (int64 m_buffer.[5] <<< 16) |||
+                (int64 m_buffer.[6] <<< 8) |||
+                (int64 m_buffer.[7]))
 
     member this.ReadUInt64(lendian: bool) =
         this.FillBuffer(8)
         if lendian then
             ((uint64 m_buffer.[0]) |||
-                uint64 (m_buffer.[1] <<< 8) |||
-                uint64 (m_buffer.[2] <<< 16) |||
-                uint64 (m_buffer.[3] <<< 24) |||
-                uint64 (m_buffer.[4] <<< 32) |||
-                uint64 (m_buffer.[5] <<< 40) |||
-                uint64 (m_buffer.[6] <<< 48) |||
-                uint64 (m_buffer.[7] <<< 56))
+                (uint64 m_buffer.[1] <<< 8) |||
+                (uint64 m_buffer.[2] <<< 16) |||
+                (uint64 m_buffer.[3] <<< 24) |||
+                (uint64 m_buffer.[4] <<< 32) |||
+                (uint64 m_buffer.[5] <<< 40) |||
+                (uint64 m_buffer.[6] <<< 48) |||
+                (uint64 m_buffer.[7] <<< 56))
         else
             ((uint64 m_buffer.[0]) <<< 56 |||
-                uint64 (m_buffer.[1] <<< 48) |||
-                uint64 (m_buffer.[2] <<< 40) |||
-                uint64 (m_buffer.[3] <<< 32) |||
-                uint64 (m_buffer.[4] <<< 24) |||
-                uint64 (m_buffer.[5] <<< 16) |||
-                uint64 (m_buffer.[6] <<< 8) |||
-                uint64 m_buffer.[7])
+                (uint64 m_buffer.[1] <<< 48) |||
+                (uint64 m_buffer.[2] <<< 40) |||
+                (uint64 m_buffer.[3] <<< 32) |||
+                (uint64 m_buffer.[4] <<< 24) |||
+                (uint64 m_buffer.[5] <<< 16) |||
+                (uint64 m_buffer.[6] <<< 8) |||
+                (uint64 m_buffer.[7]))
 
     member this.ReadUInt256([<O;D(true)>]lendian: bool) =
         let b = this.ReadBytes(32)

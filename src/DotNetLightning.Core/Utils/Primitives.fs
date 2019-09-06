@@ -34,6 +34,7 @@ module Primitives =
 
         static member (-) (a: BlockHeight, b: BlockHeightOffset) =
             a.Value - (uint32 b.Value) |> BlockHeight
+
     /// **Description**
     ///
     /// Relative block height used for `OP_CSV` locks,
@@ -163,6 +164,10 @@ module Primitives =
 
         static member Max(a: FeeRatePerKw, b: FeeRatePerKw) =
             if (a.Value >= b.Value) then a else b
+        static member (+) (a: FeeRatePerKw, b: uint32) =
+            (a.Value + b) |> FeeRatePerKw
+        static member (*) (a: FeeRatePerKw, b: uint32) =
+            (a.Value * b) |> FeeRatePerKw
     /// Block Hash
     type BlockId = | BlockId of uint256 with
         member x.Value = let (BlockId v) = x in v
