@@ -15,7 +15,6 @@ open GeneratorsTests
 open NBitcoin
 open Secp256k1Net
 
-(*
 // let logger = Log.create "bolt3-transaction tests"
 let logger = TestLogger.Create("bolt3-transaction tests")
 let log = logger.LogSimple
@@ -26,10 +25,9 @@ let data = JsonDocument.Parse(File.ReadAllText("Data/bolt3-tx.json"))
 let localPerCommitmentPoint = PubKey("025f7117a78150fe2ef97db7cfc83bd57b2e2c0d0dd25eaf467a4a1c2a45ce1486")
 let getLocal() =
     let ctx = new Secp256k1()
-    let paymentBasePointSecret = uint256.Parse("1111111111111111111111111111111111111111111111111111111111111111")
-    let paymentBasePoint = paymentBasePointSecret |> fun x -> x.ToBytes() |> Key
-    let delayedPaymentBasePointSecret = uint256.Parse("3333333333333333333333333333333333333333333333333333333333333333")
-    let delayedPaymentBasePoint = delayedPaymentBasePointSecret |> fun x -> x.ToBytes() |> Key
+    let paymentBasePointSecret = "1111111111111111111111111111111111111111111111111111111111111111" |> hex.DecodeData |> Key
+    let paymentBasePoint = paymentBasePointSecret.PubKey
+    let delayedPaymentBasePointSecret = "3333333333333333333333333333333333333333333333333333333333333333" |> hex.DecodeData |> Key
     {|
       Ctx = ctx
       CommitTxNumber = 42UL
@@ -39,20 +37,21 @@ let getLocal() =
       PaymentBasePoint = paymentBasePoint
       RevocationBasePointSecret = uint256.Parse("2222222222222222222222222222222222222222222222222222222222222222")
       DelayedPaymentBasePointSecret = delayedPaymentBasePointSecret
+      delayedPaymentBasePoint = delayedPaymentBasePointSecret.PubKey
       FundingPrivKey = "30ff4956bbdd3222d44cc5e8a1261dab1e07957bdac5ae88fe3261ef321f3749" |> hex.DecodeData |> Key
       PerCommitmentPoint = localPerCommitmentPoint
-      PaymentPrivKey = Generators.derivePrivKey(ctx) (paymentBasePoint) (localPerCommitmentPoint)
-      DelayedPaymentPrivKey = Generators.derivePrivKey(ctx) (delayedPaymentBasePoint) (localPerCommitmentPoint)
+      PaymentPrivKey = Generators.derivePrivKey(ctx) (paymentBasePointSecret) (localPerCommitmentPoint)
+      DelayedPaymentPrivKey = Generators.derivePrivKey(ctx) (delayedPaymentBasePointSecret) (localPerCommitmentPoint)
       RevocationPubKey = PubKey("0212a140cd0c6539d07cd08dfe09984dec3251ea808b892efeac3ede9402bf2b19")
       FeeRatePerKw = 15000u |> FeeRatePerKw
     |}
 
 let getRemote() =
     let ctx = new Secp256k1()
-    let paymentBasePointSecret = uint256.Parse    "4444444444444444444444444444444444444444444444444444444444444444"
-    let paymentBasePoint = paymentBasePointSecret |> fun x -> x.ToBytes() |> Key
-    let revocationBasePointSecret = uint256.Parse("2222222222222222222222222222222222222222222222222222222222222222")
-    let revocationBasePoint = revocationBasePointSecret |> fun x -> x.ToBytes() |> Key
+    let paymentBasePointSecret = "4444444444444444444444444444444444444444444444444444444444444444" |> hex.DecodeData |> Key
+    let paymentBasePoint = paymentBasePointSecret.PubKey
+    let revocationBasePointSecret = "2222222222222222222222222222222222222222222222222222222222222222" |> hex.DecodeData |> Key
+    let revocationBasePoint = revocationBasePointSecret.PubKey
     {|
       Ctx = ctx
       CommitTxNumber = 42UL
@@ -63,8 +62,8 @@ let getRemote() =
       RevocationBasePointSecret = revocationBasePointSecret
       RevocationBasePoint = revocationBasePoint
       FundingPrivKey = "1552dfba4f6cf29a62a0af13c8d6981d36d0ef8d61ba10fb0fe90da7634d7e13" |> hex.DecodeData |> Key
-      PaymentPrivKey = Generators.derivePrivKey (ctx) (paymentBasePoint) localPerCommitmentPoint
-      PerCommitmentPoint = "022c76692fd70814a8d1ed9dedc833318afaaed8188db4d14727e2e99bc619d325" |> uint256.Parse
+      PaymentPrivKey = Generators.derivePrivKey (ctx) (paymentBasePointSecret) localPerCommitmentPoint
+      PerCommitmentPoint = "022c76692fd70814a8d1ed9dedc833318afaaed8188db4d14727e2e99bc619d325" |> PubKey
     |}
     
 let n = Network.RegTest
@@ -85,8 +84,10 @@ let commitmentInputSCoin =
     Coin(fundingTx.GetHash(), 0u, fundingAmount, fundingRedeem.WitHash.ScriptPubKey)
     |> fun c -> ScriptCoin(c, fundingRedeem)
 
-let obscuredTxNumber = Transactions.obscuredCommitTxNumber 42UL true local.FundingPrivKey.PubKey remote.FundingPrivKey.PubKey
-assert(obscuredTxNumber = (0x2bb038521914UL ^^^ 42UL))
+log (sprintf "local payment basepoint is %A" local.PaymentBasePoint)
+log (sprintf "remote payment basepoint is %A" remote.PaymentBasePoint)
+let obscuredTxNumber = Transactions.obscuredCommitTxNumber 42UL true local.PaymentBasePoint remote.PaymentBasePoint
+Expect.equal obscuredTxNumber (0x2bb038521914UL ^^^ 42UL) ""
 
 sprintf "local_payment_basepoint: %A " local.PaymentBasePoint |> log
 sprintf "remote_payment_basepoint: %A" remote.PaymentBasePoint |> log
@@ -175,8 +176,8 @@ let run (spec: CommitmentSpec): (Transaction * _) =
         let commitTx = Transactions.makeCommitTx
                          (commitmentInputSCoin)
                          (local.CommitTxNumber)
-                         (local.PaymentBasePoint.PubKey)
-                         (remote.PaymentBasePoint.PubKey)
+                         (local.PaymentBasePoint)
+                         (remote.PaymentBasePoint)
                          (true)
                          (local.DustLimit)
                          (local.RevocationPubKey)
@@ -218,8 +219,8 @@ let run (spec: CommitmentSpec): (Transaction * _) =
     let actualCommitTxNum = Transactions.getCommitTxNumber
                                 (commitTx.Value.GetGlobalTransaction())
                                 (true)
-                                (local.PaymentBasePoint.PubKey)
-                                (remote.PaymentBasePoint.PubKey)
+                                (local.PaymentBasePoint)
+                                (remote.PaymentBasePoint)
     let expectedCommitTxNumber = local.CommitTxNumber
     Expect.equal (expectedCommitTxNumber) (actualCommitTxNum) ""
     Expect.isTrue (commitTx.Value.CanExtractTransaction()) ""
@@ -240,7 +241,7 @@ let run (spec: CommitmentSpec): (Transaction * _) =
 [<Tests>]
 let tests =
     testList "Transaction test vectors" [
-        ptestCase "simple commitment tx with no HTLCs" <| fun _ ->
+        ftestCase "simple commitment tx with no HTLCs" <| fun _ ->
             let spec = { CommitmentSpec.HTLCs = Map.empty; FeeRatePerKw = 15000u |> FeeRatePerKw;
                          ToLocal = LNMoney.MilliSatoshis(7000000000L); ToRemote =  3000000000L |> LNMoney.MilliSatoshis}
             let commitTx, htlcTxs = run(spec)
@@ -251,4 +252,3 @@ let tests =
             // Expect.equal expected commitTx ""
             ()
     ]
-*)

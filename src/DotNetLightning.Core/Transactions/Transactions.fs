@@ -1,15 +1,18 @@
 namespace DotNetLightning.Transactions
 
 open System
+open System
 open System.Linq
 open NBitcoin
 open NBitcoin.Crypto
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils
+open DotNetLightning.Core.Utils.Extensions
 open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Utils.Aether
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Chain
+open System.Linq
 
 /// We define all possible txs here.
 /// For internal representation is psbt. But this is just for convenience since
@@ -268,22 +271,23 @@ module Transactions =
         let weight = COMMIT_WEIGHT + 172UL * (uint64 trimmedOfferedHTLCs.Length + uint64 trimmedReceivedHTLCs.Length)
         spec.FeeRatePerKw.ToFee(weight)
 
-    let getCommitmentTxNumberObscureFactor (isFunder: bool) (localPaymentBasePoint: PubKey) (remotePaymentBasePoint: PubKey) =
+    let internal getCommitmentTxNumberObscureFactor (isFunder: bool) (localPaymentBasePoint: PubKey) (remotePaymentBasePoint: PubKey) =
         let res =
             if (isFunder) then
                 Hashes.SHA256(Array.concat[| localPaymentBasePoint.ToBytes(); remotePaymentBasePoint.ToBytes() |])
             else
                 Hashes.SHA256(Array.concat[| remotePaymentBasePoint.ToBytes(); localPaymentBasePoint.ToBytes() |])
-        (uint64 (res.[26]) <<< 5*8 |||
-         uint64 (res.[27]) <<< 4*8 |||
-         uint64 (res.[28]) <<< 3*8 |||
-         uint64 (res.[29]) <<< 2*8 |||
-         uint64 (res.[30]) <<< 1*8 |||
-         uint64 (res.[31]) <<< 0*8)
-
+        res.[26..]
     let obscuredCommitTxNumber (commitTxNumber: uint64) (isFunder) (localPaymentBasePoint) (remotePaymentBasePoint) =
         let obs = getCommitmentTxNumberObscureFactor isFunder localPaymentBasePoint remotePaymentBasePoint
-        commitTxNumber ^^^ obs
+        let numData = commitTxNumber.GetBytesBigEndian().[2..]
+        
+        let res = Array.zeroCreate (obs.Length + 2)
+        obs |> Array.iteri(fun i ob ->
+            res.[i + 2] <- ob ^^^ numData.[i]
+            )
+        let resSpanBigE = ReadOnlySpan(res |> Array.rev)
+        BitConverter.ToUInt64(resSpanBigE)
 
     let private encodeTxNumber (txNumber): (_ * _) =
         if (txNumber > 0xffffffffffffUL) then raise <| ArgumentException("tx number must be lesser than 48 bits long")
@@ -293,7 +297,7 @@ module Transactions =
         (uint64 sequence &&& 0xffffffUL <<< 24) + (uint64 lockTime &&& 0xffffffUL)
 
     let getCommitTxNumber(commitTx: Transaction) (isFunder: bool) (localPaymentBasePoint: PubKey) (remotePaymentBasePoint) =
-        let blind =  0UL ^^^ getCommitmentTxNumberObscureFactor isFunder localPaymentBasePoint remotePaymentBasePoint
+        let blind =  obscuredCommitTxNumber (0UL) isFunder localPaymentBasePoint remotePaymentBasePoint
         let obscured = decodeTxNumber (!> commitTx.Inputs.[0].Sequence) (!> commitTx.LockTime)
         obscured ^^^ blind
 

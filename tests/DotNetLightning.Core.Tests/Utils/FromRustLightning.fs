@@ -26,7 +26,7 @@ type TestLogger = {
             
         member this.LogSimple(str: string) =
             let _l = this :> ILogger
-            _l.LogInformation(str)
+            _l.LogInformation(str + "\n")
 
         static member Create(id) =
             {
