@@ -19,8 +19,9 @@ open Secp256k1Net
 let logger = TestLogger.Create("bolt3-transaction tests")
 let log = logger.LogSimple
 
-let path = Path.Join(Directory.GetCurrentDirectory().AsSpan(), ("Data/bolt3-tx.json").AsSpan())
-let data = JsonDocument.Parse(File.ReadAllText("Data/bolt3-tx.json"))
+
+let dataPath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "../../..", ("Data/bolt3-tx.json"))
+let data = dataPath |> File.ReadAllText |> JsonDocument.Parse
 
 let localPerCommitmentPoint = PubKey("025f7117a78150fe2ef97db7cfc83bd57b2e2c0d0dd25eaf467a4a1c2a45ce1486")
 let getLocal() =
@@ -193,7 +194,7 @@ let run (spec: CommitmentSpec): (Transaction * _) =
         Transactions.checkSigAndAdd (tx3) (localSig) (local.FundingPrivKey.PubKey)
         >>= fun tx4 ->
             Transactions.checkSigAndAdd (tx4) (remoteSig) (remote.FundingPrivKey.PubKey)
-        |> RResult.rderef
+        |> function Good e -> e | Bad e -> failwithf "%A" e
     let baseFee = Transactions.commitTxFee(local.DustLimit)(spec)
     log (sprintf "base commitment transaction fee is %A" baseFee)
     let actualFee = fundingAmount - match commitTx.Value.TryGetFee() with | true, f -> f | false, _ -> failwith ""

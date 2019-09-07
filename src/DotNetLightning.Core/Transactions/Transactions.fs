@@ -170,7 +170,7 @@ type SortableTxOut = {
             member this.CompareTo(obj: SortableTxOut) =
                 let (txout1) = this.TxOut
                 let (txout2) = obj.TxOut
-                let c1 = txout1.Value.CompareTo(txout2)
+                let c1 = txout1.Value.CompareTo(txout2.Value)
                 if (c1 <> 0) then
                     c1
                 else
@@ -394,19 +394,22 @@ module Transactions =
         | e -> RResult.rexn e
 
     let checkSigAndAdd (tx: ILightningTx) (signature: TransactionSignature) (pk: PubKey) =
-        let psbt = tx.Value
-        let spentOutput = psbt.Inputs.[tx.WhichInput].GetTxOut()
-        let spk = spentOutput.ScriptPubKey
-        let globalTx = psbt.GetGlobalTransaction()
-
-        let ctx = ScriptEvaluationContext()
-        ctx.SigHash <- signature.SigHash
-        ctx.ScriptVerify <- ScriptVerify.Standard
-        if ctx.CheckSig(signature.ToBytes(), pk.ToBytes(), spk, globalTx, tx.WhichInput, 1, spentOutput) then
-            tx.Value.Inputs.[tx.WhichInput].PartialSigs.AddOrReplace(pk, signature)
-            tx |> Good
+        if (tx.Value.IsAllFinalized()) then
+            Good tx
         else
-            RResult.rmsg "Invalid signature"
+            let psbt = tx.Value
+            let spentOutput = psbt.Inputs.[tx.WhichInput].GetTxOut()
+            let scriptCode = psbt.Inputs.[tx.WhichInput].WitnessScript
+            let globalTx = psbt.GetGlobalTransaction()
+
+            let ctx = ScriptEvaluationContext()
+            ctx.SigHash <- signature.SigHash
+            ctx.ScriptVerify <- ScriptVerify.Standard
+            if ctx.CheckSig(signature.ToBytes(), pk.ToBytes(), scriptCode, globalTx, tx.WhichInput, 1, spentOutput) then
+                tx.Value.Inputs.[tx.WhichInput].PartialSigs.AddOrReplace(pk, signature)
+                tx |> Good
+            else
+                RResult.rmsg "Invalid signature"
     let sign(tx: ILightningTx, key: Key) =
         tx.Value.SignWithKeys(key) |> ignore
         (tx.Value.GetMatchingSig(key.PubKey), tx)
