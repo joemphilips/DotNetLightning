@@ -291,11 +291,12 @@ module Transactions =
 
     let private encodeTxNumber (txNumber): (_ * _) =
         if (txNumber > 0xffffffffffffUL) then raise <| ArgumentException("tx number must be lesser than 48 bits long")
-        (0x80000000UL ||| txNumber >>> 24) |> uint32, ((txNumber &&& 0xffffffUL) ||| 0x20000000UL) |> uint32
+        (0x80000000UL ||| (txNumber >>> 24)) |> uint32, ((txNumber &&& 0xffffffUL) ||| 0x20000000UL) |> uint32
 
     let private decodeTxNumber (sequence: uint32) (lockTime: uint32) =
-        (uint64 sequence &&& 0xffffffUL <<< 24) + (uint64 lockTime &&& 0xffffffUL)
+        ((uint64 sequence) &&& 0xffffffUL <<< 24) + ((uint64 lockTime) &&& 0xffffffUL)
 
+    /// unblind commit tx number
     let getCommitTxNumber(commitTx: Transaction) (isFunder: bool) (localPaymentBasePoint: PubKey) (remotePaymentBasePoint) =
         let blind =  obscuredCommitTxNumber (0UL) isFunder localPaymentBasePoint remotePaymentBasePoint
         let obscured = decodeTxNumber (!> commitTx.Inputs.[0].Sequence) (!> commitTx.LockTime)

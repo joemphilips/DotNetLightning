@@ -223,7 +223,8 @@ let run (spec: CommitmentSpec): (Transaction * _) =
                                 (local.PaymentBasePoint)
                                 (remote.PaymentBasePoint)
     let expectedCommitTxNumber = local.CommitTxNumber
-    Expect.equal (expectedCommitTxNumber) (actualCommitTxNum) ""
+    Expect.equal (actualCommitTxNum) (expectedCommitTxNumber) ""
+    commitTx.Value.Finalize() |> ignore
     Expect.isTrue (commitTx.Value.CanExtractTransaction()) ""
     sprintf "output commit_tx %A" commitTx.Value |> log
     let (unsignedHTLCTimeoutTxs, unsignedHTLCSuccessTxs) =
@@ -237,8 +238,9 @@ let run (spec: CommitmentSpec): (Transaction * _) =
                                  spec
                                  n
         |> RResult.rderef
-    failwith ""
+    commitTx.Value.ExtractTransaction(), ()
 
+let testVectors = data.RootElement.GetProperty("test_vectors").EnumerateArray() |> Seq.toArray
 [<Tests>]
 let tests =
     testList "Transaction test vectors" [
@@ -247,9 +249,7 @@ let tests =
                          ToLocal = LNMoney.MilliSatoshis(7000000000L); ToRemote =  3000000000L |> LNMoney.MilliSatoshis}
             let commitTx, htlcTxs = run(spec)
             Expect.equal(commitTx.Outputs.Count) (2) ""
-            let expected = data.RootElement.TryGetProperty("simple commitment tx with no HTLCs")
-                           |> function true, e -> e.ToString() | _ -> failwith ""
-                           |> fun d -> Transaction.Parse(d, n)
+            let expected = testVectors.[0].GetProperty("to_local_msat")
             // Expect.equal expected commitTx ""
             ()
     ]
