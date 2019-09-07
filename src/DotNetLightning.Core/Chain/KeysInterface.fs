@@ -1,4 +1,6 @@
 namespace DotNetLightning.Chain
+open System.Collections.Concurrent
+open System.Collections.Concurrent
 open NBitcoin
 open NBitcoin.Crypto
 open DotNetLightning.Utils.Primitives
@@ -111,7 +113,7 @@ type DefaultKeyRepository(seed: uint256) =
     member this.ChannelIdMasterKey = masterKey.Derive(5, true)
     member val ChannelIdChildIndex = 0u with get, set
     member val SessionChildIndex = 0u with get, set
-    member val BasepointToSecretMap = Map.empty with get, set
+    member val BasepointToSecretMap = ConcurrentDictionary<PubKey, Key>() with get, set
     interface IKeysRepository with
         member this.GetChannelId(): ChannelId = 
             let idx = this.ChannelIdChildIndex
@@ -123,7 +125,9 @@ type DefaultKeyRepository(seed: uint256) =
             let seed = uint256(RandomUtils.GetBytes(32))
             let keys = [ for _ in 0..4 -> Key() ]
             let basepointAndSecrets = keys |> List.map(fun k -> k.PubKey, k)
-            this.BasepointToSecretMap <- basepointAndSecrets |> Map.ofList
+            basepointAndSecrets
+                |> List.iter(fun (k ,v) ->
+                    this.BasepointToSecretMap.TryAdd(k, v) |> ignore)
             {
                 FundingKey = keys.[0]
                 RevocationBaseKey = keys.[1]
@@ -142,13 +146,13 @@ type DefaultKeyRepository(seed: uint256) =
             this.NodeSecret.PrivateKey
 
         member this.GetSignatureFor(psbt, pubkey) =
-            let priv = this.BasepointToSecretMap |> Map.find pubkey
+            let priv = this.BasepointToSecretMap.TryGet pubkey
             psbt.SignWithKeys(priv) |> ignore
             (psbt.GetMatchingSig(priv.PubKey), psbt)
 
         member this.GenerateKeyFromBasePointAndSign(psbt, pubkey, basePoint) =
             use ctx = new Secp256k1Net.Secp256k1()
-            let basepointSecret: Key = this.BasepointToSecretMap |> Map.find pubkey
+            let basepointSecret: Key = this.BasepointToSecretMap.TryGet pubkey
             let priv2 = Generators.derivePrivKey ctx (basepointSecret)  basePoint 
             psbt.SignWithKeys(priv2) |> ignore
             (psbt.GetMatchingSig(priv2.PubKey), psbt)

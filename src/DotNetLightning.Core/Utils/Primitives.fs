@@ -117,7 +117,7 @@ module Primitives =
         member this.ToBytes() =
             this.Value
 
-        member this.GetHash() =
+        member this.GetSha256() =
             this.ToBytes() |> Crypto.Hashes.SHA256 |> uint256 |> PaymentHash
 
         member this.ToKey() =
@@ -129,6 +129,10 @@ module Primitives =
     and PaymentHash = | PaymentHash of uint256 with
         member x.Value = let (PaymentHash v) = x in v
         member x.ToBytes() = x.Value.ToBytes()
+        
+        member x.GetRIPEMD160() =
+            let b = x.Value.ToBytes()
+            Crypto.Hashes.RIPEMD160(b, 0, b.Length)
 
     type ChannelId = | ChannelId of uint256 with
         member x.Value = let (ChannelId v) = x in v

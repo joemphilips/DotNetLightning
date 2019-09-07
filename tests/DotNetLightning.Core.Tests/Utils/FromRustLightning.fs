@@ -23,6 +23,10 @@ type TestLogger = {
 
         static member Zero =
             TestLogger.Create("")
+            
+        member this.LogSimple(str: string) =
+            let _l = this :> ILogger
+            _l.LogInformation(str)
 
         static member Create(id) =
             {

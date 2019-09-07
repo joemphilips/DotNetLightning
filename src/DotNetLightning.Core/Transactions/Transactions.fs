@@ -269,7 +269,6 @@ module Transactions =
         spec.FeeRatePerKw.ToFee(weight)
 
     let getCommitmentTxNumberObscureFactor (isFunder: bool) (localPaymentBasePoint: PubKey) (remotePaymentBasePoint: PubKey) =
-        let mutable res: byte[] = null
         let res =
             if (isFunder) then
                 Hashes.SHA256(Array.concat[| localPaymentBasePoint.ToBytes(); remotePaymentBasePoint.ToBytes() |])
@@ -404,6 +403,9 @@ module Transactions =
             tx |> Good
         else
             RResult.rmsg "Invalid signature"
+    let sign(tx: ILightningTx, key: Key) =
+        tx.Value.SignWithKeys(key) |> ignore
+        (tx.Value.GetMatchingSig(key.PubKey), tx)
 
     let makeHTLCTimeoutTx (commitTx: Transaction)
                           (localDustLimit: Money)
@@ -640,4 +642,5 @@ module Transactions =
                 PSBT.FromTransaction(tx)
                     .AddCoins(commitTxInput)
             psbt |> ClosingTx |> Good
+
 

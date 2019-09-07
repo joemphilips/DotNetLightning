@@ -140,14 +140,14 @@ module internal Commitments =
         | Some htlc when (cm.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
             sprintf "We have already sent a fail/fulfill for this htlc: %A" htlc
             |> RResult.rmsg
-        | Some htlc when (htlc.PaymentHash = cmd.PaymentPreimage.GetHash()) ->
+        | Some htlc when (htlc.PaymentHash = cmd.PaymentPreimage.GetSha256()) ->
             let msgToSend: UpdateFulfillHTLC = { ChannelId = cm.ChannelId; HTLCId = cmd.Id; PaymentPreimage = cmd.PaymentPreimage }
             let newCommitments = cm.AddLocalProposal(msgToSend)
             (msgToSend, newCommitments) |> Good
         | Some htlc ->
             sprintf "Invalid HTLC PreImage %A. Hash (%A) does not match the one expected %A"
                     cmd.PaymentPreimage
-                    (cmd.PaymentPreimage.GetHash())
+                    (cmd.PaymentPreimage.GetSha256())
                     (htlc.PaymentHash)
             |> RResult.rmsg
         | None ->
@@ -156,14 +156,14 @@ module internal Commitments =
 
     let receiveFulfill(msg: UpdateFulfillHTLC) (cm: Commitments) =
         match cm.GetHTLCCrossSigned(Direction.Out, msg.HTLCId) with
-        | Some htlc when htlc.PaymentHash = msg.PaymentPreimage.GetHash() ->
+        | Some htlc when htlc.PaymentHash = msg.PaymentPreimage.GetSha256() ->
             let commitments = cm.AddRemoteProposal(msg)
             let origin = cm.OriginChannels |> Map.find(msg.HTLCId)
             [WeAcceptedFulfillHTLC(msg, origin, htlc, commitments)] |> Good
         | Some htlc ->
             sprintf "Invalid HTLC PreImage %A. Hash (%A) does not match the one expected %A"
                     msg.PaymentPreimage
-                    (msg.PaymentPreimage.GetHash())
+                    (msg.PaymentPreimage.GetSha256())
                     (htlc.PaymentHash)
             |> RResult.rmsg
         | None ->
