@@ -31,11 +31,11 @@ jobs:
         sudo dpkg -i dotnet-sdk-3.0.100-preview9-014004-x64.deb
     - name: Fetch requisite libraries
       run: |
-        cd $GITHUB_WORKSPACE/src/DotNetLighning.Core
+        cd $GITHUB_WORKSPACE/src/DotNetLightning.Core
         dotnet add package -v 4.1.2.33-joemphilips014 -s "https://www.myget.org/F/joemphilips/api/v3/index.json" NBitcoin
         dotnet add package -v 0.0.4-joemphilips -s "https://www.myget.org/F/joemphilips/api/v3/index.json" Secp256k1.Native
     - name: Build and Upload
       run: |
-        cd $GITHUB_WORKSPACE/src/DotNetLighning.Core
+        cd $GITHUB_WORKSPACE/src/DotNetLightning.Core
         dotnet pack -p:Configuration=Release
         dotnet nuget push ./bin/Release/DotNetLightningCore.1.0.0.nupkg -k $NUGET_API_KEY -s https://artifactory.mycompany.eu/artifactory/api/nuget/MyRepo
