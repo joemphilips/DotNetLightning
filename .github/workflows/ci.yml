@@ -1,0 +1,44 @@
+name: DotNetLightning
+description: Build DotNetLightning and deploy to NuGet
+on: push
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v1
+    - name: Install wget
+      run: apt install -y wget
+    - name: Install dotnet SDK
+      run: |
+        wget https://download.visualstudio.microsoft.com/download/pr/74de6be8-877f-4609-b79b-38dede445116/adcf4dd307da5cf2923eb84ecedf12f7/netstandard-targeting-pack-2.1.0-preview9-19423-09-x64.deb
+        wget https://download.visualstudio.microsoft.com/download/pr/cdb44a9d-0206-402f-83a2-3c01877b59ff/d3103becb436731e940d1ea75eac53f5/dotnet-targeting-pack-3.0.0-preview9-19423-09-x64.deb
+        wget https://download.visualstudio.microsoft.com/download/pr/78c8f182-da7d-4652-9fae-f2db9aceb1ee/30b94fbce292b85c6b384ac6beac5d6c/aspnetcore-targeting-pack-3.0.0-preview9.19424.4.deb
+        wget https://download.visualstudio.microsoft.com/download/pr/09e25de1-3dd8-4263-b58e-757f4bd1608b/1ddc78ef1aea2859c81b100fc0d1b40a/dotnet-host-3.0.0-preview9-19423-09-x64.deb
+        wget https://download.visualstudio.microsoft.com/download/pr/c40cc1d2-77ac-4f30-8e51-e8656f62daf0/0db9301e24c7510f48250c47f7748d04/dotnet-hostfxr-3.0.0-preview9-19423-09-x64.deb
+        wget https://download.visualstudio.microsoft.com/download/pr/94413b27-2380-475e-b5c2-627e05f5964e/7a155f7b54b7fbf3d79442b7c6f768c0/dotnet-runtime-deps-3.0.0-preview9-19423-09-x64.deb
+        wget https://download.visualstudio.microsoft.com/download/pr/e96af339-d9d2-427e-9b98-1d150544e41c/3d81321efa1bd44eb4d7ba4f6cdbf02e/dotnet-runtime-3.0.0-preview9-19423-09-x64.deb
+        wget https://download.visualstudio.microsoft.com/download/pr/1693593e-d1c8-4728-81d3-704666e15a59/8540d1594208edd6874deca47437f3b5/dotnet-apphost-pack-3.0.0-preview9-19423-09-x64.deb
+        wget https://download.visualstudio.microsoft.com/download/pr/bf6ef79c-6525-4610-8dbb-c3f484083838/dcc596ef611f9f4c1e738f3eb9db8fbd/aspnetcore-runtime-3.0.0-preview9.19424.4-x64.deb
+        wget https://download.visualstudio.microsoft.com/download/pr/a28f44b5-58b2-438d-a4fd-c051521bf4b8/2df57a1d2364056cf9f235c556e2786f/dotnet-sdk-3.0.100-preview9-014004-x64.deb
+        dpkg -i netstandard-targeting-pack-2.1.0-preview9-19423-09-x64.deb
+        dpkg -i dotnet-targeting-pack-3.0.0-preview9-19423-09-x64.deb
+        dpkg -i aspnetcore-targeting-pack-3.0.0-preview9.19424.4.deb
+        dpkg -i dotnet-host-3.0.0-preview9-19423-09-x64.deb
+        dpkg -i dotnet-hostfxr-3.0.0-preview9-19423-09-x64.deb
+        dpkg -i dotnet-runtime-deps-3.0.0-preview9-19423-09-x64.deb
+        dpkg -i dotnet-runtime-3.0.0-preview9-19423-09-x64.deb
+        dpkg -i dotnet-apphost-pack-3.0.0-preview9-19423-09-x64.deb
+        dpkg -i aspnetcore-runtime-3.0.0-preview9.19424.4-x64.deb
+        dpkg -i dotnet-sdk-3.0.100-preview9-014004-x64.deb
+    - name: Fetch requisite libraries
+      run: |
+        cd /workspace/src/DotNetLighning.Core
+        dotnet add package -v 4.1.2.33-joemphilips014 -s "https://www.myget.org/F/joemphilips/api/v3/index.json" NBitcoin
+        dotnet add package -v 0.0.4-joemphilips -s "https://www.myget.org/F/joemphilips/api/v3/index.json" Secp256k1.Native
+    - name: Build and Upload
+      env:
+        VERSION: ${{ GITHUB_SHA }}
+      run: |
+        cd /workspace/src/DotNetLighning.Core
+        dotnet pack -p:Configuration=Release
+        dotnet nuget push ./bin/Release/DotNetLightningCore.1.0.0.nupkg -k $NUGET_API_KEY -s https://artifactory.mycompany.eu/artifactory/api/nuget/MyRepo
