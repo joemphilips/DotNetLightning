@@ -1,5 +1,4 @@
-name: DotNetLightning
-description: Build DotNetLightning and deploy to NuGet
+name: Build DotNetLightning and deploy to NuGet
 on: push
 jobs:
   build_and_deploy:
