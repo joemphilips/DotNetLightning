@@ -128,11 +128,13 @@ module Primitives =
 
     and PaymentHash = | PaymentHash of uint256 with
         member x.Value = let (PaymentHash v) = x in v
-        member x.ToBytes() = x.Value.ToBytes()
+        member x.ToBytes(?lEndian) =
+            let e = defaultArg lEndian true
+            x.Value.ToBytes(e)
         
         member x.GetRIPEMD160() =
             let b = x.Value.ToBytes()
-            Crypto.Hashes.RIPEMD160(b, 0, b.Length)
+            Crypto.Hashes.RIPEMD160(b, b.Length)
 
     type ChannelId = | ChannelId of uint256 with
         member x.Value = let (ChannelId v) = x in v

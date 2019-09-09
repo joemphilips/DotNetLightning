@@ -12,12 +12,17 @@ open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Utils.Aether
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Chain
+open NBitcoin
+open NBitcoin
+open NBitcoin.BuilderExtensions
 open System.Linq
 
 /// We define all possible txs here.
 /// For internal representation is psbt. But this is just for convenience since
-/// in current spec we don't have to send PSBT with each other in case of Lightning.
-type ILightningTx = 
+/// in current spec we don't have to send PSBT with each other node in case of Lightning.
+/// NOTE: we are assuming ILightningTx will never have redeem_script as an input script.
+/// And we are also ignoring `SigHash` field in its input (always `SigHash.All`)
+type ILightningTx =
     abstract member Value: PSBT
     abstract member WhichInput: int
 
@@ -39,11 +44,58 @@ type CommitTx = {
         member this.GetTxId() =
             this.Value.GetGlobalTransaction().GetTxId()
 
+module private HTLCHelper =
+    let createHTLCWitScript(localSig: TransactionSignature, remoteSig: TransactionSignature, witScript: Script, paymentPreimage: PaymentPreimage option) =
+        let l = new ResizeArray<Op>()
+        l.Add(!> OpcodeType.OP_0)
+        l.Add(Op.GetPushOp(remoteSig.ToBytes()))
+        l.Add(Op.GetPushOp(localSig.ToBytes()))
+        match paymentPreimage with
+        | Some p -> l.Add(Op.GetPushOp(p.ToBytes()))
+        | None -> l.Add(!> OpcodeType.OP_0)
+        l.Add(Op.GetPushOp(witScript.ToBytes()))
+        let s = Script(l)
+        s.ToWitScript()
+        
 type HTLCSuccessTx = {
     Value: PSBT
     WhichInput: int
+    PaymentHash: PaymentHash
 }
     with
+        member this.GetRedeem() =
+            this.Value.Inputs.[this.WhichInput].WitnessScript
+            
+        member this.Finalize(localPubkey, remotePubKey, paymentPreimage) =
+            let localSig = this.Value.Inputs.[this.WhichInput].PartialSigs.[localPubkey]
+            let remoteSig = this.Value.Inputs.[this.WhichInput].PartialSigs.[remotePubKey]
+            this.Finalize(localSig, remoteSig, paymentPreimage)
+            
+        /// PSBT does not support finalizing script with payment preimage.
+        /// (And it never does unless scripts in BOLT3 follows some other static analysis scheme such as Miniscript.)
+        /// We must finalize manually here.
+        member this.Finalize(localSig, remoteSig, paymentPreimage: PaymentPreimage) =
+            // Clone this to make the operation atomic. we don't want to mutate `this` in case of failure
+            let psbt = this.Value.Clone() 
+            let psbtIn = psbt.Inputs.[this.WhichInput]
+            let witScript = psbtIn.WitnessScript
+            let finalWit = HTLCHelper.createHTLCWitScript(localSig, remoteSig, witScript, Some paymentPreimage)
+            psbtIn.FinalScriptWitness <- finalWit
+            let coin = psbtIn.GetCoin()
+            let txIn = psbt.GetGlobalTransaction().Inputs.FindIndexedInput(coin.Outpoint)
+            txIn.WitScript <- finalWit
+            let errors = ref ScriptError.OK
+            match txIn.VerifyScript(coin, ScriptVerify.Standard, errors) with
+            | true ->
+                this.Value.Inputs.[this.WhichInput].FinalScriptWitness <- finalWit
+                this.Value.Inputs.[this.WhichInput].WitnessScript <- null
+                this.Value.Inputs.[this.WhichInput].PartialSigs.Clear()
+                this.Value.ExtractTransaction()
+                |> Good
+            | false ->
+                sprintf "Failed to finalize PSBT. error (%A) " errors
+                |> RResult.rmsg
+            
         interface IHTLCTx
             with
                 member this.Value = this.Value
@@ -54,6 +106,28 @@ type HTLCTimeoutTx = {
     WhichInput: int
 }
     with
+        member this.Finalize(localSig: TransactionSignature, remoteSig: TransactionSignature) =
+            // Clone this to make the operation atomic. we don't want to mutate `this` in case of failure
+            let psbt = this.Value.Clone() 
+            let psbtIn = psbt.Inputs.[this.WhichInput]
+            let witScript = psbtIn.WitnessScript
+            let finalWit = HTLCHelper.createHTLCWitScript(localSig, remoteSig, witScript, None)
+            psbtIn.FinalScriptWitness <- finalWit
+            let coin = psbtIn.GetCoin()
+            let txIn = psbt.GetGlobalTransaction().Inputs.FindIndexedInput(coin.Outpoint)
+            txIn.WitScript <- finalWit
+            let errors = ref ScriptError.OK
+            match txIn.VerifyScript(coin, ScriptVerify.Standard, errors) with
+            | true ->
+                this.Value.Inputs.[this.WhichInput].FinalScriptWitness <- finalWit
+                this.Value.Inputs.[this.WhichInput].WitnessScript <- null
+                this.Value.Inputs.[this.WhichInput].PartialSigs.Clear()
+                this.Value.ExtractTransaction()
+                |> Good
+            | false ->
+                sprintf "Failed to finalize PSBT. error (%A) " errors
+                |> RResult.rmsg
+            
         interface IHTLCTx
             with
                 member this.Value = this.Value
@@ -336,7 +410,7 @@ module Transactions =
                 None
         let toRemoteOutput_opt =
             if (toRemoteAmount >= localDustLimit) then 
-                Some(TxOut(toLocalAmount, (remotePaymentPubkey.WitHash.ScriptPubKey)))
+                Some(TxOut(toRemoteAmount, (remotePaymentPubkey.WitHash.ScriptPubKey)))
             else
                 None
 
@@ -411,9 +485,35 @@ module Transactions =
                 tx |> Good
             else
                 RResult.rmsg "Invalid signature"
+    /// Sign psbt inside ILightningTx and returns
+    /// 1. Newly created signature
+    /// 2. ILightningTx updated
+    /// Technically speaking, we could just return one of them.
+    /// Returning both is just for ergonomic reason. (pretending to be referential transparent)
     let sign(tx: ILightningTx, key: Key) =
-        tx.Value.SignWithKeys(key) |> ignore
-        (tx.Value.GetMatchingSig(key.PubKey), tx)
+        try
+            tx.Value.SignWithKeys(key) |> ignore
+            (tx.Value.GetMatchingSig(key.PubKey), tx)
+        with
+        /// Sadly, psbt does not support signing for script other than predefined template.
+        /// So we must fall back to more low level way.
+        | :? NotSupportedException ->
+            let psbt = tx.Value
+            let psbtIn = psbt.Inputs.[tx.WhichInput]
+            let coin =
+                let c = psbtIn.GetCoin()
+                ScriptCoin(c, psbtIn.WitnessScript)
+            let txIn =
+                let globalTx = psbt.GetGlobalTransaction()
+                globalTx.Inputs.AsIndexedInputs()
+                |> Seq.indexed
+                |> Seq.find(fun (i, _txIn) -> i = tx.WhichInput)
+                |> snd
+            let txSig = txIn.Sign(key, coin, SigHash.All, psbt.Settings.UseLowR)
+            match checkSigAndAdd tx txSig key.PubKey with
+            | Good txWithSig ->
+                (txSig, txWithSig)
+            | Bad _ -> failwith "Failed to check signature. This should never happen."
 
     let makeHTLCTimeoutTx (commitTx: Transaction)
                           (localDustLimit: Money)
@@ -478,7 +578,7 @@ module Transactions =
                 PSBT.FromTransaction(tx)
                     .AddCoins(scoin)
             let whichInput = psbt.Inputs |> Seq.findIndex(fun i -> not (isNull i.WitnessScript))
-            { HTLCSuccessTx.Value = psbt; WhichInput = whichInput } |> Good
+            { HTLCSuccessTx.Value = psbt; WhichInput = whichInput; PaymentHash = htlc.PaymentHash } |> Good
 
     let makeHTLCTxs (commitTx: Transaction)
                     (localDustLimit: Money)
@@ -493,7 +593,7 @@ module Transactions =
                              |> List.map(fun htlc -> makeHTLCTimeoutTx (commitTx) (localDustLimit) (localRevocationPubKey) (toLocalDelay) (toLocalDelayedPaymentPubKey) (localHTLCPubKey) (remoteHTLCPubKey) (spec.FeeRatePerKw) (htlc.Add) n)
                              |> List.sequenceRResult
         
-        let htlcSuccessTxs = (trimOfferedHTLCs localDustLimit spec)
+        let htlcSuccessTxs = (trimReceivedHTLCs localDustLimit spec)
                              |> List.map(fun htlc -> makeHTLCSuccessTx (commitTx) (localDustLimit) (localRevocationPubKey) (toLocalDelay) (toLocalDelayedPaymentPubKey) (localHTLCPubKey) (remoteHTLCPubKey) (spec.FeeRatePerKw) (htlc.Add) n)
                              |> List.sequenceRResult
         RResult.Good (fun a b -> (a, b)) <*> htlcTimeoutTxs <*> htlcSuccessTxs

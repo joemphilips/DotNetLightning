@@ -25,13 +25,11 @@ module Scripts =
         opList.Add(!> OpcodeType.OP_CHECKSIG)
         Script(opList)
 
-    let htlcOffered (localHtlcPubKey: PubKey) (remoteHtlcPubKey: PubKey) (revocationPubKey: PubKey) (PaymentHash ph): Script =
+    let htlcOffered (localHtlcPubKey: PubKey) (remoteHtlcPubKey: PubKey) (revocationPubKey: PubKey) (ph: PaymentHash): Script =
         let revocationPubKeyHash =
             let p = revocationPubKey.ToBytes()
             Hashes.Hash160(p, 0, p.Length)
-        let paymentHashHash =
-            let p = ph.ToBytes()
-            Hashes.RIPEMD160(p, 0, p.Length)
+        let paymentHashHash = ph.GetRIPEMD160()
         let opList = new ResizeArray<Op>();
         opList.Add(!> OpcodeType.OP_DUP);
         opList.Add(!> OpcodeType.OP_HASH160);
@@ -61,13 +59,11 @@ module Scripts =
         opList.Add(!> OpcodeType.OP_ENDIF);    
         Script(opList);
 
-    let htlcReceived (localHTLCPubKey: PubKey) (remoteHTLCPubKey: PubKey) (revocationPubKey: PubKey) (PaymentHash ph) (lockTime: uint32): Script =
+    let htlcReceived (localHTLCPubKey: PubKey) (remoteHTLCPubKey: PubKey) (revocationPubKey: PubKey) (ph: PaymentHash) (lockTime: uint32): Script =
         let revocationPubKeyHash =
             let p = revocationPubKey.ToBytes()
             Hashes.Hash160(p, 0, p.Length)
-        let paymentHashHash =
-            let p = ph.ToBytes()
-            Hashes.RIPEMD160(p, 0, p.Length)
+        let paymentHashHash = ph.GetRIPEMD160()
         let opList = ResizeArray<Op>();
         
         opList.Add(!> OpcodeType.OP_DUP);
