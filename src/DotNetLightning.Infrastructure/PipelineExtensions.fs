@@ -30,5 +30,6 @@ type PipeWriterExtensions() =
     [<Extension>]
     static member WriteAsync(this: PipeWriter, data: byte[]) =
         unitVtask {
-            return! this.WriteAsync(ReadOnlyMemory(data))
+            let! r = this.WriteAsync(ReadOnlyMemory(data))
+            return ()
         }

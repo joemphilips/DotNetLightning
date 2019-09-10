@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
+    <RootNamespace>DotnetLightning.Infrastructure</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\DotNetLightning.Core\DotNetLightning.Core.fsproj" />
@@ -9,12 +10,12 @@
   <ItemGroup>
     <Compile Include="Ply.fs" />
     <Compile Include="ComputationBuilders.fs" />
-    <Compile Include="Subject.fs" />
     <Compile Include="PrimitiveExtensions.fs" />
     <Compile Include="PipelineExtensions.fs" />
     <Compile Include="RResultExtensions.fs" />
     <Compile Include="Constants.fs" />
     <Compile Include="Logger.fs" />
+    <Compile Include="FundingTxProvider.fs" />
     <Compile Include="Codec.fs" />
     <Compile Include="DTOs.fs" />
     <Compile Include="Storage.fs" />

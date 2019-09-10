@@ -38,7 +38,6 @@
     <Compile Include="LN/PeerChannelEncryptor.fs" />
     <Compile Include="LN/ChannelUtils.fs" />
     <Compile Include="LN/HTLCChannelType.fs" />
-    <Compile Include="LN/ChannelMonitor.fs" />
     <Compile Include="LN/ChannelConstants.fs" />
     <Compile Include="LN/ChannelCommands.fs" />
     <Compile Include="LN/Commitments.fs" />

@@ -117,7 +117,7 @@ module Primitives =
         member this.ToBytes() =
             this.Value
 
-        member this.GetHash() =
+        member this.GetSha256() =
             this.ToBytes() |> Crypto.Hashes.SHA256 |> uint256 |> PaymentHash
 
         member this.ToKey() =
@@ -128,7 +128,13 @@ module Primitives =
 
     and PaymentHash = | PaymentHash of uint256 with
         member x.Value = let (PaymentHash v) = x in v
-        member x.ToBytes() = x.Value.ToBytes()
+        member x.ToBytes(?lEndian) =
+            let e = defaultArg lEndian true
+            x.Value.ToBytes(e)
+        
+        member x.GetRIPEMD160() =
+            let b = x.Value.ToBytes()
+            Crypto.Hashes.RIPEMD160(b, b.Length)
 
     type ChannelId = | ChannelId of uint256 with
         member x.Value = let (ChannelId v) = x in v
@@ -161,6 +167,9 @@ module Primitives =
 
         member this.ToFee(weight) =
             Money.Satoshis((uint64 this.Value) * weight / 1000UL)
+            
+        member this.AsNBitcoinFeeRate() =
+            this.Value |> uint64 |> Money.Satoshis |> FeeRate
 
         static member Max(a: FeeRatePerKw, b: FeeRatePerKw) =
             if (a.Value >= b.Value) then a else b

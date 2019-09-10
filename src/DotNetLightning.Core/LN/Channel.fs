@@ -11,12 +11,14 @@ open NBitcoin
 open System
 open Secp256k1Net
 
+
+type ProvideFundingTx = IDestination * Money * FeeRatePerKw -> RResult<FinalizedTx * TxOutIndex> 
 type Channel = {
     Config: ChannelConfig
     ChainListener: IChainListener
     KeysRepository: IKeysRepository
     FeeEstimator: IFeeEstimator
-    FundingTxProvider: IDestination * Money * FeeRatePerKw -> RResult<FinalizedTx * TxOutIndex>
+    FundingTxProvider:ProvideFundingTx
     Logger: Logger
     RemoteNodeId: NodeId
     LocalNodeSecret: Key
@@ -119,7 +121,7 @@ module Channel =
             (if isNode1 then 1us else 0us) ||| ((if enable then 1us else 0us) <<< 1)
 
         let internal makeChannelUpdate (chainHash, nodeSecret: Key, remoteNodeId: NodeId, shortChannelId, cltvExpiryDelta,
-                                       htlcMinimum, feeBase, feeProportionalMillionths, enabled: bool, timestamp) =
+                                        htlcMinimum, feeBase, feeProportionalMillionths, enabled: bool, timestamp) =
             let timestamp = defaultArg timestamp ((System.DateTime.UtcNow.ToUnixTimestamp()) |> uint32)
             let isNodeOne = nodeSecret.PubKey < remoteNodeId.Value
             let unsignedChannelUpdate = {
@@ -257,11 +259,11 @@ module Channel =
                 [ MutualClosePerformed nextData ]
                 |> Good
 
-            let claimCurrentLocalCommitTxOutputs (keyRepo: IKeysRepository, channelPubKeys: ChannelPubKeys, commitments: Commitments, commitTx: CommitTx) =
+            let claimCurrentLocalCommitTxOutputs (_keyRepo: IKeysRepository, channelPubKeys: ChannelPubKeys, commitments: Commitments, commitTx: CommitTx) =
                 checkOrClose (commitments.LocalCommit.PublishableTxs.CommitTx.Value.GetTxId()) (=) (commitTx.Value.GetTxId()) "txid mismatch. provided txid (%A) does not match current local commit tx (%A)"
                 >>= fun _ ->
-                    let localPerCommitmentPoint = ChannelUtils.buildCommitmentPoint (channelPubKeys.CommitmentSeed, commitments.LocalCommit.Index)
-                    let localRevocationPubKey = Generators.revocationPubKey
+                    let _localPerCommitmentPoint = ChannelUtils.buildCommitmentPoint (channelPubKeys.CommitmentSeed, commitments.LocalCommit.Index)
+                    let _localRevocationPubKey = Generators.revocationPubKey
                     failwith ""
 
     module internal Validation =
@@ -360,14 +362,19 @@ module Channel =
             let checkIsAcceptableByCurrentFeeRate (feeEstimator: IFeeEstimator) msg =
                 let ourDustLimit = Helpers.deriveOurDustLimitSatoshis feeEstimator
                 let ourChannelReserve = Helpers.getOurChannelReserve (msg.FundingSatoshis)
-                if (ourChannelReserve < ourDustLimit) then
-                    RRClose("Suitable channel reserve not found. Aborting")
-                else if (msg.ChannelReserveSatoshis < ourDustLimit) then
-                    RRClose (sprintf "channel_reserve_satoshis too small. It was: %A; dust_limit: %A" msg.ChannelReserveSatoshis ourDustLimit)
-                else if (ourChannelReserve < msg.DustLimitSatoshis) then
-                    RRClose (sprintf "Dust limit too high for our channel reserve. our channel reserve: %A received dust limit: %A" ourChannelReserve msg.DustLimitSatoshis)
-                else
-                    Good()
+                let check1 =
+                    checkOrClose
+                        ourChannelReserve (<) ourDustLimit
+                        "Suitable channel reserve not found. Aborting. (our channel reserve was (%A). and our dust limit was(%A))"
+                let check2 =
+                    checkOrClose
+                        msg.ChannelReserveSatoshis (<) ourDustLimit
+                        "channel_reserve_satoshis too small. It was: %A; dust_limit: %A"
+                let check3 =
+                    checkOrClose
+                        ourChannelReserve (<) msg.DustLimitSatoshis
+                        "Dust limit too high for our channel reserve. our channel reserve: %A received dust limit: %A"
+                check1 *> check2 *> check3
 
             let checkIfFundersAmountSufficient (feeEst: IFeeEstimator) msg =
                 let fundersAmount = LNMoney.Satoshis(msg.FundingSatoshis.Satoshi) - msg.PushMSat
@@ -404,12 +411,12 @@ module Channel =
                 else
                     Good()
 
-            let checkChannelReserveSatoshis (c: Channel) (state: Data.WaitForAcceptChannelData) msg =
+            let checkChannelReserveSatoshis (state: Data.WaitForAcceptChannelData) msg =
                 if msg.ChannelReserveSatoshis > state.LastSent.FundingSatoshis then
                     sprintf "bogus channel_reserve_satoshis %A . Must be larger than funding_satoshis %A" (msg.ChannelReserveSatoshis) (state.InputInitFunder.FundingSatoshis)
                     |> RRClose
                 else if msg.DustLimitSatoshis > state.LastSent.ChannelReserveSatoshis then
-                    sprintf "Bogus channel_serserve and dust_limit. dust_limit: %A; channel_reserve %A" msg.DustLimitSatoshis (state.LastSent.ChannelReserveSatoshis)
+                    sprintf "Bogus channel_reserve and dust_limit. dust_limit: %A; channel_reserve %A" msg.DustLimitSatoshis (state.LastSent.ChannelReserveSatoshis)
                     |> RRClose
                 else if msg.ChannelReserveSatoshis < state.LastSent.DustLimitSatoshis then
                     sprintf "Peer never wants payout outputs? channel_reserve_satoshis are %A; dust_limit_satoshis in our last sent msg is %A" msg.ChannelReserveSatoshis (state.LastSent.DustLimitSatoshis)
@@ -419,11 +426,9 @@ module Channel =
 
             let checkDustLimitIsLargerThanOurChannelReserve (state: Data.WaitForAcceptChannelData) msg =
                 let reserve = Helpers.getOurChannelReserve state.LastSent.FundingSatoshis
-                if (msg.DustLimitSatoshis < reserve) then
-                    sprintf "dust limit (%A) is bigger than our channel reserve (%A)" msg.DustLimitSatoshis reserve
-                    |> RRClose
-                else
-                    Good()
+                checkOrClose
+                    msg.DustLimitSatoshis (>) reserve
+                    "dust limit (%A) is bigger than our channel reserve (%A)" 
 
             let checkMinimumHTLCValueIsAcceptable (state: Data.WaitForAcceptChannelData) (msg: AcceptChannel) =
                 if (msg.HTLCMinimumMSat.ToMoney() >= (state.LastSent.FundingSatoshis - msg.ChannelReserveSatoshis)) then
@@ -445,14 +450,14 @@ module Channel =
                 let check3 = checkOrClose msg.ChannelReserveSatoshis (>) config.MaxChannelReserveSatoshis "max reserve_satoshis (%A) is higher than the user specified limit (%A)"
                 let check4 = checkOrClose msg.MaxAcceptedHTLCs (<) config.MinMaxAcceptedHTLCs "max accepted htlcs (%A) is less than the user specified limit (%A)"
                 let check5 = checkOrClose msg.DustLimitSatoshis (<) config.MinDustLimitSatoshis "dust limit satoshis (%A) is less then the user specified limit (%A)"
-                let check6 = checkOrClose msg.DustLimitSatoshis (>) config.MinDustLimitSatoshis "dust limit satoshis (%A) is greater then the user specified limit (%A)"
+                let check6 = checkOrClose msg.DustLimitSatoshis (>) config.MaxDustLimitSatoshis "dust limit satoshis (%A) is greater then the user specified limit (%A)"
                 let check7 = checkOrClose msg.MinimumDepth (>) config.MaxMinimumDepth "We consider the minimum depth (%A) to be unreasonably large. Our max minimum depth is (%A)"
 
                 check1 *> check2 *> check3 *> check4 *> check5 *> check6 *> check7
 
         let internal checkAcceptChannelMsgAcceptable c (state) (msg: AcceptChannel) =
             AcceptChannelValidator.checkDustLimit msg
-            *> AcceptChannelValidator.checkChannelReserveSatoshis c state msg
+            *> AcceptChannelValidator.checkChannelReserveSatoshis state msg
             *> AcceptChannelValidator.checkDustLimitIsLargerThanOurChannelReserve state msg
             *> AcceptChannelValidator.checkMinimumHTLCValueIsAcceptable state msg
             *> AcceptChannelValidator.checkToSelfDelayIsAcceptable msg
@@ -474,7 +479,7 @@ module Channel =
                 checkOrIgnore (amount) (<) (htlcMinimum) "htlc value (%A) is too small. must be greater or equal to %A"
 
             let checkLessThanHTLCValueInFlightLimit (currentSpec: CommitmentSpec) (limit) (add: UpdateAddHTLC) =
-                let htlcValueInFlight = currentSpec.HTLCs |> Map.toSeq |> Seq.sumBy (fun (k, v) -> v.Add.AmountMSat)
+                let htlcValueInFlight = currentSpec.HTLCs |> Map.toSeq |> Seq.sumBy (fun (_, v) -> v.Add.AmountMSat)
                 if (htlcValueInFlight > limit) then
                     sprintf "Too much HTLC value is in flight. Current: %A. Limit: %A \n Could not add new one with value: %A"
                             htlcValueInFlight
@@ -581,7 +586,7 @@ module Channel =
                 let remoteParams = RemoteParams.FromOpenChannel cs.RemoteNodeId state.InitFundee.RemoteInit msg
                 let data = Data.WaitForFundingCreatedData.Create localParams remoteParams msg acceptChannel
                 [ WeAcceptedOpenChannel(acceptChannel, data) ]
-        | WaitForOpenChannel state, ChannelCommand.Close spk -> [ ChannelEvent.Closed ] |> Good
+        | WaitForOpenChannel _state, ChannelCommand.Close _spk -> [ ChannelEvent.Closed ] |> Good
 
         | WaitForFundingCreated state, ApplyFundingCreated msg ->
             Helpers.makeFirstCommitTxs state.LocalParams
@@ -596,7 +601,7 @@ module Channel =
                 match (localCommitTx.Value.IsReadyToSign()) with
                 | false -> failwith "unreachable"
                 | true ->
-                    let s, signedLocalCommitTx =
+                    let _s, signedLocalCommitTx =
                         cs.KeysRepository.GetSignatureFor (localCommitTx.Value, state.LocalParams.ChannelPubKeys.FundingPubKey)
                     let theirSigPair = (state.RemoteParams.FundingPubKey, TransactionSignature(msg.Signature.Value, SigHash.All))
                     let sigPairs = seq [ theirSigPair ]
@@ -653,7 +658,7 @@ module Channel =
                                            outIndex
                                            (fundingTx.Value.GetHash() |> TxId)
                                            cs.Network
-                |>> fun (localSpec, localCommitTx, remoteSpec, remoteCommitTx) ->
+                |>> fun (_localSpec, localCommitTx, remoteSpec, remoteCommitTx) ->
                     let localSigOfRemoteCommit, _ = (cs.KeysRepository.GetSignatureFor(remoteCommitTx.Value, state.LastSent.FundingPubKey))
                     let nextMsg = { FundingCreated.TemporaryChannelId = msg.TemporaryChannelId
                                     FundingTxId = fundingTx.Value.GetTxId()
@@ -675,7 +680,6 @@ module Channel =
                                  InitialFeeRatePerKw = state.InputInitFunder.InitFeeRatePerKw }
                     [ WeAcceptedAcceptChannel(nextMsg, data) ]
         | WaitForFundingSigned state, ApplyFundingSigned msg ->
-            let fundingOutIndex = state.LastSent.FundingOutputIndex
             let finalLocalCommitTxRR =
                 let theirFundingPk = state.RemoteParams.FundingPubKey
                 let localSigPairOfLocalTx = (theirFundingPk, TransactionSignature(state.LastSent.Signature.Value, SigHash.All))
@@ -718,7 +722,7 @@ module Channel =
                                   InitialFeeRatePerKw = state.InitialFeeRatePerKw
                                   ChannelId = msg.ChannelId }
                 [ WeAcceptedFundingSigned(state.FundingTx, nextState) ]
-        | WaitForFundingConfirmed state, ApplyFundingLocked msg ->
+        | WaitForFundingConfirmed _state, ApplyFundingLocked msg ->
             [ TheySentFundingLockedMsgBeforeUs msg ] |> Good
         | WaitForFundingConfirmed state, ApplyFundingConfirmedOnBC(height, txindex, depth) ->
             cs.Logger (LogLevel.Info) (sprintf "ChannelId %A was confirmed at block height %A; depth: %A" state.Commitments.ChannelId height.Value depth)
@@ -741,7 +745,7 @@ module Channel =
                               InitialFeeRatePerKw = state.InitialFeeRatePerKw
                               ChannelId = state.Commitments.ChannelId }
             [ FundingConfirmed nextState ] |> Good
-        | WaitForFundingLocked state, ApplyFundingConfirmedOnBC(height, txindex, depth) ->
+        | WaitForFundingLocked state, ApplyFundingConfirmedOnBC(height, _txindex, depth) ->
             if (state.HaveWeSentFundingLocked) then
                 if (cs.Config.ChannelHandshakeConfig.MinimumDepth <= depth) then
                     [] |> Good
@@ -797,7 +801,7 @@ module Channel =
                 let remoteCommit1 =
                     match commitments1.RemoteNextCommitInfo with
                     | Choice1Of2 info -> info.NextRemoteCommit
-                    | Choice2Of2 info -> commitments1.RemoteCommit
+                    | Choice2Of2 _info -> commitments1.RemoteCommit
                 remoteCommit1.Spec.Reduce(commitments1.RemoteChanges.ACKed, commitments1.LocalChanges.Proposed)
                 >>= fun reduced ->
                     Validation.checkOurUpdateAddHTLCIsAcceptableWithCurrentSpec reduced commitments1 add
@@ -1000,7 +1004,7 @@ module Channel =
             | Choice2Of2 _ ->
                 cm |> Commitments.sendCommit (cs.Secp256k1Context) (cs.KeysRepository) (cs.Network)
                 >>>= fun e -> e.Describe() |> RRClose
-            | Choice1Of2 waitForRevocation ->
+            | Choice1Of2 _waitForRevocation ->
                 sprintf "Already in the process of signing."
                 |> RRIgnore
         | Shutdown state, ApplyCommitmentSigned msg ->
@@ -1170,3 +1174,4 @@ module Channel =
         // ----- else -----
         | NewBlockVerified height, _ ->
             { c with CurrentBlockHeight = height }
+        | otherEvent -> c

@@ -1,6 +1,7 @@
 module SerializationPropertyTests
 
 open System.IO
+
 open NBitcoin.Crypto
 open Expecto
 open DotNetLightning.Utils

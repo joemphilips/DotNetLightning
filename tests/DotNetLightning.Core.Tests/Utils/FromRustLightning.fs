@@ -7,9 +7,10 @@ type Node = {
     ChainMonitor: ChainWatchInterfaceUtil
 }
 
-type TestLogger = {
+type TestLogger = private {
     Level: LogLevel
     Id: string
+    _lockObj: obj
 }
     with
         interface ILogger with
@@ -18,16 +19,21 @@ type TestLogger = {
             member this.IsEnabled(logLevel: LogLevel): bool = 
                 true
             member this.Log(logLevel: LogLevel, eventId: EventId, state: 'TState, ``exception``: exn, formatter: System.Func<'TState,exn,string>): unit = 
-                printf "[%O]: %s" logLevel (formatter.Invoke(state, ``exception``))
+                lock this._lockObj (fun _ -> (printf "[%O]: %s" logLevel (formatter.Invoke(state, ``exception``))))
 
 
         static member Zero =
             TestLogger.Create("")
+            
+        member this.LogSimple(str: string) =
+            let _l = this :> ILogger
+            _l.LogInformation(str + "\n")
 
         static member Create(id) =
             {
                 Level = LogLevel.Debug
                 Id = id
+                _lockObj = new obj()
             }
 
         member this.Enable(level) = { this with Level = level }

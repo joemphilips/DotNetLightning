@@ -4,6 +4,7 @@ open NBitcoin
 open DotNetLightning.Utils
 open DotNetLightning.Chain
 open DotNetLightning.Infrastructure
+open DotNetLightning.Transactions
 open System.Net
 open Foq
 
@@ -33,6 +34,25 @@ let bobChannelKeysSeed =
     hex.DecodeData("4444444444444444444444444444444444444444444444444444444444444444")
     |> uint256
     
+
+type DummyFundingTxProvider(n: Network) =
+    interface IFundingTxProvider with
+        member this.ProvideFundingTx(dest: IDestination, amount: Money, feerate: FeeRatePerKw) =
+            let txb = n.CreateTransactionBuilder()
+            let dummyKey = Key()
+            let coin =
+                let inputAmount = amount + Money.Satoshis(6000000L)
+                let dummyTxid = [| for _ in 0..31 -> 1uy |] |> uint256
+                Coin(dummyTxid, 0u, inputAmount, dummyKey.PubKey.WitHash.ScriptPubKey)
+            let dummyChange = Key()
+            txb.AddCoins(coin)
+               .AddKeys(dummyKey, dummyChange) |> ignore
+            txb.SetChange(dummyChange) |> ignore
+            let fees = txb.EstimateFees(feerate.AsNBitcoinFeeRate())
+            txb.SendFees(fees).Send(dest, amount) |> ignore
+            (txb.BuildTransaction(true) |> FinalizedTx, 0us |> TxOutIndex)
+            |> RResult.Good
+            
 let getAliceParam() =
     let p = NodeParams()
     p.Alias <- "alice"

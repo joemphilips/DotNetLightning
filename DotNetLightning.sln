@@ -9,7 +9,7 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DotNetLightning.Core", "src
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{E6F1DC30-D346-4E86-8F58-20CFAAB19448}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DotNetLightning.Tests", "tests\DotNetLightning.Tests\DotNetLightning.Tests.fsproj", "{690894CA-BD95-48D5-8C0A-4D2CC6D0C8B9}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DotNetLightning.Core.Tests", "tests\DotNetLightning.Core.Tests\DotNetLightning.Core.Tests.fsproj", "{690894CA-BD95-48D5-8C0A-4D2CC6D0C8B9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NSec.Cryptography", "src\NSec.Cryptography\NSec.Cryptography.csproj", "{E0BF9872-B300-41C9-9B54-0F5BDD1B9343}"
 EndProject
@@ -21,7 +21,7 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "EventAggregator", "src\Even
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "EventAggregator.Tests", "tests\EventAggregator.Tests\EventAggregator.Tests.fsproj", "{F5AB8998-BDEF-4BD4-BE09-0D2237659B00}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DotnetLightning.Infrastructure", "src\DotnetLightning.Infrastructure\DotnetLightning.Infrastructure.fsproj", "{2B5A983E-FC27-4992-9611-CE3C17B9ADCA}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DotNetLightning.Infrastructure", "src\DotNetLightning.Infrastructure\DotNetLightning.Infrastructure.fsproj", "{2B5A983E-FC27-4992-9611-CE3C17B9ADCA}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DotNetLightning.Server", "src\DotNetLightning.Server\DotNetLightning.Server.fsproj", "{721CE279-93C3-4015-8288-9B6FE847B321}"
 EndProject

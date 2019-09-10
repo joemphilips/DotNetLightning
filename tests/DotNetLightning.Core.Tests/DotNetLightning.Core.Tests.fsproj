@@ -2,6 +2,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.0</TargetFramework>
+    <RootNamespace>DotNetLightning.Tests</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
@@ -15,9 +16,11 @@
     <Compile Include="FunctionalTests.fs" />
     <Compile Include="SphinxTests.fs" />
     <Compile Include="GeneratorsTests.fs" />
+    <Compile Include="TransactionBolt3TestVectorTests.fs" />
     <Compile Include="TransactionTests.fs" />
     <Compile Include="PeerChannelEncryptorTests.fs" />
     <Compile Include="Main.fs" />
+    <Content Include="Data\bolt3-tx.json" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Expecto" Version="8.*" />

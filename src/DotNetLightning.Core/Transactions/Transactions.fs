@@ -1,20 +1,23 @@
 namespace DotNetLightning.Transactions
 
 open System
+open System
 open System.Linq
 open NBitcoin
 open NBitcoin.Crypto
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils
+open DotNetLightning.Core.Utils.Extensions
 open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Utils.Aether
 open DotNetLightning.Serialize.Msgs
-open DotNetLightning.Chain
 
 /// We define all possible txs here.
-/// For internal representation is psbt. But this is just for convenience since
-/// in current spec we don't have to send PSBT with each other in case of Lightning.
-type ILightningTx = 
+/// internal representation is psbt. But this is just for convenience since
+/// in current spec we don't have to send PSBT with each other node in case of Lightning.
+/// NOTE: we are assuming ILightningTx will never have redeem_script as an input script.
+/// And we are also ignoring `SigHash` field in its input (always `SigHash.All`)
+type ILightningTx =
     abstract member Value: PSBT
     abstract member WhichInput: int
 
@@ -36,11 +39,61 @@ type CommitTx = {
         member this.GetTxId() =
             this.Value.GetGlobalTransaction().GetTxId()
 
+module private HTLCHelper =
+    let createHTLCWitScript(localSig: TransactionSignature, remoteSig: TransactionSignature, witScript: Script, paymentPreimage: PaymentPreimage option) =
+        let l = new ResizeArray<Op>()
+        l.Add(!> OpcodeType.OP_0)
+        l.Add(Op.GetPushOp(remoteSig.ToBytes()))
+        l.Add(Op.GetPushOp(localSig.ToBytes()))
+        match paymentPreimage with
+        | Some p -> l.Add(Op.GetPushOp(p.ToBytes()))
+        | None -> l.Add(!> OpcodeType.OP_0)
+        l.Add(Op.GetPushOp(witScript.ToBytes()))
+        let s = Script(l)
+        s.ToWitScript()
+        
+    /// PSBT does not support finalizing script with payment preimage.
+    /// (And it never does unless scripts in BOLT3 follows some other static analysis scheme such as Miniscript.)
+    /// We must finalize manually here.
+    let finalize(htlcTx: IHTLCTx, localSig, remoteSig, paymentPreimage: PaymentPreimage option) =
+        // Clone this to make the operation atomic. we don't want to mutate `this` in case of failure
+        let psbt = htlcTx.Value.Clone() 
+        let psbtIn = psbt.Inputs.[htlcTx.WhichInput]
+        let witScript = psbtIn.WitnessScript
+        let finalWit = createHTLCWitScript(localSig, remoteSig, witScript, paymentPreimage)
+        psbtIn.FinalScriptWitness <- finalWit
+        let coin = psbtIn.GetCoin()
+        let txIn = psbt.GetGlobalTransaction().Inputs.FindIndexedInput(coin.Outpoint)
+        txIn.WitScript <- finalWit
+        let errors = ref ScriptError.OK
+        match txIn.VerifyScript(coin, ScriptVerify.Standard, errors) with
+        | true ->
+            htlcTx.Value.Inputs.[htlcTx.WhichInput].FinalScriptWitness <- finalWit
+            htlcTx.Value.Inputs.[htlcTx.WhichInput].WitnessScript <- null
+            htlcTx.Value.Inputs.[htlcTx.WhichInput].PartialSigs.Clear()
+            htlcTx.Value.ExtractTransaction()
+            |> Good
+        | false ->
+            sprintf "Failed to finalize PSBT. error (%A) " errors
+            |> RResult.rmsg
+        
 type HTLCSuccessTx = {
     Value: PSBT
     WhichInput: int
+    PaymentHash: PaymentHash
 }
     with
+        member this.GetRedeem() =
+            this.Value.Inputs.[this.WhichInput].WitnessScript
+            
+        member this.Finalize(localPubkey, remotePubKey, paymentPreimage) =
+            let localSig = this.Value.Inputs.[this.WhichInput].PartialSigs.[localPubkey]
+            let remoteSig = this.Value.Inputs.[this.WhichInput].PartialSigs.[remotePubKey]
+            this.Finalize(localSig, remoteSig, paymentPreimage)
+            
+        member this.Finalize(localSig, remoteSig, paymentPreimage: PaymentPreimage) =
+            HTLCHelper.finalize(this, localSig, remoteSig, Some paymentPreimage)
+            
         interface IHTLCTx
             with
                 member this.Value = this.Value
@@ -51,6 +104,9 @@ type HTLCTimeoutTx = {
     WhichInput: int
 }
     with
+        member this.Finalize(localSig: TransactionSignature, remoteSig: TransactionSignature) =
+            HTLCHelper.finalize(this, localSig, remoteSig, None)
+            
         interface IHTLCTx
             with
                 member this.Value = this.Value
@@ -167,7 +223,7 @@ type SortableTxOut = {
             member this.CompareTo(obj: SortableTxOut) =
                 let (txout1) = this.TxOut
                 let (txout2) = obj.TxOut
-                let c1 = txout1.Value.CompareTo(txout2)
+                let c1 = txout1.Value.CompareTo(txout2.Value)
                 if (c1 <> 0) then
                     c1
                 else
@@ -268,33 +324,34 @@ module Transactions =
         let weight = COMMIT_WEIGHT + 172UL * (uint64 trimmedOfferedHTLCs.Length + uint64 trimmedReceivedHTLCs.Length)
         spec.FeeRatePerKw.ToFee(weight)
 
-    let getCommitmentTxNumberObscureFactor (isFunder: bool) (localPaymentBasePoint: PubKey) (remotePaymentBasePoint: PubKey) =
-        let mutable res: byte[] = null
+    let internal getCommitmentTxNumberObscureFactor (isFunder: bool) (localPaymentBasePoint: PubKey) (remotePaymentBasePoint: PubKey) =
         let res =
             if (isFunder) then
                 Hashes.SHA256(Array.concat[| localPaymentBasePoint.ToBytes(); remotePaymentBasePoint.ToBytes() |])
             else
                 Hashes.SHA256(Array.concat[| remotePaymentBasePoint.ToBytes(); localPaymentBasePoint.ToBytes() |])
-        (uint64 (res.[26]) <<< 5*8 |||
-         uint64 (res.[27]) <<< 4*8 |||
-         uint64 (res.[28]) <<< 3*8 |||
-         uint64 (res.[29]) <<< 2*8 |||
-         uint64 (res.[30]) <<< 1*8 |||
-         uint64 (res.[31]) <<< 0*8)
-
+        res.[26..]
     let obscuredCommitTxNumber (commitTxNumber: uint64) (isFunder) (localPaymentBasePoint) (remotePaymentBasePoint) =
         let obs = getCommitmentTxNumberObscureFactor isFunder localPaymentBasePoint remotePaymentBasePoint
-        commitTxNumber ^^^ obs
+        let numData = commitTxNumber.GetBytesBigEndian().[2..]
+        
+        let res = Array.zeroCreate (obs.Length + 2)
+        obs |> Array.iteri(fun i ob ->
+            res.[i + 2] <- ob ^^^ numData.[i]
+            )
+        let resSpanBigE = ReadOnlySpan(res |> Array.rev)
+        BitConverter.ToUInt64(resSpanBigE)
 
     let private encodeTxNumber (txNumber): (_ * _) =
         if (txNumber > 0xffffffffffffUL) then raise <| ArgumentException("tx number must be lesser than 48 bits long")
-        (0x80000000UL ||| txNumber >>> 24) |> uint32, ((txNumber &&& 0xffffffUL) ||| 0x20000000UL) |> uint32
+        (0x80000000UL ||| (txNumber >>> 24)) |> uint32, ((txNumber &&& 0xffffffUL) ||| 0x20000000UL) |> uint32
 
     let private decodeTxNumber (sequence: uint32) (lockTime: uint32) =
-        (uint64 sequence &&& 0xffffffUL <<< 24) + (uint64 lockTime &&& 0xffffffUL)
+        ((uint64 sequence) &&& 0xffffffUL <<< 24) + ((uint64 lockTime) &&& 0xffffffUL)
 
+    /// unblind commit tx number
     let getCommitTxNumber(commitTx: Transaction) (isFunder: bool) (localPaymentBasePoint: PubKey) (remotePaymentBasePoint) =
-        let blind =  0UL ^^^ getCommitmentTxNumberObscureFactor isFunder localPaymentBasePoint remotePaymentBasePoint
+        let blind =  obscuredCommitTxNumber (0UL) isFunder localPaymentBasePoint remotePaymentBasePoint
         let obscured = decodeTxNumber (!> commitTx.Inputs.[0].Sequence) (!> commitTx.LockTime)
         obscured ^^^ blind
 
@@ -332,7 +389,7 @@ module Transactions =
                 None
         let toRemoteOutput_opt =
             if (toRemoteAmount >= localDustLimit) then 
-                Some(TxOut(toLocalAmount, (remotePaymentPubkey.WitHash.ScriptPubKey)))
+                Some(TxOut(toRemoteAmount, (remotePaymentPubkey.WitHash.ScriptPubKey)))
             else
                 None
 
@@ -391,19 +448,51 @@ module Transactions =
         | e -> RResult.rexn e
 
     let checkSigAndAdd (tx: ILightningTx) (signature: TransactionSignature) (pk: PubKey) =
-        let psbt = tx.Value
-        let spentOutput = psbt.Inputs.[tx.WhichInput].GetTxOut()
-        let spk = spentOutput.ScriptPubKey
-        let globalTx = psbt.GetGlobalTransaction()
-
-        let ctx = ScriptEvaluationContext()
-        ctx.SigHash <- signature.SigHash
-        ctx.ScriptVerify <- ScriptVerify.Standard
-        if ctx.CheckSig(signature.ToBytes(), pk.ToBytes(), spk, globalTx, tx.WhichInput, 1, spentOutput) then
-            tx.Value.Inputs.[tx.WhichInput].PartialSigs.AddOrReplace(pk, signature)
-            tx |> Good
+        if (tx.Value.IsAllFinalized()) then
+            Good tx
         else
-            RResult.rmsg "Invalid signature"
+            let psbt = tx.Value
+            let spentOutput = psbt.Inputs.[tx.WhichInput].GetTxOut()
+            let scriptCode = psbt.Inputs.[tx.WhichInput].WitnessScript
+            let globalTx = psbt.GetGlobalTransaction()
+
+            let ctx = ScriptEvaluationContext()
+            ctx.SigHash <- signature.SigHash
+            ctx.ScriptVerify <- ScriptVerify.Standard
+            if ctx.CheckSig(signature.ToBytes(), pk.ToBytes(), scriptCode, globalTx, tx.WhichInput, 1, spentOutput) then
+                tx.Value.Inputs.[tx.WhichInput].PartialSigs.AddOrReplace(pk, signature)
+                tx |> Good
+            else
+                RResult.rmsg "Invalid signature"
+    /// Sign psbt inside ILightningTx and returns
+    /// 1. Newly created signature
+    /// 2. ILightningTx updated
+    /// Technically speaking, we could just return one of them.
+    /// Returning both is just for ergonomic reason. (pretending to be referential transparent)
+    let sign(tx: ILightningTx, key: Key) =
+        try
+            tx.Value.SignWithKeys(key) |> ignore
+            (tx.Value.GetMatchingSig(key.PubKey), tx)
+        with
+        /// Sadly, psbt does not support signing for script other than predefined template.
+        /// So we must fall back to more low level way.
+        | :? NotSupportedException ->
+            let psbt = tx.Value
+            let psbtIn = psbt.Inputs.[tx.WhichInput]
+            let coin =
+                let c = psbtIn.GetCoin()
+                ScriptCoin(c, psbtIn.WitnessScript)
+            let txIn =
+                let globalTx = psbt.GetGlobalTransaction()
+                globalTx.Inputs.AsIndexedInputs()
+                |> Seq.indexed
+                |> Seq.find(fun (i, _txIn) -> i = tx.WhichInput)
+                |> snd
+            let txSig = txIn.Sign(key, coin, SigHash.All, psbt.Settings.UseLowR)
+            match checkSigAndAdd tx txSig key.PubKey with
+            | Good txWithSig ->
+                (txSig, txWithSig)
+            | Bad _ -> failwith "Failed to check signature. This should never happen."
 
     let makeHTLCTimeoutTx (commitTx: Transaction)
                           (localDustLimit: Money)
@@ -428,8 +517,11 @@ module Transactions =
                 let indexedTxOut = commitTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex)
                 let scoin = ScriptCoin(indexedTxOut, redeem)
                 let dest = Scripts.toLocalDelayed localRevocationPubKey toLocalDelay localDelayedPaymentPubKey
+                // we have already done dust limit check above
+                txb.DustPrevention <- false
                 let tx = txb.AddCoins(scoin)
                             .Send(dest.WitHash, amount)
+                            .SendFees(fee)
                             .SetLockTime(!> htlc.CLTVExpiry.Value)
                             .BuildTransaction(false)
                 tx.Version <- 2u
@@ -458,17 +550,22 @@ module Transactions =
         else
             let psbt = 
                 let txb = n.CreateTransactionBuilder()
-                let scoin = ScriptCoin(commitTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex), redeem)
+                let scoin =
+                    let coin = commitTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex)
+                    ScriptCoin(coin, redeem)
                 let dest = Scripts.toLocalDelayed localRevocationPubKey toLocalDelay localDelayedPaymentPubKey
+                // we have already done dust limit check above
+                txb.DustPrevention <- false
                 let tx = txb.AddCoins(scoin)
                             .Send(dest.WitHash, amount)
+                            .SendFees(fee)
                             .SetLockTime(!> 0u)
                             .BuildTransaction(false)
                 tx.Version <- 2u
                 PSBT.FromTransaction(tx)
                     .AddCoins(scoin)
             let whichInput = psbt.Inputs |> Seq.findIndex(fun i -> not (isNull i.WitnessScript))
-            { HTLCSuccessTx.Value = psbt; WhichInput = whichInput } |> Good
+            { HTLCSuccessTx.Value = psbt; WhichInput = whichInput; PaymentHash = htlc.PaymentHash } |> Good
 
     let makeHTLCTxs (commitTx: Transaction)
                     (localDustLimit: Money)
@@ -483,7 +580,7 @@ module Transactions =
                              |> List.map(fun htlc -> makeHTLCTimeoutTx (commitTx) (localDustLimit) (localRevocationPubKey) (toLocalDelay) (toLocalDelayedPaymentPubKey) (localHTLCPubKey) (remoteHTLCPubKey) (spec.FeeRatePerKw) (htlc.Add) n)
                              |> List.sequenceRResult
         
-        let htlcSuccessTxs = (trimOfferedHTLCs localDustLimit spec)
+        let htlcSuccessTxs = (trimReceivedHTLCs localDustLimit spec)
                              |> List.map(fun htlc -> makeHTLCSuccessTx (commitTx) (localDustLimit) (localRevocationPubKey) (toLocalDelay) (toLocalDelayedPaymentPubKey) (localHTLCPubKey) (remoteHTLCPubKey) (spec.FeeRatePerKw) (htlc.Add) n)
                              |> List.sequenceRResult
         RResult.Good (fun a b -> (a, b)) <*> htlcTimeoutTxs <*> htlcSuccessTxs
@@ -510,6 +607,7 @@ module Transactions =
                 let coin = Coin(commitTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex))
                 let tx = txb.AddCoins(coin)
                             .Send(localFinalScriptPubKey, amount)
+                            .SendFees(fee)
                             .SetLockTime(!> 0u)
                             .BuildTransaction(false)
                 tx.Version <- 2u
@@ -540,6 +638,7 @@ module Transactions =
                 let tx = n.CreateTransactionBuilder()
                           .AddCoins(coin)
                           .Send(localFinalScriptPubKey, amount)
+                          .SendFees(fee)
                           .SetLockTime(!> 0u)
                           .BuildTransaction(false)
                 tx.Version <- 2u
@@ -564,9 +663,13 @@ module Transactions =
         else
             let psbt = 
                 let coin = Coin(outPut)
-                let tx = n.CreateTransactionBuilder()
+                let txb = n.CreateTransactionBuilder()
+                // we have already done dust limit check above
+                txb.DustPrevention <- false
+                let tx = txb
                           .AddCoins(coin)
                           .Send(localFinalDestination, amount)
+                          .SendFees(fee)
                           .SetLockTime(!> 0u)
                           .BuildTransaction(false)
                 tx.Version <- 2u
@@ -594,9 +697,13 @@ module Transactions =
         else
             let psbt = 
                 let coin = Coin(outPut)
-                let tx = n.CreateTransactionBuilder()
+                let txb = n.CreateTransactionBuilder()
+                // we have already done dust limit check above
+                txb.DustPrevention <- false
+                let tx = txb
                           .AddCoins(coin)
                           .Send(localFinalDestination, amount)
+                          .SendFees(fee)
                           .SetLockTime(!> 0u)
                           .BuildTransaction(false)
                 tx.Version <- 2u
@@ -631,6 +738,7 @@ module Transactions =
             let psbt = 
                 let txb = n.CreateTransactionBuilder()
                            .AddCoins(commitTxInput)
+                           .SendFees(closingFee)
                            .SetLockTime(!> 0u)
                 for (money, dest) in outputs do
                     txb.Send(dest, money) |> ignore
@@ -640,4 +748,5 @@ module Transactions =
                 PSBT.FromTransaction(tx)
                     .AddCoins(commitTxInput)
             psbt |> ClosingTx |> Good
+
 
