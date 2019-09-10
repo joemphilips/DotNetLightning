@@ -11,14 +11,9 @@ open DotNetLightning.Core.Utils.Extensions
 open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Utils.Aether
 open DotNetLightning.Serialize.Msgs
-open DotNetLightning.Chain
-open NBitcoin
-open NBitcoin
-open NBitcoin.BuilderExtensions
-open System.Linq
 
 /// We define all possible txs here.
-/// For internal representation is psbt. But this is just for convenience since
+/// internal representation is psbt. But this is just for convenience since
 /// in current spec we don't have to send PSBT with each other node in case of Lightning.
 /// NOTE: we are assuming ILightningTx will never have redeem_script as an input script.
 /// And we are also ignoring `SigHash` field in its input (always `SigHash.All`)
@@ -57,6 +52,31 @@ module private HTLCHelper =
         let s = Script(l)
         s.ToWitScript()
         
+    /// PSBT does not support finalizing script with payment preimage.
+    /// (And it never does unless scripts in BOLT3 follows some other static analysis scheme such as Miniscript.)
+    /// We must finalize manually here.
+    let finalize(htlcTx: IHTLCTx, localSig, remoteSig, paymentPreimage: PaymentPreimage option) =
+        // Clone this to make the operation atomic. we don't want to mutate `this` in case of failure
+        let psbt = htlcTx.Value.Clone() 
+        let psbtIn = psbt.Inputs.[htlcTx.WhichInput]
+        let witScript = psbtIn.WitnessScript
+        let finalWit = createHTLCWitScript(localSig, remoteSig, witScript, paymentPreimage)
+        psbtIn.FinalScriptWitness <- finalWit
+        let coin = psbtIn.GetCoin()
+        let txIn = psbt.GetGlobalTransaction().Inputs.FindIndexedInput(coin.Outpoint)
+        txIn.WitScript <- finalWit
+        let errors = ref ScriptError.OK
+        match txIn.VerifyScript(coin, ScriptVerify.Standard, errors) with
+        | true ->
+            htlcTx.Value.Inputs.[htlcTx.WhichInput].FinalScriptWitness <- finalWit
+            htlcTx.Value.Inputs.[htlcTx.WhichInput].WitnessScript <- null
+            htlcTx.Value.Inputs.[htlcTx.WhichInput].PartialSigs.Clear()
+            htlcTx.Value.ExtractTransaction()
+            |> Good
+        | false ->
+            sprintf "Failed to finalize PSBT. error (%A) " errors
+            |> RResult.rmsg
+        
 type HTLCSuccessTx = {
     Value: PSBT
     WhichInput: int
@@ -71,30 +91,8 @@ type HTLCSuccessTx = {
             let remoteSig = this.Value.Inputs.[this.WhichInput].PartialSigs.[remotePubKey]
             this.Finalize(localSig, remoteSig, paymentPreimage)
             
-        /// PSBT does not support finalizing script with payment preimage.
-        /// (And it never does unless scripts in BOLT3 follows some other static analysis scheme such as Miniscript.)
-        /// We must finalize manually here.
         member this.Finalize(localSig, remoteSig, paymentPreimage: PaymentPreimage) =
-            // Clone this to make the operation atomic. we don't want to mutate `this` in case of failure
-            let psbt = this.Value.Clone() 
-            let psbtIn = psbt.Inputs.[this.WhichInput]
-            let witScript = psbtIn.WitnessScript
-            let finalWit = HTLCHelper.createHTLCWitScript(localSig, remoteSig, witScript, Some paymentPreimage)
-            psbtIn.FinalScriptWitness <- finalWit
-            let coin = psbtIn.GetCoin()
-            let txIn = psbt.GetGlobalTransaction().Inputs.FindIndexedInput(coin.Outpoint)
-            txIn.WitScript <- finalWit
-            let errors = ref ScriptError.OK
-            match txIn.VerifyScript(coin, ScriptVerify.Standard, errors) with
-            | true ->
-                this.Value.Inputs.[this.WhichInput].FinalScriptWitness <- finalWit
-                this.Value.Inputs.[this.WhichInput].WitnessScript <- null
-                this.Value.Inputs.[this.WhichInput].PartialSigs.Clear()
-                this.Value.ExtractTransaction()
-                |> Good
-            | false ->
-                sprintf "Failed to finalize PSBT. error (%A) " errors
-                |> RResult.rmsg
+            HTLCHelper.finalize(this, localSig, remoteSig, Some paymentPreimage)
             
         interface IHTLCTx
             with
@@ -107,26 +105,7 @@ type HTLCTimeoutTx = {
 }
     with
         member this.Finalize(localSig: TransactionSignature, remoteSig: TransactionSignature) =
-            // Clone this to make the operation atomic. we don't want to mutate `this` in case of failure
-            let psbt = this.Value.Clone() 
-            let psbtIn = psbt.Inputs.[this.WhichInput]
-            let witScript = psbtIn.WitnessScript
-            let finalWit = HTLCHelper.createHTLCWitScript(localSig, remoteSig, witScript, None)
-            psbtIn.FinalScriptWitness <- finalWit
-            let coin = psbtIn.GetCoin()
-            let txIn = psbt.GetGlobalTransaction().Inputs.FindIndexedInput(coin.Outpoint)
-            txIn.WitScript <- finalWit
-            let errors = ref ScriptError.OK
-            match txIn.VerifyScript(coin, ScriptVerify.Standard, errors) with
-            | true ->
-                this.Value.Inputs.[this.WhichInput].FinalScriptWitness <- finalWit
-                this.Value.Inputs.[this.WhichInput].WitnessScript <- null
-                this.Value.Inputs.[this.WhichInput].PartialSigs.Clear()
-                this.Value.ExtractTransaction()
-                |> Good
-            | false ->
-                sprintf "Failed to finalize PSBT. error (%A) " errors
-                |> RResult.rmsg
+            HTLCHelper.finalize(this, localSig, remoteSig, None)
             
         interface IHTLCTx
             with
@@ -538,8 +517,11 @@ module Transactions =
                 let indexedTxOut = commitTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex)
                 let scoin = ScriptCoin(indexedTxOut, redeem)
                 let dest = Scripts.toLocalDelayed localRevocationPubKey toLocalDelay localDelayedPaymentPubKey
+                // we have already done dust limit check above
+                txb.DustPrevention <- false
                 let tx = txb.AddCoins(scoin)
                             .Send(dest.WitHash, amount)
+                            .SendFees(fee)
                             .SetLockTime(!> htlc.CLTVExpiry.Value)
                             .BuildTransaction(false)
                 tx.Version <- 2u
@@ -568,10 +550,15 @@ module Transactions =
         else
             let psbt = 
                 let txb = n.CreateTransactionBuilder()
-                let scoin = ScriptCoin(commitTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex), redeem)
+                let scoin =
+                    let coin = commitTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex)
+                    ScriptCoin(coin, redeem)
                 let dest = Scripts.toLocalDelayed localRevocationPubKey toLocalDelay localDelayedPaymentPubKey
+                // we have already done dust limit check above
+                txb.DustPrevention <- false
                 let tx = txb.AddCoins(scoin)
                             .Send(dest.WitHash, amount)
+                            .SendFees(fee)
                             .SetLockTime(!> 0u)
                             .BuildTransaction(false)
                 tx.Version <- 2u
@@ -620,6 +607,7 @@ module Transactions =
                 let coin = Coin(commitTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex))
                 let tx = txb.AddCoins(coin)
                             .Send(localFinalScriptPubKey, amount)
+                            .SendFees(fee)
                             .SetLockTime(!> 0u)
                             .BuildTransaction(false)
                 tx.Version <- 2u
@@ -650,6 +638,7 @@ module Transactions =
                 let tx = n.CreateTransactionBuilder()
                           .AddCoins(coin)
                           .Send(localFinalScriptPubKey, amount)
+                          .SendFees(fee)
                           .SetLockTime(!> 0u)
                           .BuildTransaction(false)
                 tx.Version <- 2u
@@ -674,9 +663,13 @@ module Transactions =
         else
             let psbt = 
                 let coin = Coin(outPut)
-                let tx = n.CreateTransactionBuilder()
+                let txb = n.CreateTransactionBuilder()
+                // we have already done dust limit check above
+                txb.DustPrevention <- false
+                let tx = txb
                           .AddCoins(coin)
                           .Send(localFinalDestination, amount)
+                          .SendFees(fee)
                           .SetLockTime(!> 0u)
                           .BuildTransaction(false)
                 tx.Version <- 2u
@@ -704,9 +697,13 @@ module Transactions =
         else
             let psbt = 
                 let coin = Coin(outPut)
-                let tx = n.CreateTransactionBuilder()
+                let txb = n.CreateTransactionBuilder()
+                // we have already done dust limit check above
+                txb.DustPrevention <- false
+                let tx = txb
                           .AddCoins(coin)
                           .Send(localFinalDestination, amount)
+                          .SendFees(fee)
                           .SetLockTime(!> 0u)
                           .BuildTransaction(false)
                 tx.Version <- 2u
@@ -741,6 +738,7 @@ module Transactions =
             let psbt = 
                 let txb = n.CreateTransactionBuilder()
                            .AddCoins(commitTxInput)
+                           .SendFees(closingFee)
                            .SetLockTime(!> 0u)
                 for (money, dest) in outputs do
                     txb.Send(dest, money) |> ignore

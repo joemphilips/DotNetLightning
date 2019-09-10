@@ -6,8 +6,10 @@ open DotNetLightning.Crypto
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Tests.Utils
 open DotNetLightning.Transactions
+open DotNetLightning.Transactions.Transactions
 open DotNetLightning.Utils
 open System.IO
+open System.Reflection.Metadata
 open Expecto
 open GeneratorsTests
 open NBitcoin
@@ -21,34 +23,6 @@ let log = logger.LogSimple
 /// data formatted to json
 let dataPath1 = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "../../..", ("Data/bolt3-tx.json"))
 let data1 = dataPath1 |> File.ReadAllText |> JsonDocument.Parse
-
-let dataPath2 = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "../../..", ("Data/bolt3-tx2.txt"))
-
-/// data unformatted
-/// ideally it should be all json. But I was lazy enough to just copy-paste original string.
-/// So we must parse here.
-let data2: Map<string, Map<string, string>> =
-    let mutable results = Map.empty
-    let mutable current = Map.empty
-    let mutable name = String.Empty
-    File.ReadLines (dataPath2)
-    |> Seq.filter(fun s -> not <| String.IsNullOrWhiteSpace(s))
-    |> Seq.iter(fun line ->
-        if line.StartsWith("name: ") then
-            let a = line.Split(": ")
-            if (not <| (name |> String.IsNullOrEmpty)) then
-                results <- results |> Map.add name current
-            name <- a.[1]
-            current <- Map.empty
-        else
-            let s = line.Split()
-            match s.Length with
-            | 2 ->
-                current <- current |> Map.add(s.[0]) (s.[1])
-            | _ -> ()
-        )
-    results <- results |> Map.add name current
-    results   
 
 let localPerCommitmentPoint = PubKey("025f7117a78150fe2ef97db7cfc83bd57b2e2c0d0dd25eaf467a4a1c2a45ce1486")
 let getLocal() =
@@ -222,9 +196,6 @@ let run (spec: CommitmentSpec): (Transaction * _) =
         commitTx.Value.Settings.UseLowR <- false
         let localSig, tx2 = Transactions.sign(commitTx, local.FundingPrivKey)
         let remoteSig, tx3 = Transactions.sign(tx2, remote.FundingPrivKey)
-        sprintf
-            "going to check and add sigs %A and %A"
-            (localSig.ToBytes().ToHexString()) (remoteSig.ToBytes().ToHexString()) |> log
         Transactions.checkSigAndAdd (tx3) (localSig) (local.FundingPrivKey.PubKey)
         >>= fun tx4 ->
             Transactions.checkSigAndAdd (tx4) (remoteSig) (remote.FundingPrivKey.PubKey)
@@ -285,7 +256,7 @@ let run (spec: CommitmentSpec): (Transaction * _) =
         |> List.map(fun htlcTx -> match htlcTx with
                                   | :? HTLCSuccessTx as tx ->
                                       let localSig, tx2 = Transactions.sign(tx, local.PaymentPrivKey)
-                                      let remoteSig, tx3 = Transactions.sign(tx2, remote.PaymentPrivKey)
+                                      let remoteSig, _tx3 = Transactions.sign(tx2, remote.PaymentPrivKey)
                                       // just checking preimage is in global list
                                       let paymentPreimage = (paymentPreImages |> List.find(fun p -> p.GetSha256() = tx.PaymentHash))
                                       log (sprintf "Finalizing %A" tx)
@@ -302,9 +273,26 @@ let run (spec: CommitmentSpec): (Transaction * _) =
     commitTx.Value.ExtractTransaction(), signedTxs
 
 let testVectors = data1.RootElement.GetProperty("test_vectors").EnumerateArray() |> Seq.toArray
+
+let htlcMap = htlcs |> List.map(fun htlc ->  htlc.Add.HTLCId, htlc) |> Map.ofList
+
+let runTest(testCase: JsonElement) (spec) (expectedOutputCount) =
+    log (sprintf "testing %A" (testCase.GetProperty("name").GetString()))
+    let commitTx, htlcTxs = run (spec)
+    Expect.equal(commitTx.Outputs.Count) (expectedOutputCount) ""
+    let expectedTx = testCase.GetProperty("output_commit_tx").GetString()
+    Expect.equal (commitTx.ToHex()) (expectedTx) ""
+    let expectedHTLC = testCase.GetProperty("htlc_output_txs").EnumerateArray()
+    expectedHTLC
+        |> Seq.iteri( fun i htlc ->
+            Expect.equal (htlcTxs.[i].ToHex()) (htlc.GetProperty("value").GetString())""
+        )
+
+let specBase = { CommitmentSpec.HTLCs = htlcMap; FeeRatePerKw = 15000u |> FeeRatePerKw;
+                 ToLocal = LNMoney.MilliSatoshis(6988000000L); ToRemote =  3000000000L |> LNMoney.MilliSatoshis}
 [<Tests>]
 let tests =
-    ftestList "Transaction test vectors" [
+    testList "Transaction test vectors" [
         testCase "simple commitment tx with no HTLCs" <| fun _ ->
             let spec = { CommitmentSpec.HTLCs = Map.empty; FeeRatePerKw = 15000u |> FeeRatePerKw;
                          ToLocal = LNMoney.MilliSatoshis(7000000000L); ToRemote =  3000000000L |> LNMoney.MilliSatoshis}
@@ -314,18 +302,112 @@ let tests =
             let expectedTx =
                 testCase.GetProperty("output_commit_tx").GetString()
             Expect.equal(commitTx.ToHex()) (expectedTx) ""
-            ()
             
         testCase "commitment tx with all 5 htlcs untrimmed (minimum feerate)"  <| fun _ ->
             let testCase = testVectors.[1]
-            let spec = { CommitmentSpec.HTLCs = htlcs |> List.map(fun htlc ->  htlc.Add.HTLCId, htlc) |> Map.ofList
+            let spec = { CommitmentSpec.HTLCs = htlcMap
                          FeeRatePerKw = 0u |> FeeRatePerKw
                          ToLocal = 6988000000L |> LNMoney.MilliSatoshis
                          ToRemote = 3000000000L |> LNMoney.MilliSatoshis }
-            let commitTx, _htlcTxs = run(spec)
-            Expect.equal (commitTx.Outputs.Count) (7) ""
-            let expectedTx =
-                testCase.GetProperty("output_commit_tx").GetString()
-            Expect.equal (commitTx.ToHex()) (expectedTx) ""
-            ()
+            runTest (testCase) (spec) (7)
+            
+        testCase "commitment tx with seven outputs untrimmed (maximum feerate)" <| fun _ ->
+            let testCase = testVectors.[2]
+            let spec = { CommitmentSpec.HTLCs = htlcMap
+                         FeeRatePerKw = (454999UL / Constants.HTLC_SUCCESS_WEIGHT) |> uint32 |> FeeRatePerKw
+                         ToLocal = 6988000000L |> LNMoney.MilliSatoshis
+                         ToRemote = 3000000000L |> LNMoney.MilliSatoshis }
+            runTest (testCase) (spec) (7)
+            
+        testCase "commitment tx with six outputs untrimmed (minimum feerate)" <| fun _ ->
+            let testCase = testVectors.[3]
+            let spec = { specBase with
+                             FeeRatePerKw = (454999UL / Constants.HTLC_SUCCESS_WEIGHT)
+                                            |> ((+)1UL) |> uint32 |> FeeRatePerKw }
+            runTest (testCase) (spec) (6)
+            
+        testCase "commitment tx with six outputs untrimmed (maximum feerate)" <| fun _ ->
+            let testCase = testVectors.[4]
+            let spec = { specBase with
+                            FeeRatePerKw = (1454999UL / Constants.HTLC_SUCCESS_WEIGHT)
+                                           |> uint32 |> FeeRatePerKw }
+            runTest (testCase) (spec) (6)
+            
+        testCase "commitment tx with five outputs untrimmed (minimum feerate)" <| fun _ ->
+            let testCase = testVectors.[5]
+            let spec = { specBase with
+                            FeeRatePerKw = (1454999UL / Constants.HTLC_SUCCESS_WEIGHT)
+                                           |> ((+)1UL)|> uint32 |> FeeRatePerKw }
+            runTest (testCase) (spec) (5)
+            
+        testCase "commitment tx with five outputs untrimmed (maximum feerate)" <| fun _ ->
+            let testCase = testVectors.[6]
+            let spec = { specBase with
+                            FeeRatePerKw = (1454999UL / Constants.HTLC_TIMEOUT_WEIGHT)
+                                           |> uint32 |> FeeRatePerKw }
+            runTest (testCase) (spec) (5)
+            
+        testCase "commitment tx with four outputs untrimmed (minimum feerate)" <| fun _ ->
+            let testCase = testVectors.[7]
+            let spec = { specBase with
+                            FeeRatePerKw = (1454999UL / Constants.HTLC_TIMEOUT_WEIGHT)
+                                           |> ((+)1UL) |> uint32 |> FeeRatePerKw }
+            runTest (testCase) (spec) (4)
+            
+        testCase "commitment tx with four outputs untrimmed (maximum feerate)" <| fun _ ->
+            let testCase = testVectors.[8]
+            let spec = { specBase with
+                            FeeRatePerKw = (2454999UL / Constants.HTLC_TIMEOUT_WEIGHT)
+                                           |> uint32 |> FeeRatePerKw }
+            runTest (testCase) (spec) (4)
+            
+        testCase "commitment tx with three outputs untrimmed (minimum feerate)" <| fun _ ->
+            let feeRate = 2454999UL / Constants.HTLC_TIMEOUT_WEIGHT
+            let spec = { CommitmentSpec.HTLCs = htlcMap
+                         FeeRatePerKw = feeRate + 1UL |> uint32 |> FeeRatePerKw
+                         ToLocal = 6988000000L |> LNMoney.MilliSatoshis
+                         ToRemote = 3000000000L |> LNMoney.MilliSatoshis }
+            let testCase = testVectors.[9]
+            runTest (testCase) (spec) (3)
+            
+        testCase "commitment tx with three outputs untrimmed (maximum feerate)" <| fun _ ->
+            let feeRate = 3454999UL / Constants.HTLC_SUCCESS_WEIGHT
+            let spec = { CommitmentSpec.HTLCs = htlcMap
+                         FeeRatePerKw = feeRate |> uint32 |> FeeRatePerKw
+                         ToLocal = 6988000000L |> LNMoney.MilliSatoshis
+                         ToRemote = 3000000000L |> LNMoney.MilliSatoshis }
+            let testCase = testVectors.[10]
+            runTest (testCase) (spec) (3)
+            
+        testCase "commitment tx with two outputs untrimmed (minimum feerate)" <| fun _ ->
+            let feeRate = 3454999UL / Constants.HTLC_SUCCESS_WEIGHT
+            let spec = { CommitmentSpec.HTLCs = htlcMap
+                         FeeRatePerKw = feeRate + 1UL |> uint32 |> FeeRatePerKw
+                         ToLocal = 6988000000L |> LNMoney.MilliSatoshis
+                         ToRemote = 3000000000L |> LNMoney.MilliSatoshis }
+            let testCase = testVectors.[11]
+            runTest (testCase) (spec) (2)
+            
+        testCase "commitment tx with two outputs untrimmed (maximum feerate)" <| fun _ ->
+            let spec = { CommitmentSpec.HTLCs = htlcMap
+                         FeeRatePerKw = 9651180u |> FeeRatePerKw
+                         ToLocal = 6988000000L |> LNMoney.MilliSatoshis
+                         ToRemote = 3000000000L |> LNMoney.MilliSatoshis }
+            let testCase = testVectors.[12]
+            runTest (testCase) (spec) (2)
+            
+        testCase "commitment tx with one output untrimmed (minimum feerate)" <| fun _ ->
+            let testCase = testVectors.[13]
+            let spec = { specBase with
+                            FeeRatePerKw = (9651181u |> FeeRatePerKw) }
+            runTest (testCase) (spec) (1)
+            
+        testCase "commitment tx with fee greater than funder amount" <| fun _ ->
+            let spec = { CommitmentSpec.HTLCs = htlcMap;
+                         FeeRatePerKw = 9651936u |> FeeRatePerKw;
+                         ToLocal = 6988000000L |> LNMoney.MilliSatoshis
+                         ToRemote = 3000000000L |> LNMoney.MilliSatoshis }
+            let testCase = testVectors.[14]
+            runTest(testCase) (spec) (1)
+            
     ]
