@@ -487,8 +487,7 @@ type PeerManager(keyRepo: IKeysRepository,
             return ()
     }
     
-    member this.MakeLocalParams(defaultFinalScriptPubKey: Script, isFunder: bool, fundingSatoshis: Money) =
-        let channelPubKeys = _keyRepo.GetChannelKeys(not isFunder).ToChannelPubKeys()
+    member this.MakeLocalParams(channelPubKeys, defaultFinalScriptPubKey: Script, isFunder: bool, fundingSatoshis: Money) =
         _nodeParams.MakeLocalParams(this.OurNodeId, channelPubKeys, defaultFinalScriptPubKey, isFunder, fundingSatoshis)
         
     interface IPeerManager with

@@ -1,23 +1,17 @@
 module ChannelInitializationTests
 
 open FSharp.Control.Reactive
-open System.Reactive.Threading.Tasks
 open DotNetLightning.Utils.Primitives
 open NBitcoin
 open CustomEventAggregator
 open DotNetLightning.LN
 open DotNetLightning.Infrastructure
 
-open System
 open System.Net
 open System.Threading.Tasks
 open DotNetLightning.Chain
-open DotNetLightning.Utils.Primitives
 open Expecto
 open Foq
-open Microsoft.Extensions.DependencyInjection
-open Microsoft.Extensions.Logging
-open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Options
 open TestConstants
 
@@ -115,10 +109,22 @@ type internal ActorCreator =
         return actors
     }
     
+let temporaryChannelId =
+    "5555555555555555555555555555555555555555555555555555555555555555"
+    |> hex.DecodeData
+    |> uint256
+    |> ChannelId
+    
+let defaultFinalScriptPubKey =
+    "5555555555555555555555555555555555555555555555555555555555555555"
+    |> hex.DecodeData
+    |> Key
+    |> fun k -> k.PubKey.WitHash.ScriptPubKey
+
 [<Tests>]
 let tests =
     testList "Basic Channel handling between 2 peers" [
-        testAsync "Channel Initialization" {
+        ftestAsync "Channel Initialization" {
             let alice = ActorCreator.getAlice()
             let bob = ActorCreator.getBob()
             let bobInitTask = alice.EventAggregator.GetObservable<PeerEvent>()
@@ -127,17 +133,17 @@ let tests =
             
             let! bobInit = bobInitTask
             
+            let channelKeys = alice.CM.KeysRepository.GetChannelKeys(false)
             let initFunder = { InputInitFunder.PushMSat = TestConstants.pushMsat
-                               TemporaryChannelId = Key().ToBytes() |> uint256 |> ChannelId
+                               TemporaryChannelId = temporaryChannelId
                                FundingSatoshis = TestConstants.fundingSatoshis
                                InitFeeRatePerKw = TestConstants.feeratePerKw
                                FundingTxFeeRatePerKw = TestConstants.feeratePerKw
                                LocalParams =
-                                   let defaultFinalScriptPubKey = Key().PubKey.WitHash.ScriptPubKey
-                                   alice.PM.MakeLocalParams(defaultFinalScriptPubKey, true, TestConstants.fundingSatoshis)
+                                   alice.PM.MakeLocalParams(channelKeys.ToChannelPubKeys() ,defaultFinalScriptPubKey, true, TestConstants.fundingSatoshis)
                                RemoteInit = bobInit.Value
                                ChannelFlags = 0x00uy
-                               ChannelKeys =  alice.CM.KeysRepository.GetChannelKeys(false) }
+                               ChannelKeys = channelKeys }
             let aliceChannelEventFuture =
                 alice.EventAggregator.AwaitChannelEvent()
             let bobChannelEventFuture1 =

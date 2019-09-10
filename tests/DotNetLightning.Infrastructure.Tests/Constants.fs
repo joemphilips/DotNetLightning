@@ -39,12 +39,16 @@ type DummyFundingTxProvider(n: Network) =
     interface IFundingTxProvider with
         member this.ProvideFundingTx(dest: IDestination, amount: Money, feerate: FeeRatePerKw) =
             let txb = n.CreateTransactionBuilder()
-            let dummyKey = Key()
+            let dummyKey =
+                "5555555555555555555555555555555555555555555555555555555555555555"
+                |> hex.DecodeData |> Key
             let coin =
                 let inputAmount = amount + Money.Satoshis(6000000L)
                 let dummyTxid = [| for _ in 0..31 -> 1uy |] |> uint256
                 Coin(dummyTxid, 0u, inputAmount, dummyKey.PubKey.WitHash.ScriptPubKey)
-            let dummyChange = Key()
+            let dummyChange =
+                "6666666666666666666666666666666666666666666666666666666666666666"
+                |> hex.DecodeData |> Key
             txb.AddCoins(coin)
                .AddKeys(dummyKey, dummyChange) |> ignore
             txb.SetChange(dummyChange) |> ignore

@@ -472,10 +472,12 @@ module Transactions =
     let sign(tx: ILightningTx, key: Key) =
         try
             tx.Value.SignWithKeys(key) |> ignore
-            (tx.Value.GetMatchingSig(key.PubKey), tx)
+            match tx.Value.GetMatchingSig(key.PubKey) with
+            | Some signature -> (signature, tx)
+            | None -> failwith "unreachable"
         with
         /// Sadly, psbt does not support signing for script other than predefined template.
-        /// So we must fall back to more low level way.
+        /// So we must fallback to more low level way.
         | :? NotSupportedException ->
             let psbt = tx.Value
             let psbtIn = psbt.Inputs.[tx.WhichInput]

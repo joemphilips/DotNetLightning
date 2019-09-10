@@ -17,8 +17,10 @@
     <Compile Include="SphinxTests.fs" />
     <Compile Include="GeneratorsTests.fs" />
     <Compile Include="TransactionBolt3TestVectorTests.fs" />
+    <Compile Include="ClaimReceivedHTLCTests.fs" />
     <Compile Include="TransactionTests.fs" />
     <Compile Include="PeerChannelEncryptorTests.fs" />
+    <Compile Include="ChannelCoreTests.fs" />
     <Compile Include="Main.fs" />
     <Content Include="Data\bolt3-tx.json" />
   </ItemGroup>

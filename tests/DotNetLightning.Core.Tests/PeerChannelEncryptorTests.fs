@@ -240,7 +240,8 @@ let peerChannelEncryptorTests =
                     inboundPeer <- inboundPeer3
                 | _ -> failwith ""
 
-            let log = eventX >> logger.info 
+            let log = fun s -> ()
+                // eventX >> logger.info 
             let rec loop (i: int) (localOutBound) (localInbound) =
                 log (sprintf "%d th iteration ----\n\n" i)
                 log (sprintf "outbound is %A" localOutBound)

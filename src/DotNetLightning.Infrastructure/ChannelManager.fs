@@ -76,14 +76,15 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
                 match msg with
                 | :? OpenChannel as m ->
                     let remoteInit = this.RemoteInits.TryGet(nodeId)
+                    let channelKeys = _keysRepository.GetChannelKeys(true)
                     let initFundee = { InputInitFundee.LocalParams =
-                                           let channelPubKeys = _keysRepository.GetChannelKeys(true).ToChannelPubKeys()
+                                           let channelPubKeys = channelKeys.ToChannelPubKeys()
                                            let spk = _nodeParams.ShutdownScriptPubKey |> Option.defaultValue (_keysRepository.GetShutdownPubKey().WitHash.ScriptPubKey)
                                            _nodeParams.MakeLocalParams(_ourNodeId, channelPubKeys, spk, false, m.FundingSatoshis)
                                        TemporaryChannelId = m.TemporaryChannelId
                                        RemoteInit = remoteInit
                                        ToLocal = m.PushMSat
-                                       ChannelKeys = _keysRepository.GetChannelKeys(true) }
+                                       ChannelKeys = channelKeys }
                     do! this.AcceptCommandAsync(nodeId, ChannelCommand.CreateInbound(initFundee))
                     return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyOpenChannel m)
                 | :? AcceptChannel as m ->
@@ -158,7 +159,7 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
                 do! this.ChannelEventRepo.SetEventsAsync(contextEvents)
                 match this.KnownChannels.TryUpdate(nodeId, nextChannel, channel) with
                 | true ->
-                    _logger.LogTrace(sprintf "Update channel %A" nextChannel.State)
+                    _logger.LogTrace(sprintf "Updated channel with %A" nextChannel.State)
                 | false ->
                     _logger.LogTrace(sprintf "Did not update channel %A" nextChannel.State)
                 contextEvents

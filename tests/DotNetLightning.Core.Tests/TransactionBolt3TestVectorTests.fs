@@ -9,7 +9,6 @@ open DotNetLightning.Transactions
 open DotNetLightning.Transactions.Transactions
 open DotNetLightning.Utils
 open System.IO
-open System.Reflection.Metadata
 open Expecto
 open GeneratorsTests
 open NBitcoin

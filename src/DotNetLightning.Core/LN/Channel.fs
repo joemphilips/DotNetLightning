@@ -532,35 +532,9 @@ module Channel =
 
     let executeCommand (cs: Channel) (command: ChannelCommand): RResult<ChannelEvent list> =
         match cs.State, command with
-        | WaitForInitInternal, CreateOutbound inputInitFunder ->
-            let openChannelMsgToSend = {
-                OpenChannel.Chainhash = cs.Network.Consensus.HashGenesisBlock
-                TemporaryChannelId = inputInitFunder.TemporaryChannelId
-                FundingSatoshis = inputInitFunder.FundingSatoshis
-                PushMSat = inputInitFunder.PushMSat
-                DustLimitSatoshis = inputInitFunder.LocalParams.DustLimitSatoshis
-                MaxHTLCValueInFlightMsat = inputInitFunder.LocalParams.MaxHTLCValueInFlightMSat
-                ChannelReserveSatoshis = inputInitFunder.LocalParams.ChannelReserveSatoshis
-                HTLCMinimumMsat = inputInitFunder.LocalParams.HTLCMinimumMSat
-                FeeRatePerKw = inputInitFunder.InitFeeRatePerKw
-                ToSelfDelay = inputInitFunder.LocalParams.ToSelfDelay
-                MaxAcceptedHTLCs = inputInitFunder.LocalParams.MaxAcceptedHTLCs
-                FundingPubKey = inputInitFunder.ChannelKeys.FundingKey.PubKey
-                RevocationBasepoint = inputInitFunder.ChannelKeys.RevocationBaseKey.PubKey
-                PaymentBasepoint = inputInitFunder.ChannelKeys.PaymentBaseKey.PubKey
-                DelayedPaymentBasepoint = inputInitFunder.ChannelKeys.DelayedPaymentBaseKey.PubKey
-                HTLCBasepoint = inputInitFunder.ChannelKeys.HTLCBaseKey.PubKey
-                FirstPerCommitmentPoint =  ChannelUtils.buildCommitmentPoint(inputInitFunder.ChannelKeys.CommitmentSeed, 0UL)
-                ChannelFlags = inputInitFunder.ChannelFlags
-                ShutdownScriptPubKey = cs.Config.ChannelOptions.ShutdownScriptPubKey
-            }
-            [ NewOutboundChannelStarted(openChannelMsgToSend, { InputInitFunder = inputInitFunder;
-                                                                LastSent = openChannelMsgToSend }) ]
-            |> Good
+        // --------------- open channel procedure: case we are fundee -------------
         | WaitForInitInternal, CreateInbound inputInitFundee ->
             [ NewInboundChannelStarted({ InitFundee = inputInitFundee }) ] |> Good
-            
-        // --------------- open channel procedure: case we are fundee -------------
         | WaitForOpenChannel state, ApplyOpenChannel msg ->
             Validation.checkOpenChannelMsgAcceptable cs msg
             |>> fun _ ->
@@ -641,6 +615,31 @@ module Channel =
                         |> Good
 
         // --------------- open channel procedure: case we are funder -------------
+        | WaitForInitInternal, CreateOutbound inputInitFunder ->
+            let openChannelMsgToSend = {
+                OpenChannel.Chainhash = cs.Network.Consensus.HashGenesisBlock
+                TemporaryChannelId = inputInitFunder.TemporaryChannelId
+                FundingSatoshis = inputInitFunder.FundingSatoshis
+                PushMSat = inputInitFunder.PushMSat
+                DustLimitSatoshis = inputInitFunder.LocalParams.DustLimitSatoshis
+                MaxHTLCValueInFlightMsat = inputInitFunder.LocalParams.MaxHTLCValueInFlightMSat
+                ChannelReserveSatoshis = inputInitFunder.LocalParams.ChannelReserveSatoshis
+                HTLCMinimumMsat = inputInitFunder.LocalParams.HTLCMinimumMSat
+                FeeRatePerKw = inputInitFunder.InitFeeRatePerKw
+                ToSelfDelay = inputInitFunder.LocalParams.ToSelfDelay
+                MaxAcceptedHTLCs = inputInitFunder.LocalParams.MaxAcceptedHTLCs
+                FundingPubKey = inputInitFunder.ChannelKeys.FundingKey.PubKey
+                RevocationBasepoint = inputInitFunder.ChannelKeys.RevocationBaseKey.PubKey
+                PaymentBasepoint = inputInitFunder.ChannelKeys.PaymentBaseKey.PubKey
+                DelayedPaymentBasepoint = inputInitFunder.ChannelKeys.DelayedPaymentBaseKey.PubKey
+                HTLCBasepoint = inputInitFunder.ChannelKeys.HTLCBaseKey.PubKey
+                FirstPerCommitmentPoint =  ChannelUtils.buildCommitmentPoint(inputInitFunder.ChannelKeys.CommitmentSeed, 0UL)
+                ChannelFlags = inputInitFunder.ChannelFlags
+                ShutdownScriptPubKey = cs.Config.ChannelOptions.ShutdownScriptPubKey
+            }
+            [ NewOutboundChannelStarted(openChannelMsgToSend, { InputInitFunder = inputInitFunder;
+                                                                LastSent = openChannelMsgToSend }) ]
+            |> Good
         | WaitForAcceptChannel state, ApplyAcceptChannel msg ->
             Validation.checkAcceptChannelMsgAcceptable cs state msg
             >>= fun _ ->
@@ -649,6 +648,10 @@ module Channel =
             >>= fun (fundingTx, outIndex) ->
                 let remoteParams = RemoteParams.FromAcceptChannel cs.RemoteNodeId (state.InputInitFunder.RemoteInit) msg
                 let localParams = state.InputInitFunder.LocalParams
+                let _ =
+                    assert (state.LastSent.FundingPubKey = localParams.ChannelPubKeys.FundingPubKey)
+                    let scoin = Helpers.getFundingRedeemScript (localParams.ChannelPubKeys) (msg.FundingPubKey)
+                    ()
                 let commitmentSpec = state.InputInitFunder.DeriveCommitmentSpec()
                 Helpers.makeFirstCommitTxs localParams
                                            remoteParams

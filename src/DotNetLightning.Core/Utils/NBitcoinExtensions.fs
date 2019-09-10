@@ -25,7 +25,7 @@ module NBitcoinExtensions =
             this.Inputs
             |> Seq.collect (fun i -> i.PartialSigs)
             |> Seq.choose(fun kv -> if kv.Key = pubkey then Some kv.Value else None)
-            |> Seq.exactlyOne
+            |> Seq.tryExactlyOne
 
         member this.GetTxId() =
             this.GetGlobalTransaction().GetTxId()

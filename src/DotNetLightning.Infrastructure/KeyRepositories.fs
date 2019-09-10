@@ -15,8 +15,6 @@ type FlatFileKeyRepository() =
             failwith "Not Implemented"
         member this.GenerateKeyFromRemoteSecretAndSign(psbt: PSBT, pubKey: PubKey, remoteSecret: Key): TransactionSignature * PSBT = 
             failwith "Not Implemented"
-        member this.GetChannelId(): ChannelId = 
-            failwith "Not Implemented"
         member this.GetChannelKeys(inbound: bool): ChannelKeys = 
             failwith "Not Implemented"
         member this.GetDestinationScript(): Script = 
