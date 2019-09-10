@@ -539,7 +539,7 @@ module Channel =
             Validation.checkOpenChannelMsgAcceptable cs msg
             |>> fun _ ->
                 let localParams = state.InitFundee.LocalParams
-                let channelKeys = cs.KeysRepository.GetChannelKeys(true)
+                let channelKeys = state.InitFundee.ChannelKeys
                 let localCommitmentSecret = ChannelUtils.buildCommitmentSecret (channelKeys.CommitmentSeed, 0UL)
                 let acceptChannel = { AcceptChannel.TemporaryChannelId = msg.TemporaryChannelId
                                       DustLimitSatoshis = localParams.DustLimitSatoshis

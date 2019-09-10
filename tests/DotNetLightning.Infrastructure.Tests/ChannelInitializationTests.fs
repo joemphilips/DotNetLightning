@@ -7,6 +7,7 @@ open CustomEventAggregator
 open DotNetLightning.LN
 open DotNetLightning.Infrastructure
 
+open System
 open System.Net
 open System.Threading.Tasks
 open DotNetLightning.Chain
@@ -22,8 +23,8 @@ type internal ActorCreator =
     static member getAlice(?keyRepo: IKeysRepository, ?nodeParams, ?chainWatcher, ?broadCaster) =
         let aliceParam = TestConstants.getAliceParam()
         let keyRepo = defaultArg keyRepo (aliceParam.KeyRepo)
-        let peerLogger = TestLogger.create<PeerManager>()
-        let channelLogger = TestLogger.create<ChannelManager>()
+        let peerLogger = TestLogger.create<PeerManager>(ConsoleColor.Red)
+        let channelLogger = TestLogger.create<ChannelManager>(ConsoleColor.Magenta)
         let nodeParams = defaultArg nodeParams (Options.Create<NodeParams>(aliceParam.NodeParams))
         let chainWatcher = defaultArg chainWatcher (Mock<IChainWatcher>().Create())
         let broadCaster = defaultArg broadCaster (Mock<IBroadCaster>().Create())
@@ -62,10 +63,10 @@ type internal ActorCreator =
         let keyRepo = defaultArg keyRepo (bobParam.KeyRepo)
         let peerLogger =
             // Mock<ILogger<PeerManager>>().Create()
-            TestLogger.create<PeerManager>()
+            TestLogger.create<PeerManager>(ConsoleColor.Blue)
         let channelLogger =
             // Mock<ILogger<ChannelManager>>().Create()
-            TestLogger.create<ChannelManager>()
+            TestLogger.create<ChannelManager>(ConsoleColor.Green)
         let nodeParams = defaultArg nodeParams (Options.Create<NodeParams>(bobParam.NodeParams))
         let chainWatcher = defaultArg chainWatcher (Mock<IChainWatcher>().Create())
         let broadCaster = defaultArg broadCaster (Mock<IBroadCaster>().Create())
@@ -124,7 +125,7 @@ let defaultFinalScriptPubKey =
 [<Tests>]
 let tests =
     testList "Basic Channel handling between 2 peers" [
-        ftestAsync "Channel Initialization" {
+        testAsync "Channel Initialization" {
             let alice = ActorCreator.getAlice()
             let bob = ActorCreator.getBob()
             let bobInitTask = alice.EventAggregator.GetObservable<PeerEvent>()
@@ -146,25 +147,37 @@ let tests =
                                ChannelKeys = channelKeys }
             let aliceChannelEventFuture =
                 alice.EventAggregator.AwaitChannelEvent()
-            let bobChannelEventFuture1 =
+            let bobStartedNewInboundChannelTask =
                 bob.EventAggregator.AwaitChannelEvent(function NewInboundChannelStarted msg -> Some msg | _ -> None)
-            let bobChannelEventFuture2 =
+            let bobAcceptedOpenChannelTask =
                 bob.EventAggregator.AwaitChannelEvent(function WeAcceptedOpenChannel(acceptChannel, _state) -> Some acceptChannel | _ -> None)
                 
-            let aliceReceivedAcceptChannel =
+            let aliceReceivedAcceptChannelTask =
                 alice.EventAggregator.AwaitChannelEvent(function WeAcceptedAcceptChannel(i, _) -> Some i | _ -> None)
+            
+            let bobAcceptedFundingCreatedTask =
+                bob.EventAggregator.AwaitChannelEvent(function WeAcceptedFundingCreated(i, _) -> Some i | _ -> None)
+                
+            let aliceAcceptedFundingSignedTask =
+                alice.EventAggregator.AwaitChannelEvent(function WeAcceptedFundingSigned(i, _) -> Some i | _ -> None)
             
             let bobNodeId = bob.CM.KeysRepository.GetNodeSecret().PubKey |> NodeId
             do! alice.CM.AcceptCommandAsync(bobNodeId, ChannelCommand.CreateOutbound(initFunder)) |> Async.AwaitTask
             
             let! r = aliceChannelEventFuture
             Expect.isSome r "timeout"
-            let! r = bobChannelEventFuture1
+            let! r = bobStartedNewInboundChannelTask
             Expect.isSome (r) "timeout"
-            let! r = bobChannelEventFuture2
+            let! r = bobAcceptedOpenChannelTask
             Expect.isSome (r) "timeout"
             
-            let! r = aliceReceivedAcceptChannel
+            let! r = aliceReceivedAcceptChannelTask
+            Expect.isSome r "timeout"
+            
+            let! r = bobAcceptedFundingCreatedTask
+            Expect.isSome r "timeout"
+            
+            let! r = aliceAcceptedFundingSignedTask
             Expect.isSome r "timeout"
             
             return ()
