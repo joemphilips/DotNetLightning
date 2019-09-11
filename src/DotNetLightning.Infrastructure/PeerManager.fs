@@ -231,7 +231,7 @@ type PeerManager(keyRepo: IKeysRepository,
         }
 
     member private this.UpdatePeerWith(theirPeerId, newPeer: Peer) =
-        ignore <| this.KnownPeers.AddOrUpdate(theirPeerId, newPeer, (fun pId exisintgPeer -> newPeer))
+        ignore <| this.KnownPeers.AddOrUpdate(theirPeerId, newPeer, (fun pId existingPeer -> newPeer))
         if newPeer.ChannelEncryptor.IsReadyForEncryption() then
             ignore <| this.OpenedPeers.AddOrUpdate(theirPeerId, newPeer, fun pId existingPeer -> newPeer)
 
