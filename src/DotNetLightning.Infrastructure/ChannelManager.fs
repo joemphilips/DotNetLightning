@@ -152,14 +152,14 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
         | true, channel ->
             match Channel.executeCommand channel cmd with
             | Good events ->
-                _logger.LogTrace(sprintf "Applying events %A" events)
+                _logger.LogTrace(sprintf "Applying events %A" (events |> List.map (fun e -> e.GetType())))
                 let nextChannel = events |> List.fold Channel.applyEvent channel
                 let contextEvents =
                     events |> List.map(fun e -> { ChannelEventWithContext.ChannelEvent = e; NodeId = nodeId })
                 do! this.ChannelEventRepo.SetEventsAsync(contextEvents)
                 match this.KnownChannels.TryUpdate(nodeId, nextChannel, channel) with
                 | true ->
-                    _logger.LogTrace(sprintf "Updated channel with %A" nextChannel.State)
+                    _logger.LogTrace(sprintf "Updated channel with %A" (nextChannel.State.GetType()))
                 | false ->
                     _logger.LogTrace(sprintf "Did not update channel %A" nextChannel.State)
                 contextEvents
