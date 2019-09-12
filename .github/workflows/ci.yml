@@ -38,4 +38,4 @@ jobs:
       run: |
         cd $GITHUB_WORKSPACE/src/DotNetLightning.Core
         dotnet pack -p:Configuration=Release -p:Version=1.0.0-git$GITHUB_SHA
-        dotnet nuget push ./bin/Release/DotNetLightning.Core.1.0.0-*.nupkg -k $NUGET_API_KEY --source nuget.org
+        dotnet nuget push ./bin/Release/DotNetLightning.Core.1.0.0-*.nupkg --source nuget.org -k $NUGET_API_KEY
