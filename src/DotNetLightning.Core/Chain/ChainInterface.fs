@@ -57,7 +57,7 @@ type IFeeEstimator =
 type ChainWatchedUtil = {
     WatchAll: bool
     WatchedTxn: Map<TxId, Script>
-    WatchedOutpoints: Set<OutPoint>
+    WatchedOutpoints: Set<LNOutPoint>
 }
 
 module ChainWatchedUtil =
@@ -74,7 +74,7 @@ module ChainWatchedUtil =
     let registerOutpoint (outpoint: OutPoint) (util) =
         if util.WatchAll then util
         else
-            { util with WatchedOutpoints = util.WatchedOutpoints |> Set.add outpoint }
+            { util with WatchedOutpoints = util.WatchedOutpoints |> Set.add (LNOutPoint outpoint) }
 
     let private doesMatchTxOut(tx: Transaction) (util: ChainWatchedUtil) =
         util.WatchedTxn

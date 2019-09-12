@@ -163,6 +163,45 @@ module Primitives =
     [<StructuralComparison;StructuralEquality>]
     type TxId = | TxId of uint256 with
         member x.Value = let (TxId v) = x in v
+        
+    /// Small wrapper for NBitcoin's OutPoint type
+    /// So that it supports comparison and equality constraints
+    [<CustomComparison;CustomEquality>]
+    type LNOutPoint = LNOutPoint of OutPoint with
+        member x.Value = let (LNOutPoint v) = x in v
+        
+        member this.CompareTo(other: LNOutPoint) =
+            if this.Value.Hash > other.Value.Hash then
+                1
+            else if this.Value.Hash < other.Value.Hash then
+                -1
+            else
+                if this.Value.N > other.Value.N then
+                    1
+                else if this.Value.N < other.Value.N then
+                    -1
+                else
+                    0
+            
+        member this.Equals(other: LNOutPoint) =
+            (this.Value.Hash = other.Value.Hash) &&
+            (this.Value.N = other.Value.N)
+            
+        override this.Equals(other: obj) =
+            if isNull other then false else
+            if not <| other :? LNOutPoint then false else
+            this.Equals((other :?> LNOutPoint))
+            
+        override this.GetHashCode() = hash (this.Value.ToBytes())
+            
+        interface IComparable with
+            member this.CompareTo(other) =
+                if isNull other then 1 else
+                if not <| other :? LNOutPoint then 1 else
+                this.CompareTo(other :?> LNOutPoint)
+            
+        interface IEquatable<LNOutPoint> with
+            member this.Equals(other) = this.Equals(other)
 
     type FeeRatePerKw = | FeeRatePerKw of uint32 with
         member x.Value = let (FeeRatePerKw v) = x in v

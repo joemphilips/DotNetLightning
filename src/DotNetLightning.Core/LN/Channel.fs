@@ -74,7 +74,7 @@ module Channel =
     let private dummySig =
         "01010101010101010101010101010101" |> ascii.GetBytes
         |> uint256
-        |> fun m -> dummyPrivKey.SignCompact(m, false)
+        |> fun m -> dummyPrivKey.SignCompact(m)
         |> fun d -> LNECDSASignature.FromBytesCompact(d, true)
         |> fun ecdsaSig -> TransactionSignature(ecdsaSig.Value, SigHash.All)
 
@@ -121,7 +121,7 @@ module Channel =
         let internal makeChannelUpdate (chainHash, nodeSecret: Key, remoteNodeId: NodeId, shortChannelId, cltvExpiryDelta,
                                         htlcMinimum, feeBase, feeProportionalMillionths, enabled: bool, timestamp) =
             let timestamp = defaultArg timestamp ((System.DateTime.UtcNow.ToUnixTimestamp()) |> uint32)
-            let isNodeOne = nodeSecret.PubKey < remoteNodeId.Value
+            let isNodeOne = NodeId (nodeSecret.PubKey) < remoteNodeId
             let unsignedChannelUpdate = {
                 ChainHash = chainHash
                 ShortChannelId = shortChannelId
@@ -144,7 +144,7 @@ module Channel =
             // for lack of a better metric, we calculate waht it would cost to consolidate the new HTLC
             // output value back into a transaction with the regular channel output:
 
-            // the fee cost of the HTLC-sucess/HTLC-Timout transaction
+            // the fee cost of the HTLC-success/HTLC-Timout transaction
             let mutable res = uint64 feeRatePerKw * (max (ChannelConstants.HTLC_TIMEOUT_TX_WEIGHT) (ChannelConstants.HTLC_TIMEOUT_TX_WEIGHT)) |> fun r -> r / 1000UL
             if (isFunder) then
                 res <- res + uint64 feeRatePerKw * COMMITMENT_TX_WEIGHT_PER_HTLC / 1000UL

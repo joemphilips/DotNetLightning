@@ -38,7 +38,6 @@ module Data =
         ClaimMainDelayedOutputTx: ClaimDelayedOutputTx option
         HTLCSuccessTxs: HTLCSuccessTx list
         HTLCTimeoutTxs: HTLCTimeoutTx list
-        IrrevocablySpent: Map<OutPoint, byte[]>
     }
 
     type RemoteCommitPublished = {
@@ -46,7 +45,6 @@ module Data =
         ClaimMainOutputTx: ClaimP2WPKHOutputTx
         ClaimHTLCSuccessTxs: ClaimHTLCSuccessTx list
         ClaimHTLCTimeoutTxs: ClaimHTLCTimeoutTx list
-        IrrevocablySpent: Map<OutPoint, byte[]>
     }
 
     type RevokedCommitPublished = {
@@ -56,7 +54,6 @@ module Data =
         ClaimHTLCTimeoutTxs: ClaimHTLCTimeoutTx list
         HTLCTimeoutTxs: HTLCTimeoutTx list
         HTLCPenaltyTxs: HTLCPenaltyTx list
-        IrrevocalySpent: Map<OutPoint, byte[]>
     }
 
     type IChannelStateData = interface inherit IStateData end

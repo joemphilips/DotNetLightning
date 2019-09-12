@@ -14,7 +14,7 @@ let n = Network.RegTest
 [<Tests>]
 let tests =
     ptestList "Channel Domain Tests" [
-        testCase "Should accept accept_channel" <| fun _ ->
+        ptestCase "Should accept accept_channel" <| fun _ ->
             let seed = [| for _ in 0..31 -> 0uy |] |> uint256
             let repo = DefaultKeyRepository(seed) :> IKeysRepository
             let tempChannelId = [| for _ in 0..31 -> 0uy |] |> uint256 |> ChannelId
