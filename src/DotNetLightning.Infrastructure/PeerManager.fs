@@ -52,8 +52,6 @@ type PeerManager(keyRepo: IKeysRepository,
     
     let _keyRepo = keyRepo
     
-    let _ss = new SemaphoreSlim(1, 1)
-    
     let _channelEventObservable =
         eventAggregator.GetObservable<ChannelEventWithContext>()
         |> Observable.flatmapAsync(this.ChannelEventListener)
@@ -263,12 +261,7 @@ type PeerManager(keyRepo: IKeysRepository,
         }
 
     /// wrapper to work on PeerChannelEncryptor in atomic way.
-    /// i.e. retrieve old peer, operate on with it, and set updated peer to dict again. while that operation, no other
-    /// threads can not access to it.
-    /// TODO: Ideally we should not lock whole KnownPeer dictionary here for performance reason.
-    ///       And instead rely on more dotnet idiomatic way such as using `ConcurrentDictionary.AddOrUpdate` .
-    ///       But that requires whole operation to be represented as continuation using callback. So for now
-    ///       We just give up performance
+    /// i.e. retrieve old peer, operate on with it, and set updated peer to dict again.
     member private this.AtomicEncryptorOperation(peerId, f: Peer -> RResult<('a * PeerChannelEncryptor)>) =
         match this.KnownPeers.TryGetValue peerId with
         | false, _ ->
@@ -306,12 +299,8 @@ type PeerManager(keyRepo: IKeysRepository,
         this.AtomicEncryptorOperation(peerId, innerOp)
         
     member private this.SetTheirNodeIdToPeer(peerId: PeerId, theirNodeId: NodeId) =
-        _ss.Wait()
-        try
-            let dum = fun x -> failwithf "Unknown Peer Id %A" peerId
-            this.KnownPeers.AddOrUpdate(peerId, dum, fun v (oldPeer: Peer) -> { oldPeer with TheirNodeId = Some theirNodeId })
-        finally
-            _ss.Release() |> ignore
+        let dum = fun x -> failwithf "Unknown Peer Id %A" peerId
+        this.KnownPeers.AddOrUpdate(peerId, dum, fun v (oldPeer: Peer) -> { oldPeer with TheirNodeId = Some theirNodeId })
     
     member private this.HandleSetupMsgAsync(peerId, msg: ISetupMsg, pipe: IDuplexPipe) =
         vtask {
