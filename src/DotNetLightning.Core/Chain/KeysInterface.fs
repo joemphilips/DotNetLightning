@@ -2,6 +2,7 @@ namespace DotNetLightning.Chain
 open System.Collections.Concurrent
 open System.Collections.Concurrent
 open System.Text
+open System.Threading
 open NBitcoin
 open NBitcoin.Crypto
 open DotNetLightning.Utils.Primitives
@@ -115,7 +116,7 @@ type DefaultKeyRepository(seed: uint256) =
     member val SessionChildIndex = 0u with get, set
     member val BasepointToSecretMap = ConcurrentDictionary<PubKey, Key>() with get, set
     member this.GetChannelKeys() =
-        lock _lockObj (fun _ -> _childIndex <- _childIndex + 1)
+        Interlocked.Increment(ref _childIndex) |> ignore
         let childPrivKey = masterKey.Derive(_childIndex, true)
         let seed = Hashes.SHA256(childPrivKey.ToBytes())
         let commitmentSeed = Array.append seed ("commitment seed" |> _utf8.GetBytes) |> Hashes.SHA256
