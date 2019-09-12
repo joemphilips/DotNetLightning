@@ -18,6 +18,8 @@ open DotNetLightning.Chain
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.LN
 
+open System
+open System.Threading
 open CustomEventAggregator
 open DotNetLightning.Utils.Aether
 open FSharp.Control.Reactive
@@ -73,12 +75,7 @@ type PeerManager(keyRepo: IKeysRepository,
             let peerId = this.NodeIdToPeerId.TryGet(nodeId)
             let transport = this.PeerIdToTransport.TryGet(peerId)
             match contextEvent.ChannelEvent with
-            | ChannelEvent.NewInboundChannelStarted _ ->
-                ()
-            | ChannelEvent.WeAcceptedOpenChannel(msg, _) ->
-                return! this.EncodeAndSendMsg(peerId, transport) msg
-            | ChannelEvent.WeAcceptedFundingCreated(msg, _) ->
-                return! this.EncodeAndSendMsg(peerId, transport) msg
+            // ---- channel init: funder -----
             | ChannelEvent.NewOutboundChannelStarted(msg, _) ->
                 return! this.EncodeAndSendMsg(peerId, transport) (msg)
             | ChannelEvent.WeAcceptedAcceptChannel(msg, _) ->
@@ -103,6 +100,15 @@ type PeerManager(keyRepo: IKeysRepository,
                     str |> _logger.LogCritical
                     this.EventAggregator.Publish<PeerEvent>(FailedToBroadcastTransaction(nodeId, finalizedFundingTx.Value))
                     return ()
+            // ---- channel init: fundee -----
+            | ChannelEvent.NewInboundChannelStarted _ ->
+                ()
+            | ChannelEvent.WeAcceptedOpenChannel(msg, _) ->
+                return! this.EncodeAndSendMsg(peerId, transport) msg
+            | ChannelEvent.WeAcceptedFundingCreated(msg, _) ->
+                return! this.EncodeAndSendMsg(peerId, transport) msg
+                
+            // ---- else ----
             | FundingConfirmed _ 
             | TheySentFundingLockedMsgBeforeUs _
             | WeSentFundingLockedMsgBeforeThem _
@@ -212,46 +218,94 @@ type PeerManager(keyRepo: IKeysRepository,
                 PeerId = theirPeerId
                 GetOurNodeSecret = _keyRepo.GetNodeSecret
             }
-            "new peer created"
-            |> _logger.LogTrace
             match this.KnownPeers.TryAdd(theirPeerId, newPeer) with
             | false ->
-                "duplicate connection"
-                |> _logger.LogTrace
+                sprintf "duplicate connection with peer %A" theirPeerId
+                |> _logger.LogInformation
                 return theirPeerId
                 |> DuplicateConnection
                 |> Result.Error
             | true ->
-                "Going to Write act Two to newly created peer"
-                |> _logger.LogTrace
                 this.RememberPeersTransport(theirPeerId, pipeWriter)
                 let! _ = pipeWriter.WriteAsync(actTwo)
                 let! _ = pipeWriter.FlushAsync()
-                return Ok (newPeer)
+                return Ok ()
         }
 
     member private this.UpdatePeerWith(theirPeerId, newPeer: Peer) =
-        ignore <| this.KnownPeers.AddOrUpdate(theirPeerId, newPeer, (fun pId existingPeer -> newPeer))
+        this.KnownPeers.AddOrUpdate(theirPeerId, newPeer, (fun pId (oldPeer: Peer) -> newPeer))
+        |> ignore
         if newPeer.ChannelEncryptor.IsReadyForEncryption() then
-            ignore <| this.OpenedPeers.AddOrUpdate(theirPeerId, newPeer, fun pId existingPeer -> newPeer)
-
+            this.OpenedPeers.AddOrUpdate(theirPeerId, newPeer, (fun pId (oldPeer: Peer) -> newPeer))
+            |> ignore
+    member private this.SetFeaturesToPeer(theirPeerId, gf: GlobalFeatures, lf: LocalFeatures) =
+        let dummy = fun _ ->
+            let msg = sprintf "Unknown peer. id (%A)" theirPeerId
+            _logger.LogError(msg); failwith msg
+        this.OpenedPeers.AddOrUpdate(theirPeerId, dummy, fun pId (oldPeer: Peer) -> { oldPeer with
+                                                                                          TheirGlobalFeatures = Some gf
+                                                                                          TheirLocalFeatures = Some lf })
     member private this.EncodeAndSendMsg(theirPeerId: PeerId, pipeWriter: PipeWriter) (msg: ILightningMsg) =
-        _logger.LogTrace(sprintf "encoding and sending msg %A to peer %A" msg theirPeerId)
+        _logger.LogTrace(sprintf "encoding and sending msg %A to peer %A" (msg.GetType()) theirPeerId)
         unitVtask {
-            match this.OpenedPeers.TryGetValue(theirPeerId) with
-            | true, peer ->
-                let msgEncrypted, newPCE =
-                    peer.ChannelEncryptor |> PeerChannelEncryptor.encryptMessage (_logger.LogTrace) (msg.ToBytes())
-                this.UpdatePeerWith(theirPeerId, { peer with ChannelEncryptor = newPCE })
-                do! pipeWriter.WriteAsync(msgEncrypted)
-                return ()
-            | false, _ ->
-                sprintf "peerId %A is not in opened peers" theirPeerId
-                |> _logger.LogCritical
+                match this.OpenedPeers.TryGetValue(theirPeerId) with
+                | true, peer ->
+                    let msgEncrypted, newPCE =
+                        peer.ChannelEncryptor |> PeerChannelEncryptor.encryptMessage (_logger.LogTrace) (msg.ToBytes())
+                    this.UpdatePeerWith(theirPeerId, { peer with ChannelEncryptor = newPCE }) |> ignore
+                    do! pipeWriter.WriteAsync(msgEncrypted)
+                    return ()
+                | false, _ ->
+                    sprintf "peerId %A is not in opened peers" theirPeerId
+                    |> _logger.LogCritical
         }
 
-    member private this.HandleSetupMsgAsync(peerId, msg: ISetupMsg, peer: Peer, pipe: IDuplexPipe) =
+    /// wrapper to work on PeerChannelEncryptor in atomic way.
+    /// i.e. retrieve old peer, operate on with it, and set updated peer to dict again.
+    member private this.AtomicEncryptorOperation(peerId, f: Peer -> RResult<('a * PeerChannelEncryptor)>) =
+        match this.KnownPeers.TryGetValue peerId with
+        | false, _ ->
+            sprintf "Unknown Peer %A. Failed to operate by Encryptor" peerId
+            |> RResult.rmsg
+        | true, peer ->
+            match f(peer) with
+            | Good(result, newPCE) ->
+                this.UpdatePeerWith(peerId, { peer with ChannelEncryptor = newPCE })
+                Good result
+            | Bad e -> Bad e
+    /// Atomic version of PeerChannelEncryptor.processActOneWithKey
+    member private this.ProcessActOneWithKey(peerId, actOne: byte[], nodeSecret: Key) =
+        _logger.LogTrace("processing act one")
+        let innerOp peer = peer.ChannelEncryptor |> PeerChannelEncryptor.processActOneWithKey actOne nodeSecret
+        this.AtomicEncryptorOperation(peerId, innerOp)
+
+    /// Atomic version of PeerChannelEncryptor.processActTwo
+    member private this.ProcessActTwo(peerId, actTwo, nodeSecret: Key) =
+        _logger.LogTrace("processing act two")
+        let innerOp = fun p -> p.ChannelEncryptor |> PeerChannelEncryptor.processActTwo actTwo nodeSecret
+        this.AtomicEncryptorOperation(peerId, innerOp)
+        
+    /// Atomic version of PeerChannelEncryptor.processActThree
+    member private this.ProcessActThree(peerId, actThree) =
+        _logger.LogTrace("processing act three")
+        let innerOp peer = peer.ChannelEncryptor |> PeerChannelEncryptor.processActThree actThree
+        this.AtomicEncryptorOperation(peerId, innerOp)
+    member private this.DecryptLengthHeader(peerId, headerCypherText) =
+        let innerOp peer = peer.ChannelEncryptor |> PeerChannelEncryptor.decryptLengthHeader (_logger.LogTrace) headerCypherText
+        this.AtomicEncryptorOperation(peerId, innerOp)
+        
+    member private this.DecryptMessage(peerId, cypherText) =
+        let innerOp peer = peer.ChannelEncryptor |> PeerChannelEncryptor.decryptMessage (_logger.LogTrace) cypherText
+        this.AtomicEncryptorOperation(peerId, innerOp)
+        
+    member private this.SetTheirNodeIdToPeer(peerId: PeerId, theirNodeId: NodeId) =
+        let dum = fun x -> failwithf "Unknown Peer Id %A" peerId
+        this.KnownPeers.AddOrUpdate(peerId, dum, fun v (oldPeer: Peer) -> { oldPeer with TheirNodeId = Some theirNodeId })
+    
+    member private this.HandleSetupMsgAsync(peerId, msg: ISetupMsg, pipe: IDuplexPipe) =
         vtask {
+            let ok, peer = this.OpenedPeers.TryGetValue(peerId)
+            assert ok
             match msg with
             | :? Init as init ->
                 if (init.GlobalFeatures.RequiresUnknownBits()) then
@@ -270,22 +324,19 @@ type PeerManager(keyRepo: IKeysRepository,
                         (if init.LocalFeatures.SupportsUnknownBits() then "present" else "not present")
                         (if init.GlobalFeatures.SupportsUnknownBits() then "present" else "not present")
                         |> _logger.LogInformation
-                    this.EventAggregator.Publish<PeerEvent>(ReceivedInit (peer.TheirNodeId.Value, init))
-                    let peer =
-                        let p =
-                            if (init.LocalFeatures.InitialRoutingSync()) then
-                                { peer with SyncStatus = InitSyncTracker.ChannelsSyncing (ChannelId.Zero) }
-                            else
-                                peer
-                        { p with TheirGlobalFeatures = Some init.GlobalFeatures; TheirLocalFeatures = Some init.LocalFeatures }
-                    this.UpdatePeerWith(peerId, peer)
+                    let theirNodeId = if peer.TheirNodeId.IsSome then peer.TheirNodeId.Value else
+                                        let msg = "peer node id is not set. This should never happen"
+                                        _logger.LogError msg
+                                        failwith msg
+                    this.EventAggregator.Publish<PeerEvent>(ReceivedInit (theirNodeId, init))
+                    this.SetFeaturesToPeer(peerId, init.GlobalFeatures, init.LocalFeatures) |> ignore
                     if (not peer.IsOutBound) then
                         let lf = LocalFeatures.Flags([||]).SetInitialRoutingSync()
                         do! this.EncodeAndSendMsg(peer.PeerId, pipe.Output) ({ Init.GlobalFeatures = GlobalFeatures.Flags([||]); Init.LocalFeatures = lf })
-                        return Good (None)
+                        return Good ()
                     else
-                        this.EventAggregator.Publish<PeerEvent>(Connected peer.TheirNodeId.Value)
-                        return Good (None)
+                        this.EventAggregator.Publish<PeerEvent>(Connected theirNodeId)
+                        return Good ()
             | :? ErrorMessage as e ->
                 let isDataPrintable = e.Data |> Array.exists(fun b -> b < 32uy || b > 126uy) |> not
                 do
@@ -303,7 +354,7 @@ type PeerManager(keyRepo: IKeysRepository,
                         |> RResult.rbad
                 else
                     this.EventAggregator.Publish<PeerEvent>(ReceivedError(peer.TheirNodeId.Value, e))
-                    return Good (Some peer)
+                    return Good ()
             | :? Ping as ping ->
                 this.EventAggregator.Publish<PeerEvent>(ReceivedPing (peer.TheirNodeId.Value, ping))
                 sprintf "Received ping from %A" peer.TheirNodeId.Value
@@ -311,13 +362,13 @@ type PeerManager(keyRepo: IKeysRepository,
                 if (ping.PongLen < 65532us) then
                     let pong = { Pong.BytesLen = ping.PongLen }
                     do! this.EncodeAndSendMsg(peer.PeerId, pipe.Output) (pong)
-                    return Good(None)
+                    return Good()
                 else
-                    return Good(Some peer)
+                    return Good()
             | :? Pong as pong ->
                 sprintf "Received pong from %A"  peer.TheirNodeId.Value |> _logger.LogDebug
                 this.EventAggregator.Publish<PeerEvent>(ReceivedPong (peer.TheirNodeId.Value, pong))
-                return Good (Some peer)
+                return Good ()
             | _ -> return failwithf "Unknown setup message %A This should never happen" msg
         }
 
@@ -368,7 +419,12 @@ type PeerManager(keyRepo: IKeysRepository,
             RResult.rbad(RBad.Object { HandleError.Action = Some IgnoreError ; Error = sprintf "We already have connection with %A. nodeid: is %A" theirPeerId theirNodeId })
         | true ->
             _logger.LogTrace(sprintf "Finished noise handshake for connection with %A" theirNodeId)
-            Good ()
+            match this.KnownPeers.TryGetValue(theirPeerId) with
+            | true, peer ->
+                this.UpdatePeerWith(theirPeerId, { peer with TheirNodeId = Some theirNodeId })
+                Good ()
+            | false, _ ->
+                RResult.rmsg("Failed to get from known peers")
 
     member this.ProcessMessageAsync(peerId: PeerId, pipe: IDuplexPipe) =
         this.ProcessMessageAsync(peerId, pipe, Key())
@@ -380,14 +436,11 @@ type PeerManager(keyRepo: IKeysRepository,
         let errorHandler: RBad -> Task = this.TryPotentialHandleError(theirPeerId, pipe)
         unitVtask {
             let! r = this.ReadAsyncCore(theirPeerId, pipe, ourEphemeral)
-            let r: RResult<_> =  r // compiler complains about type annotation without this
+            let r: RResult<unit> =  r // compiler complains about type annotation without this
             do! r.RBadIterAsync(errorHandler)
-            match r with
-            | Good (Some peer) ->
-                this.UpdatePeerWith(theirPeerId, peer)
-            | _ -> ()
             return ()
         }
+        
         
     // I wanted to use a bind (>>=) as we do in Channel, but we had to prepare monad-transformer.
     // so instead decided to just use match expression.
@@ -400,28 +453,26 @@ type PeerManager(keyRepo: IKeysRepository,
                 let! actOne = pipe.Input.ReadExactAsync(50, true)
                 let! r = this.NewInboundConnection(peerId, actOne, pipe.Output, ourEphemeral)
                 match r with
-                | Ok p -> return Good (Some p)
+                | Ok p -> return Good ()
                 | Result.Error e -> return (e |> box |> RBad.Object |> RResult.rbad)
             // This case might be unnecessary. Since probably there is no way these are both true
             // 1. We know the peer
             // 2. peer has not sent act1 yet.
             // TODO: Remove?
-            | true, peer when peer.ChannelEncryptor.GetNoiseStep() = ActOne ->
+            | true, _peer when _peer.ChannelEncryptor.GetNoiseStep() = ActOne ->
                 let! actOne = pipe.Input.ReadExactAsync(50)
-                match peer.ChannelEncryptor |> PeerChannelEncryptor.processActOneWithKey actOne (_keyRepo.GetNodeSecret()) with
+                match this.ProcessActOneWithKey(peerId, actOne, (_keyRepo.GetNodeSecret())) with
                 | Bad rbad -> return Bad rbad
-                | Good (actTwo, nextPCE) ->
+                | Good (actTwo) ->
                     do! pipe.Output.WriteAsync(actTwo)
-                    return Good (Some { peer with ChannelEncryptor = nextPCE })
-            | true, peer when peer.ChannelEncryptor.GetNoiseStep() = ActTwo ->
+                    return Good ()
+            | true, _peer when _peer.ChannelEncryptor.GetNoiseStep() = ActTwo ->
                 let! actTwo = pipe.Input.ReadExactAsync(50)
-                match peer.ChannelEncryptor |> PeerChannelEncryptor.processActTwo(actTwo) (_keyRepo.GetNodeSecret()) with
+                let r = this.ProcessActTwo(peerId, actTwo, (_keyRepo.GetNodeSecret()))
+                match r with
                 | Bad rbad -> return Bad rbad
-                | Good ((actThree, theirNodeId), newPCE) ->
+                | Good(actThree, theirNodeId) ->
                     do! pipe.Output.WriteAsync(actThree)
-                    let newPeer = { peer with TheirNodeId = Some theirNodeId; ChannelEncryptor = newPCE }
-                    // it is necessary to  update peer here for sending first init data by `EncodeAndSendMsg`
-                    this.UpdatePeerWith(peerId, newPeer)
                     match this.InsertNodeId(theirNodeId, peerId) with
                     | Bad rbad -> return Bad rbad
                     | Good _ -> 
@@ -434,41 +485,40 @@ type PeerManager(keyRepo: IKeysRepository,
                         do!
                             this.EncodeAndSendMsg (peerId, pipe.Output)
                                 ({ Init.GlobalFeatures = GlobalFeatures.Flags [||]; LocalFeatures = localFeatures })
-                        return Good (None)
-            | true, peer when peer.ChannelEncryptor.GetNoiseStep() = ActThree ->
+                        return Good ()
+            | true, _peer when _peer.ChannelEncryptor.GetNoiseStep() = ActThree ->
                 let! actThree = pipe.Input.ReadExactAsync(66)
-                match peer.ChannelEncryptor |> PeerChannelEncryptor.processActThree actThree with
+                match this.ProcessActThree(peerId, actThree) with
                 | Bad rbad -> return Bad rbad
-                | Good (theirNodeId, newPCE) ->
+                | Good (theirNodeId) ->
                     match this.InsertNodeId(theirNodeId, peerId) with
                     | Bad b -> return Bad b
                     | Good _ ->
                         this.EventAggregator.Publish<PeerEvent>(Connected theirNodeId)
-                        return Good (Some { peer with ChannelEncryptor = newPCE; TheirNodeId = Some theirNodeId })
+                        this.SetTheirNodeIdToPeer(peerId, theirNodeId) |> ignore
+                        return Good ()
             | true, peer when peer.ChannelEncryptor.GetNoiseStep() = NoiseComplete ->
                 let! lengthHeader = pipe.Input.ReadExactAsync(18)
-                match peer.ChannelEncryptor |> PeerChannelEncryptor.decryptLengthHeader (_logger.LogTrace) lengthHeader with
+                match this.DecryptLengthHeader(peerId, lengthHeader) with
                 | Bad b -> return Bad b
-                | Good (length, newPCE) -> 
-                    let peer = { peer with ChannelEncryptor = newPCE }
+                | Good (length) -> 
                     let! cipherTextWithMAC = pipe.Input.ReadExactAsync(int length + 16)
-                    match peer.ChannelEncryptor |> PeerChannelEncryptor.decryptMessage (_logger.LogTrace) cipherTextWithMAC with
+                    match this.DecryptMessage(peerId,cipherTextWithMAC) with
                     | Bad b -> return Bad b
-                    | Good (data, newPCE) ->
-                        let peer = { peer with ChannelEncryptor = newPCE }
+                    | Good (data) ->
                         match LightningMsg.fromBytes data with
                         | Bad b -> return Bad b
                         | Good msg ->
-                            _logger.LogTrace(sprintf "Peer Decrypted msg %A" msg)
+                            _logger.LogTrace(sprintf "Peer Decrypted msg %A" (msg.GetType()))
                             match msg with
                             | :? ISetupMsg as setupMsg ->
-                                return! this.HandleSetupMsgAsync (peerId, setupMsg, peer, pipe)
+                                return! this.HandleSetupMsgAsync (peerId, setupMsg, pipe)
                             | :? IRoutingMsg as routingMsg ->
                                 this.EventAggregator.Publish<PeerEvent>(ReceivedRoutingMsg (peer.TheirNodeId.Value, routingMsg))
-                                return Good (Some peer)
+                                return Good ()
                             | :? IChannelMsg as channelMsg ->
                                 this.EventAggregator.Publish<PeerEvent>(ReceivedChannelMsg (peer.TheirNodeId.Value, channelMsg))
-                                return Good (Some peer)
+                                return Good ()
                             | msg -> return failwithf "Unknown type of message (%A), this should never happen" msg
             | _ -> return failwith "unreachable"
         }

@@ -30,7 +30,7 @@ type internal ActorCreator =
         let broadCaster = defaultArg broadCaster (Mock<IBroadCaster>().Create())
         let eventAggregator = ReactiveEventAggregator() :> IEventAggregator
         {
-            PeerManagerEntity.Id = IPEndPoint.Parse("127.0.0.2") :> EndPoint |> PeerId
+            PeerManagerEntity.Id = IPEndPoint.Parse("127.1.1.1") :> EndPoint |> PeerId
             PM = PeerManager(keyRepo,
                              peerLogger,
                              nodeParams,
@@ -72,7 +72,7 @@ type internal ActorCreator =
         let broadCaster = defaultArg broadCaster (Mock<IBroadCaster>().Create())
         let eventAggregator = ReactiveEventAggregator() :> IEventAggregator
         {
-            PeerManagerEntity.Id = IPEndPoint.Parse("127.0.0.2") :> EndPoint |> PeerId
+            PeerManagerEntity.Id = IPEndPoint.Parse("127.1.1.2") :> EndPoint |> PeerId
             PM = PeerManager(keyRepo,
                              peerLogger,
                              nodeParams,
@@ -121,14 +121,15 @@ let defaultFinalScriptPubKey =
     |> hex.DecodeData
     |> Key
     |> fun k -> k.PubKey.WitHash.ScriptPubKey
-
 [<Tests>]
 let tests =
     testList "Basic Channel handling between 2 peers" [
         testAsync "Channel Initialization" {
+
             let alice = ActorCreator.getAlice()
             let bob = ActorCreator.getBob()
             let bobInitTask = alice.EventAggregator.GetObservable<PeerEvent>()
+                              |> Observable.map(fun e -> printfn "alice has raised peer event %A" e; e)
                               |> Observable.awaitFirst(function | ReceivedInit(_nodeId, init) -> Some init | _ -> None)
             let! _actors = ActorCreator.initiateActor(alice, bob)
             
@@ -142,7 +143,7 @@ let tests =
                                FundingTxFeeRatePerKw = TestConstants.feeratePerKw
                                LocalParams =
                                    alice.PM.MakeLocalParams(channelKeys.ToChannelPubKeys() ,defaultFinalScriptPubKey, true, TestConstants.fundingSatoshis)
-                               RemoteInit = bobInit.Value
+                               RemoteInit = if (bobInit.IsSome) then bobInit.Value else failwith "alice did not receive init from bob"
                                ChannelFlags = 0x00uy
                                ChannelKeys = channelKeys }
             let aliceChannelEventFuture =

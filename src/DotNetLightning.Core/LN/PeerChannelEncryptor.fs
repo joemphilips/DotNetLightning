@@ -307,10 +307,8 @@ module PeerChannelEncryptor =
                     }
             }
         let internal decryptWithAD(n: uint64, key: uint256, ad: byte[], cipherText: ReadOnlySpan<byte>): RResult<byte[]> =
-            printfn "decrypting msg nonce is %A" n
             CryptoUtils.decryptWithAD(n, key, ad, cipherText)
             >>>= fun e ->
-                printfn "Failed to decrypt message"
                 RResult.rbad(RBad.Object({ HandleError.Error = "Bad MAC"; Action = Some(DisconnectPeer(None))} ))
 
         let internal hkdfExtractExpand(salt: byte[], ikm: byte[]) =
