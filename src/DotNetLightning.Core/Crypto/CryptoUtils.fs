@@ -38,7 +38,6 @@ module internal CryptoUtils =
         res
 
     let internal encryptWithAD(n: uint64, key: uint256, ad: ReadOnlySpan<byte>, plainText: ReadOnlySpan<byte>) =
-        printfn "encrypting with AD with nonce %A" n
         let nonce = getNonce n
         let keySpan = ReadOnlySpan(key.ToBytes())
         let blobF = NSec.Cryptography.KeyBlobFormat.RawSymmetricKey

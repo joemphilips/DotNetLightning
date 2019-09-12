@@ -35,7 +35,7 @@ type IFeeEstimator =
 type ChainWatchedUtil = {
     WatchAll: bool
     WatchedTxn: Map<TxId, Script>
-    WatchedOutpoints: Set<OutPoint>
+    WatchedOutpoints: Set<LNOutPoint>
 }
 
 module ChainWatchedUtil =
@@ -46,13 +46,13 @@ module ChainWatchedUtil =
             WatchedOutpoints = Set.empty
         }
 
-    let regsiterTx (txid) (scriptPubKey: Script) (util: ChainWatchedUtil) = 
+    let registerTx (txid) (scriptPubKey: Script) (util: ChainWatchedUtil) = 
         { util with WatchedTxn = util.WatchedTxn |> Map.add txid scriptPubKey }
     
     let registerOutpoint (outpoint: OutPoint) (util) =
         if util.WatchAll then util
         else
-            { util with WatchedOutpoints = util.WatchedOutpoints |> Set.add outpoint }
+            { util with WatchedOutpoints = util.WatchedOutpoints |> Set.add (LNOutPoint outpoint) }
 
     let private doesMatchTxOut(tx: Transaction) (util: ChainWatchedUtil) =
         util.WatchedTxn
@@ -77,7 +77,7 @@ module ChainWatchedUtil =
     let watchAll util =
         { util with WatchAll = true}
 /// Utility to capture some parts of ChainWatchInterface implementors
-/// Keepking a local copy of this in a ChainWatchInterface implementor is likely useful.
+/// Keeping a local copy of this in a ChainWatchInterface implementor is likely useful.
 [<CLIMutable>]
 type ChainWatchInterfaceUtil = {
     Network: Network
@@ -89,7 +89,7 @@ type ChainWatchInterfaceUtil = {
 with
     interface IChainWatcher with
         member this.InstallWatchTx(txHash: uint256, scriptPubKey: Script): bool = 
-            this.Watched <- this.Watched |> ChainWatchedUtil.regsiterTx (TxId txHash) (scriptPubKey)
+            this.Watched <- this.Watched |> ChainWatchedUtil.registerTx (TxId txHash) (scriptPubKey)
             true
 
         member this.InstallWatchOutPoint(outPoint: OutPoint, scriptPubKey: Script): bool = 
