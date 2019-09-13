@@ -3,10 +3,6 @@ open DotNetLightning.Chain
 open Expecto.Logging
 open Microsoft.Extensions.Logging
 
-type Node = {
-    ChainMonitor: ChainWatchInterfaceUtil
-}
-
 type TestLogger = private {
     Level: LogLevel
     Id: string

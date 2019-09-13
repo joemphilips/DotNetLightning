@@ -155,7 +155,11 @@ let tests = testList "PeerManagerTests" [
                                      broadCasterMock)
                     CM = Mock<IChannelManager>().Create()
                     Id = IPEndPoint.Parse("127.0.0.3") :> EndPoint |> PeerId
-                    EventAggregator = aliceEventAggregatorMock }
+                    EventAggregator = aliceEventAggregatorMock
+                    NodeParams = aliceNodeParams.Value
+                    CurrentHeight = 0
+                    FundingTxProvider = Mock<IFundingTxProvider>().Create()
+                    }
       let bobNodeSecret =
         Key(hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202"))
       let keyRepoBob = 
@@ -169,7 +173,11 @@ let tests = testList "PeerManagerTests" [
                                    broadCasterMock)
                   CM = Mock<IChannelManager>().Create()
                   Id = IPEndPoint.Parse("127.0.0.2") :> EndPoint |> PeerId
-                  EventAggregator = bobEventAggregatorMock }
+                  EventAggregator = bobEventAggregatorMock
+                  NodeParams = aliceNodeParams.Value
+                  CurrentHeight = 0
+                  FundingTxProvider = Mock<IFundingTxProvider>().Create()
+                  }
       let actors = new PeerActors(alice, bob)
       
       // this should trigger All handshake process

@@ -110,6 +110,7 @@ type NodeParams() as this =
     member val SocksProxy: Socks5Params option = None
     member val MaxPaymentAttempts: int = 5
     
+    
     /// We are going to send funds to this ScriptPubKey.
     /// If None is given, we will call `IKeysRepository.GetShutDownPubKey()` and
     /// send it to its P2WPKH

@@ -16,20 +16,32 @@ open Foq
 open Microsoft.Extensions.Options
 open TestConstants
 
+
+let dummyBlockChainInstanceId = 
+    "8888888888888888888888888888888888888888888888888888888888888888"
+    |> BlockChainInstanceId
+let n = Network.RegTest
 type internal ActorCreator =
     static member hex = NBitcoin.DataEncoders.HexEncoder()
     
     
-    static member getAlice(?keyRepo: IKeysRepository, ?nodeParams, ?chainWatcher, ?broadCaster) =
+    static member getAlice(?keyRepo: IKeysRepository, ?nodeParams) =
         let aliceParam = TestConstants.getAliceParam()
         let keyRepo = defaultArg keyRepo (aliceParam.KeyRepo)
         let peerLogger = TestLogger.create<PeerManager>(ConsoleColor.Red)
         let channelLogger = TestLogger.create<ChannelManager>(ConsoleColor.Magenta)
         let nodeParams = defaultArg nodeParams (Options.Create<NodeParams>(aliceParam.NodeParams))
-        let chainWatcher = defaultArg chainWatcher (Mock<IChainWatcher>().Create())
-        let broadCaster = defaultArg broadCaster (Mock<IBroadCaster>().Create())
+        let chainWatcher =
+            Mock<IChainWatcher>()
+                .Setup(fun x -> <@ x.InstallWatchTx(any(), any()) @>).Returns(true)
+                .Setup(fun x -> <@ x.InstallWatchOutPoint(any(), any()) @>).Returns(true)
+                .Setup(fun x -> <@ x.WatchAllTxn() @>).Returns(true)
+                .Create()
+        let broadCaster = DummyBroadCaster()
         let eventAggregator = ReactiveEventAggregator() :> IEventAggregator
+        let fundingTxProvider = DummyFundingTxProvider(aliceParam.NodeParams.ChainNetwork)
         {
+            NodeParams = aliceParam.NodeParams
             PeerManagerEntity.Id = IPEndPoint.Parse("127.1.1.1") :> EndPoint |> PeerId
             PM = PeerManager(keyRepo,
                              peerLogger,
@@ -45,7 +57,6 @@ type internal ActorCreator =
                 let chainListener = Mock<IChainListener>().Create()
                 let feeEstimator =
                     Mock<IFeeEstimator>.Method(fun x -> <@ x.GetEstSatPer1000Weight @>).Returns(5000u |> FeeRatePerKw)
-                let fundingTxProvider = DummyFundingTxProvider(aliceParam.NodeParams.ChainNetwork)
                 ChannelManager(nodeParams,
                                channelLogger,
                                eventAggregator,
@@ -56,9 +67,11 @@ type internal ActorCreator =
                                fundingTxProvider
                                )
             EventAggregator = eventAggregator
+            CurrentHeight = 100
+            FundingTxProvider = fundingTxProvider
         }
     
-    static member getBob(?keyRepo: IKeysRepository, ?nodeParams, ?chainWatcher, ?broadCaster) =
+    static member getBob(?keyRepo: IKeysRepository, ?nodeParams) =
         let bobParam = TestConstants.getBobParam()
         let keyRepo = defaultArg keyRepo (bobParam.KeyRepo)
         let peerLogger =
@@ -68,10 +81,17 @@ type internal ActorCreator =
             // Mock<ILogger<ChannelManager>>().Create()
             TestLogger.create<ChannelManager>(ConsoleColor.Green)
         let nodeParams = defaultArg nodeParams (Options.Create<NodeParams>(bobParam.NodeParams))
-        let chainWatcher = defaultArg chainWatcher (Mock<IChainWatcher>().Create())
-        let broadCaster = defaultArg broadCaster (Mock<IBroadCaster>().Create())
+        let chainWatcher =
+            Mock<IChainWatcher>()
+                .Setup(fun x -> <@ x.InstallWatchTx(any(), any()) @>).Returns(true)
+                .Setup(fun x -> <@ x.InstallWatchOutPoint(any(), any()) @>).Returns(true)
+                .Setup(fun x -> <@ x.WatchAllTxn() @>).Returns(true)
+                .Create()
+        let broadCaster = DummyBroadCaster()
         let eventAggregator = ReactiveEventAggregator() :> IEventAggregator
+        let fundingTxProvider = DummyFundingTxProvider(bobParam.NodeParams.ChainNetwork)
         {
+            NodeParams = bobParam.NodeParams
             PeerManagerEntity.Id = IPEndPoint.Parse("127.1.1.2") :> EndPoint |> PeerId
             PM = PeerManager(keyRepo,
                              peerLogger,
@@ -87,7 +107,6 @@ type internal ActorCreator =
                 let chainListener = Mock<IChainListener>().Create()
                 let feeEstimator =
                     Mock<IFeeEstimator>.Method(fun x -> <@ x.GetEstSatPer1000Weight @>).Returns(5000u |> FeeRatePerKw)
-                let fundingTxProvider = DummyFundingTxProvider(bobParam.NodeParams.ChainNetwork)
                 ChannelManager(nodeParams,
                                channelLogger,
                                eventAggregator,
@@ -98,6 +117,8 @@ type internal ActorCreator =
                                fundingTxProvider
                                )
             EventAggregator = eventAggregator
+            CurrentHeight = 100
+            FundingTxProvider = fundingTxProvider
         }
     
     static member initiateActor(alice, bob) = async {
@@ -161,6 +182,20 @@ let tests =
                 
             let aliceAcceptedFundingSignedTask =
                 alice.EventAggregator.AwaitChannelEvent(function WeAcceptedFundingSigned(i, _) -> Some i | _ -> None)
+               
+            let aliceFundingConfirmedTask =
+                alice.EventAggregator.AwaitChannelEvent(function FundingConfirmed _ -> Some () | _ -> None)
+                
+            let aliceSentFundingLockedTask =
+                alice.EventAggregator.AwaitChannelEvent(function WeSentFundingLockedMsgBeforeThem _ -> Some () | _ -> None)
+                
+            let bobReceivedFundingLockedTask =
+                bob.EventAggregator.AwaitChannelEvent(function TheySentFundingLockedMsgBeforeUs _ -> Some () | _ -> None)
+                
+            let aliceBothFundingLockedTask =
+                alice.EventAggregator.AwaitChannelEvent(function BothFundingLocked _ -> Some () | _ -> None)
+            let bobBothFundingLockedTask =
+                bob.EventAggregator.AwaitChannelEvent(function BothFundingLocked _ -> Some () | _ -> None)
             
             let bobNodeId = bob.CM.KeysRepository.GetNodeSecret().PubKey |> NodeId
             do! alice.CM.AcceptCommandAsync(bobNodeId, ChannelCommand.CreateOutbound(initFunder)) |> Async.AwaitTask
@@ -181,6 +216,34 @@ let tests =
             let! r = aliceAcceptedFundingSignedTask
             Expect.isSome r "timeout"
             
+            let fundingTx = (alice.FundingTxProvider :?> DummyFundingTxProvider).DummyTx
+            
+            // We need three confirmation before we consider funding is locked
+            // (3 is default for NodeParams)
+            alice.PublishDummyBlockWith(dummyBlockChainInstanceId, [fundingTx])
+            alice.PublishDummyBlockWith(dummyBlockChainInstanceId, [])
+            alice.PublishDummyBlockWith(dummyBlockChainInstanceId, [])
+            let! r = aliceFundingConfirmedTask
+            Expect.isSome r "timeout"
+            let! r = aliceSentFundingLockedTask
+            Expect.isSome r "timeout"
+            
+            let! r = bobReceivedFundingLockedTask
+            Expect.isSome r "timeout"
+            
+            bob.PublishDummyBlockWith(dummyBlockChainInstanceId, [fundingTx])
+            bob.PublishDummyBlockWith(dummyBlockChainInstanceId, [])
+            bob.PublishDummyBlockWith(dummyBlockChainInstanceId, [])
+            
+            let! r = bobBothFundingLockedTask
+            Expect.isSome r "timeout"
+            let! r = aliceBothFundingLockedTask
+            Expect.isSome r "timeout"
+            
+            return ()
+        }
+        
+        testAsync "funding_confirmed should be sent only when it is really confirmed" {
             return ()
         }
     ]

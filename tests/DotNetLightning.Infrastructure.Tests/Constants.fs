@@ -2,6 +2,7 @@ module TestConstants
 
 open NBitcoin
 open DotNetLightning.Utils
+open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Chain
 open DotNetLightning.Infrastructure
 open DotNetLightning.Transactions
@@ -36,6 +37,7 @@ let bobChannelKeysSeed =
     
 
 type DummyFundingTxProvider(n: Network) =
+    member val DummyTx = null with get, set
     interface IFundingTxProvider with
         member this.ProvideFundingTx(dest: IDestination, amount: Money, feerate: FeeRatePerKw) =
             let txb = n.CreateTransactionBuilder()
@@ -54,9 +56,14 @@ type DummyFundingTxProvider(n: Network) =
             txb.SetChange(dummyChange) |> ignore
             let fees = txb.EstimateFees(feerate.AsNBitcoinFeeRate())
             txb.SendFees(fees).Send(dest, amount) |> ignore
-            (txb.BuildTransaction(true) |> FinalizedTx, 0us |> TxOutIndex)
-            |> RResult.Good
-            
+            this.DummyTx <- txb.BuildTransaction(true)
+            (this.DummyTx |> FinalizedTx, 0us |> TxOutIndex) |> RResult.Good
+
+type DummyBroadCaster() =
+    interface IBroadCaster with
+        member this.BroadCastTransaction(tx: Transaction) =
+            async { return tx.GetTxId() }
+
 let getAliceParam() =
     let p = NodeParams()
     p.Alias <- "alice"
