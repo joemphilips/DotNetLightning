@@ -745,25 +745,14 @@ module Channel =
                               HaveWeSentFundingLocked = false
                               InitialFeeRatePerKw = state.InitialFeeRatePerKw
                               ChannelId = state.Commitments.ChannelId }
-            [ FundingConfirmed nextState ] |> Good
-        | WaitForFundingLocked state, ApplyFundingConfirmedOnBC(height, _txindex, depth) ->
-            if (state.HaveWeSentFundingLocked) then
-                if (cs.Config.ChannelHandshakeConfig.MinimumDepth <= depth) then
-                    [] |> Good
-                else
-                    let msg = sprintf "once confirmed funding tx has become less confirmed than threshold %A! This is probably caused by reorg. current depth is: %A " height depth
-                    cs.Logger (LogLevel.Error) (msg)
-                    RRClose(msg)
+            [ FundingConfirmed nextState; WeSentFundingLockedMsgBeforeThem msgToSend ] |> Good
+        | WaitForFundingLocked _state, ApplyFundingConfirmedOnBC(height, _txindex, depth) ->
+            if (cs.Config.ChannelHandshakeConfig.MinimumDepth <= depth) then
+                [] |> Good
             else
-                if (cs.Config.ChannelHandshakeConfig.MinimumDepth <= depth) then
-                    let nextPerCommitmentPoint =
-                        ChannelUtils.buildCommitmentSecret (state.Commitments.LocalParams.ChannelPubKeys.CommitmentSeed, 1UL)
-                        |> fun seed -> Key(seed.ToBytes()).PubKey
-                    let msg: FundingLocked = { FundingLocked.ChannelId = state.Commitments.ChannelId
-                                               NextPerCommitmentPoint = nextPerCommitmentPoint }
-                    [ WeSentFundingLockedMsgBeforeThem msg ] |> Good
-                else
-                    [] |> Good
+                let msg = sprintf "once confirmed funding tx has become less confirmed than threshold %A! This is probably caused by reorg. current depth is: %A " height depth
+                cs.Logger (LogLevel.Error) (msg)
+                RRClose(msg)
         | WaitForFundingLocked state, ApplyFundingLocked msg ->
             if (state.HaveWeSentFundingLocked) then
                 let initialChannelUpdate = failwith ""

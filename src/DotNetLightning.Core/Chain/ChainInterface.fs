@@ -1,4 +1,5 @@
 namespace DotNetLightning.Chain
+open System
 open NBitcoin
 open DotNetLightning.Utils
 open Microsoft.Extensions.Logging
@@ -9,19 +10,28 @@ type ChainError =
     | NotWatched
     | UnknownTx of Transaction
 
+type BlockChainInstanceId = BlockChainInstanceId of string
+
+/// We want transaction index for channel id and such.
+/// So not using NBitcoin.Block directly
+type BlockContent = BlockHeader * BlockHeight * (uint32 * Transaction) list
+type OnChainEvent =
+    | BlockConnected of chainId: BlockChainInstanceId * content: BlockContent
+    | BlockDisconnected of chainId: BlockChainInstanceId * BlockHeader
 
 type IChainListener =
-    abstract member BlockConnected: BlockHeader * BlockHeight * (uint32 * Transaction) list -> unit
-    abstract member BlockDisconnected: BlockHeader -> bool
+    abstract member ObservableOnChainEvent : IObservable<OnChainEvent>
+
 
 type IChainWatcher =
-    abstract member InstallWatchTx: txHash: uint256 * scriptPubKey: Script -> bool
+    abstract member InstallWatchTx: txid: TxId * scriptPubKey: Script -> bool
     abstract member InstallWatchOutPoint: OutPoint * Script -> bool
     abstract member WatchAllTxn: unit -> bool
     abstract member RegisterListener: IChainListener -> bool
+    abstract member CurrentTip: BlockHeight * BlockHeader
 
 type IBroadCaster =
-    abstract member BroadCastTransaction: (Transaction) -> Result<unit, string>
+    abstract member BroadCastTransaction: (Transaction) -> Async<TxId>
 
 type ConfirmationTarget =
     | Background
@@ -46,7 +56,7 @@ module ChainWatchedUtil =
             WatchedOutpoints = Set.empty
         }
 
-    let regsiterTx (txid) (scriptPubKey: Script) (util: ChainWatchedUtil) = 
+    let registerTx (txid) (scriptPubKey: Script) (util: ChainWatchedUtil) = 
         { util with WatchedTxn = util.WatchedTxn |> Map.add txid scriptPubKey }
     
     let registerOutpoint (outpoint: OutPoint) (util) =
@@ -76,59 +86,3 @@ module ChainWatchedUtil =
             doesMatchTxOut tx util || doesMatchTxIn tx util
     let watchAll util =
         { util with WatchAll = true}
-/// Utility to capture some parts of ChainWatchInterface implementors
-/// Keepking a local copy of this in a ChainWatchInterface implementor is likely useful.
-[<CLIMutable>]
-type ChainWatchInterfaceUtil = {
-    Network: Network
-    mutable Watched: ChainWatchedUtil
-    mutable Listeners: IChainListener array
-    mutable reentered: bool
-    Logger: ILogger
-}
-with
-    interface IChainWatcher with
-        member this.InstallWatchTx(txHash: uint256, scriptPubKey: Script): bool = 
-            this.Watched <- this.Watched |> ChainWatchedUtil.regsiterTx (TxId txHash) (scriptPubKey)
-            true
-
-        member this.InstallWatchOutPoint(outPoint: OutPoint, scriptPubKey: Script): bool = 
-            this.Watched <- this.Watched |> ChainWatchedUtil.registerOutpoint outPoint
-            true
-
-        member this.RegisterListener(arg1: IChainListener): bool = 
-            if this.Listeners |> Array.exists(fun cl -> cl.Equals(arg1)) then false
-            else
-                this.Listeners <- this.Listeners |> Array.append [|arg1|]
-                true
-
-        member this.WatchAllTxn(): bool = 
-            this.Watched <- this.Watched |> ChainWatchedUtil.watchAll
-            true
-
-    member private this.BlockConnectedChecked(header: BlockHeader, height: BlockHeight, txMatched: (uint32 * Transaction) list): bool =
-        let lastSeen = this.reentered
-        this.Listeners |> Array.iter(fun l -> l.BlockConnected(header, height, txMatched))
-        lastSeen = this.reentered
-
-    member this.BlockConnectedWithFiltering(block: Block, height: BlockHeight) =
-        let mutable reentered = true
-        while reentered do
-            let matched = block.Transactions
-                          |> Seq.toList
-                          |> List.indexed
-                          |> List.where(fun (_, tx: Transaction) -> this.Watched |> ChainWatchedUtil.doesMatchTx tx )
-                          |> List.map(fun (i, tx) -> (uint32)i, tx)
-            reentered <- this.BlockConnectedChecked (block.Header, height, matched)
-        ()
-
-
-module ChainWatchInterfaceUtil =
-    let Create (network, logger) =
-        {
-            Network = network
-            Watched = ChainWatchedUtil.Create()
-            Listeners = Array.empty
-            Logger = logger
-            reentered = false
-        }

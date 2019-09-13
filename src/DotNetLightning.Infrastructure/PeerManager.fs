@@ -81,23 +81,23 @@ type PeerManager(keyRepo: IKeysRepository,
             | ChannelEvent.WeAcceptedAcceptChannel(msg, _) ->
                 return! this.EncodeAndSendMsg(peerId, transport) (msg)
             | ChannelEvent.WeAcceptedFundingSigned(finalizedFundingTx, _) ->
-                match _broadCaster.BroadCastTransaction(finalizedFundingTx.Value) with
-                | Ok _ ->
+                let! r = _broadCaster.BroadCastTransaction(finalizedFundingTx.Value) |> Async.Catch |> Async.StartAsTask
+                match r with
+                | Choice1Of2 txId ->
                     let spk1 = finalizedFundingTx.Value.Outputs.[0].ScriptPubKey
                     let spk2 = finalizedFundingTx.Value.Outputs.[1].ScriptPubKey
-                    let txHash = finalizedFundingTx.Value.GetHash()
                     match ([spk1; spk2]
-                          |> List.map(fun spk -> _chainWatcher.InstallWatchTx(txHash, spk))
+                          |> List.map(fun spk -> _chainWatcher.InstallWatchTx(txId, spk))
                           |> List.forall(id)) with
                     | true ->
-                        _logger.LogInformation(sprintf "Waiting for funding tx (%A) to get confirmed..." txHash )
+                        _logger.LogInformation(sprintf "Waiting for funding tx (%A) to get confirmed..." txId )
                         return ()
                     | false ->
-                        _logger.LogCritical(sprintf "Failed to install watching tx (%A)" txHash)
+                        _logger.LogCritical(sprintf "Failed to install watching tx (%A)" txId)
                         this.EventAggregator.Publish<PeerEvent>(FailedToBroadcastTransaction(nodeId, finalizedFundingTx.Value))
                         return ()
-                | Result.Error str ->
-                    str |> _logger.LogCritical
+                | Choice2Of2 ex ->
+                    ex.Message |> _logger.LogCritical
                     this.EventAggregator.Publish<PeerEvent>(FailedToBroadcastTransaction(nodeId, finalizedFundingTx.Value))
                     return ()
             // ---- channel init: fundee -----
@@ -109,10 +109,11 @@ type PeerManager(keyRepo: IKeysRepository,
                 return! this.EncodeAndSendMsg(peerId, transport) msg
                 
             // ---- else ----
-            | FundingConfirmed _ 
-            | TheySentFundingLockedMsgBeforeUs _
-            | WeSentFundingLockedMsgBeforeThem _
-            | BothFundingLocked _
+            | FundingConfirmed _  -> ()
+            | TheySentFundingLockedMsgBeforeUs _msg -> ()
+            | WeSentFundingLockedMsgBeforeThem fundingLockedMsg ->
+                return! this.EncodeAndSendMsg(peerId, transport) fundingLockedMsg
+            | BothFundingLocked _ -> ()
             | WeAcceptedUpdateAddHTLC _
             | WeAcceptedFulfillHTLC _
             | WeAcceptedFailHTLC _ -> ()

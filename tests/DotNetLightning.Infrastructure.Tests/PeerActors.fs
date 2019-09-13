@@ -6,16 +6,31 @@ open System.IO.Pipelines
 
 open FSharp.Control.Tasks
 
+open System.Threading
 open CustomEventAggregator
 open DotNetLightning.Infrastructure
 open DotNetLightning.Utils.Primitives
+open DotNetLightning.Chain
+open NBitcoin
+open TestConstants
 
 type internal PeerManagerEntity = {
     PM: PeerManager
     Id: PeerId
     CM: IChannelManager
     EventAggregator: IEventAggregator
+    NodeParams: NodeParams
+    mutable CurrentHeight: int
+    FundingTxProvider: IFundingTxProvider
 }
+    with
+    member this.PublishDummyBlockWith(blockChainInstanceId, txIncluded: Transaction list) =
+        Interlocked.Increment(ref this.CurrentHeight) |> ignore
+        let dummyBlockHeader = this.NodeParams.ChainNetwork.GetGenesis().Header
+        let dummyBlock : BlockContent =
+            let txWithIndex = txIncluded |> List.indexed |> List.map(fun iTx -> (fst iTx |> uint32), (snd iTx))
+            dummyBlockHeader, (this.CurrentHeight |> uint32 |> BlockHeight), txWithIndex
+        this.EventAggregator.Publish(BlockConnected(blockChainInstanceId, dummyBlock))
 
 type internal PeerActors(a, b) =
     let pipePair = DuplexPipe.CreatePair()
