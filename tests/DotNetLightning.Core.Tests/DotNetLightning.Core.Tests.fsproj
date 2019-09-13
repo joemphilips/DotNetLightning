@@ -21,6 +21,7 @@
     <Compile Include="TransactionTests.fs" />
     <Compile Include="PeerChannelEncryptorTests.fs" />
     <Compile Include="ChannelCoreTests.fs" />
+    <Compile Include="KeyRepositoryTests.fs" />
     <Compile Include="Main.fs" />
     <Content Include="Data\bolt3-tx.json" />
   </ItemGroup>

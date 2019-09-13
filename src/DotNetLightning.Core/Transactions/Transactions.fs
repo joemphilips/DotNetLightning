@@ -432,7 +432,7 @@ module Transactions =
     let checkTxFinalized (psbt: PSBT) (inputIndex: int) (additionalKnownSigs: (PubKey * TransactionSignature) seq): RResult<FinalizedTx> =
         let checkTxFinalizedCore (psbt: PSBT): RResult<_> =
             match psbt.TryFinalize() with
-            | false, e -> RResult.rmsg (sprintf "failed to finalize psbt Errors: %A \n PSBTInput: %A" e psbt.Inputs.[inputIndex])
+            | false, e -> RResult.rmsg (sprintf "failed to finalize psbt Errors: %A \n PSBTInput: %A \n base64 PSBT: %s" e psbt.Inputs.[inputIndex] (psbt.ToBase64()))
             | true, _ ->
                 psbt.ExtractTransaction() |> FinalizedTx |> Good
         try
