@@ -3,6 +3,7 @@ module KeyRepositoryTests
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Chain
 open DotNetLightning.LN
+open DotNetLightning.Tests.Utils
 open DotNetLightning.Transactions
 open DotNetLightning.Utils
 open NBitcoin
@@ -10,6 +11,9 @@ open Expecto
 
 let hex = NBitcoin.DataEncoders.HexEncoder()
 let n = Network.RegTest
+
+let logger = TestLogger.Create("KeyRepository tests")
+let log = logger.LogSimple
 
 /// same with bolt 3
 let paymentPreImages =
@@ -64,9 +68,9 @@ let htlcMap = htlcs |> List.map(fun htlc ->  htlc.Add.HTLCId, htlc) |> Map.ofLis
 [<Tests>]
 let tests =
     testList "KeyRepository tests" [
-        testCase "should create valid signature" <| fun _ ->
+        ftestCase "should create valid signature" <| fun _ ->
             let fundingTxId = [| for _ in 0..31 -> 1uy |] |> uint256 |> TxId
-            let fundingAmount = Money.Satoshis 1000L
+            let fundingAmount = Money.Satoshis 10000000L
             
             let localSeed = [| for _ in 0..31 -> 0uy |] |> uint256
             let localRepo = DefaultKeyRepository(localSeed) :> IKeysRepository
@@ -78,9 +82,8 @@ let tests =
             let remoteKeys = remoteRepo.GetChannelKeys(false)
             let remotePubKeys = remoteKeys.ToChannelPubKeys()
             
-            let remoteFundingKey = "4141414141414141414141414141414141414141414141414141414141414141" |> hex.DecodeData |> Key
             let fundingSCoin = Channel.Helpers.getFundingSCoin(localPubKeys)
-                                                              (remoteFundingKey.PubKey)
+                                                              (remotePubKeys.FundingPubKey)
                                                               (fundingTxId)
                                                               (TxOutIndex 0us)
                                                               fundingAmount
@@ -104,7 +107,33 @@ let tests =
                                           remotePubKeys.HTLCBasePubKey
                                           specBase
                                           n
-            let remoteSig, commitTx2 = remoteRepo.GetSignatureFor(commitTx.Value, remotePubKeys.FundingPubKey)
-            let localSig, commitTx3 = localRepo.GetSignatureFor(commitTx2, localPubKeys.FundingPubKey)
-            Expect.isTrue (commitTx3.CanExtractTransaction()) ""
+            let _remoteSigForLocalCommit, commitTx2 = remoteRepo.GetSignatureFor(commitTx.Value, remotePubKeys.FundingPubKey)
+            let _localSigForLocalCommit, commitTx3 = localRepo.GetSignatureFor(commitTx2, localPubKeys.FundingPubKey)
+            commitTx3.Finalize() |> ignore
+            Expect.isTrue (commitTx3.CanExtractTransaction()) (sprintf "failed to finalize commitTx %A" commitTx3)
+            
+            let remoteDustLimit = Money.Satoshis(1000L)
+            let remoteDelay = 160us |> BlockHeightOffset
+            let remoteCommitTx =
+                Transactions.makeCommitTx fundingSCoin
+                                          0UL
+                                          remotePubKeys.PaymentBasePubKey
+                                          localPubKeys.PaymentBasePubKey
+                                          false
+                                          remoteDustLimit
+                                          remotePubKeys.RevocationBasePubKey
+                                          remoteDelay
+                                          remotePubKeys.DelayedPaymentBasePubKey
+                                          localPubKeys.PaymentBasePubKey
+                                          remotePubKeys.HTLCBasePubKey
+                                          localPubKeys.HTLCBasePubKey
+                                          specBase
+                                          n
+            
+            let _remoteSigForRemoteCommit, remoteCommitTx2 = remoteRepo.GetSignatureFor(remoteCommitTx.Value, remotePubKeys.FundingPubKey)
+            let localSigForRemoteCommit, commitTx3 = localRepo.GetSignatureFor(remoteCommitTx2, localPubKeys.FundingPubKey)
+            
+            let localSigs = seq [(localPubKeys.FundingPubKey, TransactionSignature(localSigForRemoteCommit.Signature, SigHash.All))]
+            let finalizedTx = Transactions.checkTxFinalized remoteCommitTx2 0 localSigs |> function Good tx -> tx | Bad e -> failwithf "%A" e
+            ()
     ]

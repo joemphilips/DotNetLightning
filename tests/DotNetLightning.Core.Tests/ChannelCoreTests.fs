@@ -13,7 +13,7 @@ let n = Network.RegTest
 
 [<Tests>]
 let tests =
-    testList "Channel Domain Tests" [
+    ptestList "Channel Domain Tests" [
         testCase "Should accept accept_channel" <| fun _ ->
             let seed = [| for _ in 0..31 -> 0uy |] |> uint256
             let repo = DefaultKeyRepository(seed) :> IKeysRepository
