@@ -210,6 +210,7 @@ type ChannelCommand =
     | RemoteShutdown of Shutdown
 
     // else
+    | BlockConnected of BlockContent
     | ForceClose
     | GetState
     | GetStateData

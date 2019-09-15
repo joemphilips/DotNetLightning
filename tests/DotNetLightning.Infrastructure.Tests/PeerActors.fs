@@ -30,7 +30,7 @@ type internal PeerManagerEntity = {
         let dummyBlock : BlockContent =
             let txWithIndex = txIncluded |> List.indexed |> List.map(fun iTx -> (fst iTx |> uint32), (snd iTx))
             dummyBlockHeader, (this.CurrentHeight |> uint32 |> BlockHeight), txWithIndex
-        this.EventAggregator.Publish(BlockConnected(blockChainInstanceId, dummyBlock))
+        this.EventAggregator.Publish(OnChainEvent.BlockConnected(dummyBlock))
 
 type internal PeerActors(a, b) =
     let pipePair = DuplexPipe.CreatePair()

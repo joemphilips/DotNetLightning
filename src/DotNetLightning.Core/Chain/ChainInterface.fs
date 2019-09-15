@@ -10,19 +10,30 @@ type ChainError =
     | NotWatched
     | UnknownTx of Transaction
 
+/// Id for specific on-chain information source
 type BlockChainInstanceId = BlockChainInstanceId of string
 
-/// We want transaction index for channel id and such.
+/// We want transaction index number for channel id and such.
 /// So not using NBitcoin.Block directly
 type BlockContent = BlockHeader * BlockHeight * (uint32 * Transaction) list
-type OnChainEvent =
+type RawOnChainEvent =
     | BlockConnected of chainId: BlockChainInstanceId * content: BlockContent
     | BlockDisconnected of chainId: BlockChainInstanceId * BlockHeader
 
+/// type to watch specific bitcoind node.
+/// Or whatever information source which we can assume as a `real`
 type IChainListener =
-    abstract member ObservableOnChainEvent : IObservable<OnChainEvent>
+    abstract member Id: BlockChainInstanceId
+    abstract member ObservableOnChainEvent : IObservable<RawOnChainEvent>
 
+type OnChainEvent =
+    | BlockConnected of content: BlockContent
+    | BlockDisconnected of header: BlockHeader
 
+/// an interface responsible for
+/// 1. hold more than one IChainListener
+/// 2. Aggregate the information from IChainListeners
+/// 3. Publish only those are important for us.
 type IChainWatcher =
     abstract member InstallWatchTx: txid: TxId * scriptPubKey: Script -> bool
     abstract member InstallWatchOutPoint: OutPoint * Script -> bool

@@ -62,6 +62,15 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
                (id)
                ((sprintf "Channel Manager got error while Observing PeerEvent: %A") >> _logger.LogCritical)
 
+    let _onChainObservable =
+        _eventAggregator.GetObservable<OnChainEvent>()
+        
+    let _ =
+        _onChainObservable
+        |> Observable.flatmapAsync(this.OnChainEventListener)
+        |> Observable.subscribeWithError
+            (id)
+            ((sprintf "Channel Manager got error while Observing OnChain Event: %A") >> _logger.LogCritical)
     let _ourNodeId = _keysRepository.GetNodeSecret().PubKey |> NodeId
     member val KeysRepository = _keysRepository
     member val KnownChannels: ConcurrentDictionary<NodeId, Channel> = ConcurrentDictionary<_, _>() with get
@@ -69,6 +78,20 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
     
     member val ChannelEventRepo = channelEventRepo with get
     member val RemoteInits = ConcurrentDictionary<_,_>() with get
+    
+    member this.OnChainEventListener e =
+        let t = unitTask {
+            let allNodes = this.KnownChannels.Keys
+            match e with
+            | OnChainEvent.BlockConnected content ->
+                for nodeId in allNodes do
+                    do! this.AcceptCommandAsync(nodeId, ChannelCommand.BlockConnected content)
+                failwith "TODO"
+            | OnChainEvent.BlockDisconnected _  ->
+                failwith "TODO"
+            return ()
+        }
+        t |> Async.AwaitTask
     member this.PeerEventListener e =
         let t = unitTask {
             match e with
