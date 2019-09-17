@@ -73,7 +73,7 @@ let getAliceParam() =
     p.MaxAcceptedHTLCs <- 100us
     // p.ExpirtyDeltaBlocks <- 144
     p.HTLCMinimumMSat <- LNMoney.Zero
-    p.MinDepthBlocks <- 3u |> BlockHeight
+    p.MinimumDepth <- 3us |> BlockHeightOffset
     // p.SmartFeeNBlocks <- 3
     p.ToRemoteDelayBlocks <- BlockHeightOffset 720us
     p.MaxToLocalDelayBlocks <- BlockHeightOffset 1000us

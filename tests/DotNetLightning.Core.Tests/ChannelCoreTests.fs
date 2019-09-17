@@ -69,7 +69,6 @@ let tests =
                       Logger = failwith "todo"
                       RemoteNodeId = failwith "todo"
                       LocalNodeSecret = failwith "todo"
-                      CurrentBlockHeight = failwith "todo"
                       Network = failwith "todo"
                       Secp256k1Context = failwith "todo" }
             ()

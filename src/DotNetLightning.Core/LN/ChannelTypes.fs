@@ -301,7 +301,6 @@ type ChannelEvent =
     // -------- else ---------
     | Closed
     | Disconnected
-    | NewBlockVerified of height: BlockHeight
     | ChannelStateRequestedSignCommitment
 
 

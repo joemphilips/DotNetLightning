@@ -148,7 +148,6 @@ type PeerManager(keyRepo: IKeysRepository,
             | WeProposedNewClosingSigned _ -> failwith "todo"
             | ChannelEvent.Closed _ -> failwith "TODO"
             | Disconnected _ -> failwith "TODO"
-            | NewBlockVerified _ -> ()
             | ChannelStateRequestedSignCommitment _ -> failwith "TODO"
         }
         vt.AsTask() |> Async.AwaitTask

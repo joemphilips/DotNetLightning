@@ -28,7 +28,8 @@ type IChainListener =
 
 type OnChainEvent =
     | BlockConnected of content: BlockContent
-    | BlockDisconnected of header: BlockHeader
+    /// value is a list of blocks which has disappeared from the blockchain.
+    | BlockDisconnected of header: BlockContent list
 
 /// an interface responsible for
 /// 1. hold more than one IChainListener

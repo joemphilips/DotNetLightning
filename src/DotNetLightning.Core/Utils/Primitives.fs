@@ -29,11 +29,16 @@ module Primitives =
     type BlockHeight = | BlockHeight of uint32 with
         static member Zero = 0u |> BlockHeight
         member x.Value = let (BlockHeight v) = x in v
+        member x.AsOffset() =
+            x.Value |> Checked.uint16 |> BlockHeightOffset
         static member (+) (a: BlockHeight, b: BlockHeightOffset) =
                 a.Value + (uint32 b.Value ) |> BlockHeight
 
         static member (-) (a: BlockHeight, b: BlockHeightOffset) =
             a.Value - (uint32 b.Value) |> BlockHeight
+            
+        static member (-) (a: BlockHeight, b: BlockHeight) =
+            a.Value - (b.Value) |> uint16 |> BlockHeightOffset
 
     /// **Description**
     ///
@@ -44,6 +49,7 @@ module Primitives =
         member x.Value = let (BlockHeightOffset v) = x in v
         static member op_Implicit (v: uint16) =
             BlockHeightOffset v
+        static member One = BlockHeightOffset(0us)
         static member (+) (a: BlockHeightOffset, b: BlockHeightOffset) =
             a.Value + b.Value |> BlockHeightOffset
         static member (-) (a: BlockHeightOffset, b: BlockHeightOffset) =

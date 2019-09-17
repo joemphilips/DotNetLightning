@@ -78,7 +78,12 @@ type NodeParams() as this =
     member val MaxHTLCMinimumMSat: LNMoney = LNMoney.MilliSatoshis(100L) with get, set
     member val ToRemoteDelayBlocks: BlockHeightOffset = BlockHeightOffset(720us) with get, set
     member val MaxToLocalDelayBlocks: BlockHeightOffset = BlockHeightOffset(2016us) with get, set
-    member val MinDepthBlocks: BlockHeight = BlockHeight(3u) with get, set
+    
+    /// The number of confirmation when we consider the funding tx is locked.
+    member val MinimumDepth = BlockHeightOffset(3us) with get, set
+    /// We do not accept channel if other node wants to wait more than this (in block number) before funding tx is locked.
+    member val MaxMinimumDepth  = BlockHeightOffset(144us) with get, set
+    
     // member val SmartFeeNBlocks: BlockHeight
     member val FeeBaseMSat: LNMoney = LNMoney.MilliSatoshis(1000L) with get, set
     member val FeeProportionalMillionths: uint32 = 100u with get, set
@@ -119,8 +124,8 @@ type NodeParams() as this =
     with
     member this.GetChannelConfig() =
         {
-            ChannelConfig.ChannelHandshakeConfig = { MinimumDepth = this.MinDepthBlocks }
-            PeerChannelConfigLimits = { ChannelHandshakeLimits.MaxMinimumDepth = this.MinDepthBlocks
+            ChannelConfig.ChannelHandshakeConfig = { MinimumDepth = this.MinimumDepth }
+            PeerChannelConfigLimits = { ChannelHandshakeLimits.MaxMinimumDepth = this.MaxMinimumDepth
                                         MinFundingSatoshis = this.MinFundingSatoshis
                                         MaxHTLCMinimumMSat = this.MaxHTLCMinimumMSat
                                         MinMaxHTLCValueInFlightMSat = this.MinMaxHTLCValueInFlightMSat

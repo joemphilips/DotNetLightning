@@ -14,6 +14,7 @@ open FSharp.Control.Tasks
 open CustomEventAggregator
 open System
 open DotNetLightning.Utils
+open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Chain
 open DotNetLightning.LN
@@ -79,16 +80,62 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
     member val ChannelEventRepo = channelEventRepo with get
     member val RemoteInits = ConcurrentDictionary<_,_>() with get
     
+    member val CurrentBlockHeight = BlockHeight.Zero with get, set
+    
+    /// Values are
+    /// 1. actual transaction
+    /// 2. other peer's id
+    /// 3. absolute height of this tx is included in a block (None if it is not confirmed)
+    member val FundingTxs = ConcurrentDictionary<TxId, NodeId * (TxIndexInBlock * BlockHeight) option>()
+    
     member this.OnChainEventListener e =
         let t = unitTask {
-            let allNodes = this.KnownChannels.Keys
+            _logger.LogTrace(sprintf "Channel Manager is Handling on chain event %A with handler" e)
             match e with
-            | OnChainEvent.BlockConnected content ->
-                for nodeId in allNodes do
-                    do! this.AcceptCommandAsync(nodeId, ChannelCommand.BlockConnected content)
-                failwith "TODO"
-            | OnChainEvent.BlockDisconnected _  ->
-                failwith "TODO"
+            | OnChainEvent.BlockConnected (_, height, txs) ->
+                this.CurrentBlockHeight <- height
+                for kv in this.FundingTxs do
+                    let mutable found = false
+                    for txInBlock in txs do
+                        let txId = txInBlock |> snd |> fun tx  -> tx.GetTxId()
+                        if (txId = kv.Key) then
+                            _logger.LogInformation(sprintf "we found funding tx (%A) on the blockchain" txId)
+                            found <- true
+                            let txIndex = txInBlock |> fst |> TxIndexInBlock
+                            let (nodeId, _) = kv.Value
+                            let depth = 1us |> BlockHeightOffset
+                            let newValue = (nodeId, Some(txIndex, height))
+                            this.FundingTxs.TryUpdate(kv.Key, newValue, kv.Value) |> ignore
+                            do!
+                                this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyFundingConfirmedOnBC(height, txIndex, depth))
+                    if (not found) then
+                        match kv.Value with
+                        | (_nodeId, None) ->
+                            ()
+                        |(nodeId, Some(txIndex, heightConfirmed)) ->
+                            let depth = height - heightConfirmed
+                            _logger.LogDebug(sprintf "funding tx (%A) confirmed (%d) times" kv.Key depth.Value)
+                            let newValue = nodeId, Some(txIndex, heightConfirmed)
+                            this.FundingTxs.TryUpdate(kv.Key, newValue, kv.Value) |> ignore
+                            do! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyFundingConfirmedOnBC(height, txIndex, depth))
+                            
+            | OnChainEvent.BlockDisconnected blocks ->
+                for b in blocks do
+                    let _header, _height, txs = b
+                    for kv in this.FundingTxs do
+                        for txInBlock in txs do
+                            let txId = txInBlock |> snd |> fun tx -> tx.GetTxId()
+                            // if once confirmed funding tx disappears from the blockchain,
+                            // there is not much we can do to reclaim funds.
+                            // we just wait for funding tx to appear on the blockchain again.
+                            // If it does, we close the channel afterwards.
+                            if (kv.Key = txId) then
+                                _logger.LogError(sprintf "funding tx (%A) has disappeared from chain (probably by reorg)" txId)
+                                match kv.Value with
+                                | (_nodeId, None) -> ()
+                                | (nodeId, Some(_txIndex, _heightConfirmed)) ->
+                                    let newValue = (nodeId, None)
+                                    this.FundingTxs.TryUpdate(kv.Key, newValue, kv.Value) |> ignore
             return ()
         }
         t |> Async.AwaitTask
@@ -113,6 +160,7 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
                 | :? AcceptChannel as m ->
                     return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyAcceptChannel m)
                 | :? FundingCreated as m ->
+                    this.FundingTxs.TryAdd(m.FundingTxId, (nodeId, None)) |> ignore
                     return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyFundingCreated m)
                 | :? FundingSigned as m ->
                     return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyFundingSigned m)
@@ -123,7 +171,7 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
                 | :? ClosingSigned as m ->
                     return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyClosingSigned m)
                 | :? UpdateAddHTLC as m ->
-                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyUpdateAddHTLC m)
+                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyUpdateAddHTLC (m, this.CurrentBlockHeight))
                 | :? UpdateFulfillHTLC as m ->
                     return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyUpdateFulfillHTLC m)
                 | :? UpdateFailHTLC as m ->
@@ -146,6 +194,12 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
             | _ -> return ()
         }
         t |> Async.AwaitTask
+        
+    member private this.ChannelEventHandler (e: ChannelEventWithContext) =
+        match e.ChannelEvent with
+        | ChannelEvent.WeAcceptedAcceptChannel (nextMsg, _) ->
+            this.FundingTxs.TryAdd(nextMsg.FundingTxId, (e.NodeId, None)) |> ignore
+        | _ -> ()
         
     member private this.HandleChannelError (nodeId: NodeId) (b: RBad) = unitTask {
             match b with
@@ -185,6 +239,7 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
                     _logger.LogTrace(sprintf "Updated channel with %A" (nextChannel.State.GetType()))
                 | false ->
                     _logger.LogTrace(sprintf "Did not update channel %A" nextChannel.State)
+                contextEvents |> List.iter(this.ChannelEventHandler)
                 contextEvents
                    |> List.iter this.EventAggregator.Publish<ChannelEventWithContext>
             | Bad ex ->

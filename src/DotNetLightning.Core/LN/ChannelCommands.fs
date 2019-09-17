@@ -24,9 +24,10 @@ type CMDAddHTLC = {
     Onion: OnionPacket
     Upstream: UpdateAddHTLC option
     Origin: HTLCSource option
+    CurrentHeight: BlockHeight
 }
     with
-        static member Create amountMSat paymentHash expiry onion upstream commit origin =
+        static member Create amountMSat paymentHash expiry onion upstream commit origin currentHeight =
             {
                 AmountMSat = amountMSat
                 PaymentHash = paymentHash
@@ -34,6 +35,7 @@ type CMDAddHTLC = {
                 Onion = onion
                 Upstream = upstream
                 Origin = origin
+                CurrentHeight = currentHeight
             }
 
 
@@ -181,7 +183,7 @@ type ChannelCommand =
     | ApplyAcceptChannel of AcceptChannel
     | ApplyFundingSigned of FundingSigned
     | ApplyFundingLocked of FundingLocked
-    | ApplyFundingConfirmedOnBC of height: BlockHeight * txIndex: TxIndexInBlock * depth: BlockHeight
+    | ApplyFundingConfirmedOnBC of height: BlockHeight * txIndex: TxIndexInBlock * depth: BlockHeightOffset
 
     // open: fundee
     | CreateInbound of InputInitFundee
@@ -190,7 +192,7 @@ type ChannelCommand =
 
     // normal
     | AddHTLC of CMDAddHTLC
-    | ApplyUpdateAddHTLC of UpdateAddHTLC
+    | ApplyUpdateAddHTLC of msg: UpdateAddHTLC * currentHeight: BlockHeight
     | FulfillHTLC of CMDFulfillHTLC
     | ApplyUpdateFulfillHTLC of UpdateFulfillHTLC
     | FailHTLC of CMDFailHTLC
@@ -210,7 +212,6 @@ type ChannelCommand =
     | RemoteShutdown of Shutdown
 
     // else
-    | BlockConnected of BlockContent
     | ForceClose
     | GetState
     | GetStateData

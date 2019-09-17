@@ -23,7 +23,6 @@ type Channel = {
     RemoteNodeId: NodeId
     LocalNodeSecret: Key
     State: ChannelState
-    CurrentBlockHeight: BlockHeight
     Network: Network
     Secp256k1Context: Secp256k1
  }
@@ -40,7 +39,6 @@ type Channel = {
                 RemoteNodeId = remoteNodeId
                 LocalNodeSecret = localNodeSecret
                 State = WaitForInitInternal
-                CurrentBlockHeight = BlockHeight.Zero
                 Network = n
             }
         static member CreateCurried = curry9 (Channel.Create)
@@ -451,7 +449,7 @@ module Channel =
                 let check4 = checkOrClose msg.MaxAcceptedHTLCs (<) config.MinMaxAcceptedHTLCs "max accepted htlcs (%A) is less than the user specified limit (%A)"
                 let check5 = checkOrClose msg.DustLimitSatoshis (<) config.MinDustLimitSatoshis "dust limit satoshis (%A) is less then the user specified limit (%A)"
                 let check6 = checkOrClose msg.DustLimitSatoshis (>) config.MaxDustLimitSatoshis "dust limit satoshis (%A) is greater then the user specified limit (%A)"
-                let check7 = checkOrClose msg.MinimumDepth (>) config.MaxMinimumDepth "We consider the minimum depth (%A) to be unreasonably large. Our max minimum depth is (%A)"
+                let check7 = checkOrClose (msg.MinimumDepth.Value) (>) (config.MaxMinimumDepth.Value |> uint32) "We consider the minimum depth (%A) to be unreasonably large. Our max minimum depth is (%A)"
 
                 check1 *> check2 *> check3 *> check4 *> check5 *> check6 *> check7
 
@@ -506,8 +504,8 @@ module Channel =
                     Good()
 
         let checkCMDAddHTLC (c: Channel) (state: NormalData) (cmd: CMDAddHTLC) =
-            UpdateAddHTLCValidator.checkExpiryIsNotPast c.CurrentBlockHeight cmd.Expiry
-            *> UpdateAddHTLCValidator.checkExpiryIsInAcceptableRange c.CurrentBlockHeight cmd.Expiry
+            UpdateAddHTLCValidator.checkExpiryIsNotPast cmd.CurrentHeight cmd.Expiry
+            *> UpdateAddHTLCValidator.checkExpiryIsInAcceptableRange cmd.CurrentHeight cmd.Expiry
             *> UpdateAddHTLCValidator.checkAmountIsLargerThanMinimum state.Commitments.RemoteParams.HTLCMinimumMSat cmd.AmountMSat
 
         let checkOurUpdateAddHTLCIsAcceptableWithCurrentSpec (currentSpec) (state: Commitments) (add: UpdateAddHTLC) =
@@ -515,11 +513,11 @@ module Channel =
             *> UpdateAddHTLCValidator.checkLessThanMaxAcceptedHTLC currentSpec state.RemoteParams.MaxAcceptedHTLCs
             *> UpdateAddHTLCValidator.checkWeHaveSufficientFunds state currentSpec
 
-        let checkTheirUpdateAddHTLCIsAcceptable (c: Channel) (state: Commitments) (add: UpdateAddHTLC) =
+        let checkTheirUpdateAddHTLCIsAcceptable (state: Commitments) (add: UpdateAddHTLC) (currentHeight: BlockHeight) =
             checkOrClose add.HTLCId (=) state.RemoteNextHTLCId "Received Unexpected HTLCId (%A). Must be (%A)"
             >>= fun _ ->
-                UpdateAddHTLCValidator.checkExpiryIsNotPast c.CurrentBlockHeight add.CLTVExpiry
-                *> UpdateAddHTLCValidator.checkExpiryIsInAcceptableRange c.CurrentBlockHeight add.CLTVExpiry
+                UpdateAddHTLCValidator.checkExpiryIsNotPast currentHeight add.CLTVExpiry
+                *> UpdateAddHTLCValidator.checkExpiryIsInAcceptableRange currentHeight add.CLTVExpiry
                 *> UpdateAddHTLCValidator.checkAmountIsLargerThanMinimum state.LocalParams.HTLCMinimumMSat add.AmountMSat
                 >>>= fun e -> RRClose(e.Describe())
 
@@ -655,7 +653,7 @@ module Channel =
                                       MaxHTLCValueInFlightMsat = localParams.MaxHTLCValueInFlightMSat
                                       ChannelReserveSatoshis = localParams.ChannelReserveSatoshis
                                       HTLCMinimumMSat = localParams.HTLCMinimumMSat
-                                      MinimumDepth = cs.Config.ChannelHandshakeConfig.MinimumDepth
+                                      MinimumDepth = cs.Config.ChannelHandshakeConfig.MinimumDepth.Value |> uint32 |> BlockHeight
                                       ToSelfDelay = localParams.ToSelfDelay
                                       MaxAcceptedHTLCs = localParams.MaxAcceptedHTLCs
                                       FundingPubKey = channelKeys.FundingKey.PubKey
@@ -755,7 +753,8 @@ module Channel =
                 RRClose(msg)
         | WaitForFundingLocked state, ApplyFundingLocked msg ->
             if (state.HaveWeSentFundingLocked) then
-                let initialChannelUpdate = failwith ""
+                let initialChannelUpdate =
+                    failwith ""
                 let nextState = { NormalData.Buried = true
                                   Commitments = { state.Commitments with RemoteNextCommitInfo = Choice2Of2(msg.NextPerCommitmentPoint) }
                                   ShortChannelId = state.ShortChannelId
@@ -796,8 +795,8 @@ module Channel =
                 >>= fun reduced ->
                     Validation.checkOurUpdateAddHTLCIsAcceptableWithCurrentSpec reduced commitments1 add
                     *> Good([ WeAcceptedCMDAddHTLC(add, commitments1) ])
-        | ChannelState.Normal state, ApplyUpdateAddHTLC msg ->
-            Validation.checkTheirUpdateAddHTLCIsAcceptable cs state.Commitments msg
+        | ChannelState.Normal state, ApplyUpdateAddHTLC (msg, height) ->
+            Validation.checkTheirUpdateAddHTLCIsAcceptable state.Commitments msg height
             >>= fun _ ->
                 let commitments1 = { state.Commitments.AddRemoteProposal(msg)
                                         with RemoteNextHTLCId = state.Commitments.LocalNextHTLCId + 1UL }
@@ -1162,6 +1161,4 @@ module Channel =
         | WeProposedNewClosingSigned(_msg, nextState), ChannelState.Negotiating _d ->
             { c with State = Negotiating(nextState) }
         // ----- else -----
-        | NewBlockVerified height, _ ->
-            { c with CurrentBlockHeight = height }
         | otherEvent -> c
