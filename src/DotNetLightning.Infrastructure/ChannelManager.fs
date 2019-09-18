@@ -90,7 +90,6 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
     
     member this.OnChainEventListener e =
         let t = unitTask {
-            _logger.LogTrace(sprintf "Channel Manager is Handling on chain event %A with handler" e)
             match e with
             | OnChainEvent.BlockConnected (_, height, txs) ->
                 this.CurrentBlockHeight <- height

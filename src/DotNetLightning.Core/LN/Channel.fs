@@ -760,7 +760,6 @@ module Channel =
                 cs.Logger (LogLevel.Error) (msg)
                 RRClose(msg)
         | WaitForFundingLocked state, ApplyFundingLocked msg ->
-            printfn "Applying Funding Locked when state is %A" (state.GetType())
             if (state.HaveWeSentFundingLocked) then
                 let initialChannelUpdate =
                     let feeBase = Helpers.getOurFeeBaseMSat cs.FeeEstimator state.InitialFeeRatePerKw state.Commitments.LocalParams.IsFunder
