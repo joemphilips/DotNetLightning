@@ -113,10 +113,8 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
                         | (_nodeId, None) ->
                             ()
                         |(nodeId, Some(txIndex, heightConfirmed)) ->
-                            let depth = height - heightConfirmed
+                            let depth = (height - heightConfirmed) + BlockHeightOffset.One
                             _logger.LogDebug(sprintf "funding tx (%A) confirmed (%d) times" kv.Key depth.Value)
-                            let newValue = nodeId, Some(txIndex, heightConfirmed)
-                            this.FundingTxs.TryUpdate(kv.Key, newValue, kv.Value) |> ignore
                             do! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyFundingConfirmedOnBC(height, txIndex, depth))
                             
             | OnChainEvent.BlockDisconnected blocks ->

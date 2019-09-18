@@ -724,26 +724,29 @@ module Channel =
         | WaitForFundingConfirmed _state, ApplyFundingLocked msg ->
             [ TheySentFundingLockedMsgBeforeUs msg ] |> Good
         | WaitForFundingConfirmed state, ApplyFundingConfirmedOnBC(height, txindex, depth) ->
-            cs.Logger (LogLevel.Info) (sprintf "ChannelId %A was confirmed at block height %A; depth: %A" state.Commitments.ChannelId height.Value depth)
-            let nextPerCommitmentPoint =
-                ChannelUtils.buildCommitmentPoint (state.Commitments.LocalParams.ChannelPubKeys.CommitmentSeed, 1UL)
-            let msgToSend: FundingLocked = { ChannelId = state.Commitments.ChannelId; NextPerCommitmentPoint = nextPerCommitmentPoint }
+            cs.Logger (LogLevel.Info) (sprintf "Funding tx for ChannelId (%A) was confirmed at block height %A; depth: %A" state.Commitments.ChannelId height.Value depth)
+            if (cs.Config.ChannelHandshakeConfig.MinimumDepth > depth) then
+                [] |> Good
+            else
+                let nextPerCommitmentPoint =
+                    ChannelUtils.buildCommitmentPoint (state.Commitments.LocalParams.ChannelPubKeys.CommitmentSeed, 1UL)
+                let msgToSend: FundingLocked = { ChannelId = state.Commitments.ChannelId; NextPerCommitmentPoint = nextPerCommitmentPoint }
 
-            // This is temporary channel id that we will use in our channel_update message, the goal is to be able to use our channel
-            // as soon as it reaches NORMAL state, and before it is announced on the network
-            // (this id might be updated when the funding tx gets deeply buried, if there was a reorg in the meantime)
-            // this is not specified in BOLT.
-            let shortChannelId = { ShortChannelId.BlockHeight = height;
-                                   BlockIndex = txindex
-                                   TxOutIndex = state.Commitments.FundingSCoin.Outpoint.N |> uint16 |> TxOutIndex }
-            let nextState = { Data.WaitForFundingLockedData.Commitments = state.Commitments
-                              ShortChannelId = shortChannelId
-                              OurMessage = msgToSend
-                              TheirMessage = None
-                              HaveWeSentFundingLocked = false
-                              InitialFeeRatePerKw = state.InitialFeeRatePerKw
-                              ChannelId = state.Commitments.ChannelId }
-            [ FundingConfirmed nextState; WeSentFundingLockedMsgBeforeThem msgToSend ] |> Good
+                // This is temporary channel id that we will use in our channel_update message, the goal is to be able to use our channel
+                // as soon as it reaches NORMAL state, and before it is announced on the network
+                // (this id might be updated when the funding tx gets deeply buried, if there was a reorg in the meantime)
+                // this is not specified in BOLT.
+                let shortChannelId = { ShortChannelId.BlockHeight = height;
+                                       BlockIndex = txindex
+                                       TxOutIndex = state.Commitments.FundingSCoin.Outpoint.N |> uint16 |> TxOutIndex }
+                let nextState = { Data.WaitForFundingLockedData.Commitments = state.Commitments
+                                  ShortChannelId = shortChannelId
+                                  OurMessage = msgToSend
+                                  TheirMessage = None
+                                  HaveWeSentFundingLocked = false
+                                  InitialFeeRatePerKw = state.InitialFeeRatePerKw
+                                  ChannelId = state.Commitments.ChannelId }
+                [ FundingConfirmed nextState; WeSentFundingLockedMsgBeforeThem msgToSend ] |> Good
         | WaitForFundingLocked _state, ApplyFundingConfirmedOnBC(height, _txindex, depth) ->
             if (cs.Config.ChannelHandshakeConfig.MinimumDepth <= depth) then
                 [] |> Good
@@ -754,7 +757,17 @@ module Channel =
         | WaitForFundingLocked state, ApplyFundingLocked msg ->
             if (state.HaveWeSentFundingLocked) then
                 let initialChannelUpdate =
-                    failwith ""
+                    let feeBase = Helpers.getOurFeeBaseMSat cs.FeeEstimator state.InitialFeeRatePerKw state.Commitments.LocalParams.IsFunder
+                    Helpers.makeChannelUpdate (cs.Network.GenesisHash,
+                                               cs.LocalNodeSecret,
+                                               cs.RemoteNodeId,
+                                               state.ShortChannelId,
+                                               state.Commitments.LocalParams.ToSelfDelay,
+                                               state.Commitments.RemoteParams.HTLCMinimumMSat,
+                                               feeBase,
+                                               cs.Config.ChannelOptions.FeeProportionalMillionths,
+                                               true,
+                                               None)
                 let nextState = { NormalData.Buried = true
                                   Commitments = { state.Commitments with RemoteNextCommitInfo = Choice2Of2(msg.NextPerCommitmentPoint) }
                                   ShortChannelId = state.ShortChannelId

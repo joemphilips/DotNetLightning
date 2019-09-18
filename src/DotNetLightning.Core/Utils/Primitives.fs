@@ -49,7 +49,7 @@ module Primitives =
         member x.Value = let (BlockHeightOffset v) = x in v
         static member op_Implicit (v: uint16) =
             BlockHeightOffset v
-        static member One = BlockHeightOffset(0us)
+        static member One = BlockHeightOffset(1us)
         static member (+) (a: BlockHeightOffset, b: BlockHeightOffset) =
             a.Value + b.Value |> BlockHeightOffset
         static member (-) (a: BlockHeightOffset, b: BlockHeightOffset) =

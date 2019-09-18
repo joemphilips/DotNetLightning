@@ -220,9 +220,9 @@ let tests =
             
             // We need three confirmation before we consider funding is locked
             // (3 is default for NodeParams)
-            alice.PublishDummyBlockWith(dummyBlockChainInstanceId, [fundingTx])
-            alice.PublishDummyBlockWith(dummyBlockChainInstanceId, [])
-            alice.PublishDummyBlockWith(dummyBlockChainInstanceId, [])
+            alice.PublishDummyBlockWith([fundingTx])
+            alice.PublishDummyBlockWith([])
+            alice.PublishDummyBlockWith([])
             let! r = aliceFundingConfirmedTask
             Expect.isSome r "timeout"
             let! r = aliceSentFundingLockedTask
@@ -231,9 +231,9 @@ let tests =
             let! r = bobReceivedFundingLockedTask
             Expect.isSome r "timeout"
             
-            bob.PublishDummyBlockWith(dummyBlockChainInstanceId, [fundingTx])
-            bob.PublishDummyBlockWith(dummyBlockChainInstanceId, [])
-            bob.PublishDummyBlockWith(dummyBlockChainInstanceId, [])
+            bob.PublishDummyBlockWith([fundingTx])
+            bob.PublishDummyBlockWith([])
+            bob.PublishDummyBlockWith([])
             
             let! r = bobBothFundingLockedTask
             Expect.isSome r "timeout"
