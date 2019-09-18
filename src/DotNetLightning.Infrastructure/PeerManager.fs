@@ -111,6 +111,7 @@ type PeerManager(keyRepo: IKeysRepository,
             // ---- else ----
             | FundingConfirmed _  -> ()
             | TheySentFundingLocked _msg -> ()
+            | ChannelEvent.WeResumedDelayedFundingLocked _ -> ()
             | WeSentFundingLocked fundingLockedMsg ->
                 return! this.EncodeAndSendMsg(peerId, transport) fundingLockedMsg
             | BothFundingLocked _ -> ()
