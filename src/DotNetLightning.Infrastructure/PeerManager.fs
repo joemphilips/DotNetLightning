@@ -110,8 +110,8 @@ type PeerManager(keyRepo: IKeysRepository,
                 
             // ---- else ----
             | FundingConfirmed _  -> ()
-            | TheySentFundingLockedMsgBeforeUs _msg -> ()
-            | WeSentFundingLockedMsgBeforeThem fundingLockedMsg ->
+            | TheySentFundingLocked _msg -> ()
+            | WeSentFundingLocked fundingLockedMsg ->
                 return! this.EncodeAndSendMsg(peerId, transport) fundingLockedMsg
             | BothFundingLocked _ -> ()
             | WeAcceptedUpdateAddHTLC _

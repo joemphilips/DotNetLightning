@@ -722,7 +722,7 @@ module Channel =
                         [ WeAcceptedFundingCreated(msgToSend, nextState) ]
                         |> Good
         | WaitForFundingConfirmed _state, ApplyFundingLocked msg ->
-            [ TheySentFundingLockedMsgBeforeUs msg ] |> Good
+            [ TheySentFundingLocked msg ] |> Good
         | WaitForFundingConfirmed state, ApplyFundingConfirmedOnBC(height, txindex, depth) ->
             cs.Logger (LogLevel.Info) (sprintf "Funding tx for ChannelId (%A) was confirmed at block height %A; depth: %A" state.Commitments.ChannelId height.Value depth)
             if (cs.Config.ChannelHandshakeConfig.MinimumDepth > depth) then
@@ -746,7 +746,12 @@ module Channel =
                                   HaveWeSentFundingLocked = false
                                   InitialFeeRatePerKw = state.InitialFeeRatePerKw
                                   ChannelId = state.Commitments.ChannelId }
-                [ FundingConfirmed nextState; WeSentFundingLockedMsgBeforeThem msgToSend ] |> Good
+                
+                match (state.Deferred) with
+                | None ->
+                    [ FundingConfirmed nextState; WeSentFundingLocked msgToSend ] |> Good
+                | Some msg ->
+                    [ FundingConfirmed nextState; WeSentFundingLocked msgToSend; WeResumedDelayedFundingLocked msg ] |> Good
         | WaitForFundingLocked _state, ApplyFundingConfirmedOnBC(height, _txindex, depth) ->
             if (cs.Config.ChannelHandshakeConfig.MinimumDepth <= depth) then
                 [] |> Good
@@ -755,6 +760,7 @@ module Channel =
                 cs.Logger (LogLevel.Error) (msg)
                 RRClose(msg)
         | WaitForFundingLocked state, ApplyFundingLocked msg ->
+            printfn "Applying Funding Locked when state is %A" (state.GetType())
             if (state.HaveWeSentFundingLocked) then
                 let initialChannelUpdate =
                     let feeBase = Helpers.getOurFeeBaseMSat cs.FeeEstimator state.InitialFeeRatePerKw state.Commitments.LocalParams.IsFunder
@@ -778,7 +784,7 @@ module Channel =
                                   ChannelId = state.ChannelId }
                 [ BothFundingLocked nextState ] |> Good
             else
-                [ TheySentFundingLockedMsgBeforeUs msg ] |> Good
+                [] |> Good
 
         // ---------- normal operation ---------
         | ChannelState.Normal state, AddHTLC cmd when state.LocalShutdown.IsSome || state.RemoteShutdown.IsSome ->
@@ -1099,9 +1105,9 @@ module Channel =
         // --------- init both ------
         | FundingConfirmed data, WaitForFundingConfirmed _ ->
             { c with State = WaitForFundingLocked data }
-        | TheySentFundingLockedMsgBeforeUs msg, WaitForFundingConfirmed s ->
+        | TheySentFundingLocked msg, WaitForFundingConfirmed s ->
             { c with State = WaitForFundingConfirmed({ s with Deferred = Some(msg) }) }
-        | TheySentFundingLockedMsgBeforeUs msg, WaitForFundingLocked s ->
+        | TheySentFundingLocked msg, WaitForFundingLocked s ->
             let feeBase = Helpers.getOurFeeBaseMSat c.FeeEstimator s.InitialFeeRatePerKw s.Commitments.LocalParams.IsFunder
             let channelUpdate = Helpers.makeChannelUpdate (c.Network.GenesisHash,
                                                            c.LocalNodeSecret,
@@ -1122,7 +1128,7 @@ module Channel =
                               RemoteShutdown = None
                               ChannelId = msg.ChannelId }
             { c with State = ChannelState.Normal nextState }
-        | WeSentFundingLockedMsgBeforeThem msg, WaitForFundingLocked prevState ->
+        | WeSentFundingLocked msg, WaitForFundingLocked prevState ->
             { c with State = WaitForFundingLocked { prevState with OurMessage = msg; HaveWeSentFundingLocked = true } }
         | BothFundingLocked data, WaitForFundingSigned _s ->
             { c with State = ChannelState.Normal data }

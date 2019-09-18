@@ -187,10 +187,10 @@ let tests =
                 alice.EventAggregator.AwaitChannelEvent(function FundingConfirmed _ -> Some () | _ -> None)
                 
             let aliceSentFundingLockedTask =
-                alice.EventAggregator.AwaitChannelEvent(function WeSentFundingLockedMsgBeforeThem _ -> Some () | _ -> None)
+                alice.EventAggregator.AwaitChannelEvent(function WeSentFundingLocked _ -> Some () | _ -> None)
                 
             let bobReceivedFundingLockedTask =
-                bob.EventAggregator.AwaitChannelEvent(function TheySentFundingLockedMsgBeforeUs _ -> Some () | _ -> None)
+                bob.EventAggregator.AwaitChannelEvent(function TheySentFundingLocked _ -> Some () | _ -> None)
                 
             let aliceBothFundingLockedTask =
                 alice.EventAggregator.AwaitChannelEvent(function BothFundingLocked _ -> Some () | _ -> None)
@@ -235,9 +235,10 @@ let tests =
             bob.PublishDummyBlockWith([])
             bob.PublishDummyBlockWith([])
             
-            let! r = bobBothFundingLockedTask
-            Expect.isSome r "timeout"
             let! r = aliceBothFundingLockedTask
+            Expect.isSome r "timeout"
+            
+            let! r = bobBothFundingLockedTask
             Expect.isSome r "timeout"
             
             return ()

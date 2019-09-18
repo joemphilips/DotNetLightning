@@ -264,8 +264,9 @@ type ChannelEvent =
 
     /// -------- init both -----
     | FundingConfirmed of nextState: Data.WaitForFundingLockedData
-    | TheySentFundingLockedMsgBeforeUs of msg: FundingLocked
-    | WeSentFundingLockedMsgBeforeThem of msg: FundingLocked
+    | TheySentFundingLocked of msg: FundingLocked
+    | WeSentFundingLocked of msg: FundingLocked
+    | WeResumedDelayedFundingLocked of msg: FundingLocked
     | BothFundingLocked of nextState: Data.NormalData
 
     // -------- normal operation ------

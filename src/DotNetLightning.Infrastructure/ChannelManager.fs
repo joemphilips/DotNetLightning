@@ -193,11 +193,14 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
         }
         t |> Async.AwaitTask
         
-    member private this.ChannelEventHandler (e: ChannelEventWithContext) =
+    member private this.ChannelEventHandler (e: ChannelEventWithContext) = unitVtask {
         match e.ChannelEvent with
         | ChannelEvent.WeAcceptedAcceptChannel (nextMsg, _) ->
             this.FundingTxs.TryAdd(nextMsg.FundingTxId, (e.NodeId, None)) |> ignore
+        | WeResumedDelayedFundingLocked theirFundingSigned ->
+            do! this.AcceptCommandAsync(e.NodeId, ChannelCommand.ApplyFundingLocked theirFundingSigned)
         | _ -> ()
+    }
         
     member private this.HandleChannelError (nodeId: NodeId) (b: RBad) = unitTask {
             match b with
@@ -237,7 +240,8 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
                     _logger.LogTrace(sprintf "Updated channel with %A" (nextChannel.State.GetType()))
                 | false ->
                     _logger.LogTrace(sprintf "Did not update channel %A" nextChannel.State)
-                contextEvents |> List.iter(this.ChannelEventHandler)
+                for e in contextEvents do
+                    do! this.ChannelEventHandler e
                 contextEvents
                    |> List.iter this.EventAggregator.Publish<ChannelEventWithContext>
             | Bad ex ->
