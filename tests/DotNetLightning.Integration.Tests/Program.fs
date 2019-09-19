@@ -22,6 +22,7 @@ module Program =
 
     [<EntryPoint>]
     let main args =
-        CreateHostBuilder(args).Build().Run()
+        // skip for now
+        // CreateHostBuilder(args).Build().Run()
 
         exitCode
