@@ -36,6 +36,12 @@ jobs:
         dotnet add package -v 0.0.4-joemphilips -s "https://www.myget.org/F/joemphilips/api/v3/index.json" Secp256k1.Native
     - name: Build
       run: |
+        dotnet build -p:Configuration=Release -p:Version=1.1.0-date`date +%Y%m%d-%H%M`.git-`echo $GITHUB_SHA | cut -c 1-7`
+    - name: Run tests
+      run: |
+        dotnet test
+    - name: Package
+      run: |
         cd $GITHUB_WORKSPACE/src/DotNetLightning.Core
         dotnet pack -p:Configuration=Release -p:Version=1.1.0-date`date +%Y%m%d-%H%M`.git-`echo $GITHUB_SHA | cut -c 1-7`
     - name: Upload
