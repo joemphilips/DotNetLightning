@@ -68,7 +68,7 @@ let htlcMap = htlcs |> List.map(fun htlc ->  htlc.Add.HTLCId, htlc) |> Map.ofLis
 [<Tests>]
 let tests =
     testList "KeyRepository tests" [
-        ftestCase "should create valid signature" <| fun _ ->
+        testCase "should create valid signature" <| fun _ ->
             let fundingTxId = [| for _ in 0..31 -> 1uy |] |> uint256 |> TxId
             let fundingAmount = Money.Satoshis 10000000L
             
