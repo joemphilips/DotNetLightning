@@ -21,6 +21,18 @@ let dummyBlockChainInstanceId =
     "8888888888888888888888888888888888888888888888888888888888888888"
     |> BlockChainInstanceId
 let n = Network.RegTest
+
+let temporaryChannelId =
+    "5555555555555555555555555555555555555555555555555555555555555555"
+    |> hex.DecodeData
+    |> uint256
+    |> ChannelId
+    
+let defaultFinalScriptPubKey =
+    "5555555555555555555555555555555555555555555555555555555555555555"
+    |> hex.DecodeData
+    |> Key
+    |> fun k -> k.PubKey.WitHash.ScriptPubKey
 type internal ActorCreator =
     static member hex = NBitcoin.DataEncoders.HexEncoder()
     
@@ -131,17 +143,64 @@ type internal ActorCreator =
         return actors
     }
     
-let temporaryChannelId =
-    "5555555555555555555555555555555555555555555555555555555555555555"
-    |> hex.DecodeData
-    |> uint256
-    |> ChannelId
+    static member initiateOpenedChannel(alice, bob) = async {
+        let bobInitTask = alice.EventAggregator.GetObservable<PeerEvent>()
+                          |> Observable.awaitFirst(function | ReceivedInit(_nodeId, init) -> Some init | _ -> None)
+        let! actors = ActorCreator.initiateActor(alice, bob)
+        let! bobInit = bobInitTask
+        let channelKeys = actors.Initiator.CM.KeysRepository.GetChannelKeys(false)
+        let initFunder = { InputInitFunder.PushMSat = TestConstants.pushMsat
+                           TemporaryChannelId = temporaryChannelId
+                           FundingSatoshis = TestConstants.fundingSatoshis
+                           InitFeeRatePerKw = TestConstants.feeratePerKw
+                           FundingTxFeeRatePerKw = TestConstants.feeratePerKw
+                           LocalParams =
+                               alice.PM.MakeLocalParams(channelKeys.ToChannelPubKeys() ,defaultFinalScriptPubKey, true, TestConstants.fundingSatoshis)
+                           RemoteInit = if (bobInit.IsSome) then bobInit.Value else failwith "alice did not receive init from bob"
+                           ChannelFlags = 0x00uy
+                           ChannelKeys = channelKeys }
+        
+        /// prepare tasks
+        let bobAcceptedFundingCreatedTask =
+            bob.EventAggregator.AwaitChannelEvent(function WeAcceptedFundingCreated(i, _) -> Some i | _ -> None)
+        let aliceAcceptedFundingSignedTask =
+            alice.EventAggregator.AwaitChannelEvent(function WeAcceptedFundingSigned(i, _) -> Some i | _ -> None)
+        let aliceBothFundingLockedTask =
+            alice.EventAggregator.AwaitChannelEvent(function BothFundingLocked _ -> Some () | _ -> None)
+        let bobBothFundingLockedTask =
+            bob.EventAggregator.AwaitChannelEvent(function BothFundingLocked _ -> Some () | _ -> None)
+            
+        /// give create outbound command
+        let bobNodeId = bob.CM.KeysRepository.GetNodeSecret().PubKey |> NodeId
+        do! alice.CM.AcceptCommandAsync(bobNodeId, ChannelCommand.CreateOutbound(initFunder)) |> Async.AwaitTask
+        
+        /// wait for both peer exchange initiation messages
+        let! r = bobAcceptedFundingCreatedTask
+        Expect.isSome r "timeout"
+        let! r = aliceAcceptedFundingSignedTask
+        Expect.isSome r "timeout"
+            
+        
+        /// Confirm funding tx
+        let fundingTx = (alice.FundingTxProvider :?> DummyFundingTxProvider).DummyTx
+        alice.PublishDummyBlockWith([fundingTx])
+        alice.PublishDummyBlockWith([])
+        alice.PublishDummyBlockWith([])
+        bob.PublishDummyBlockWith([fundingTx])
+        bob.PublishDummyBlockWith([])
+        bob.PublishDummyBlockWith([])
+        
+        let! r = aliceBothFundingLockedTask
+        Expect.isSome r "timeout"
+        
+        let! r = bobBothFundingLockedTask
+        Expect.isSome r "timeout"
+            
+        
+        return actors
+    }
     
-let defaultFinalScriptPubKey =
-    "5555555555555555555555555555555555555555555555555555555555555555"
-    |> hex.DecodeData
-    |> Key
-    |> fun k -> k.PubKey.WitHash.ScriptPubKey
+    
 [<Tests>]
 let tests =
     testList "Basic Channel handling between 2 peers" [
@@ -150,7 +209,6 @@ let tests =
             let alice = ActorCreator.getAlice()
             let bob = ActorCreator.getBob()
             let bobInitTask = alice.EventAggregator.GetObservable<PeerEvent>()
-                              |> Observable.map(fun e -> printfn "alice has raised peer event %A" e; e)
                               |> Observable.awaitFirst(function | ReceivedInit(_nodeId, init) -> Some init | _ -> None)
             let! _actors = ActorCreator.initiateActor(alice, bob)
             
@@ -247,5 +305,13 @@ let tests =
         testAsync "funding_confirmed should be sent only when it is really confirmed" {
             return ()
         }
+        
+        testAsync "Normal channel operation" { 
+            let alice = ActorCreator.getAlice()
+            let bob = ActorCreator.getBob()
+            let! actors = ActorCreator.initiateOpenedChannel(alice, bob)
+            return ()
+        }
+        
     ]
 
