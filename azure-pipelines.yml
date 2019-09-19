@@ -21,9 +21,7 @@ steps:
   displayName: 'Install dotnet core 3.0 (preview)'
   inputs:
     includePreviewVersions: true
-    # version: '3.0.100-preview8-013656'
     version: '3.0.100-preview8-013656'
-- script: dotnet restore
 - task: NuGetToolInstaller@1
 
 - task: NuGetCommand@2
