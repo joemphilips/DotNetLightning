@@ -21,9 +21,8 @@ module SerializationTest =
     let base64 = NBitcoin.DataEncoders.Base64Encoder()
     let ascii = System.Text.ASCIIEncoding.ASCII
     let signMessageWith (privKey: Key) (msgHash: string) =
-        failwith "This must be on after NBitcoin has support api"
-        // let msgBytes = msgHash |> ascii.GetBytes
-        // privKey.SignCompact(msgBytes |> uint256, false) |> fun d -> LNECDSASignature.FromBytesCompact(d, true)
+        let msgBytes = msgHash |> ascii.GetBytes
+        privKey.SignCompact(msgBytes |> uint256, false) |> fun d -> LNECDSASignature.FromBytesCompact(d, true)
     let privKey1 = Key(hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101"))
     let privKey2 = Key(hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202"))
     let privKey3 = Key(hex.DecodeData("0303030303030303030303030303030303030303030303030303030303030303"))
