@@ -37,10 +37,10 @@ jobs:
     - name: Build
       run: |
         cd $GITHUB_WORKSPACE/src/DotNetLightning.Core
-        dotnet pack -p:Configuration=Release -p:Version=1.0.0-git$GITHUB_SHA
+        dotnet pack -p:Configuration=Release -p:Version=1.1.0-date`date +%Y%m%d-%H%M`.git-`echo $GITHUB_SHA | cut -c 1-7`
     - name: Upload
       run: |
         cd $GITHUB_WORKSPACE/src/DotNetLightning.Core
         if [ ${{ secrets.NUGET_API_KEY }} ] && [ $GITHUB_REF == "refs/heads/master" ]; then
-            dotnet nuget push ./bin/Release/DotNetLightning.Core.1.0.0-*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
+            dotnet nuget push ./bin/Release/DotNetLightning.Core*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
         fi
