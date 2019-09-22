@@ -16,7 +16,10 @@ open Secp256k1Net
 
 // let logger = Log.create "bolt3-transaction tests"
 let logger = TestLogger.Create("bolt3-transaction tests")
-let log = logger.LogSimple
+let log =
+    // uncomment this if you want to see the debug message for this test
+    // logger.LogSimple
+    fun s -> ()
 
 
 /// data formatted to json

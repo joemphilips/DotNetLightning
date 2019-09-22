@@ -49,7 +49,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FSharp.Core" Version="4.5.4" />
-    <PackageReference Include="NBitcoin" Version="4.1.2.33-joemphilips014" />
-    <PackageReference Include="System.Reactive" Version="4.1.6" />
+    <PackageReference Include="NBitcoin" Version="4.2.7" />
   </ItemGroup>
 </Project>

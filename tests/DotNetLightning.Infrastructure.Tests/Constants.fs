@@ -51,11 +51,13 @@ type DummyFundingTxProvider(n: Network) =
             let dummyChange =
                 "6666666666666666666666666666666666666666666666666666666666666666"
                 |> hex.DecodeData |> Key
+            
             txb.AddCoins(coin)
                .AddKeys(dummyKey, dummyChange) |> ignore
             txb.SetChange(dummyChange) |> ignore
+            txb.Send(dest, amount) |> ignore
             let fees = txb.EstimateFees(feerate.AsNBitcoinFeeRate())
-            txb.SendFees(fees).Send(dest, amount) |> ignore
+            txb.SendFees(fees) |> ignore
             this.DummyTx <- txb.BuildTransaction(true)
             (this.DummyTx |> FinalizedTx, 0us |> TxOutIndex) |> RResult.Good
 
