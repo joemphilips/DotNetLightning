@@ -61,8 +61,8 @@ type LightningWriterStream(inner: Stream) =
     override this.Write(buffer: byte[], offset: int, count: int) =
         this.Inner.Write(buffer, offset, count)
     
-    override this.Write(buffer: ReadOnlySpan<byte>) =
-        this.Inner.Write(buffer)
+    member this.Write(buffer: ReadOnlySpan<byte>) =
+        this.Inner.Write(buffer.ToArray(), 0, buffer.Length)
 
     member this.Write(buf: byte[]) =
         this.Write(buf, 0, buf.Length)

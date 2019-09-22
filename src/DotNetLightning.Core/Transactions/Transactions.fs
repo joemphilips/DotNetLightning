@@ -340,7 +340,7 @@ module Transactions =
             res.[i + 2] <- ob ^^^ numData.[i]
             )
         let resSpanBigE = ReadOnlySpan(res |> Array.rev)
-        BitConverter.ToUInt64(resSpanBigE)
+        BitConverter.ToUInt64(resSpanBigE.ToArray(), 0)
 
     let private encodeTxNumber (txNumber): (_ * _) =
         if (txNumber > 0xffffffffffffUL) then raise <| ArgumentException("tx number must be lesser than 48 bits long")
