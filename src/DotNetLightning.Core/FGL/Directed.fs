@@ -1,4 +1,4 @@
-namespace DotNetLightning.Core.FGL
+namespace DotNetLightning.FGL
 
 open DotNetLightning.Utils.Aether
 

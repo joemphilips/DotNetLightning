@@ -25,6 +25,7 @@
     <Compile Include="DTOs\GetInfoResponse.fs" />
     <Compile Include="DomainTypes.fs" />
     <Compile Include="Socks5.fs" />
+<<<<<<< HEAD
     <Compile Include="ChainConfig.fs" />
     <Compile Include="Interfaces\IFundingTxProvider.fs" />
     <Compile Include="Interfaces/IChannelEventStream.fs" />
@@ -49,6 +50,14 @@
     <Compile Include="Services\KeyRepositories.fs" />
     <Compile Include="Services\ChainWatchers.fs" />
     <Compile Include="Services\ActorManagers.fs" />
+=======
+    <Compile Include="NodeParams.fs" />
+    <Compile Include="Router.fs" />
+    <Compile Include="ChannelActor.fs" />
+    <Compile Include="ChannelManager.fs" />
+    <Compile Include="PeerActor.fs" />
+    <Compile Include="PeerManager.fs" />
+>>>>>>> WIP: Writing Router
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FSharp.Control.Reactive" Version="4.2.0" />
