@@ -1,7 +1,8 @@
-namespace DotNetLightning.FGL
+namespace DotNetLightning.FGL.Directed
 
 open DotNetLightning.Utils.Aether
 
+open DotNetLightning.FGL
 
 module Vertices =
     let add ((v, l): LVertex<'V, 'L>) (g: Graph<'V, 'L, 'E>): Graph<'V, 'L, 'E> =
@@ -274,10 +275,3 @@ module Graph =
         Edges.iter (fun v1 v2 e -> adj.[hashMap.Item v1].[hashMap.Item v2] <- projection e) g
         adj
 
-module Models =
-    /// Creates a directed graph ov vertexcount n and edge probability p
-    let gilbert (nodeInitializer: int -> LVertex<'V, 'L>) (n: int) (p: float) : Graph<'V, 'L, int> =
-        Models.gilbert Graph.empty nodeInitializer (Vertices.add) (fun (v1, _) (v2, _) g -> Edges.add (v1, v2, 1) g) n p
-
-    let erdosRenyi (nodeInitializer : int -> LVertex<'V, 'L>) (v: int) (e: int) : Graph<'V, 'L, int> =
-        Models.erdosRenyi Graph.empty nodeInitializer Vertices.add (fun (v1, _) (v2, _) g -> Edges.add (v1, v2, 1) g) v e

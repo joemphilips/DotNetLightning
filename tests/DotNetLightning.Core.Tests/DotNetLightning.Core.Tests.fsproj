@@ -21,6 +21,7 @@
     <Compile Include="FunctionalTests.fs" />
     <Compile Include="SphinxTests.fs" />
     <Compile Include="GeneratorsTests.fs" />
+    <Compile Include="GraphTests.fs" />
     <Compile Include="TransactionBolt3TestVectorTests.fs" />
     <Compile Include="ClaimReceivedHTLCTests.fs" />
     <Compile Include="TransactionTests.fs" />

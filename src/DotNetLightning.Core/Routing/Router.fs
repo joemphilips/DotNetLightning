@@ -1,4 +1,4 @@
-namespace DotNetLightning.Core.Routing
+namespace DotNetLightning.Routing
 
 open System
 open DotNetLightning.Utils

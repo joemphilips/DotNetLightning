@@ -1,6 +1,7 @@
-namespace DotNetLightning.FGL
+namespace DotNetLightning.FGL.Undirected
 
 open DotNetLightning.Utils.Aether
+open DotNetLightning.FGL
 
 
 module Vertices =

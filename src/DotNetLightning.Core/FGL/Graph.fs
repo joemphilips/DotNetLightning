@@ -8,8 +8,8 @@ type LVertex<'Vertex, 'Label> =
 type Edge<'Vertex> =
     'Vertex * 'Vertex
 
-type LEdge<'Vertex, 'Edge> =
-    'Vertex * 'Vertex * 'Edge
+type LEdge<'Vertex, 'Label> =
+    'Vertex * 'Vertex * 'Label
 
 /// List version
 type Adj<'Vertex, 'Edge> when 'Vertex: comparison =
@@ -112,7 +112,6 @@ module Graph =
             let c = decomposeContext v mc
             let g = decomposeGraph v (Optic.get Lenses.pred_ c) (Optic.get Lenses.succ_ c) g
             c, g
-
     let tryDecompose (v: 'Vertex) (g: Graph<'Vertex, 'Label, 'Edge>) =
         match Map.tryFind v g with
         | Some mc ->

@@ -34,10 +34,12 @@
     <Compile Include="Utils/Config.fs" />
     <Compile Include="Utils/Errors.fs" />
     <Compile Include="Utils/RouteType.fs" />
+    <Compile Include="Utils/PriorityQueue.fs" />
     <Compile Include="FGL/Graph.fs" />
     <Compile Include="FGL/Models.fs" />
     <Compile Include="FGL/Undirected.fs" />
     <Compile Include="FGL/Directed.fs" />
+    <Compile Include="FGL/Query.fs" />
     <Compile Include="Serialize\GenericTLV.fs" />
     <Compile Include="Serialize/LightningStream.fs" />
     <Compile Include="Serialize\BitWriter.fs" />

@@ -1,10 +1,11 @@
-namespace DotNetLightning.Core.Routing
+namespace DotNetLightning.Routing
 
 open System
 open System.Collections.Generic
 open DotNetLightning.Utils
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.FGL
+open DotNetLightning.FGL.Directed
 open DotNetLightning.LN
 
 type WeightRatios = unit
@@ -52,35 +53,42 @@ module Graph =
         Weight: RichWeight
     }
     
-    [<StructuralComparison;StructuralEquality>]
-    type ChannelDesc = {
-        ShortChannelId: ShortChannelId
-        A: NodeId
-        B: NodeId
-    }
-
     [<CustomComparison;StructuralEquality>]
-    type GraphEdge = {
-        Desc: ChannelDesc
-        Update: ChannelUpdate
+    type ChannelDesc = {
+        ShotChannelId: ShortChannelId
+        ChannelUpdate: ChannelUpdate
     }
-    with
-        member this.CompareTo(o: GraphEdge) =
-            (this.Desc :> IComparable).CompareTo(o.Desc)
+        with
+        member this.CompareTo(o: ChannelDesc) =
+            (this.ShotChannelId :> IComparable).CompareTo(o.ShotChannelId)
             
         interface IComparable with
             member this.CompareTo(o: obj) =
                 match o with
-                | :? GraphEdge as e -> this.CompareTo(e)
+                | :? ChannelDesc as e -> this.CompareTo(e)
                 | _ -> -1
+
+    type GraphEdge = NodeId * NodeId * ChannelDesc
+    type WeightedGraphEdge = NodeId * NodeId * RichWeight
                 
-    type WeightedPath = {
-        Path: GraphEdge list
-        Weight: RichWeight
-    }
+    type WeightedPath = WeightedGraphEdge list
     
-    type DirectedGraph = Graph<NodeId, string, GraphEdge>
-    let private dijkstraShortestPath(g: DirectedGraph)
+    type DirectedLNGraph = DirectedLNGraph of Graph<NodeId, string, GraphEdge>
+        with
+        static member Create(vertices: (NodeId * _) list) (edges: GraphEdge) =
+            let h = Directed.Vertices.addMany vertices
+            let e = Directed.Edges.addMany
+            failwith ""
+    
+    let makeGraph(descAndUpdates: Map<ChannelDesc, ChannelUpdate>): DirectedLNGraph =
+        let h1 =
+            descAndUpdates
+            |> Map.toSeq
+            |> Seq.map(fun (desc, update) -> desc.B, { GraphEdge.Desc = desc; Update = update })
+        let h = Seq.concat[h1] |> Map.ofSeq
+        DirectedLNGraph.Create(h)
+        
+    let private dijkstraShortestPath(DirectedLNGraph g)
                                     (sourceNode: NodeId)
                                     (targetNode: NodeId)
                                     (ignoredEdges: Set<ChannelDesc>)
@@ -97,13 +105,35 @@ module Graph =
         let mutable maxMapSize = 100
         let weight: Map<NodeId, RichWeight> = Map.empty
         let prev = Map.empty
-        let vertexQueue = SortedSet()
+        let vertexQueue = Heap.empty true
         
-        let w = weight |> Map.add targetNode initialWeight
-        vertexQueue
+        let weight = weight |> Map.add targetNode initialWeight
+        let vertexQueue = vertexQueue |> Heap.insert({WeightedNode.Id = targetNode; Weight = initialWeight})
+        let mutable targetFound = false
+        let rec loop (targetFound) vertexQueue =
+            let current, vertexQueue = vertexQueue |> Heap.uncons
+            if (current.Id = sourceNode) then
+                // finish loop
+                ()
+            else
+                let currentNeighbors =
+                    match extraEdges.IsEmpty with
+                    | true -> g |> Graph.getContext current.Id |> Vertices.predecessors
+                    | false ->
+                        let extraNeighbors = extraEdges
+                        failwith ""
+                ()
+        (*
+        while (not vertexQueue.IsEmpty && not targetFound) do
+            let current, vertexQueue = vertexQueue |> Heap.uncons
+            if (current.Id = sourceNode) then
+                ()
+            failwith ""
+        *)
+        loop false vertexQueue
         failwith ""
         
-    let yenKShortestPaths (graph: DirectedGraph)
+    let yenKShortestPaths (DirectedLNGraph g)
                           (sourceNode: NodeId)
                           (targetNode: NodeId)
                           (amount: LNMoney)
@@ -118,7 +148,7 @@ module Graph =
         let shortestPaths = new ResizeArray<WeightedPath>()
         // Stores the candidates for k (K+1) shortest paths
         // should be sorted by path cost
-        let candidates = PriorityQueue
+        let candidates = Heap.empty
         
         // find the shortest path, k = 0
         let initialWeight = { RichWeight.Cost = amount;
@@ -127,3 +157,4 @@ module Graph =
                               CLTV = 0 }
         let shortestPath = dijkstraShortestPath
         failwith ""
+        
