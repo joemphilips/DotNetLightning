@@ -514,7 +514,7 @@ module Channel =
             *> UpdateAddHTLCValidator.checkWeHaveSufficientFunds state currentSpec
 
         let checkTheirUpdateAddHTLCIsAcceptable (state: Commitments) (add: UpdateAddHTLC) (currentHeight: BlockHeight) =
-            checkOrClose add.HTLCId (=) state.RemoteNextHTLCId "Received Unexpected HTLCId (%A). Must be (%A)"
+            checkOrClose add.HTLCId (<>) state.RemoteNextHTLCId "Received Unexpected HTLCId (%A). Must be (%A)"
             >>= fun _ ->
                 UpdateAddHTLCValidator.checkExpiryIsNotPast currentHeight add.CLTVExpiry
                 *> UpdateAddHTLCValidator.checkExpiryIsInAcceptableRange currentHeight add.CLTVExpiry

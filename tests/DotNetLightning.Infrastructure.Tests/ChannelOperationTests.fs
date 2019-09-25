@@ -11,6 +11,8 @@ open System
 open System.Net
 open System.Threading.Tasks
 open DotNetLightning.Chain
+open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Utils
 open Expecto
 open Foq
 open Microsoft.Extensions.Options
@@ -302,14 +304,26 @@ let tests =
             return ()
         }
         
-        testAsync "funding_confirmed should be sent only when it is really confirmed" {
-            return ()
-        }
-        
         testAsync "Normal channel operation" { 
             let alice = ActorCreator.getAlice()
             let bob = ActorCreator.getBob()
             let! actors = ActorCreator.initiateOpenedChannel(alice, bob)
+            let bobNodeId = bob.CM.KeysRepository.GetNodeSecret().PubKey |> NodeId
+            let paymentPreimage = PaymentPreimage([|for _ in 0..31 -> 9uy|])
+            let addHtlcCmd = { CMDAddHTLC.Expiry = BlockHeight 120u
+                               AmountMSat = LNMoney.MilliSatoshis(1000L)
+                               PaymentHash = paymentPreimage.GetSha256()
+                               Onion = OnionPacket.LastPacket
+                               Upstream = None
+                               Origin = None
+                               CurrentHeight = BlockHeight(101u) }
+            do! alice.CM.AcceptCommandAsync(bobNodeId, ChannelCommand.AddHTLC addHtlcCmd) |> Async.AwaitTask
+            
+            let bobAcceptedAddHTLCTask =
+                bob.EventAggregator.AwaitChannelEvent(function WeAcceptedUpdateAddHTLC _ -> Some () | _ -> None)
+                
+            let! r = bobAcceptedAddHTLCTask
+            Expect.isSome r "timeout"
             return ()
         }
         
