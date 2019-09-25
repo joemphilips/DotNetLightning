@@ -230,6 +230,7 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
             match Channel.executeCommand channel cmd with
             | Good events ->
                 _logger.LogTrace(sprintf "Applying events %A" (events |> List.map (fun e -> e.GetType())))
+                _logger.LogTrace(sprintf "to state %A" (channel.State.GetType()))
                 let nextChannel = events |> List.fold Channel.applyEvent channel
                 let contextEvents =
                     events |> List.map(fun e -> { ChannelEventWithContext.ChannelEvent = e; NodeId = nodeId })

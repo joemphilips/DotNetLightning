@@ -1131,6 +1131,8 @@ module Channel =
             { c with State = WaitForFundingLocked { prevState with OurMessage = msg; HaveWeSentFundingLocked = true } }
         | BothFundingLocked data, WaitForFundingSigned _s ->
             { c with State = ChannelState.Normal data }
+        | BothFundingLocked data, WaitForFundingLocked _s ->
+            { c with State = ChannelState.Normal data }
 
         // ----- normal operation --------
         | WeAcceptedCMDAddHTLC(_, newCommitments), ChannelState.Normal d ->
