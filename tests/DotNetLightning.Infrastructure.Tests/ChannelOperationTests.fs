@@ -30,6 +30,7 @@ let temporaryChannelId =
     |> uint256
     |> ChannelId
     
+            
 let defaultFinalScriptPubKey =
     "5555555555555555555555555555555555555555555555555555555555555555"
     |> hex.DecodeData
@@ -309,21 +310,52 @@ let tests =
             let bob = ActorCreator.getBob()
             let! actors = ActorCreator.initiateOpenedChannel(alice, bob)
             let bobNodeId = bob.CM.KeysRepository.GetNodeSecret().PubKey |> NodeId
-            let paymentPreimage = PaymentPreimage([|for _ in 0..31 -> 9uy|])
-            let addHtlcCmd = { CMDAddHTLC.Expiry = BlockHeight 120u
-                               AmountMSat = LNMoney.MilliSatoshis(1000L)
-                               PaymentHash = paymentPreimage.GetSha256()
-                               Onion = OnionPacket.LastPacket
-                               Upstream = None
-                               Origin = None
-                               CurrentHeight = BlockHeight(101u) }
+            let aliceNodeId = alice.CM.KeysRepository.GetNodeSecret().PubKey |> NodeId
+            let paymentPreImages =
+                List.init 9 (fun i ->
+                    PaymentPreimage([|for _ in 0..31 -> (uint8 i)|])
+                )
+                
+            let baseAddHTLCCmd = { CMDAddHTLC.Expiry = BlockHeight (130u)
+                                   AmountMSat = LNMoney.Zero
+                                   PaymentHash = paymentPreImages.[0].GetSha256()
+                                   Onion = OnionPacket.LastPacket
+                                   Upstream = None
+                                   Origin = None
+                                   CurrentHeight = BlockHeight(101u) }
+                
+            // send update_add_htlc from alice to bob
+            let addHtlcCmd = { baseAddHTLCCmd with AmountMSat = LNMoney.MilliSatoshis(1000L) }
             do! alice.CM.AcceptCommandAsync(bobNodeId, ChannelCommand.AddHTLC addHtlcCmd) |> Async.AwaitTask
-            
             let bobAcceptedAddHTLCTask =
                 bob.EventAggregator.AwaitChannelEvent(function WeAcceptedUpdateAddHTLC _ -> Some () | _ -> None)
                 
             let! r = bobAcceptedAddHTLCTask
             Expect.isSome r "timeout"
+            
+            // 1. send update_add_htlc from bob to alice.
+            // 2. send from alice to bob again.
+            let aliceAcceptedAddHTLCTask =
+                alice.EventAggregator.AwaitChannelEvent(function WeAcceptedUpdateAddHTLC _ -> Some () | _ -> None)
+            let bobAcceptedAddHTLCTask =
+                bob.EventAggregator.AwaitChannelEvent(function WeAcceptedUpdateAddHTLC _ -> Some () | _ -> None)
+            let addHtlcCmd = { baseAddHTLCCmd with
+                                    AmountMSat = LNMoney.MilliSatoshis(100000L)
+                                    PaymentHash = paymentPreImages.[1].GetSha256() }
+            do! bob.CM.AcceptCommandAsync(aliceNodeId, ChannelCommand.AddHTLC addHtlcCmd) |> Async.AwaitTask
+            
+            let addHtlcCmd = { baseAddHTLCCmd with
+                                    AmountMSat = LNMoney.MilliSatoshis(40000L)
+                                    PaymentHash = paymentPreImages.[2].GetSha256() }
+            do! alice.CM.AcceptCommandAsync(bobNodeId, ChannelCommand.AddHTLC addHtlcCmd) |> Async.AwaitTask
+            
+            let! r = aliceAcceptedAddHTLCTask
+            Expect.isSome r "timeout"
+            let! r = bobAcceptedAddHTLCTask
+            Expect.isSome r "timeout"
+            
+            // sign commitment
+            do! alice.CM.AcceptCommandAsync(bobNodeId, ChannelCommand.SignCommitment) |> Async.AwaitTask
             return ()
         }
         

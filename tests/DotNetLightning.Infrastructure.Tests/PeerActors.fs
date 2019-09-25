@@ -11,6 +11,7 @@ open CustomEventAggregator
 open DotNetLightning.Infrastructure
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Chain
+open DotNetLightning.LN
 open NBitcoin
 open TestConstants
 
@@ -31,6 +32,7 @@ type internal PeerManagerEntity = {
             let txWithIndex = txIncluded |> List.indexed |> List.map(fun iTx -> (fst iTx |> uint32), (snd iTx))
             dummyBlockHeader, (this.CurrentHeight |> uint32 |> BlockHeight), txWithIndex
         this.EventAggregator.Publish(OnChainEvent.BlockConnected(dummyBlock))
+        
 
 type internal PeerActors(a, b) =
     let pipePair = DuplexPipe.CreatePair()
