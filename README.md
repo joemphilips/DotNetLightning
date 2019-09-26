@@ -6,10 +6,9 @@ That is, it will read in following order.
 
 * Read `appsettings.json`
 
-## Supported platfrom
+## Supported platforms
 
-It should work on every os if we build Secp256k1 for every platfrom.
-Right now. It only supports Linux.
+It should work on every OS if we build Secp256k1 for every platform (right now we only provide Linux binaries).
 
 ## TODO
 
