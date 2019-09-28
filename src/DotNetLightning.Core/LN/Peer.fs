@@ -47,3 +47,10 @@ type Peer = {
             | NoSyncRequested -> true
             | ChannelsSyncing i -> i < channelId
             | NodeSyncing _ -> true
+            
+module Peer =
+    let executeCommand (state: Peer) (cmd: PeerCommand) =
+        failwith ""
+        
+    let applyEvent (state: Peer) (event: PeerEvent): Peer =
+        failwith ""

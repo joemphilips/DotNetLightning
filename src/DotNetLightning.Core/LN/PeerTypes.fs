@@ -17,3 +17,7 @@ type PeerEvent =
 type PeerCommand =
     | Connect of theirNodeId: NodeId
     | SendPing of ping: Ping
+    | ProcessActOne of actOne: byte[] * ourNodeSecret: Key
+    | ProcessActTwo of actTwo: byte[] * ourNodeSecret: Key
+    | ProcessActThree of actThree: byte[]
+    | ProcessCipherPacket of byte[]

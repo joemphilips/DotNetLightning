@@ -14,28 +14,21 @@ open DotNetLightning.Infrastructure
 
 
 /// Actor for specific channel.
-/// All inputs to this should be done through CommunicationChannel (To ensure only one change will take place at the time.)
-/// And all outputs to other services will go through EventAggregator
-type IChannelActor =
-    inherit DotNetLightning.Infrastructure.IActor<ChannelCommand>
-    abstract member CommunicationChannel: System.Threading.Channels.Channel<ChannelCommand>
-    /// Start accepting message from the CommunicationChannel
+type IChannelActor = Actor<Channel, ChannelCommand, ChannelEvent>
 
 type ChannelActor(nodeParams: IOptions<NodeParams>,
-                  log: ILogger<ChannelActor>,
+                  log: ILogger,
                   eventAggregator: IEventAggregator,
                   channel: Channel,
                   channelEventRepo: IChannelEventRepository,
                   keysRepository: IKeysRepository) as this =
     
-    
+    inherit Actor<Channel, ChannelCommand, ChannelEvent>( CreateChannelAggregate(channel))
     let _nodeParams = nodeParams.Value
-    let mutable disposed = false
+    
     member val Channel = channel with get, set
     
-    member val CommunicationChannel: System.Threading.Channels.Channel<ChannelCommand> = null with get, set
-        
-    member private this.HandleChannelError (b: RBad) = unitTask {
+    override this.HandleError (b: RBad) = unitTask {
             match b with
             | RBad.Exception(ChannelException(ChannelError.Close(msg))) ->
                 let closeCMD =
@@ -59,37 +52,11 @@ type ChannelActor(nodeParams: IOptions<NodeParams>,
             | o -> sprintf "Observed a following error in a channel %A" o |> log.LogError
         }
     
-    member this.StartAsync(jobQueue: System.Threading.Channels.Channel<ChannelCommand>) = unitTask {
-        this.CommunicationChannel <- jobQueue
-        let mutable nonFinished = true
-        while nonFinished do
-            let! cont = jobQueue.Reader.WaitToReadAsync()
-            nonFinished <- cont
-            if nonFinished && (not disposed) then
-                match (jobQueue.Reader.TryRead()) with
-                | true, cmd ->
-                    match Channel.executeCommand this.Channel cmd with
-                    | Good events ->
-                        this.Channel <- events |> List.fold Channel.applyEvent this.Channel
-                        let contextEvents =
-                            events |> List.map(fun e -> { ChannelEventWithContext.ChannelEvent = e; NodeId = channel.RemoteNodeId })
-                        do! channelEventRepo.SetEventsAsync(contextEvents)
-                        contextEvents
-                        |> List.iter
-                            eventAggregator.Publish<ChannelEventWithContext>
-                        ()
-                    | Bad ex ->
-                        let ex = ex.Flatten()
-                        ex |> Array.map (this.HandleChannelError) |> ignore
-                        ()
-                | false, _ ->
-                    ()
-    }
+    override this.PublishEvent(e) = unitTask {
+            let contextEvents =
+                { ChannelEventWithContext.ChannelEvent = e; NodeId = this.Channel.RemoteNodeId }
+            do! channelEventRepo.SetEventsAsync([contextEvents])
+            eventAggregator.Publish<ChannelEventWithContext> contextEvents
+        }
 
-    interface IChannelActor with
-        member this.StartAsync jobQueue = this.StartAsync jobQueue
-        member this.CommunicationChannel = this.CommunicationChannel
-        member this.Dispose() =
-            disposed <- true
-            ()
         

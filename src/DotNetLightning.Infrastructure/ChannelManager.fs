@@ -24,11 +24,12 @@ type IChannelManager =
     abstract KeysRepository : IKeysRepository with get
     
 
-type ChannelManager(serviceProvider: IServiceProvider,
-                    log: ILogger<ChannelActor>,
+type ChannelManager(log: ILogger<ChannelActor>,
+                    loggerProvider: ILoggerProvider,
                     chainListener: IChainListener,
                     eventAggregator: IEventAggregator,
                     keysRepository: IKeysRepository,
+                    channelEventRepo: IChannelEventRepository,
                     feeEstimator: IFeeEstimator,
                     fundingTxProvider: IFundingTxProvider,
                     nodeParams: IOptions<NodeParams>) as this =
@@ -50,9 +51,9 @@ type ChannelManager(serviceProvider: IServiceProvider,
                 (fundingTxProvider.ProvideFundingTx)
                 _nodeParams.ChainNetwork
                 nodeId
-        let channelActor = serviceProvider.GetRequiredService<IChannelActor>()
-        let jobQueue = System.Threading.Channels.Channel.CreateBounded<ChannelCommand>(600)
-        channelActor.StartAsync(jobQueue) |> ignore
+        let logger = loggerProvider.CreateLogger(sprintf "%A" nodeId)
+        let channelActor = new ChannelActor(nodeParams, logger, eventAggregator, c, channelEventRepo, keysRepository)
+        (channelActor :> IActor).StartAsync() |> ignore
         match this.Actors.TryAdd(nodeId, channelActor) with
         | true ->
             channelActor
