@@ -18,13 +18,16 @@
     <Compile Include="FundingTxProvider.fs" />
     <Compile Include="Codec.fs" />
     <Compile Include="DTOs.fs" />
+    <Compile Include="DomainTypes.fs" />
     <Compile Include="Storage.fs" />
     <Compile Include="BitcoinRPCPollingChainWatcher.fs" />
     <Compile Include="BroadCaster.fs" />
     <Compile Include="KeyRepositories.fs" />
     <Compile Include="Socks5.fs" />
     <Compile Include="NodeParams.fs" />
+    <Compile Include="ChannelActor.fs" />
     <Compile Include="ChannelManager.fs" />
+    <Compile Include="PeerActor.fs" />
     <Compile Include="PeerManager.fs" />
   </ItemGroup>
   <ItemGroup>

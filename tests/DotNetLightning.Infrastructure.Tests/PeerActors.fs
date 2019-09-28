@@ -16,7 +16,7 @@ open NBitcoin
 open TestConstants
 
 type internal PeerManagerEntity = {
-    PM: PeerManager
+    PM: PeerActor
     Id: PeerId
     CM: IChannelManager
     EventAggregator: IEventAggregator

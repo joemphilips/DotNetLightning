@@ -23,16 +23,15 @@ type SegmentExtensions() =
         if (this.IsEmpty) then [||] else
         this.Slice(int64 length).ToArray()
 
-type P2PConnectionHandler(peerManager: IPeerManager, logger: ILogger<P2PConnectionHandler>) =
+type P2PConnectionHandler(peerManager: IPeerManager, logger: ILogger<P2PConnectionHandler>, serviceProvider: IServiceProvider) =
     inherit ConnectionHandler()
-    let _logger = logger
 
     override this.OnConnectedAsync(connectionCtx: ConnectionContext) =
         unitTask {
             let remoteEndPoint = connectionCtx.RemoteEndPoint
-            _logger.LogInformation(connectionCtx.ConnectionId + (sprintf " connected with %A" remoteEndPoint))
+            logger.LogInformation(connectionCtx.ConnectionId + (sprintf " connected with %A" remoteEndPoint))
             while true do
                 do! peerManager.ProcessMessageAsync(PeerId remoteEndPoint, connectionCtx.Transport)
-            _logger.LogInformation(connectionCtx.ConnectionId + " disconnected")
+            logger.LogInformation(connectionCtx.ConnectionId + " disconnected")
 
         }

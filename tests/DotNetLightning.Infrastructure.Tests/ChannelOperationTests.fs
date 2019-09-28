@@ -43,8 +43,8 @@ type internal ActorCreator =
     static member getAlice(?keyRepo: IKeysRepository, ?nodeParams) =
         let aliceParam = TestConstants.getAliceParam()
         let keyRepo = defaultArg keyRepo (aliceParam.KeyRepo)
-        let peerLogger = TestLogger.create<PeerManager>(ConsoleColor.Red)
-        let channelLogger = TestLogger.create<ChannelManager>(ConsoleColor.Magenta)
+        let peerLogger = TestLogger.create<PeerActor>(ConsoleColor.Red)
+        let channelLogger = TestLogger.create<ChannelActor>(ConsoleColor.Magenta)
         let nodeParams = defaultArg nodeParams (Options.Create<NodeParams>(aliceParam.NodeParams))
         let chainWatcher =
             Mock<IChainWatcher>()
@@ -58,7 +58,7 @@ type internal ActorCreator =
         {
             NodeParams = aliceParam.NodeParams
             PeerManagerEntity.Id = IPEndPoint.Parse("127.1.1.1") :> EndPoint |> PeerId
-            PM = PeerManager(keyRepo,
+            PM = PeerActor(keyRepo,
                              peerLogger,
                              nodeParams,
                              eventAggregator,
@@ -72,7 +72,7 @@ type internal ActorCreator =
                 let chainListener = Mock<IChainListener>().Create()
                 let feeEstimator =
                     Mock<IFeeEstimator>.Method(fun x -> <@ x.GetEstSatPer1000Weight @>).Returns(5000u |> FeeRatePerKw)
-                ChannelManager(nodeParams,
+                ChannelActor(nodeParams,
                                channelLogger,
                                eventAggregator,
                                channelEventRepo,
@@ -91,10 +91,10 @@ type internal ActorCreator =
         let keyRepo = defaultArg keyRepo (bobParam.KeyRepo)
         let peerLogger =
             // Mock<ILogger<PeerManager>>().Create()
-            TestLogger.create<PeerManager>(ConsoleColor.Blue)
+            TestLogger.create<PeerActor>(ConsoleColor.Blue)
         let channelLogger =
             // Mock<ILogger<ChannelManager>>().Create()
-            TestLogger.create<ChannelManager>(ConsoleColor.Green)
+            TestLogger.create<ChannelActor>(ConsoleColor.Green)
         let nodeParams = defaultArg nodeParams (Options.Create<NodeParams>(bobParam.NodeParams))
         let chainWatcher =
             Mock<IChainWatcher>()
@@ -108,7 +108,7 @@ type internal ActorCreator =
         {
             NodeParams = bobParam.NodeParams
             PeerManagerEntity.Id = IPEndPoint.Parse("127.1.1.2") :> EndPoint |> PeerId
-            PM = PeerManager(keyRepo,
+            PM = PeerActor(keyRepo,
                              peerLogger,
                              nodeParams,
                              eventAggregator,
@@ -122,7 +122,7 @@ type internal ActorCreator =
                 let chainListener = Mock<IChainListener>().Create()
                 let feeEstimator =
                     Mock<IFeeEstimator>.Method(fun x -> <@ x.GetEstSatPer1000Weight @>).Returns(5000u |> FeeRatePerKw)
-                ChannelManager(nodeParams,
+                ChannelActor(nodeParams,
                                channelLogger,
                                eventAggregator,
                                channelEventRepo,

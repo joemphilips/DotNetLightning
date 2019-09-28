@@ -5,15 +5,15 @@ open DotNetLightning.Serialize.Msgs
 open NBitcoin
 
 type PeerEvent =
-    | Connected of theirNodeId: NodeId
-    | ReceivedError of theirNodeId: NodeId * error: ErrorMessage
-    | ReceivedPing of theirNodeId: NodeId * ping: Ping
-    | ReceivedPong of theirNodeId: NodeId * ping: Pong
-    | ReceivedInit of theirNodeId: NodeId * init: Init
-    | ReceivedRoutingMsg of theirNodeId: NodeId * msg: IRoutingMsg
-    | ReceivedChannelMsg of theirNodeId: NodeId * msg: IChannelMsg
-    | FailedToBroadcastTransaction of theirNodeId: NodeId * tx: Transaction
+    | Connected
+    | ReceivedError of error: ErrorMessage
+    | ReceivedPing of ping: Ping
+    | ReceivedPong of ping: Pong
+    | ReceivedInit of init: Init
+    | ReceivedRoutingMsg of msg: IRoutingMsg
+    | ReceivedChannelMsg of msg: IChannelMsg
+    | FailedToBroadcastTransaction of tx: Transaction
 
 type PeerCommand =
-    | Connect of theirPeerId: PeerId * theirNodeId: NodeId
-    | SendPing of theirPeerId: PeerId * ping: Ping
+    | Connect of theirNodeId: NodeId
+    | SendPing of ping: Ping

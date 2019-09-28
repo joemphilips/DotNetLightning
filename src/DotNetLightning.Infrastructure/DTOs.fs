@@ -2,11 +2,6 @@ namespace DotNetLightning.Infrastructure
 open DotNetLightning.Utils
 open DotNetLightning.LN
 
-type ChannelEventWithContext = {
-    NodeId: NodeId
-    ChannelEvent: ChannelEvent
-}
-
 module DTO =
     open System.Text.Json
     open DotNetLightning.Serialize.Msgs
