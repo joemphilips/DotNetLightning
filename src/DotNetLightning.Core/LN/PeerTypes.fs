@@ -1,3 +1,5 @@
+open DotNetLightning.LN
+
 namespace DotNetLightning.LN
 
 open DotNetLightning.Utils
@@ -5,19 +7,32 @@ open DotNetLightning.Serialize.Msgs
 open NBitcoin
 
 type PeerEvent =
+    // --- initialization ---
     | Connected
-    | ReceivedError of error: ErrorMessage
-    | ReceivedPing of ping: Ping
-    | ReceivedPong of ping: Pong
-    | ReceivedInit of init: Init
-    | ReceivedRoutingMsg of msg: IRoutingMsg
-    | ReceivedChannelMsg of msg: IChannelMsg
+    | ActOneProcessed of actTwo: byte[] * newPCE: PeerChannelEncryptor
+    | ActTwoProcessed of (byte[] * NodeId) * newPCE: PeerChannelEncryptor
+    | ActThreeProcessed of theirNodeId: NodeId * newPCE: PeerChannelEncryptor
+    
+    // --- else ---
+    // --- receiving ---
+    | LengthDecrypted of length: uint16 * newPCE: PeerChannelEncryptor
+    | ReceivedError of error: ErrorMessage * newPCE: PeerChannelEncryptor
+    | ReceivedPing of ping: Ping * newPCE: PeerChannelEncryptor
+    | ReceivedPong of ping: Pong * newPCE: PeerChannelEncryptor
+    | ReceivedInit of init: Init * newPCE: PeerChannelEncryptor
+    | ReceivedRoutingMsg of msg: IRoutingMsg * newPCE: PeerChannelEncryptor
+    | ReceivedChannelMsg of msg: IChannelMsg * newPCE: PeerChannelEncryptor
+    
+    // --- sending ---
+    | MsgEncoded of msg: byte[] * newPCE: PeerChannelEncryptor
     | FailedToBroadcastTransaction of tx: Transaction
 
 type PeerCommand =
     | Connect of theirNodeId: NodeId
-    | SendPing of ping: Ping
+    | Disconnect of theirNodeId: NodeId
     | ProcessActOne of actOne: byte[] * ourNodeSecret: Key
     | ProcessActTwo of actTwo: byte[] * ourNodeSecret: Key
     | ProcessActThree of actThree: byte[]
-    | ProcessCipherPacket of byte[]
+    | DecodeLength of byte[]
+    | DecodeCipherPacket of byte[]
+    | EncodeMsg of msg: ILightningMsg

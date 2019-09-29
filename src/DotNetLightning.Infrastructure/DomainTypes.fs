@@ -56,10 +56,11 @@ type IActor =
 /// All inputs to this should be given through CommunicationChannel (To ensure only one change will take place at the time.)
 /// And all outputs to other services will go through PublishEvent (typically using EventAggregator)
 [<AbstractClass>]
-type Actor<'TState, 'TCommand, 'TEvent>(aggregate: Aggregate<'TState, 'TCommand, 'TEvent>) =
+type Actor<'TState, 'TCommand, 'TEvent>(aggregate: Aggregate<'TState, 'TCommand, 'TEvent>, ?capacity: int) =
     let mutable disposed = false
+    let capacity = defaultArg capacity 600
     member val State = aggregate.InitialState with get, set
-    member val CommunicationChannel = System.Threading.Channels.Channel.CreateBounded<'TCommand>(600) with get, set
+    member val CommunicationChannel = System.Threading.Channels.Channel.CreateBounded<'TCommand>(capacity) with get, set
     abstract member PublishEvent: e: 'TEvent -> Task
     abstract member HandleError: RBad -> Task
     interface IActor with

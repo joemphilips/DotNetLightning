@@ -159,7 +159,7 @@ type ChannelManager(log: ILogger<ChannelActor>,
     member this.PeerEventListener e =
         let t = unitTask {
             match e.PeerEvent with
-            | PeerEvent.ReceivedChannelMsg (msg) ->
+            | PeerEvent.ReceivedChannelMsg (msg, _) ->
                 match msg with
                 | :? OpenChannel as m ->
                     let channelKeys = keysRepository.GetChannelKeys(true)
@@ -202,7 +202,7 @@ type ChannelManager(log: ILogger<ChannelActor>,
                     return! this.Actors.[e.NodeId].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyUpdateFee m)
                 | m ->
                         return failwithf "Unknown Channel Message (%A). This should never happen" m
-            | PeerEvent.ReceivedInit(_init) ->
+            | PeerEvent.ReceivedInit(_init, _) ->
                 return ()
             | PeerEvent.FailedToBroadcastTransaction(_tx) ->
                 return ()
