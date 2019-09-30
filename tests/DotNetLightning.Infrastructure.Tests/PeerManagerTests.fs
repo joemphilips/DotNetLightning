@@ -50,12 +50,12 @@ let createPipe() =
         member x.Input = pipe.Reader }
 
 let ie = "1212121212121212121212121212121212121212121212121212121212121212" |> hex.DecodeData |> Key
-let updateIEForTestVector (peerMan: PeerActor, peerId: PeerId) =
+let updateIEForTestVector (peerMan: PeerManager, peerId: PeerId) =
     match peerMan.KnownPeers.TryGetValue peerId with
     | false, _ -> failwith ""
-    | true, p ->
-        let newPeer = { p with ChannelEncryptor = (Optic.set PeerChannelEncryptor.OutBoundIE_ ie p.ChannelEncryptor) }
-        peerMan.KnownPeers.[peerId] <- newPeer
+    | true, actor ->
+        actor.State <- { actor.State with ChannelEncryptor = (Optic.set PeerChannelEncryptor.OutBoundIE_ ie actor.State.ChannelEncryptor) }
+        peerMan.KnownPeers.[peerId] <- actor
 
 [<Tests>]
 let tests = testList "PeerManagerTests" [
@@ -63,10 +63,11 @@ let tests = testList "PeerManagerTests" [
       let dPipe = createPipe()
       let theirPeerId = IPEndPoint.Parse("127.0.0.2") :> EndPoint |> PeerId
       let theirNodeId = PubKey("028d7500dd4c12685d1f568b4c2b5048e8534b873319f3a8daa612b469132ec7f7") |> NodeId
-      let peerManager = PeerActor (keysRepoMock,
+      let peerManager = PeerManager (eventAggregatorMock,
                                     TestLogger.create(ConsoleColor.White),
+                                    getTestLoggerFactory(),
+                                    keysRepoMock,
                                     aliceNodeParams,
-                                    eventAggregatorMock,
                                     chainWatcherMock,
                                     broadCasterMock)
       let! read = peerManager.NewOutBoundConnection(theirNodeId, theirPeerId, dPipe.Output, ie)
@@ -81,14 +82,10 @@ let tests = testList "PeerManagerTests" [
       let! _ = dPipe.Output.WriteAsync(actTwo)
 
       // complete handshake by processing act two
-      let! _ = peerManager.ProcessMessageAsync(theirPeerId, dPipe)
+      let! _ = peerManager.ReadAsync(theirPeerId, dPipe)
 
-      Expect.isTrue (peerManager.OpenedPeers.ContainsKey(theirPeerId)) ""
       let actualPeerId = (peerManager.NodeIdToPeerId.TryGetValue(theirNodeId) |> snd)
       Expect.equal (actualPeerId) (theirPeerId) ""
-      let _ = match peerManager.OpenedPeers.TryGetValue(theirPeerId) with
-              | true, p -> p
-              | false, _ -> failwith "Peer not opened"
       return ()
     } |> Async.AwaitTask)
 
@@ -98,18 +95,19 @@ let tests = testList "PeerManagerTests" [
       let keyRepoMock =
           let ourNodeSecret = hex.DecodeData ("2121212121212121212121212121212121212121212121212121212121212121") |> Key
           Mock<IKeysRepository>.Method(fun repo -> <@ repo.GetNodeSecret @>).Returns(ourNodeSecret)
-      let peerManager = PeerActor (keyRepoMock,
-                                    TestLogger.create(ConsoleColor.White),
-                                    aliceNodeParams,
-                                    eventAggregatorMock,
-                                    chainWatcherMock,
-                                    broadCasterMock)
+      let peerManager = PeerManager (eventAggregatorMock,
+                                     TestLogger.create(ConsoleColor.White),
+                                     getTestLoggerFactory(),
+                                     keyRepoMock,
+                                     aliceNodeParams,
+                                     chainWatcherMock,
+                                     broadCasterMock)
 
       // processing act 1 ...
       let act1 = hex.DecodeData ("00036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6a")
       let ourEphemeral = hex.DecodeData("2222222222222222222222222222222222222222222222222222222222222222") |> Key
       do! dPipe.Output.WriteAsync(act1)
-      do! peerManager.ProcessMessageAsync (theirPeerId, dPipe, ourEphemeral)
+      do! peerManager.ReadAsync (theirPeerId, dPipe, ourEphemeral)
 
       // should send act 2 to the peer
       let! act2 = dPipe.Input.ReadExactAsync (50, true)
@@ -119,21 +117,16 @@ let tests = testList "PeerManagerTests" [
       // if the peer responds with correct act 3 ...
       let actThree = hex.DecodeData ("00b9e3a702e93e3a9948c2ed6e5fd7590a6e1c3a0344cfc9d5b57357049aa22355361aa02e55a8fc28fef5bd6d71ad0c38228dc68b1c466263b47fdf31e560e139ba")
       do! dPipe.Output.WriteAsync(actThree)
-      do! peerManager.ProcessMessageAsync (theirPeerId, dPipe)
+      do! peerManager.ReadAsync (theirPeerId, dPipe)
 
       // their node id should be the one expected
       let theirNodeIdExpected =
           "034f355bdcb7cc0af728ef3cceb9615d90684bb5b2ca5f859ab0f0b704075871aa"
           |> hex.DecodeData |> PubKey |> NodeId
-      let theirNodeIdActual =
-          match peerManager.OpenedPeers.TryGetValue theirPeerId with
-          | true, p -> p.TheirNodeId.Value
-          | false, _ -> failwith "peer is not set to the peer manager's opened peer dict"
-      Expect.equal (theirNodeIdExpected) (theirNodeIdActual) ""
 
       // also, we can query the peer id with node id
       let peerIdRetrieved =
-          match peerManager.NodeIdToPeerId.TryGetValue theirNodeIdActual with
+          match peerManager.NodeIdToPeerId.TryGetValue theirNodeIdExpected with
           | true, p -> p
           | false, _ -> failwith "peer id is not set to NodeId -> PeerId Dict"
       Expect.equal (peerIdRetrieved) (theirPeerId) ""
@@ -147,10 +140,11 @@ let tests = testList "PeerManagerTests" [
       let bobEventAggregatorMock =
           Mock<IEventAggregator>.Method(fun ea -> <@ ea.GetObservable<ChannelEventWithContext> @> )
               .Returns(Observable.empty)
-      let alice = { PM = PeerActor(keysRepoMock,
+      let alice = { PM = PeerManager(aliceEventAggregatorMock,
                                      TestLogger.create(ConsoleColor.White),
+                                     getTestLoggerFactory(),
+                                     keysRepoMock,
                                      aliceNodeParams,
-                                     aliceEventAggregatorMock,
                                      chainWatcherMock,
                                      broadCasterMock)
                     CM = Mock<IChannelManager>().Create()
@@ -165,10 +159,11 @@ let tests = testList "PeerManagerTests" [
       let keyRepoBob = 
         Mock<IKeysRepository>.Method(fun repo -> <@ repo.GetNodeSecret @>).Returns(bobNodeSecret)
         
-      let bob = { PM = PeerActor(keyRepoBob,
+      let bob = { PM = PeerManager(bobEventAggregatorMock,
                                    TestLogger.create(ConsoleColor.White),
+                                   getTestLoggerFactory(),
+                                   keyRepoBob,
                                    Options.Create<NodeParams>(new NodeParams()),
-                                   bobEventAggregatorMock,
                                    chainWatcherMock,
                                    broadCasterMock)
                   CM = Mock<IChannelManager>().Create()
@@ -186,35 +181,38 @@ let tests = testList "PeerManagerTests" [
       do! Task.Delay 1000
       
       let _ =
-          match actors.Initiator.PM.OpenedPeers.TryGetValue (actors.Responder.Id) with
+          match actors.Initiator.PM.KnownPeers.TryGetValue (actors.Responder.Id) with
           | true, p ->
-            Expect.equal (p.ChannelEncryptor.GetNoiseStep()) (NextNoiseStep.NoiseComplete) "Noise State should be completed"
+            Expect.equal (p.State.ChannelEncryptor.GetNoiseStep()) (NextNoiseStep.NoiseComplete) "Noise State should be completed"
           | false, _ -> failwith "bob is not in alice's OpenedPeer"
-          match actors.Responder.PM.OpenedPeers.TryGetValue (actors.Initiator.Id) with
+          match actors.Responder.PM.KnownPeers.TryGetValue (actors.Initiator.Id) with
           | true, p ->
-            Expect.equal (p.ChannelEncryptor.GetNoiseStep()) (NextNoiseStep.NoiseComplete) "Noise State should be completed"
+            Expect.equal (p.State.ChannelEncryptor.GetNoiseStep()) (NextNoiseStep.NoiseComplete) "Noise State should be completed"
           | false, _ -> failwith "alice is not in bob's OpenedPeer"
           
-      Mock.Verify(<@ aliceEventAggregatorMock.Publish<PeerEvent>(It.Is(function | PeerEvent.Connected _ -> true | _ -> false)) @>, once)
-      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEvent>(It.Is(function | PeerEvent.Connected _ -> true | _ -> false)) @>, once)
+      Mock.Verify(<@ aliceEventAggregatorMock.Publish<PeerEventWithContext>(It.Is(function | { PeerEvent = PeerEvent.Connected _ } -> true | _ -> false)) @>, once)
+      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEventWithContext>(It.Is(function | { PeerEvent = PeerEvent.Connected _ } -> true | _ -> false)) @>, once)
       
       // --- ping from initiator ---
-      do! actors.Initiator.PM.AcceptCommand(PeerCommand.SendPing(actors.Responder.Id, { Ping.BytesLen = 22us;
-                                                                                        PongLen = 32us }))
+      do! actors.Initiator.PM.AcceptCommand({ PeerCommand = PeerCommand.EncodeMsg({ Ping.BytesLen = 22us;
+                                                                                    PongLen = 32us })
+                                              PeerId = bob.Id })
       do! Task.Delay 200
-      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEvent>(It.Is(function | ReceivedPing _ -> true | _ -> false)) @>, once)
-      Mock.Verify(<@ aliceEventAggregatorMock.Publish<PeerEvent>(It.Is(function | ReceivedPong _ -> true | _ -> false)) @>, once)
+      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEventWithContext>(It.Is(function | { PeerEvent = ReceivedPing _ } -> true | _ -> false)) @>, once)
+      Mock.Verify(<@ aliceEventAggregatorMock.Publish<PeerEventWithContext>(It.Is(function | { PeerEvent = ReceivedPong _ } -> true | _ -> false)) @>, once)
 
       // --- ping from responder ---
-      do! actors.Responder.PM.AcceptCommand(PeerCommand.SendPing(actors.Initiator.Id, { Ping.BytesLen = 22us;
-                                                                                        PongLen = 32us }))
+      do! actors.Responder.PM.AcceptCommand({ PeerCommand = PeerCommand.EncodeMsg({ Ping.BytesLen = 22us;
+                                                                                    PongLen = 32us })
+                                              PeerId = alice.Id })
       do! Task.Delay 200
-      Mock.Verify(<@ aliceEventAggregatorMock.Publish<PeerEvent>(It.Is(function | ReceivedPing _ -> true | _ -> false)) @>, once)
-      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEvent>(It.Is(function | ReceivedPong _ -> true | _ -> false)) @>, once)
+      Mock.Verify(<@ aliceEventAggregatorMock.Publish<PeerEventWithContext>(It.Is(function | { PeerEvent = ReceivedPing _ } -> true | _ -> false)) @>, once)
+      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEventWithContext>(It.Is(function | { PeerEvent = ReceivedPong _ } -> true | _ -> false)) @>, once)
       
       // --- ping from initiator again ---
-      do! actors.Initiator.PM.AcceptCommand(PeerCommand.SendPing(actors.Responder.Id, { Ping.BytesLen = 22us;
-                                                                                        PongLen = 32us }))
+      do! actors.Initiator.PM.AcceptCommand({ PeerCommand = PeerCommand.EncodeMsg({ Ping.BytesLen = 22us;
+                                                                                    PongLen = 32us })
+                                              PeerId = actors.Responder.Id })
       do! Task.Delay 200
       Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEvent>(It.Is(function | ReceivedPing _ -> true | _ -> false)) @>, exactly(2))
       Mock.Verify(<@ aliceEventAggregatorMock.Publish<PeerEvent>(It.Is(function | ReceivedPong _ -> true | _ -> false)) @>, exactly(2))

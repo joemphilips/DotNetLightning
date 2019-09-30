@@ -1,4 +1,4 @@
-namespace DotnetLightning.Infrastructure
+namespace DotNetLightning.Infrastructure
 
 open DotNetLightning.Utils
 open DotNetLightning.Infrastructure
@@ -22,6 +22,7 @@ open Microsoft.Extensions.Options
 
 type IPeerManager =
     abstract member ReadAsync: PeerId * IDuplexPipe -> ValueTask
+    abstract member AcceptCommand: cmd: PeerCommandWithContext -> ValueTask
     abstract member OurNodeId: NodeId
 type PeerManager(eventAggregator: IEventAggregator,
                  log: ILogger<PeerManager>,
@@ -31,6 +32,8 @@ type PeerManager(eventAggregator: IEventAggregator,
                  chainWatcher: IChainWatcher,
                  broadCaster: IBroadCaster
                  ) as this =
+    
+    let nodeParamsValue = nodeParams.Value
     let _channelEventObservable =
         eventAggregator.GetObservable<ChannelEventWithContext>()
         |> Observable.flatmapAsync(this.ChannelEventListener)
@@ -44,6 +47,8 @@ type PeerManager(eventAggregator: IEventAggregator,
             id
            ((sprintf "PeerManager got error while Observing PeerEvent: %A") >> log.LogCritical)
     let ascii = System.Text.ASCIIEncoding.ASCII
+    
+    let ourNodeId = keyRepo.GetNodeSecret().PubKey |> NodeId
 
     member val KnownPeers: ConcurrentDictionary<_,_> = ConcurrentDictionary<PeerId, PeerActor>() with get, set
     member val NodeIdToPeerId: ConcurrentDictionary<_,_> = ConcurrentDictionary<NodeId, PeerId>() with get, set
@@ -75,7 +80,7 @@ type PeerManager(eventAggregator: IEventAggregator,
                     do! this.KnownPeers.[peerId].CommunicationChannel.Writer.WriteAsync(EncodeMsg pong)
                 else
                     log.LogError(sprintf "PongLen is too long %A" ping)
-            | ReceivedPong (pong, _) ->
+            | ReceivedPong (_pong, _) ->
                 sprintf "Received pong from %A"  e.NodeId.Value |> log.LogDebug
             | ReceivedInit (init, _) ->
                 let peerActor = this.KnownPeers.[peerId]
@@ -260,9 +265,7 @@ type PeerManager(eventAggregator: IEventAggregator,
         this.ReadAsync(peerId, pipe, Key())
         
         
-    // I wanted to use a bind (>>=) as we do in Channel, but we had to prepare monad-transformer.
-    // so instead decided to just use match expression.
-    member private this.ReadAsync(peerId: PeerId, pipe: IDuplexPipe, ourEphemeral): ValueTask =
+    member this.ReadAsync(peerId: PeerId, pipe: IDuplexPipe, ourEphemeral): ValueTask =
         unitVtask {
             match this.KnownPeers.TryGetValue(peerId) with
             | false, _ ->
@@ -310,4 +313,12 @@ type PeerManager(eventAggregator: IEventAggregator,
                 log.LogError(sprintf "failed to get peer %A" cmd.PeerId)
                 ()
     }
+    
+    member this.MakeLocalParams(channelPubKeys, defaultFinalScriptPubKey: Script, isFunder: bool, fundingSatoshis: Money) =
+        nodeParamsValue.MakeLocalParams(ourNodeId, channelPubKeys, defaultFinalScriptPubKey, isFunder, fundingSatoshis)
+    
+    interface IPeerManager with
+        member this.OurNodeId = ourNodeId
+        member this.ReadAsync(peerId, pipe) = this.ReadAsync(peerId, pipe)
+        member this.AcceptCommand(cmd) = this.AcceptCommand cmd
 

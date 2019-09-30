@@ -27,3 +27,7 @@ type IEventAggregator with
         this.GetObservable<ChannelEventWithContext>()
         |> Observable.map(fun e -> e.ChannelEvent)
         |> Observable.awaitFirst(f)
+        
+    member this.AwaitPeerEvent(f) =
+        this.GetObservable<PeerEventWithContext>()
+        |> Observable.awaitFirst(f)

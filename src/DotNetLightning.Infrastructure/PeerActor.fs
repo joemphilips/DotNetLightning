@@ -101,7 +101,4 @@ type PeerActor(peer: Peer,
         | _ -> ()
     }
 
-    member this.MakeLocalParams(channelPubKeys, defaultFinalScriptPubKey: Script, isFunder: bool, fundingSatoshis: Money) =
-        nodeParams.MakeLocalParams(ourNodeId, channelPubKeys, defaultFinalScriptPubKey, isFunder, fundingSatoshis)
-        
         

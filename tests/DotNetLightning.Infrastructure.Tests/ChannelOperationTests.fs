@@ -43,7 +43,7 @@ type internal ActorCreator =
     static member getAlice(?keyRepo: IKeysRepository, ?nodeParams) =
         let aliceParam = TestConstants.getAliceParam()
         let keyRepo = defaultArg keyRepo (aliceParam.KeyRepo)
-        let peerLogger = TestLogger.create<PeerActor>(ConsoleColor.Red)
+        let peerLogger = TestLogger.create<PeerManager>(ConsoleColor.Red)
         let channelLogger = TestLogger.create<ChannelActor>(ConsoleColor.Magenta)
         let nodeParams = defaultArg nodeParams (Options.Create<NodeParams>(aliceParam.NodeParams))
         let chainWatcher =
@@ -58,10 +58,11 @@ type internal ActorCreator =
         {
             NodeParams = aliceParam.NodeParams
             PeerManagerEntity.Id = IPEndPoint.Parse("127.1.1.1") :> EndPoint |> PeerId
-            PM = PeerActor(keyRepo,
+            PM = PeerManager(eventAggregator,
                              peerLogger,
+                             getTestLoggerFactory(),
+                             keyRepo,
                              nodeParams,
-                             eventAggregator,
                              chainWatcher,
                              broadCaster
                              )
@@ -72,14 +73,15 @@ type internal ActorCreator =
                 let chainListener = Mock<IChainListener>().Create()
                 let feeEstimator =
                     Mock<IFeeEstimator>.Method(fun x -> <@ x.GetEstSatPer1000Weight @>).Returns(5000u |> FeeRatePerKw)
-                ChannelActor(nodeParams,
-                               channelLogger,
-                               eventAggregator,
-                               channelEventRepo,
+                ChannelManager(channelLogger,
+                               getTestLoggerFactory(),
                                chainListener,
+                               eventAggregator,
                                keyRepo,
+                               channelEventRepo,
                                feeEstimator,
-                               fundingTxProvider
+                               fundingTxProvider,
+                               nodeParams
                                )
             EventAggregator = eventAggregator
             CurrentHeight = 100
@@ -91,7 +93,7 @@ type internal ActorCreator =
         let keyRepo = defaultArg keyRepo (bobParam.KeyRepo)
         let peerLogger =
             // Mock<ILogger<PeerManager>>().Create()
-            TestLogger.create<PeerActor>(ConsoleColor.Blue)
+            TestLogger.create<PeerManager>(ConsoleColor.Blue)
         let channelLogger =
             // Mock<ILogger<ChannelManager>>().Create()
             TestLogger.create<ChannelActor>(ConsoleColor.Green)
@@ -108,10 +110,11 @@ type internal ActorCreator =
         {
             NodeParams = bobParam.NodeParams
             PeerManagerEntity.Id = IPEndPoint.Parse("127.1.1.2") :> EndPoint |> PeerId
-            PM = PeerActor(keyRepo,
+            PM = PeerManager(eventAggregator,
                              peerLogger,
+                             getTestLoggerFactory(),
+                             keyRepo,
                              nodeParams,
-                             eventAggregator,
                              chainWatcher,
                              broadCaster
                              )
@@ -122,14 +125,15 @@ type internal ActorCreator =
                 let chainListener = Mock<IChainListener>().Create()
                 let feeEstimator =
                     Mock<IFeeEstimator>.Method(fun x -> <@ x.GetEstSatPer1000Weight @>).Returns(5000u |> FeeRatePerKw)
-                ChannelActor(nodeParams,
-                               channelLogger,
-                               eventAggregator,
-                               channelEventRepo,
+                ChannelManager(channelLogger,
+                               getTestLoggerFactory(),
                                chainListener,
+                               eventAggregator,
                                keyRepo,
+                               channelEventRepo,
                                feeEstimator,
-                               fundingTxProvider
+                               fundingTxProvider,
+                               nodeParams
                                )
             EventAggregator = eventAggregator
             CurrentHeight = 100
@@ -138,8 +142,8 @@ type internal ActorCreator =
     
     static member initiateActor(alice, bob) = async {
         let actors = new PeerActors(alice, bob)
-        let t = actors.Initiator.PM.EventAggregator.GetObservable<PeerEvent>()
-                     |> Observable.awaitFirst(function PeerEvent.Connected _ -> Some () | _ -> None)
+        let t = actors.Initiator.EventAggregator.GetObservable<PeerEventWithContext>()
+                     |> Observable.awaitFirst(function | { PeerEvent = PeerEvent.Connected _ } -> Some () | _ -> None)
         let bobNodeId = bob.CM.KeysRepository.GetNodeSecret().PubKey |> NodeId
         do! actors.Launch(bobNodeId) |> Async.AwaitTask
         let! _ = t
@@ -147,8 +151,8 @@ type internal ActorCreator =
     }
     
     static member initiateOpenedChannel(alice, bob) = async {
-        let bobInitTask = alice.EventAggregator.GetObservable<PeerEvent>()
-                          |> Observable.awaitFirst(function | ReceivedInit(_nodeId, init) -> Some init | _ -> None)
+        let bobInitTask = alice.EventAggregator.GetObservable<PeerEventWithContext>()
+                          |> Observable.awaitFirst(function | { PeerEvent = ReceivedInit(init, _) } -> Some init | _ -> None)
         let! actors = ActorCreator.initiateActor(alice, bob)
         let! bobInit = bobInitTask
         let channelKeys = actors.Initiator.CM.KeysRepository.GetChannelKeys(false)
@@ -175,7 +179,7 @@ type internal ActorCreator =
             
         /// give create outbound command
         let bobNodeId = bob.CM.KeysRepository.GetNodeSecret().PubKey |> NodeId
-        do! alice.CM.AcceptCommandAsync(bobNodeId, ChannelCommand.CreateOutbound(initFunder)) |> Async.AwaitTask
+        do! alice.CM.AcceptCommandAsync({ NodeId = bobNodeId; ChannelCommand = ChannelCommand.CreateOutbound(initFunder) }).AsTask() |> Async.AwaitTask
         
         /// wait for both peer exchange initiation messages
         let! r = bobAcceptedFundingCreatedTask
@@ -211,8 +215,7 @@ let tests =
 
             let alice = ActorCreator.getAlice()
             let bob = ActorCreator.getBob()
-            let bobInitTask = alice.EventAggregator.GetObservable<PeerEvent>()
-                              |> Observable.awaitFirst(function | ReceivedInit(_nodeId, init) -> Some init | _ -> None)
+            let bobInitTask = alice.EventAggregator.AwaitPeerEvent((function | { PeerEvent = ReceivedInit(init, _) } -> Some init | _ -> None))
             let! _actors = ActorCreator.initiateActor(alice, bob)
             
             let! bobInit = bobInitTask
@@ -259,7 +262,7 @@ let tests =
                 bob.EventAggregator.AwaitChannelEvent(function BothFundingLocked _ -> Some () | _ -> None)
             
             let bobNodeId = bob.CM.KeysRepository.GetNodeSecret().PubKey |> NodeId
-            do! alice.CM.AcceptCommandAsync(bobNodeId, ChannelCommand.CreateOutbound(initFunder)) |> Async.AwaitTask
+            do! alice.CM.AcceptCommandAsync({ NodeId = bobNodeId; ChannelCommand = ChannelCommand.CreateOutbound(initFunder) }).AsTask() |> Async.AwaitTask
             
             let! r = aliceChannelEventFuture
             Expect.isSome r "timeout"
@@ -326,7 +329,7 @@ let tests =
                 
             // send update_add_htlc from alice to bob
             let addHtlcCmd = { baseAddHTLCCmd with AmountMSat = LNMoney.MilliSatoshis(1000L) }
-            do! alice.CM.AcceptCommandAsync(bobNodeId, ChannelCommand.AddHTLC addHtlcCmd) |> Async.AwaitTask
+            do! alice.CM.AcceptCommandAsync({ NodeId = bobNodeId; ChannelCommand = ChannelCommand.AddHTLC addHtlcCmd }).AsTask() |> Async.AwaitTask
             let bobAcceptedAddHTLCTask =
                 bob.EventAggregator.AwaitChannelEvent(function WeAcceptedUpdateAddHTLC _ -> Some () | _ -> None)
                 
@@ -342,12 +345,12 @@ let tests =
             let addHtlcCmd = { baseAddHTLCCmd with
                                     AmountMSat = LNMoney.MilliSatoshis(100000L)
                                     PaymentHash = paymentPreImages.[1].GetSha256() }
-            do! bob.CM.AcceptCommandAsync(aliceNodeId, ChannelCommand.AddHTLC addHtlcCmd) |> Async.AwaitTask
+            do! bob.CM.AcceptCommandAsync({ NodeId = aliceNodeId; ChannelCommand = AddHTLC addHtlcCmd }).AsTask() |> Async.AwaitTask
             
             let addHtlcCmd = { baseAddHTLCCmd with
                                     AmountMSat = LNMoney.MilliSatoshis(40000L)
                                     PaymentHash = paymentPreImages.[2].GetSha256() }
-            do! alice.CM.AcceptCommandAsync(bobNodeId, ChannelCommand.AddHTLC addHtlcCmd) |> Async.AwaitTask
+            do! alice.CM.AcceptCommandAsync({ NodeId = bobNodeId; ChannelCommand = AddHTLC addHtlcCmd }).AsTask() |> Async.AwaitTask
             
             let! r = aliceAcceptedAddHTLCTask
             Expect.isSome r "timeout"
@@ -355,7 +358,7 @@ let tests =
             Expect.isSome r "timeout"
             
             // sign commitment
-            do! alice.CM.AcceptCommandAsync(bobNodeId, ChannelCommand.SignCommitment) |> Async.AwaitTask
+            do! alice.CM.AcceptCommandAsync({ NodeId = bobNodeId; ChannelCommand = SignCommitment }).AsTask() |> Async.AwaitTask
             return ()
         }
         

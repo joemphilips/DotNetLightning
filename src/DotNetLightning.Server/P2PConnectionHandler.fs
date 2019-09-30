@@ -2,8 +2,6 @@ namespace DotNetLightning.Server
 
 open System
 open System.Buffers
-open System.Threading.Tasks
-open System.IO.Pipelines
 open System.Runtime.CompilerServices
 
 open FSharp.Control.Tasks
@@ -31,7 +29,7 @@ type P2PConnectionHandler(peerManager: IPeerManager, logger: ILogger<P2PConnecti
             let remoteEndPoint = connectionCtx.RemoteEndPoint
             logger.LogInformation(connectionCtx.ConnectionId + (sprintf " connected with %A" remoteEndPoint))
             while true do
-                do! peerManager.ProcessMessageAsync(PeerId remoteEndPoint, connectionCtx.Transport)
+                do! peerManager.ReadAsync(PeerId remoteEndPoint, connectionCtx.Transport)
             logger.LogInformation(connectionCtx.ConnectionId + " disconnected")
 
         }

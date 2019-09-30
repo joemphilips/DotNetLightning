@@ -1,5 +1,3 @@
-open DotNetLightning.LN
-
 namespace DotNetLightning.LN
 
 open DotNetLightning.Utils
@@ -28,7 +26,7 @@ type PeerEvent =
     | FailedToBroadcastTransaction of tx: Transaction
 
 type PeerCommand =
-    | Connect of theirNodeId: NodeId
+    | Connect of theirPeerId: NodeId
     | Disconnect of theirNodeId: NodeId
     | ProcessActOne of actOne: byte[] * ourNodeSecret: Key
     | ProcessActTwo of actTwo: byte[] * ourNodeSecret: Key

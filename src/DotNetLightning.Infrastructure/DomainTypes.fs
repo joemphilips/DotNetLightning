@@ -2,6 +2,7 @@ namespace DotNetLightning.Infrastructure
 
 open System
 
+open System.Threading.Channels
 open System.Threading.Tasks
 open DotNetLightning.Utils
 open DotNetLightning.LN
@@ -60,7 +61,11 @@ type Actor<'TState, 'TCommand, 'TEvent>(aggregate: Aggregate<'TState, 'TCommand,
     let mutable disposed = false
     let capacity = defaultArg capacity 600
     member val State = aggregate.InitialState with get, set
-    member val CommunicationChannel = System.Threading.Channels.Channel.CreateBounded<'TCommand>(capacity) with get, set
+    member val CommunicationChannel =
+        let options = BoundedChannelOptions(capacity)
+        options.SingleReader <- true
+        options.SingleWriter <- false
+        System.Threading.Channels.Channel.CreateBounded<'TCommand>(options) with get, set
     abstract member PublishEvent: e: 'TEvent -> Task
     abstract member HandleError: RBad -> Task
     interface IActor with

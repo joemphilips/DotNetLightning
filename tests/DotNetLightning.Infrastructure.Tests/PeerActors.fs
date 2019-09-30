@@ -6,17 +6,15 @@ open System.IO.Pipelines
 
 open FSharp.Control.Tasks
 
-open System.Threading
 open CustomEventAggregator
 open DotNetLightning.Infrastructure
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Chain
 open DotNetLightning.LN
 open NBitcoin
-open TestConstants
 
 type internal PeerManagerEntity = {
-    PM: PeerActor
+    PM: PeerManager
     Id: PeerId
     CM: IChannelManager
     EventAggregator: IEventAggregator
@@ -43,15 +41,15 @@ type internal PeerActors(a, b) =
     member val InitiatorTask = null with get, set
     member val ResponderTask = null with get, set
     member this.Launch(nodeIdForResponder: NodeId) = task {
-            let! r = this.Initiator.PM.NewOutBoundConnection(nodeIdForResponder, this.Responder.Id, this.InitiatorToTransport.Output)
-            match r with Ok r -> () | Result.Error e -> failwithf "%A" e
+            let peerIdForResponder = this.Responder.Id
+            do! this.Initiator.PM.AcceptCommand({ PeerCommandWithContext.PeerCommand =  PeerCommand.Connect nodeIdForResponder; PeerId = (peerIdForResponder)})
             this.InitiatorTask <- task {
                 while true do
-                    do! this.Initiator.PM.ProcessMessageAsync(this.Responder.Id, this.InitiatorToTransport)
+                    do! this.Initiator.PM.ReadAsync (this.Responder.Id, this.InitiatorToTransport)
             }
             this.ResponderTask <- task {
                 while true do
-                    do! this.Responder.PM.ProcessMessageAsync(this.Initiator.Id, this.ResponderToTransport)
+                    do! this.Responder.PM.ReadAsync(this.Initiator.Id, this.ResponderToTransport)
             }
         }
     interface IDisposable with

@@ -1,4 +1,4 @@
-namespace DotnetLightning.Infrastructure
+namespace DotNetLightning.Infrastructure
 
 open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Chain
@@ -25,7 +25,7 @@ type IChannelManager =
     
 
 type ChannelManager(log: ILogger<ChannelActor>,
-                    loggerProvider: ILoggerProvider,
+                    loggerProvider: ILoggerFactory,
                     chainListener: IChainListener,
                     eventAggregator: IEventAggregator,
                     keysRepository: IKeysRepository,
