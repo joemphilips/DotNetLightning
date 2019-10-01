@@ -14,7 +14,7 @@
     <Compile Include="DuplexPipe.fs" />
     <Compile Include="PeerActors.fs" />
     <Compile Include="PeerManagerTests.fs" />
-    <Compile Include="ChannelInitializationTests.fs" />
+    <Compile Include="ChannelOperationTests.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
 
@@ -22,8 +22,8 @@
     <PackageReference Include="Expecto" Version="8.*" />
     <PackageReference Include="Foq" Version="1.8.0" />
     <PackageReference Include="FSharp.Core" Version="4.*" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="2.2.0" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="3.0.0" />
     <PackageReference Include="YoloDev.Expecto.TestSdk" Version="0.*" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.*" />
   </ItemGroup>

@@ -2,8 +2,6 @@ namespace DotNetLightning.Server
 
 open System
 open System.Buffers
-open System.Threading.Tasks
-open System.IO.Pipelines
 open System.Runtime.CompilerServices
 
 open FSharp.Control.Tasks
@@ -23,16 +21,15 @@ type SegmentExtensions() =
         if (this.IsEmpty) then [||] else
         this.Slice(int64 length).ToArray()
 
-type P2PConnectionHandler(peerManager: IPeerManager, logger: ILogger<P2PConnectionHandler>) =
+type P2PConnectionHandler(peerManager: IPeerManager, logger: ILogger<P2PConnectionHandler>, serviceProvider: IServiceProvider) =
     inherit ConnectionHandler()
-    let _logger = logger
 
     override this.OnConnectedAsync(connectionCtx: ConnectionContext) =
         unitTask {
             let remoteEndPoint = connectionCtx.RemoteEndPoint
-            _logger.LogInformation(connectionCtx.ConnectionId + (sprintf " connected with %A" remoteEndPoint))
+            logger.LogInformation(connectionCtx.ConnectionId + (sprintf " connected with %A" remoteEndPoint))
             while true do
-                do! peerManager.ProcessMessageAsync(PeerId remoteEndPoint, connectionCtx.Transport)
-            _logger.LogInformation(connectionCtx.ConnectionId + " disconnected")
+                do! peerManager.ReadAsync(PeerId remoteEndPoint, connectionCtx.Transport)
+            logger.LogInformation(connectionCtx.ConnectionId + " disconnected")
 
         }

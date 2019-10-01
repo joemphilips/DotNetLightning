@@ -6,13 +6,12 @@ open System.IO.Pipelines
 
 open FSharp.Control.Tasks
 
-open System.Threading
 open CustomEventAggregator
 open DotNetLightning.Infrastructure
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Chain
+open DotNetLightning.LN
 open NBitcoin
-open TestConstants
 
 type internal PeerManagerEntity = {
     PM: PeerManager
@@ -31,6 +30,7 @@ type internal PeerManagerEntity = {
             let txWithIndex = txIncluded |> List.indexed |> List.map(fun iTx -> (fst iTx |> uint32), (snd iTx))
             dummyBlockHeader, (this.CurrentHeight |> uint32 |> BlockHeight), txWithIndex
         this.EventAggregator.Publish(OnChainEvent.BlockConnected(dummyBlock))
+        
 
 type internal PeerActors(a, b) =
     let pipePair = DuplexPipe.CreatePair()
@@ -41,15 +41,15 @@ type internal PeerActors(a, b) =
     member val InitiatorTask = null with get, set
     member val ResponderTask = null with get, set
     member this.Launch(nodeIdForResponder: NodeId) = task {
-            let! r = this.Initiator.PM.NewOutBoundConnection(nodeIdForResponder, this.Responder.Id, this.InitiatorToTransport.Output)
-            match r with Ok r -> () | Result.Error e -> failwithf "%A" e
+            let peerIdForResponder = this.Responder.Id
+            do! this.Initiator.PM.NewOutBoundConnection(nodeIdForResponder, peerIdForResponder, this.InitiatorToTransport.Output)
             this.InitiatorTask <- task {
                 while true do
-                    do! this.Initiator.PM.ProcessMessageAsync(this.Responder.Id, this.InitiatorToTransport)
+                    do! this.Initiator.PM.ReadAsync (this.Responder.Id, this.InitiatorToTransport)
             }
             this.ResponderTask <- task {
                 while true do
-                    do! this.Responder.PM.ProcessMessageAsync(this.Initiator.Id, this.ResponderToTransport)
+                    do! this.Responder.PM.ReadAsync(this.Initiator.Id, this.ResponderToTransport)
             }
         }
     interface IDisposable with

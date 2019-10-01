@@ -38,7 +38,7 @@ module SerializationTest =
 
     [<Tests>]
     let tests =
-        ptestList "Serialization unit tests" [
+        testList "Serialization unit tests" [
             testCase "node_announcement" <| fun _ ->
                 let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
                 let msg = { NodeAnnouncement.Signature = sig1
@@ -55,7 +55,7 @@ module SerializationTest =
 
     [<Tests>]
     let testsRustLightningSerialization =
-        ptestList "SerializationTest ported from rust-lightning" [
+        testList "SerializationTest ported from rust-lightning" [
             testCase "channel_reestablish no secret" <| fun _ ->
                 let cid = ChannelId (uint256([|4; 0; 0; 0; 0; 0; 0; 0; 5; 0; 0; 0; 0; 0; 0; 0; 6; 0; 0; 0; 0; 0; 0; 0; 7; 0; 0; 0; 0; 0; 0; 0|] |> Array.map((uint8)))) 
                 let cr = {

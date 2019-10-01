@@ -18,21 +18,25 @@
     <Compile Include="FundingTxProvider.fs" />
     <Compile Include="Codec.fs" />
     <Compile Include="DTOs.fs" />
+    <Compile Include="DomainTypes.fs" />
+    <Compile Include="Actor.fs" />
     <Compile Include="Storage.fs" />
     <Compile Include="BitcoinRPCPollingChainWatcher.fs" />
     <Compile Include="BroadCaster.fs" />
     <Compile Include="KeyRepositories.fs" />
     <Compile Include="Socks5.fs" />
     <Compile Include="NodeParams.fs" />
+    <Compile Include="ChannelActor.fs" />
     <Compile Include="ChannelManager.fs" />
+    <Compile Include="PeerActor.fs" />
     <Compile Include="PeerManager.fs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FSharp.Control.Reactive" Version="4.2.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.2.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="2.2.0" />
-    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="3.0.0" />
     <PackageReference Include="System.IO.Pipelines" Version="4.5.3" />
   </ItemGroup>
 </Project>

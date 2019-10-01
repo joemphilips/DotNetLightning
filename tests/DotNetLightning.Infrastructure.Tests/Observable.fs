@@ -15,7 +15,7 @@ module Observable =
         Observable.choose(f)
         >> Observable.first
         >> fun o -> o.ToTask()
-        >> Async.AwaitTaskWithTimeout(1000)
+        >> Async.AwaitTaskWithTimeout(6000)
         
         
 type IEventAggregator with
@@ -26,4 +26,8 @@ type IEventAggregator with
     member this.AwaitChannelEvent(f) =
         this.GetObservable<ChannelEventWithContext>()
         |> Observable.map(fun e -> e.ChannelEvent)
+        |> Observable.awaitFirst(f)
+        
+    member this.AwaitPeerEvent(f) =
+        this.GetObservable<PeerEventWithContext>()
         |> Observable.awaitFirst(f)

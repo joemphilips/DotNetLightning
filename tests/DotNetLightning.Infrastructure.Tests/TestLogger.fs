@@ -2,9 +2,10 @@
 module TestLogger
 
 open System
-open Microsoft.Extensions.Logging
 open Expecto
 open DotnetLightning.Infrastructure.PrimitiveExtensions
+open Microsoft.Extensions.Logging
+open Microsoft.Extensions.Logging.Abstractions
 
 let _lockObj = new obj()
 type ExpectoLogger<'T>(color: ConsoleColor) =
@@ -12,7 +13,7 @@ type ExpectoLogger<'T>(color: ConsoleColor) =
     
     /// Dirty workaround to avoid deadlock when running test in parallel
     /// We wanted to use built-in mechanism of Expecto, but it sometimes throws
-    /// NullReference Exception. So we are using just simple printfn
+    /// NullReference Exception. So we are simply using Printf method.
     let _output: string -> unit =
         // fun _ -> ()
         lock _lockObj (fun () ->
@@ -25,7 +26,6 @@ type ExpectoLogger<'T>(color: ConsoleColor) =
             
         member this.BeginScope(state) = this :> IDisposable
         member this.IsEnabled(level) = true
-        
     interface IDisposable with
         member this.Dispose() =
                 ()
@@ -33,3 +33,7 @@ type ExpectoLogger<'T>(color: ConsoleColor) =
 let create<'T>(color): ILogger<'T> =
     new ExpectoLogger<'T>(color) :> ILogger<'T>
 
+let getTestLoggerFactory() = LoggerFactory.Create(fun builder ->
+    builder.AddConsole() |> ignore
+    builder.AddDebug() |> ignore;
+    ())

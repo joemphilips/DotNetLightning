@@ -1,120 +1,140 @@
 namespace DotNetLightning.Infrastructure
 
-open System.Collections.Concurrent
-open System.Net
-open System.Threading.Tasks
-open System.Threading
-
-open Microsoft.Extensions.Options
-open Microsoft.Extensions.Logging
-open NBitcoin
-
-open FSharp.Control.Tasks
-
-open CustomEventAggregator
-open System
-open DotNetLightning.Utils
 open DotNetLightning.Utils.NBitcoinExtensions
-open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Chain
 open DotNetLightning.LN
-open DotNetLightning.Transactions
+open DotNetLightning.Infrastructure
+
+open Microsoft.Extensions.Logging
+open Microsoft.Extensions.Options
+open Microsoft.Extensions.DependencyInjection
+
+open CustomEventAggregator
+open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Utils.Primitives
+open System
+open System.Reactive.Threading.Tasks
+open System.Collections.Concurrent
+open System.Threading.Tasks
+open FSharp.Control.Tasks
 open FSharp.Control.Reactive
 
 type IChannelManager =
-    abstract AcceptCommandAsync: nodeId:NodeId * cmd:ChannelCommand -> Task
+    abstract AcceptCommandAsync: ChannelCommandWithContext -> ValueTask
     abstract KeysRepository : IKeysRepository with get
-type ChannelManager(nodeParams: IOptions<NodeParams>,
-                    log: ILogger<ChannelManager>,
-                    eventAggregator: IEventAggregator,
-                    channelEventRepo: IChannelEventRepository,
+    
+
+type ChannelManager(log: ILogger<ChannelActor>,
+                    loggerProvider: ILoggerFactory,
                     chainListener: IChainListener,
+                    eventAggregator: IEventAggregator,
                     keysRepository: IKeysRepository,
+                    channelEventRepo: IChannelEventRepository,
                     feeEstimator: IFeeEstimator,
-                    fundingTxProvider: IFundingTxProvider) as this =
+                    fundingTxProvider: IFundingTxProvider,
+                    nodeParams: IOptions<NodeParams>) as this =
     let _nodeParams = nodeParams.Value
     let _internalLog = Logger.fromMicrosoftLogger log
-    let _logger = log
-    let _chainListener = chainListener
     
-    let _eventAggregator = eventAggregator
+    let _ourNodeId = keysRepository.GetNodeSecret().PubKey |> NodeId
     
-    let _keysRepository = keysRepository
-    let _feeEstimator = feeEstimator
-    let _fundingTxProvider = fundingTxProvider
-    let _createChannel =
+    let createChannel nodeId =
         let config = _nodeParams.GetChannelConfig()
-        Channel.CreateCurried
-            config
-            _internalLog
-            _chainListener
-            _keysRepository
-            _feeEstimator
-            (_keysRepository.GetNodeSecret())
-            (_fundingTxProvider.ProvideFundingTx)
-            _nodeParams.ChainNetwork
-    let _peerEventObservable =
-        _eventAggregator.GetObservable<PeerEvent>()
+        let c =
+            Channel.CreateCurried
+                config
+                _internalLog
+                chainListener
+                keysRepository
+                feeEstimator
+                (keysRepository.GetNodeSecret())
+                (fundingTxProvider.ProvideFundingTx)
+                _nodeParams.ChainNetwork
+                nodeId
+        let logger = loggerProvider.CreateLogger(sprintf "%A" nodeId)
+        let channelActor = new ChannelActor(nodeParams, logger, eventAggregator, c, channelEventRepo, keysRepository)
+        (channelActor :> IActor<_>).StartAsync() |> ignore
+        match this.Actors.TryAdd(nodeId, channelActor) with
+        | true ->
+            channelActor
+        | false ->
+            let msg = sprintf "failed to add channel for %A" nodeId
+            log.LogCritical(msg)
+            failwith msg
+    
+    let onChainObservable =
+        eventAggregator.GetObservable<OnChainEvent>()
+        
+    let peerEventObservable =
+        eventAggregator.GetObservable<PeerEventWithContext>()
+        
+    let channelEventObservable =
+        eventAggregator.GetObservable<ChannelEventWithContext>()
         
     let _ =
-        _peerEventObservable
+        peerEventObservable
         |> Observable.flatmapAsync(this.PeerEventListener)
         |> Observable.subscribeWithError
                (id)
-               ((sprintf "Channel Manager got error while Observing PeerEvent: %A") >> _logger.LogCritical)
+               ((sprintf "Channel Manager got error while Observing PeerEvent: %A") >> log.LogCritical)
 
-    let _onChainObservable =
-        _eventAggregator.GetObservable<OnChainEvent>()
         
     let _ =
-        _onChainObservable
+        onChainObservable
         |> Observable.flatmapAsync(this.OnChainEventListener)
         |> Observable.subscribeWithError
             (id)
-            ((sprintf "Channel Manager got error while Observing OnChain Event: %A") >> _logger.LogCritical)
-    let _ourNodeId = _keysRepository.GetNodeSecret().PubKey |> NodeId
-    member val KeysRepository = _keysRepository
-    member val KnownChannels: ConcurrentDictionary<NodeId, Channel> = ConcurrentDictionary<_, _>() with get
-    member val EventAggregator: IEventAggregator = _eventAggregator with get
-    
-    member val ChannelEventRepo = channelEventRepo with get
-    member val RemoteInits = ConcurrentDictionary<_,_>() with get
-    
-    member val CurrentBlockHeight = BlockHeight.Zero with get, set
-    
+            ((sprintf "Channel Manager got error while Observing OnChain Event: %A") >> log.LogCritical)
+            
+    let _ =
+        channelEventObservable
+        |> Observable.flatmapAsync(this.ChannelEventHandler)
+        |> Observable.subscribeWithError
+            id
+            ((sprintf "Channel Manager got error while observing ChannelEvent %A") >> log.LogCritical)
     /// Values are
     /// 1. actual transaction
     /// 2. other peer's id
     /// 3. absolute height of this tx is included in a block (None if it is not confirmed)
     member val FundingTxs = ConcurrentDictionary<TxId, NodeId * (TxIndexInBlock * BlockHeight) option>()
     
+    member val CurrentBlockHeight = BlockHeight.Zero with get, set
+    member val RemoteInits: ConcurrentDictionary<NodeId, Init> = ConcurrentDictionary<_,_>()
+    
+    member val Actors: ConcurrentDictionary<NodeId, IChannelActor> = ConcurrentDictionary<_,_>()
+    
     member this.OnChainEventListener e =
         let t = unitTask {
+            log.LogTrace(sprintf "Channel Manager has observed on-chain event %A" (e.GetType()))
             match e with
             | OnChainEvent.BlockConnected (_, height, txs) ->
                 this.CurrentBlockHeight <- height
+                log.LogTrace(sprintf "block connected height: %A" height)
                 for kv in this.FundingTxs do
                     let mutable found = false
                     for txInBlock in txs do
                         let txId = txInBlock |> snd |> fun tx  -> tx.GetTxId()
                         if (txId = kv.Key) then
-                            _logger.LogInformation(sprintf "we found funding tx (%A) on the blockchain" txId)
+                            log.LogInformation(sprintf "we found funding tx (%A) on the blockchain" txId)
                             found <- true
                             let txIndex = txInBlock |> fst |> TxIndexInBlock
                             let (nodeId, _) = kv.Value
                             let depth = 1us |> BlockHeightOffset
                             let newValue = (nodeId, Some(txIndex, height))
                             this.FundingTxs.TryUpdate(kv.Key, newValue, kv.Value) |> ignore
-                            do!
-                                this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyFundingConfirmedOnBC(height, txIndex, depth))
+                            for kv in this.Actors do
+                                let actor = kv.Value
+                                do! (actor :> IActor<_>).Put(ChannelCommand.ApplyFundingConfirmedOnBC(height, txIndex, depth))
                     if (not found) then
                         match kv.Value with
                         | (_nodeId, None) ->
                             ()
                         |(nodeId, Some(txIndex, heightConfirmed)) ->
                             let depth = (height - heightConfirmed) + BlockHeightOffset.One
-                            _logger.LogDebug(sprintf "funding tx (%A) confirmed (%d) times" kv.Key depth.Value)
-                            do! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyFundingConfirmedOnBC(height, txIndex, depth))
+                            log.LogDebug(sprintf "funding tx (%A) confirmed (%d) times" kv.Key depth.Value)
+                            for kv in this.Actors do
+                                let actor = kv.Value
+                                do! (actor :> IActor<_>).Put(ChannelCommand.ApplyFundingConfirmedOnBC(height, txIndex, depth))
                             
             | OnChainEvent.BlockDisconnected blocks ->
                 for b in blocks do
@@ -127,7 +147,7 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
                             // we just wait for funding tx to appear on the blockchain again.
                             // If it does, we close the channel afterwards.
                             if (kv.Key = txId) then
-                                _logger.LogError(sprintf "funding tx (%A) has disappeared from chain (probably by reorg)" txId)
+                                log.LogError(sprintf "funding tx (%A) has disappeared from chain (probably by reorg)" txId)
                                 match kv.Value with
                                 | (_nodeId, None) -> ()
                                 | (nodeId, Some(_txIndex, _heightConfirmed)) ->
@@ -136,134 +156,89 @@ type ChannelManager(nodeParams: IOptions<NodeParams>,
             return ()
         }
         t |> Async.AwaitTask
+        
+        
+    member private this.ChannelEventHandler (e: ChannelEventWithContext) =
+        let vt = unitVtask {
+            match e.ChannelEvent with
+            | ChannelEvent.WeAcceptedAcceptChannel (nextMsg, _) ->
+                this.FundingTxs.TryAdd(nextMsg.FundingTxId, (e.NodeId, None)) |> ignore
+            | WeResumedDelayedFundingLocked theirFundingSigned ->
+                do! (this.Actors.[e.NodeId] :> IActor<_>).Put(ChannelCommand.ApplyFundingLocked theirFundingSigned)
+            | _ -> ()
+        }
+        vt.AsTask() |> Async.AwaitTask
+        
     member this.PeerEventListener e =
         let t = unitTask {
-            match e with
-            | PeerEvent.ReceivedChannelMsg (nodeId, msg) ->
+            match e.PeerEvent with
+            | PeerEvent.ReceivedChannelMsg (msg, _) ->
+                log.LogTrace(sprintf "channel manager has observed %A" (msg.GetType()))
                 match msg with
                 | :? OpenChannel as m ->
-                    let remoteInit = this.RemoteInits.TryGet(nodeId)
-                    let channelKeys = _keysRepository.GetChannelKeys(true)
+                    let channelKeys = keysRepository.GetChannelKeys(true)
                     let initFundee = { InputInitFundee.LocalParams =
                                            let channelPubKeys = channelKeys.ToChannelPubKeys()
-                                           let spk = _nodeParams.ShutdownScriptPubKey |> Option.defaultValue (_keysRepository.GetShutdownPubKey().WitHash.ScriptPubKey)
+                                           let spk = _nodeParams.ShutdownScriptPubKey |> Option.defaultValue (keysRepository.GetShutdownPubKey().WitHash.ScriptPubKey)
                                            _nodeParams.MakeLocalParams(_ourNodeId, channelPubKeys, spk, false, m.FundingSatoshis)
                                        TemporaryChannelId = m.TemporaryChannelId
-                                       RemoteInit = remoteInit
+                                       RemoteInit = this.RemoteInits.[e.NodeId.Value]
                                        ToLocal = m.PushMSat
                                        ChannelKeys = channelKeys }
-                    do! this.AcceptCommandAsync(nodeId, ChannelCommand.CreateInbound(initFundee))
-                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyOpenChannel m)
+                    do! this.AcceptCommandAsync({ ChannelCommand =  ChannelCommand.CreateInbound(initFundee);
+                                                  NodeId = e.NodeId.Value })
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyOpenChannel m)
                 | :? AcceptChannel as m ->
-                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyAcceptChannel m)
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put( ChannelCommand.ApplyAcceptChannel m)
                 | :? FundingCreated as m ->
-                    this.FundingTxs.TryAdd(m.FundingTxId, (nodeId, None)) |> ignore
-                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyFundingCreated m)
+                    log.LogTrace(sprintf "we received funding created so adding funding tx %A" m.FundingTxId)
+                    this.FundingTxs.TryAdd(m.FundingTxId, (e.NodeId.Value, None)) |> ignore
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyFundingCreated m)
                 | :? FundingSigned as m ->
-                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyFundingSigned m)
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyFundingSigned m)
                 | :? FundingLocked as m ->
-                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyFundingLocked m)
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyFundingLocked m)
                 | :? Shutdown as m ->
-                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.RemoteShutdown m)
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.RemoteShutdown m)
                 | :? ClosingSigned as m ->
-                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyClosingSigned m)
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyClosingSigned m)
                 | :? UpdateAddHTLC as m ->
-                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyUpdateAddHTLC (m, this.CurrentBlockHeight))
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyUpdateAddHTLC (m, this.CurrentBlockHeight))
                 | :? UpdateFulfillHTLC as m ->
-                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyUpdateFulfillHTLC m)
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyUpdateFulfillHTLC m)
                 | :? UpdateFailHTLC as m ->
-                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyUpdateFailHTLC m)
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyUpdateFailHTLC m)
                 | :? UpdateFailMalformedHTLC as m ->
-                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyUpdateFailMalformedHTLC m)
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyUpdateFailMalformedHTLC m)
                 | :? CommitmentSigned as m ->
-                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyCommitmentSigned m)
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyCommitmentSigned m)
                 | :? RevokeAndACK as m ->
-                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyRevokeAndACK m)
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyRevokeAndACK m)
                 | :? UpdateFee as m ->
-                    return! this.AcceptCommandAsync(nodeId, ChannelCommand.ApplyUpdateFee m)
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyUpdateFee m)
                 | m ->
                         return failwithf "Unknown Channel Message (%A). This should never happen" m
-            | PeerEvent.ReceivedInit(nodeId, init) ->
-                this.RemoteInits.AddOrReplace(nodeId, init)
+            | PeerEvent.ReceivedInit(init, _) ->
+                this.RemoteInits.TryAdd(e.NodeId.Value, init) |> ignore
                 return ()
-            | PeerEvent.FailedToBroadcastTransaction(_nodeId, _tx) ->
+            | PeerEvent.FailedToBroadcastTransaction(_tx) ->
                 return ()
             | _ -> return ()
         }
         t |> Async.AwaitTask
-        
-    member private this.ChannelEventHandler (e: ChannelEventWithContext) = unitVtask {
-        match e.ChannelEvent with
-        | ChannelEvent.WeAcceptedAcceptChannel (nextMsg, _) ->
-            this.FundingTxs.TryAdd(nextMsg.FundingTxId, (e.NodeId, None)) |> ignore
-        | WeResumedDelayedFundingLocked theirFundingSigned ->
-            do! this.AcceptCommandAsync(e.NodeId, ChannelCommand.ApplyFundingLocked theirFundingSigned)
-        | _ -> ()
-    }
-        
-    member private this.HandleChannelError (nodeId: NodeId) (b: RBad) = unitTask {
-            match b with
-            | RBad.Exception(ChannelException(ChannelError.Close(msg))) ->
-                let closeCMD =
-                    let spk = _nodeParams.ShutdownScriptPubKey |> Option.defaultValue (_keysRepository.GetShutdownPubKey().WitHash.ScriptPubKey)
-                    ChannelCommand.Close({ CMDClose.ScriptPubKey = Some spk })
-                _logger.LogError(sprintf "Closing a channel for a node (%A) due to a following error. \n %s" nodeId msg)
-                _logger.LogError(sprintf "%s" msg)
-                return! this.AcceptCommandAsync(nodeId, closeCMD)
-            | RBad.Exception(ChannelException(ChannelError.Ignore(msg))) ->
-                _logger.LogWarning("Observed a following error in a channel. But ignoring")
-                _logger.LogWarning(msg)
-            | RBad.Object(o) ->
-                match o with
-                | :? APIError as apiError ->
-                    match apiError with
-                    | APIMisuseError msg ->
-                        _logger.LogWarning(sprintf "Channel returned api misuse error. ignoring. %s" msg)
-                    | e ->
-                        _logger.LogCritical(sprintf "Unreachable %A" e)
-                | e -> sprintf "unreachable %A" e |> _logger.LogCritical
-            | o -> sprintf "Observed a following error in a channel %A" o |> _logger.LogError
+    
+    member this.AcceptCommandAsync cmdWithContext = unitVtask {
+            match cmdWithContext with
+            | { ChannelCommand = ChannelCommand.CreateInbound(_) as cmd; NodeId = nodeId } ->
+                let a = createChannel nodeId
+                return! (a :> IActor<_>).Put(cmd)
+            | { ChannelCommand = ChannelCommand.CreateOutbound(_) as cmd; NodeId = nodeId } ->
+                let a = createChannel nodeId
+                return! (a :> IActor<_>).Put(cmd)
+            | { ChannelCommand = cmd; NodeId = nodeId } ->
+                return! (this.Actors.[nodeId] :> IActor<_>).Put(cmd)
         }
-    member this.AcceptCommandAsync(nodeId: NodeId, cmd: ChannelCommand): Task = unitTask {
-        match this.KnownChannels.TryGetValue(nodeId) with
-        | true, channel ->
-            match Channel.executeCommand channel cmd with
-            | Good events ->
-                _logger.LogTrace(sprintf "Applying events %A" (events |> List.map (fun e -> e.GetType())))
-                _logger.LogTrace(sprintf "to state %A" (channel.State.GetType()))
-                let nextChannel = events |> List.fold Channel.applyEvent channel
-                let contextEvents =
-                    events |> List.map(fun e -> { ChannelEventWithContext.ChannelEvent = e; NodeId = nodeId })
-                do! this.ChannelEventRepo.SetEventsAsync(contextEvents)
-                match this.KnownChannels.TryUpdate(nodeId, nextChannel, channel) with
-                | true ->
-                    _logger.LogTrace(sprintf "Updated channel with %A" (nextChannel.State.GetType()))
-                | false ->
-                    _logger.LogTrace(sprintf "Did not update channel %A" nextChannel.State)
-                for e in contextEvents do
-                    do! this.ChannelEventHandler e
-                contextEvents
-                   |> List.iter this.EventAggregator.Publish<ChannelEventWithContext>
-            | Bad ex ->
-                let ex = ex.Flatten()
-                ex |> Array.map (this.HandleChannelError nodeId) |> ignore
-                ()
-        | false, _ ->
-            match cmd with
-            | CreateInbound fundeeParameters ->
-                let c = _createChannel nodeId
-                this.KnownChannels.TryAdd(nodeId, c) |> ignore
-                return! this.AcceptCommandAsync(nodeId, CreateInbound fundeeParameters)
-            | CreateOutbound funderParameters ->
-                let c = _createChannel nodeId
-                this.KnownChannels.TryAdd(nodeId, c) |> ignore
-                return! this.AcceptCommandAsync(nodeId, CreateOutbound funderParameters)
-            | _ ->
-                sprintf "Cannot handle command type (%A) for unknown peer %A" (cmd) nodeId
-                |> log.LogError
-                ()
-        }
+    
     interface IChannelManager with
-        member this.AcceptCommandAsync(nodeId, cmd:ChannelCommand): Task =
-            this.AcceptCommandAsync(nodeId, cmd)
-        member val KeysRepository = _keysRepository with get
+        member this.AcceptCommandAsync(cmd) = this.AcceptCommandAsync(cmd)
+        member val KeysRepository = keysRepository with get
