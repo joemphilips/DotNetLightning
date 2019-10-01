@@ -15,7 +15,7 @@ module Observable =
         Observable.choose(f)
         >> Observable.first
         >> fun o -> o.ToTask()
-        >> Async.AwaitTaskWithTimeout(1000)
+        >> Async.AwaitTaskWithTimeout(6000)
         
         
 type IEventAggregator with
