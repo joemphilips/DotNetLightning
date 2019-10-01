@@ -42,7 +42,7 @@ type internal PeerActors(a, b) =
     member val ResponderTask = null with get, set
     member this.Launch(nodeIdForResponder: NodeId) = task {
             let peerIdForResponder = this.Responder.Id
-            do! this.Initiator.PM.AcceptCommand({ PeerCommandWithContext.PeerCommand =  PeerCommand.Connect nodeIdForResponder; PeerId = (peerIdForResponder)})
+            do! this.Initiator.PM.NewOutBoundConnection(nodeIdForResponder, peerIdForResponder, this.InitiatorToTransport.Output)
             this.InitiatorTask <- task {
                 while true do
                     do! this.Initiator.PM.ReadAsync (this.Responder.Id, this.InitiatorToTransport)

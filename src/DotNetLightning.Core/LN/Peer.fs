@@ -118,10 +118,10 @@ module Peer =
         match noiseStep, event with
         | ActOne, ActOneProcessed (_, pce) ->
             { state with ChannelEncryptor = pce }
-        | ActTwo, ActTwoProcessed(_, pce) ->
-            { state with ChannelEncryptor = pce }
-        | ActThree, ActThreeProcessed(_, pce) ->
-            { state with ChannelEncryptor = pce }
+        | ActTwo, ActTwoProcessed((_, nodeId), pce) ->
+            { state with ChannelEncryptor = pce; TheirNodeId = Some nodeId }
+        | ActThree, ActThreeProcessed(nodeId, pce) ->
+            { state with ChannelEncryptor = pce; TheirNodeId = Some nodeId }
         | NoiseComplete, LengthDecrypted (length, pce) ->
             { state with ChannelEncryptor = pce; LengthDecoded = Some length }
         | NoiseComplete, ReceivedError (_, pce)

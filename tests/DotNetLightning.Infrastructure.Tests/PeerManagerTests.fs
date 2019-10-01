@@ -70,8 +70,7 @@ let tests = testList "PeerManagerTests" [
                                     aliceNodeParams,
                                     chainWatcherMock,
                                     broadCasterMock)
-      let! read = peerManager.NewOutBoundConnection(theirNodeId, theirPeerId, dPipe.Output, ie)
-      let _ = read |> function | Ok b -> b | Result.Error e -> failwithf "%A" e
+      do! peerManager.NewOutBoundConnection(theirNodeId, theirPeerId, dPipe.Output, ie)
       updateIEForTestVector (peerManager, theirPeerId)
       let actOneExpected = "0x00036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6a"
       let! actOneActual = dPipe.Input.ReadExactAsync(50, true)
@@ -83,6 +82,8 @@ let tests = testList "PeerManagerTests" [
 
       // complete handshake by processing act two
       let! _ = peerManager.ReadAsync(theirPeerId, dPipe)
+      
+      do! Task.Delay 200
 
       let actualPeerId = (peerManager.NodeIdToPeerId.TryGetValue(theirNodeId) |> snd)
       Expect.equal (actualPeerId) (theirPeerId) ""
@@ -123,6 +124,8 @@ let tests = testList "PeerManagerTests" [
       let theirNodeIdExpected =
           "034f355bdcb7cc0af728ef3cceb9615d90684bb5b2ca5f859ab0f0b704075871aa"
           |> hex.DecodeData |> PubKey |> NodeId
+          
+      do! Task.Delay 100
 
       // also, we can query the peer id with node id
       let peerIdRetrieved =
@@ -133,15 +136,11 @@ let tests = testList "PeerManagerTests" [
 
     } |> Async.AwaitTask)
 
-    testCaseAsync "2 peers can communicate with each other" <| (task {
-      let aliceEventAggregatorMock =
-          Mock<IEventAggregator>.Method(fun ea -> <@ ea.GetObservable<ChannelEventWithContext> @> )
-              .Returns(Observable.empty)
-      let bobEventAggregatorMock =
-          Mock<IEventAggregator>.Method(fun ea -> <@ ea.GetObservable<ChannelEventWithContext> @> )
-              .Returns(Observable.empty)
-      let alice = { PM = PeerManager(aliceEventAggregatorMock,
-                                     TestLogger.create(ConsoleColor.White),
+    ftestCaseAsync "2 peers can communicate with each other" <| (task {
+      let aliceEventAggregator = ReactiveEventAggregator()
+      let bobEventAggregator = ReactiveEventAggregator()
+      let alice = { PM = PeerManager(aliceEventAggregator,
+                                     TestLogger.create(ConsoleColor.Red),
                                      getTestLoggerFactory(),
                                      keysRepoMock,
                                      aliceNodeParams,
@@ -149,7 +148,7 @@ let tests = testList "PeerManagerTests" [
                                      broadCasterMock)
                     CM = Mock<IChannelManager>().Create()
                     Id = IPEndPoint.Parse("127.0.0.3") :> EndPoint |> PeerId
-                    EventAggregator = aliceEventAggregatorMock
+                    EventAggregator = aliceEventAggregator
                     NodeParams = aliceNodeParams.Value
                     CurrentHeight = 0
                     FundingTxProvider = Mock<IFundingTxProvider>().Create()
@@ -159,8 +158,8 @@ let tests = testList "PeerManagerTests" [
       let keyRepoBob = 
         Mock<IKeysRepository>.Method(fun repo -> <@ repo.GetNodeSecret @>).Returns(bobNodeSecret)
         
-      let bob = { PM = PeerManager(bobEventAggregatorMock,
-                                   TestLogger.create(ConsoleColor.White),
+      let bob = { PM = PeerManager(bobEventAggregator,
+                                   TestLogger.create(ConsoleColor.Blue),
                                    getTestLoggerFactory(),
                                    keyRepoBob,
                                    Options.Create<NodeParams>(new NodeParams()),
@@ -168,7 +167,7 @@ let tests = testList "PeerManagerTests" [
                                    broadCasterMock)
                   CM = Mock<IChannelManager>().Create()
                   Id = IPEndPoint.Parse("127.0.0.2") :> EndPoint |> PeerId
-                  EventAggregator = bobEventAggregatorMock
+                  EventAggregator = bobEventAggregator
                   NodeParams = aliceNodeParams.Value
                   CurrentHeight = 0
                   FundingTxProvider = Mock<IFundingTxProvider>().Create()
@@ -177,47 +176,56 @@ let tests = testList "PeerManagerTests" [
       
       // this should trigger All handshake process
       let bobNodeId = bobNodeSecret.PubKey |> NodeId
-      do! actors.Launch(bobNodeId)
-      do! Task.Delay 1000
-      
-      let _ =
-          match actors.Initiator.PM.KnownPeers.TryGetValue (actors.Responder.Id) with
-          | true, p ->
-            Expect.equal (p.State.ChannelEncryptor.GetNoiseStep()) (NextNoiseStep.NoiseComplete) "Noise State should be completed"
-          | false, _ -> failwith "bob is not in alice's OpenedPeer"
-          match actors.Responder.PM.KnownPeers.TryGetValue (actors.Initiator.Id) with
-          | true, p ->
-            Expect.equal (p.State.ChannelEncryptor.GetNoiseStep()) (NextNoiseStep.NoiseComplete) "Noise State should be completed"
-          | false, _ -> failwith "alice is not in bob's OpenedPeer"
+      let aliceFinishedActTwoTask =
+          alice.EventAggregator.AwaitPeerEvent(function | { PeerEvent = PeerEvent.ActTwoProcessed _ } -> Some() | _ -> None)
+      let bobFinishedActThreeTask =
+          bob.EventAggregator.AwaitPeerEvent(function | { PeerEvent = PeerEvent.ActThreeProcessed _ } -> Some() | _ -> None)
           
-      Mock.Verify(<@ aliceEventAggregatorMock.Publish<PeerEventWithContext>(It.Is(function | { PeerEvent = PeerEvent.Connected _ } -> true | _ -> false)) @>, once)
-      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEventWithContext>(It.Is(function | { PeerEvent = PeerEvent.Connected _ } -> true | _ -> false)) @>, once)
+      let aliceReceivedInitTask =
+          alice.EventAggregator.AwaitPeerEvent(function | { PeerEvent = ReceivedInit(i, _) } -> Some i | _ -> None)
+      let bobReceivedInitTask =
+          bob.EventAggregator.AwaitPeerEvent(function | { PeerEvent = ReceivedInit(i, _) } -> Some i | _ -> None)
+          
+      do! actors.Launch(bobNodeId)
+      // do! Task.Delay 1000
+      
+      let! t = aliceFinishedActTwoTask
+      Expect.isSome t ""
+      let! t = bobFinishedActThreeTask
+      Expect.isSome t ""
+      
+      let! t = aliceReceivedInitTask
+      Expect.isSome t "alice did not receive init"
+      let! t = bobReceivedInitTask
+      Expect.isSome t "bob did not receive init"
       
       // --- ping from initiator ---
+      let bobReceivedPingTask =
+          bob.EventAggregator.AwaitPeerEvent(function | { PeerEvent = ReceivedPing _ } -> Some() | _ -> None)
+      let aliceReceivedPongTask =
+          alice.EventAggregator.AwaitPeerEvent(function | { PeerEvent = ReceivedPong _ } -> Some() | _ -> None)
       do! actors.Initiator.PM.AcceptCommand({ PeerCommand = PeerCommand.EncodeMsg({ Ping.BytesLen = 22us;
                                                                                     PongLen = 32us })
                                               PeerId = bob.Id })
-      do! Task.Delay 200
-      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEventWithContext>(It.Is(function | { PeerEvent = ReceivedPing _ } -> true | _ -> false)) @>, once)
-      Mock.Verify(<@ aliceEventAggregatorMock.Publish<PeerEventWithContext>(It.Is(function | { PeerEvent = ReceivedPong _ } -> true | _ -> false)) @>, once)
+      let! t = bobReceivedPingTask
+      Expect.isSome t ""
+      let! t = aliceReceivedPongTask
+      Expect.isSome t ""
+      
 
       // --- ping from responder ---
+      let aliceReceivedPingTask =
+          alice.EventAggregator.AwaitPeerEvent(function | { PeerEvent = ReceivedPing _ } -> Some() | _ -> None)
+      let bobReceivedPongTask =
+          bob.EventAggregator.AwaitPeerEvent(function | { PeerEvent = ReceivedPong _ } -> Some() | _ -> None)
       do! actors.Responder.PM.AcceptCommand({ PeerCommand = PeerCommand.EncodeMsg({ Ping.BytesLen = 22us;
                                                                                     PongLen = 32us })
                                               PeerId = alice.Id })
-      do! Task.Delay 200
-      Mock.Verify(<@ aliceEventAggregatorMock.Publish<PeerEventWithContext>(It.Is(function | { PeerEvent = ReceivedPing _ } -> true | _ -> false)) @>, once)
-      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEventWithContext>(It.Is(function | { PeerEvent = ReceivedPong _ } -> true | _ -> false)) @>, once)
+      let! t = aliceReceivedPingTask
+      Expect.isSome t ""
+      let! t = bobReceivedPongTask
+      Expect.isSome t ""
       
-      // --- ping from initiator again ---
-      do! actors.Initiator.PM.AcceptCommand({ PeerCommand = PeerCommand.EncodeMsg({ Ping.BytesLen = 22us;
-                                                                                    PongLen = 32us })
-                                              PeerId = actors.Responder.Id })
-      do! Task.Delay 200
-      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEvent>(It.Is(function | ReceivedPing _ -> true | _ -> false)) @>, exactly(2))
-      Mock.Verify(<@ aliceEventAggregatorMock.Publish<PeerEvent>(It.Is(function | ReceivedPong _ -> true | _ -> false)) @>, exactly(2))
-
-      Mock.Verify(<@ bobEventAggregatorMock.Publish<PeerEvent>(It.Is(function | ReceivedError _ -> true | _ -> false)) @>, never)
       return ()
     } |> Async.AwaitTask)
   ]

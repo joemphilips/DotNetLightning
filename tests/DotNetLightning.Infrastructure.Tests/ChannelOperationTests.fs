@@ -142,11 +142,12 @@ type internal ActorCreator =
     
     static member initiateActor(alice, bob) = async {
         let actors = new PeerActors(alice, bob)
-        let t = actors.Initiator.EventAggregator.GetObservable<PeerEventWithContext>()
-                     |> Observable.awaitFirst(function | { PeerEvent = PeerEvent.Connected _ } -> Some () | _ -> None)
+        let t1 = actors.Initiator.EventAggregator.AwaitPeerEvent(function | { PeerEvent = PeerEvent.ActTwoProcessed _ } -> Some () | _ -> None)
+        let t2 = actors.Responder.EventAggregator.AwaitPeerEvent(function | { PeerEvent = PeerEvent.ActThreeProcessed _ } -> Some () | _ -> None)
         let bobNodeId = bob.CM.KeysRepository.GetNodeSecret().PubKey |> NodeId
         do! actors.Launch(bobNodeId) |> Async.AwaitTask
-        let! _ = t
+        let! _ = t1
+        let! _ = t2
         return actors
     }
     

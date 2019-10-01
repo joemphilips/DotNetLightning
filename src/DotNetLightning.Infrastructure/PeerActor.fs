@@ -29,6 +29,7 @@ type PeerError =
 type IPeerActor = Actor<Peer, PeerCommand, PeerEvent>
 
 type PeerActor(peer: Peer,
+               peerId: PeerId,
                keyRepo: IKeysRepository,
                log: ILogger,
                pipeWriter: PipeWriter,
@@ -39,6 +40,7 @@ type PeerActor(peer: Peer,
     
     let ourNodeId = keyRepo.GetNodeSecret().PubKey |> NodeId
     
+    member val ReplyChannel = System.Threading.Channels.Channel.CreateBounded<PeerEventWithContext>(10) with get
 
     override this.HandleError (b: RBad) =
         unitTask {
@@ -80,24 +82,30 @@ type PeerActor(peer: Peer,
             return ()
         }
         
+    member this.WriteAndProcess(cmd: PeerCommand) =
+        unitVtask {
+            do! this.CommunicationChannel.Writer.WriteAsync cmd
+        }
+        
     override this.PublishEvent e = unitTask {
-        eventAggregator.Publish(e)
+        printfn "peer actor is publishing event %A" (e.GetType())
+        printfn "state is %A" (this.State.ChannelEncryptor.GetNoiseStep())
+        let eCon = { PeerEvent = e; PeerId = peerId; NodeId = this.State.TheirNodeId }
+        eventAggregator.Publish<PeerEventWithContext>(eCon)
         match e with
-        | ActOneProcessed (actTwo, _) -> do! pipeWriter.WriteAsync(actTwo)
-        | ActTwoProcessed ((actThree, theirNodeId), _) ->
-            this.State <- { this.State with TheirNodeId = Some theirNodeId }
+        | ActOneProcessed (actTwo, _) ->
+            do! pipeWriter.WriteAsync(actTwo)
+            do! this.ReplyChannel.Writer.WriteAsync(eCon)
+        | ActTwoProcessed ((actThree, _theirNodeId), _) ->
             do! pipeWriter.WriteAsync(actThree)
-            let localFeatures = 
-                let lf = (LocalFeatures.Flags [||])
-                if nodeParams.RequireInitialRoutingSync then
-                    lf.SetInitialRoutingSync()
-                else
-                    lf
-            do! this.CommunicationChannel.Writer.WriteAsync(PeerCommand.EncodeMsg ({ Init.GlobalFeatures = GlobalFeatures.Flags [||]; LocalFeatures = localFeatures }))
-        | ActThreeProcessed(theirNodeId, _) ->
-            this.State <- { this.State with TheirNodeId = Some theirNodeId }
+            do! this.ReplyChannel.Writer.WriteAsync(eCon)
             ()
-        | MsgEncoded (msg, _) -> do! pipeWriter.WriteAsync(msg)
+        | ActThreeProcessed(_, _) ->
+            do! this.ReplyChannel.Writer.WriteAsync(eCon)
+            ()
+        | MsgEncoded (msg, _) ->
+            do! pipeWriter.WriteAsync(msg)
+            do! this.ReplyChannel.Writer.WriteAsync(eCon)
         | _ -> ()
     }
 

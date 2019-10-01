@@ -19,7 +19,10 @@ type ChannelCommandWithContext = {
 }
 
 type PeerEventWithContext = {
-    NodeId: NodeId
+    PeerId: PeerId
+    /// Only when we are handling new inbound connection, this will be none.
+    /// because there is no way for us to know their node id before handshake completes
+    NodeId: NodeId option
     PeerEvent: PeerEvent
 }
 

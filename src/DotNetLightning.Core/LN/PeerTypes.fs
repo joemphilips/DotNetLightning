@@ -6,7 +6,6 @@ open NBitcoin
 
 type PeerEvent =
     // --- initialization ---
-    | Connected
     | ActOneProcessed of actTwo: byte[] * newPCE: PeerChannelEncryptor
     | ActTwoProcessed of (byte[] * NodeId) * newPCE: PeerChannelEncryptor
     | ActThreeProcessed of theirNodeId: NodeId * newPCE: PeerChannelEncryptor
@@ -26,8 +25,6 @@ type PeerEvent =
     | FailedToBroadcastTransaction of tx: Transaction
 
 type PeerCommand =
-    | Connect of theirPeerId: NodeId
-    | Disconnect of theirNodeId: NodeId
     | ProcessActOne of actOne: byte[] * ourNodeSecret: Key
     | ProcessActTwo of actTwo: byte[] * ourNodeSecret: Key
     | ProcessActThree of actThree: byte[]

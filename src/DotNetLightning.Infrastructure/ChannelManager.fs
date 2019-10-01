@@ -62,15 +62,15 @@ type ChannelManager(log: ILogger<ChannelActor>,
             log.LogCritical(msg)
             failwith msg
     
-    let _onChainObservable =
+    let onChainObservable =
         eventAggregator.GetObservable<OnChainEvent>()
         
-    let _peerEventObservable =
+    let peerEventObservable =
         eventAggregator.GetObservable<PeerEventWithContext>()
         
         
     let _ =
-        _peerEventObservable
+        peerEventObservable
         |> Observable.flatmapAsync(this.PeerEventListener)
         |> Observable.subscribeWithError
                (id)
@@ -78,7 +78,7 @@ type ChannelManager(log: ILogger<ChannelActor>,
 
         
     let _ =
-        _onChainObservable
+        onChainObservable
         |> Observable.flatmapAsync(this.OnChainEventListener)
         |> Observable.subscribeWithError
             (id)
@@ -168,38 +168,38 @@ type ChannelManager(log: ILogger<ChannelActor>,
                                            let spk = _nodeParams.ShutdownScriptPubKey |> Option.defaultValue (keysRepository.GetShutdownPubKey().WitHash.ScriptPubKey)
                                            _nodeParams.MakeLocalParams(_ourNodeId, channelPubKeys, spk, false, m.FundingSatoshis)
                                        TemporaryChannelId = m.TemporaryChannelId
-                                       RemoteInit = this.RemoteInits.[e.NodeId]
+                                       RemoteInit = this.RemoteInits.[e.NodeId.Value]
                                        ToLocal = m.PushMSat
                                        ChannelKeys = channelKeys }
-                    do! this.Actors.[e.NodeId].CommunicationChannel.Writer.WriteAsync(ChannelCommand.CreateInbound(initFundee))
-                    return! this.Actors.[e.NodeId].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyOpenChannel m)
+                    do! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.CreateInbound(initFundee))
+                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyOpenChannel m)
                 | :? AcceptChannel as m ->
-                    return! this.Actors.[e.NodeId].CommunicationChannel.Writer.WriteAsync( ChannelCommand.ApplyAcceptChannel m)
+                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync( ChannelCommand.ApplyAcceptChannel m)
                 | :? FundingCreated as m ->
-                    this.FundingTxs.TryAdd(m.FundingTxId, (e.NodeId, None)) |> ignore
-                    return! this.Actors.[e.NodeId].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyFundingCreated m)
+                    this.FundingTxs.TryAdd(m.FundingTxId, (e.NodeId.Value, None)) |> ignore
+                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyFundingCreated m)
                 | :? FundingSigned as m ->
-                    return! this.Actors.[e.NodeId].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyFundingSigned m)
+                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyFundingSigned m)
                 | :? FundingLocked as m ->
-                    return! this.Actors.[e.NodeId].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyFundingLocked m)
+                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyFundingLocked m)
                 | :? Shutdown as m ->
-                    return! this.Actors.[e.NodeId].CommunicationChannel.Writer.WriteAsync(ChannelCommand.RemoteShutdown m)
+                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.RemoteShutdown m)
                 | :? ClosingSigned as m ->
-                    return! this.Actors.[e.NodeId].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyClosingSigned m)
+                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyClosingSigned m)
                 | :? UpdateAddHTLC as m ->
-                    return! this.Actors.[e.NodeId].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyUpdateAddHTLC (m, this.CurrentBlockHeight))
+                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyUpdateAddHTLC (m, this.CurrentBlockHeight))
                 | :? UpdateFulfillHTLC as m ->
-                    return! this.Actors.[e.NodeId].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyUpdateFulfillHTLC m)
+                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyUpdateFulfillHTLC m)
                 | :? UpdateFailHTLC as m ->
-                    return! this.Actors.[e.NodeId].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyUpdateFailHTLC m)
+                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyUpdateFailHTLC m)
                 | :? UpdateFailMalformedHTLC as m ->
-                    return! this.Actors.[e.NodeId].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyUpdateFailMalformedHTLC m)
+                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyUpdateFailMalformedHTLC m)
                 | :? CommitmentSigned as m ->
-                    return! this.Actors.[e.NodeId].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyCommitmentSigned m)
+                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyCommitmentSigned m)
                 | :? RevokeAndACK as m ->
-                    return! this.Actors.[e.NodeId].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyRevokeAndACK m)
+                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyRevokeAndACK m)
                 | :? UpdateFee as m ->
-                    return! this.Actors.[e.NodeId].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyUpdateFee m)
+                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyUpdateFee m)
                 | m ->
                         return failwithf "Unknown Channel Message (%A). This should never happen" m
             | PeerEvent.ReceivedInit(_init, _) ->
