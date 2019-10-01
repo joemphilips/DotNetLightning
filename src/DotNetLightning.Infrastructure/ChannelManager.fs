@@ -68,6 +68,8 @@ type ChannelManager(log: ILogger<ChannelActor>,
     let peerEventObservable =
         eventAggregator.GetObservable<PeerEventWithContext>()
         
+    let channelEventObservable =
+        eventAggregator.GetObservable<ChannelEventWithContext>()
         
     let _ =
         peerEventObservable
@@ -83,6 +85,13 @@ type ChannelManager(log: ILogger<ChannelActor>,
         |> Observable.subscribeWithError
             (id)
             ((sprintf "Channel Manager got error while Observing OnChain Event: %A") >> log.LogCritical)
+            
+    let _ =
+        channelEventObservable
+        |> Observable.flatmapAsync(this.ChannelEventHandler)
+        |> Observable.subscribeWithError
+            id
+            ((sprintf "Channel Manager got error while observing ChannelEvent %A") >> log.LogCritical)
     /// Values are
     /// 1. actual transaction
     /// 2. other peer's id
@@ -96,9 +105,11 @@ type ChannelManager(log: ILogger<ChannelActor>,
     
     member this.OnChainEventListener e =
         let t = unitTask {
+            log.LogTrace(sprintf "Channel Manager has observed on-chain event %A" (e.GetType()))
             match e with
             | OnChainEvent.BlockConnected (_, height, txs) ->
                 this.CurrentBlockHeight <- height
+                log.LogTrace(sprintf "block connected height: %A" height)
                 for kv in this.FundingTxs do
                     let mutable found = false
                     for txInBlock in txs do
@@ -147,19 +158,22 @@ type ChannelManager(log: ILogger<ChannelActor>,
         t |> Async.AwaitTask
         
         
-    member private this.ChannelEventHandler (e: ChannelEventWithContext) = unitVtask {
-        match e.ChannelEvent with
-        | ChannelEvent.WeAcceptedAcceptChannel (nextMsg, _) ->
-            this.FundingTxs.TryAdd(nextMsg.FundingTxId, (e.NodeId, None)) |> ignore
-        | WeResumedDelayedFundingLocked theirFundingSigned ->
-            do! (this.Actors.[e.NodeId] :> IActor<_>).Put(ChannelCommand.ApplyFundingLocked theirFundingSigned)
-        | _ -> ()
-    }
+    member private this.ChannelEventHandler (e: ChannelEventWithContext) =
+        let vt = unitVtask {
+            match e.ChannelEvent with
+            | ChannelEvent.WeAcceptedAcceptChannel (nextMsg, _) ->
+                this.FundingTxs.TryAdd(nextMsg.FundingTxId, (e.NodeId, None)) |> ignore
+            | WeResumedDelayedFundingLocked theirFundingSigned ->
+                do! (this.Actors.[e.NodeId] :> IActor<_>).Put(ChannelCommand.ApplyFundingLocked theirFundingSigned)
+            | _ -> ()
+        }
+        vt.AsTask() |> Async.AwaitTask
         
     member this.PeerEventListener e =
         let t = unitTask {
             match e.PeerEvent with
             | PeerEvent.ReceivedChannelMsg (msg, _) ->
+                log.LogTrace(sprintf "channel manager has observed %A" (msg.GetType()))
                 match msg with
                 | :? OpenChannel as m ->
                     let channelKeys = keysRepository.GetChannelKeys(true)
@@ -171,11 +185,13 @@ type ChannelManager(log: ILogger<ChannelActor>,
                                        RemoteInit = this.RemoteInits.[e.NodeId.Value]
                                        ToLocal = m.PushMSat
                                        ChannelKeys = channelKeys }
-                    do! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.CreateInbound(initFundee))
+                    do! this.AcceptCommandAsync({ ChannelCommand =  ChannelCommand.CreateInbound(initFundee);
+                                                  NodeId = e.NodeId.Value })
                     return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyOpenChannel m)
                 | :? AcceptChannel as m ->
                     return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put( ChannelCommand.ApplyAcceptChannel m)
                 | :? FundingCreated as m ->
+                    log.LogTrace(sprintf "we received funding created so adding funding tx %A" m.FundingTxId)
                     this.FundingTxs.TryAdd(m.FundingTxId, (e.NodeId.Value, None)) |> ignore
                     return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyFundingCreated m)
                 | :? FundingSigned as m ->
@@ -202,7 +218,8 @@ type ChannelManager(log: ILogger<ChannelActor>,
                     return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyUpdateFee m)
                 | m ->
                         return failwithf "Unknown Channel Message (%A). This should never happen" m
-            | PeerEvent.ReceivedInit(_init, _) ->
+            | PeerEvent.ReceivedInit(init, _) ->
+                this.RemoteInits.TryAdd(e.NodeId.Value, init) |> ignore
                 return ()
             | PeerEvent.FailedToBroadcastTransaction(_tx) ->
                 return ()

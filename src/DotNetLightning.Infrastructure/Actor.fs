@@ -11,9 +11,14 @@ open Microsoft.Extensions.Logging
 type IActor<'TCommand> =
     inherit IDisposable
     abstract member StartAsync: unit -> Task
+    /// Put specific item on processing queue
     abstract member Put: 'TCommand -> Task
+    /// Same with Put, but it will run several commands at once.
     abstract member BatchPut: 'TCommand[] -> Task
+    /// Use this instead of Put if you want caller to be blocked until the state is updated
+    /// Usually this is not needed, when you need is caller is referencing actors state directly
     abstract member PutAndWaitProcess: 'TCommand -> Task
+    /// Same with PutAndWaitProcess. But it will run several commands at once.
     abstract member BatchPutAndWaitProcess: 'TCommand[] -> Task
     
 /// Simple actor model agent utilizing System.Threading.Channels.

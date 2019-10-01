@@ -298,8 +298,6 @@ type PeerManager(eventAggregator: IEventAggregator,
         
     member this.ReadAsync(peerId: PeerId, pipe: IDuplexPipe, ourEphemeral): ValueTask =
         unitVtask {
-            for v in this.KnownPeers.Values do
-                log.LogTrace(sprintf "Reading. KnownPeers are %A" (v.State.ChannelEncryptor.GetNoiseStep()))
             match this.KnownPeers.TryGetValue(peerId) with
             | false, _ ->
                 sprintf "Going to create new inbound peer against %A" (peerId)
@@ -308,17 +306,12 @@ type PeerManager(eventAggregator: IEventAggregator,
                 let! _r = this.NewInboundConnection(peerId, actOne, pipe.Output, ourEphemeral)
                 ()
             | true, peer when peer.State.ChannelEncryptor.GetNoiseStep() = ActTwo ->
-                log.LogTrace "reading act two"
                 let! actTwo = pipe.Input.ReadExactAsync(50)
                 do! (this.KnownPeers.[peerId] :> IActor<_>).PutAndWaitProcess(ProcessActTwo(actTwo, (keyRepo.GetNodeSecret())))
-                log.LogTrace(sprintf "Finished PutAndWaitProcess ProcessActTwo ")
-                
             | true, peer when peer.State.ChannelEncryptor.GetNoiseStep() = ActThree ->
-                log.LogTrace "reading act three"
                 let! actThree = pipe.Input.ReadExactAsync(66)
                 do! (this.KnownPeers.[peerId] :> IActor<_>).PutAndWaitProcess(ProcessActThree(actThree))
             | true, peer when peer.State.ChannelEncryptor.GetNoiseStep() = NoiseComplete ->
-                log.LogTrace(sprintf "waiting incoming message")
                 let! l = pipe.Input.ReadExactAsync(18)
                 let reader = fun l -> (pipe.Input.ReadExactAsync (l)).AsTask() |> Async.AwaitTask |> Async.RunSynchronously
                 do! (this.KnownPeers.[peerId] :> IActor<_>).PutAndWaitProcess(DecodeCipherPacket (l, reader))
