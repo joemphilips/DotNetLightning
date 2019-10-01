@@ -23,7 +23,7 @@ type ChannelActor(nodeParams: IOptions<NodeParams>,
                   channelEventRepo: IChannelEventRepository,
                   keysRepository: IKeysRepository) as this =
     
-    inherit Actor<Channel, ChannelCommand, ChannelEvent>( CreateChannelAggregate(channel))
+    inherit Actor<Channel, ChannelCommand, ChannelEvent>(CreateChannelAggregate(channel), log)
     let _nodeParams = nodeParams.Value
     
     member val Channel = channel with get, set
@@ -36,7 +36,7 @@ type ChannelActor(nodeParams: IOptions<NodeParams>,
                     ChannelCommand.Close({ CMDClose.ScriptPubKey = Some spk })
                 log.LogError(sprintf "Closing a channel for a node (%A) due to a following error. \n %s" (this.Channel.RemoteNodeId) msg)
                 log.LogError(sprintf "%s" msg)
-                return! this.CommunicationChannel.Writer.WriteAsync(closeCMD)
+                return! (this :> IActor<_>).Put(closeCMD)
             | RBad.Exception(ChannelException(ChannelError.Ignore(msg))) ->
                 log.LogWarning("Observed a following error in a channel. But ignoring")
                 log.LogWarning(msg)

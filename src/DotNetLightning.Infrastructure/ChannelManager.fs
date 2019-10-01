@@ -53,7 +53,7 @@ type ChannelManager(log: ILogger<ChannelActor>,
                 nodeId
         let logger = loggerProvider.CreateLogger(sprintf "%A" nodeId)
         let channelActor = new ChannelActor(nodeParams, logger, eventAggregator, c, channelEventRepo, keysRepository)
-        (channelActor :> IActor).StartAsync() |> ignore
+        (channelActor :> IActor<_>).StartAsync() |> ignore
         match this.Actors.TryAdd(nodeId, channelActor) with
         | true ->
             channelActor
@@ -113,7 +113,7 @@ type ChannelManager(log: ILogger<ChannelActor>,
                             this.FundingTxs.TryUpdate(kv.Key, newValue, kv.Value) |> ignore
                             for kv in this.Actors do
                                 let actor = kv.Value
-                                do! actor.CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyFundingConfirmedOnBC(height, txIndex, depth))
+                                do! (actor :> IActor<_>).Put(ChannelCommand.ApplyFundingConfirmedOnBC(height, txIndex, depth))
                     if (not found) then
                         match kv.Value with
                         | (_nodeId, None) ->
@@ -123,7 +123,7 @@ type ChannelManager(log: ILogger<ChannelActor>,
                             log.LogDebug(sprintf "funding tx (%A) confirmed (%d) times" kv.Key depth.Value)
                             for kv in this.Actors do
                                 let actor = kv.Value
-                                do! actor.CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyFundingConfirmedOnBC(height, txIndex, depth))
+                                do! (actor :> IActor<_>).Put(ChannelCommand.ApplyFundingConfirmedOnBC(height, txIndex, depth))
                             
             | OnChainEvent.BlockDisconnected blocks ->
                 for b in blocks do
@@ -152,7 +152,7 @@ type ChannelManager(log: ILogger<ChannelActor>,
         | ChannelEvent.WeAcceptedAcceptChannel (nextMsg, _) ->
             this.FundingTxs.TryAdd(nextMsg.FundingTxId, (e.NodeId, None)) |> ignore
         | WeResumedDelayedFundingLocked theirFundingSigned ->
-            do! this.Actors.[e.NodeId].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyFundingLocked theirFundingSigned)
+            do! (this.Actors.[e.NodeId] :> IActor<_>).Put(ChannelCommand.ApplyFundingLocked theirFundingSigned)
         | _ -> ()
     }
         
@@ -171,35 +171,35 @@ type ChannelManager(log: ILogger<ChannelActor>,
                                        RemoteInit = this.RemoteInits.[e.NodeId.Value]
                                        ToLocal = m.PushMSat
                                        ChannelKeys = channelKeys }
-                    do! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.CreateInbound(initFundee))
-                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyOpenChannel m)
+                    do! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.CreateInbound(initFundee))
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyOpenChannel m)
                 | :? AcceptChannel as m ->
-                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync( ChannelCommand.ApplyAcceptChannel m)
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put( ChannelCommand.ApplyAcceptChannel m)
                 | :? FundingCreated as m ->
                     this.FundingTxs.TryAdd(m.FundingTxId, (e.NodeId.Value, None)) |> ignore
-                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyFundingCreated m)
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyFundingCreated m)
                 | :? FundingSigned as m ->
-                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyFundingSigned m)
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyFundingSigned m)
                 | :? FundingLocked as m ->
-                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyFundingLocked m)
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyFundingLocked m)
                 | :? Shutdown as m ->
-                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.RemoteShutdown m)
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.RemoteShutdown m)
                 | :? ClosingSigned as m ->
-                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyClosingSigned m)
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyClosingSigned m)
                 | :? UpdateAddHTLC as m ->
-                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyUpdateAddHTLC (m, this.CurrentBlockHeight))
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyUpdateAddHTLC (m, this.CurrentBlockHeight))
                 | :? UpdateFulfillHTLC as m ->
-                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyUpdateFulfillHTLC m)
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyUpdateFulfillHTLC m)
                 | :? UpdateFailHTLC as m ->
-                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyUpdateFailHTLC m)
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyUpdateFailHTLC m)
                 | :? UpdateFailMalformedHTLC as m ->
-                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyUpdateFailMalformedHTLC m)
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyUpdateFailMalformedHTLC m)
                 | :? CommitmentSigned as m ->
-                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyCommitmentSigned m)
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyCommitmentSigned m)
                 | :? RevokeAndACK as m ->
-                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyRevokeAndACK m)
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyRevokeAndACK m)
                 | :? UpdateFee as m ->
-                    return! this.Actors.[e.NodeId.Value].CommunicationChannel.Writer.WriteAsync(ChannelCommand.ApplyUpdateFee m)
+                    return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyUpdateFee m)
                 | m ->
                         return failwithf "Unknown Channel Message (%A). This should never happen" m
             | PeerEvent.ReceivedInit(_init, _) ->
@@ -214,12 +214,12 @@ type ChannelManager(log: ILogger<ChannelActor>,
             match cmdWithContext with
             | { ChannelCommand = ChannelCommand.CreateInbound(_) as cmd; NodeId = nodeId } ->
                 let a = createChannel nodeId
-                return! a.CommunicationChannel.Writer.WriteAsync(cmd)
+                return! (a :> IActor<_>).Put(cmd)
             | { ChannelCommand = ChannelCommand.CreateOutbound(_) as cmd; NodeId = nodeId } ->
                 let a = createChannel nodeId
-                return! a.CommunicationChannel.Writer.WriteAsync(cmd)
+                return! (a :> IActor<_>).Put(cmd)
             | { ChannelCommand = cmd; NodeId = nodeId } ->
-                return! this.Actors.[nodeId].CommunicationChannel.Writer.WriteAsync(cmd)
+                return! (this.Actors.[nodeId] :> IActor<_>).Put(cmd)
         }
     
     interface IChannelManager with

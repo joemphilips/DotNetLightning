@@ -19,6 +19,7 @@
     <Compile Include="Codec.fs" />
     <Compile Include="DTOs.fs" />
     <Compile Include="DomainTypes.fs" />
+    <Compile Include="Actor.fs" />
     <Compile Include="Storage.fs" />
     <Compile Include="BitcoinRPCPollingChainWatcher.fs" />
     <Compile Include="BroadCaster.fs" />

@@ -59,7 +59,8 @@ let updateIEForTestVector (peerMan: PeerManager, peerId: PeerId) =
 
 [<Tests>]
 let tests = testList "PeerManagerTests" [
-    testCaseAsync "PeerManager can initiate outbound connection just from their nodeid and network address" <| (task {
+    
+    testTask "PeerManager can initiate outbound connection just from their nodeid and network address" {
       let dPipe = createPipe()
       let theirPeerId = IPEndPoint.Parse("127.0.0.2") :> EndPoint |> PeerId
       let theirNodeId = PubKey("028d7500dd4c12685d1f568b4c2b5048e8534b873319f3a8daa612b469132ec7f7") |> NodeId
@@ -70,27 +71,28 @@ let tests = testList "PeerManagerTests" [
                                     aliceNodeParams,
                                     chainWatcherMock,
                                     broadCasterMock)
-      do! peerManager.NewOutBoundConnection(theirNodeId, theirPeerId, dPipe.Output, ie)
+      do! peerManager.NewOutBoundConnection(theirNodeId, theirPeerId, dPipe.Output, ie).AsTask()
       updateIEForTestVector (peerManager, theirPeerId)
       let actOneExpected = "0x00036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6a"
-      let! actOneActual = dPipe.Input.ReadExactAsync(50, true)
+      let! actOneActual = dPipe.Input.ReadExactAsync(50, true).AsTask()
+      let actOneActual: byte[] = actOneActual
       Expect.equal actOneExpected (actOneActual.ToHexString()) ""
 
       // other peer responds with act two
       let actTwo = hex.DecodeData ("0002466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f276e2470b93aac583c9ef6eafca3f730ae")
-      let! _ = dPipe.Output.WriteAsync(actTwo)
+      let! _ = dPipe.Output.WriteAsync(actTwo).AsTask()
 
       // complete handshake by processing act two
-      let! _ = peerManager.ReadAsync(theirPeerId, dPipe)
+      let! _ = peerManager.ReadAsync(theirPeerId, dPipe).AsTask()
       
       do! Task.Delay 200
 
       let actualPeerId = (peerManager.NodeIdToPeerId.TryGetValue(theirNodeId) |> snd)
       Expect.equal (actualPeerId) (theirPeerId) ""
       return ()
-    } |> Async.AwaitTask)
+    }
 
-    testCaseAsync "PeerManager can initiate inbound connection" <| (task {
+    testTask "PeerManager can initiate inbound connection" {
       let dPipe = createPipe()
       let theirPeerId = IPEndPoint.Parse("127.0.0.2") :> EndPoint |> PeerId
       let keyRepoMock =
@@ -107,18 +109,19 @@ let tests = testList "PeerManagerTests" [
       // processing act 1 ...
       let act1 = hex.DecodeData ("00036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6a")
       let ourEphemeral = hex.DecodeData("2222222222222222222222222222222222222222222222222222222222222222") |> Key
-      do! dPipe.Output.WriteAsync(act1)
-      do! peerManager.ReadAsync (theirPeerId, dPipe, ourEphemeral)
+      do! dPipe.Output.WriteAsync(act1).AsTask()
+      do! peerManager.ReadAsync(theirPeerId, dPipe, ourEphemeral).AsTask()
 
       // should send act 2 to the peer
-      let! act2 = dPipe.Input.ReadExactAsync (50, true)
+      let! act2 = dPipe.Input.ReadExactAsync(50, true).AsTask()
+      let act2: byte[] = act2
       let actTwoExpected = "0x0002466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f276e2470b93aac583c9ef6eafca3f730ae"
       Expect.equal (act2.ToHexString()) (actTwoExpected) ""
 
       // if the peer responds with correct act 3 ...
       let actThree = hex.DecodeData ("00b9e3a702e93e3a9948c2ed6e5fd7590a6e1c3a0344cfc9d5b57357049aa22355361aa02e55a8fc28fef5bd6d71ad0c38228dc68b1c466263b47fdf31e560e139ba")
-      do! dPipe.Output.WriteAsync(actThree)
-      do! peerManager.ReadAsync (theirPeerId, dPipe)
+      do! dPipe.Output.WriteAsync(actThree).AsTask()
+      do! peerManager.ReadAsync(theirPeerId, dPipe).AsTask()
 
       // their node id should be the one expected
       let theirNodeIdExpected =
@@ -134,9 +137,9 @@ let tests = testList "PeerManagerTests" [
           | false, _ -> failwith "peer id is not set to NodeId -> PeerId Dict"
       Expect.equal (peerIdRetrieved) (theirPeerId) ""
 
-    } |> Async.AwaitTask)
+    }
 
-    ftestCaseAsync "2 peers can communicate with each other" <| (task {
+    testTask "2 peers can communicate with each other" {
       let aliceEventAggregator = ReactiveEventAggregator()
       let bobEventAggregator = ReactiveEventAggregator()
       let alice = { PM = PeerManager(aliceEventAggregator,
@@ -186,17 +189,17 @@ let tests = testList "PeerManagerTests" [
       let bobReceivedInitTask =
           bob.EventAggregator.AwaitPeerEvent(function | { PeerEvent = ReceivedInit(i, _) } -> Some i | _ -> None)
           
+          
       do! actors.Launch(bobNodeId)
-      // do! Task.Delay 1000
       
-      let! t = aliceFinishedActTwoTask
+      let! t = aliceFinishedActTwoTask |> Async.StartAsTask
       Expect.isSome t ""
-      let! t = bobFinishedActThreeTask
+      let! t = bobFinishedActThreeTask |> Async.StartAsTask
       Expect.isSome t ""
       
-      let! t = aliceReceivedInitTask
+      let! t = aliceReceivedInitTask |> Async.StartAsTask
       Expect.isSome t "alice did not receive init"
-      let! t = bobReceivedInitTask
+      let! t = bobReceivedInitTask |> Async.StartAsTask
       Expect.isSome t "bob did not receive init"
       
       // --- ping from initiator ---
@@ -206,10 +209,10 @@ let tests = testList "PeerManagerTests" [
           alice.EventAggregator.AwaitPeerEvent(function | { PeerEvent = ReceivedPong _ } -> Some() | _ -> None)
       do! actors.Initiator.PM.AcceptCommand({ PeerCommand = PeerCommand.EncodeMsg({ Ping.BytesLen = 22us;
                                                                                     PongLen = 32us })
-                                              PeerId = bob.Id })
-      let! t = bobReceivedPingTask
+                                              PeerId = bob.Id }).AsTask()
+      let! t = bobReceivedPingTask |> Async.StartAsTask
       Expect.isSome t ""
-      let! t = aliceReceivedPongTask
+      let! t = aliceReceivedPongTask |> Async.StartAsTask
       Expect.isSome t ""
       
 
@@ -220,12 +223,12 @@ let tests = testList "PeerManagerTests" [
           bob.EventAggregator.AwaitPeerEvent(function | { PeerEvent = ReceivedPong _ } -> Some() | _ -> None)
       do! actors.Responder.PM.AcceptCommand({ PeerCommand = PeerCommand.EncodeMsg({ Ping.BytesLen = 22us;
                                                                                     PongLen = 32us })
-                                              PeerId = alice.Id })
-      let! t = aliceReceivedPingTask
+                                              PeerId = alice.Id }).AsTask()
+      let! t = aliceReceivedPingTask |> Async.StartAsTask
       Expect.isSome t ""
-      let! t = bobReceivedPongTask
+      let! t = bobReceivedPongTask |> Async.StartAsTask
       Expect.isSome t ""
       
       return ()
-    } |> Async.AwaitTask)
+    }
   ]

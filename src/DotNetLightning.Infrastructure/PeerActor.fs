@@ -35,12 +35,10 @@ type PeerActor(peer: Peer,
                pipeWriter: PipeWriter,
                nodeParams: IOptions<NodeParams>,
                eventAggregator: IEventAggregator) as this =
-    inherit Actor<Peer, PeerCommand, PeerEvent>(PeerDomain.CreatePeerAggregate peer)
+    inherit Actor<Peer, PeerCommand, PeerEvent>(PeerDomain.CreatePeerAggregate peer, log)
     let nodeParams = nodeParams.Value
     
     let ourNodeId = keyRepo.GetNodeSecret().PubKey |> NodeId
-    
-    member val ReplyChannel = System.Threading.Channels.Channel.CreateBounded<PeerEventWithContext>(10) with get
 
     override this.HandleError (b: RBad) =
         unitTask {
@@ -82,30 +80,19 @@ type PeerActor(peer: Peer,
             return ()
         }
         
-    member this.WriteAndProcess(cmd: PeerCommand) =
-        unitVtask {
-            do! this.CommunicationChannel.Writer.WriteAsync cmd
-        }
-        
     override this.PublishEvent e = unitTask {
-        printfn "peer actor is publishing event %A" (e.GetType())
-        printfn "state is %A" (this.State.ChannelEncryptor.GetNoiseStep())
         let eCon = { PeerEvent = e; PeerId = peerId; NodeId = this.State.TheirNodeId }
         eventAggregator.Publish<PeerEventWithContext>(eCon)
         match e with
         | ActOneProcessed (actTwo, _) ->
             do! pipeWriter.WriteAsync(actTwo)
-            do! this.ReplyChannel.Writer.WriteAsync(eCon)
         | ActTwoProcessed ((actThree, _theirNodeId), _) ->
             do! pipeWriter.WriteAsync(actThree)
-            do! this.ReplyChannel.Writer.WriteAsync(eCon)
             ()
         | ActThreeProcessed(_, _) ->
-            do! this.ReplyChannel.Writer.WriteAsync(eCon)
             ()
         | MsgEncoded (msg, _) ->
             do! pipeWriter.WriteAsync(msg)
-            do! this.ReplyChannel.Writer.WriteAsync(eCon)
         | _ -> ()
     }
 

@@ -212,7 +212,7 @@ type internal ActorCreator =
 [<Tests>]
 let tests =
     testList "Basic Channel handling between 2 peers" [
-        testAsync "Channel Initialization" {
+        ptestAsync "Channel Initialization" {
 
             let alice = ActorCreator.getAlice()
             let bob = ActorCreator.getBob()
@@ -309,7 +309,7 @@ let tests =
             return ()
         }
         
-        testAsync "Normal channel operation" { 
+        ptestAsync "Normal channel operation" { 
             let alice = ActorCreator.getAlice()
             let bob = ActorCreator.getBob()
             let! actors = ActorCreator.initiateOpenedChannel(alice, bob)

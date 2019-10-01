@@ -61,8 +61,8 @@ type PeerManager(eventAggregator: IEventAggregator,
     
     let ourNodeId = keyRepo.GetNodeSecret().PubKey |> NodeId
 
-    member val KnownPeers: Dictionary<_,_> = Dictionary<PeerId, PeerActor>() with get, set
-    member val NodeIdToPeerId: Dictionary<_,_> = Dictionary<NodeId, PeerId>() with get, set
+    member val KnownPeers: ConcurrentDictionary<_,_> = ConcurrentDictionary<PeerId, PeerActor>() with get, set
+    member val NodeIdToPeerId: ConcurrentDictionary<_,_> = ConcurrentDictionary<NodeId, PeerId>() with get, set
     
     member private this.Disconnect(peerId) =
         log.LogInformation(sprintf "disconnecting peer %A" peerId)
@@ -86,7 +86,7 @@ type PeerManager(eventAggregator: IEventAggregator,
                         lf
                 let init = { Init.GlobalFeatures = GlobalFeatures.Flags [||]; LocalFeatures = localFeatures }
                 log.LogTrace "sending init"
-                do! this.KnownPeers.[e.PeerId].CommunicationChannel.Writer.WriteAsync(PeerCommand.EncodeMsg (init))
+                do! (this.KnownPeers.[e.PeerId] :> IActor<_>). Put(PeerCommand.EncodeMsg (init))
             | ActThreeProcessed(nodeId, _) ->
                 match this.NodeIdToPeerId.TryAdd(nodeId, e.PeerId) with
                 | true -> ()
@@ -111,7 +111,7 @@ type PeerManager(eventAggregator: IEventAggregator,
                 |> log.LogDebug
                 if (ping.PongLen < 65532us) then
                     let pong = { Pong.BytesLen = ping.PongLen }
-                    do! this.KnownPeers.[e.PeerId].CommunicationChannel.Writer.WriteAsync(EncodeMsg pong)
+                    do! (this.KnownPeers.[e.PeerId] :> IActor<_>). Put(EncodeMsg pong)
                 else
                     log.LogError(sprintf "PongLen is too long %A" ping)
             | ReceivedPong (_pong, _) ->
@@ -140,7 +140,7 @@ type PeerManager(eventAggregator: IEventAggregator,
                                         failwith msg
                     if (not peer.IsOutBound) then
                         let lf = LocalFeatures.Flags([||]).SetInitialRoutingSync()
-                        do! peerActor.CommunicationChannel.Writer.WriteAsync(EncodeMsg { Init.GlobalFeatures = GlobalFeatures.Flags([||]); Init.LocalFeatures = lf })
+                        do! (peerActor :> IActor<_>). Put(EncodeMsg { Init.GlobalFeatures = GlobalFeatures.Flags([||]); Init.LocalFeatures = lf })
             | _ -> ()
         }
         vt.AsTask() |> Async.AwaitTask
@@ -153,9 +153,9 @@ type PeerManager(eventAggregator: IEventAggregator,
                 match contextEvent.ChannelEvent with
                 // ---- channel init: funder -----
                 | ChannelEvent.NewOutboundChannelStarted(msg, _) ->
-                    return! this.KnownPeers.[peerId].CommunicationChannel.Writer.WriteAsync(EncodeMsg msg)
+                    return! (this.KnownPeers.[peerId] :> IActor<_>). Put(EncodeMsg msg)
                 | ChannelEvent.WeAcceptedAcceptChannel(msg, _) ->
-                    return! this.KnownPeers.[peerId].CommunicationChannel.Writer.WriteAsync(EncodeMsg msg)
+                    return! (this.KnownPeers.[peerId] :> IActor<_>).Put(EncodeMsg msg)
                 | ChannelEvent.WeAcceptedFundingSigned(finalizedFundingTx, _) ->
                     let! r = broadCaster.BroadCastTransaction(finalizedFundingTx.Value) |> Async.Catch |> Async.StartAsTask
                     match r with
@@ -182,16 +182,16 @@ type PeerManager(eventAggregator: IEventAggregator,
                 | ChannelEvent.NewInboundChannelStarted _ ->
                     ()
                 | ChannelEvent.WeAcceptedOpenChannel(msg, _) ->
-                    return! this.KnownPeers.[peerId].CommunicationChannel.Writer.WriteAsync(EncodeMsg msg)
+                    return! (this.KnownPeers.[peerId] :> IActor<_>).Put(EncodeMsg msg)
                 | ChannelEvent.WeAcceptedFundingCreated(msg, _) ->
-                    return! this.KnownPeers.[peerId].CommunicationChannel.Writer.WriteAsync(EncodeMsg msg)
+                    return! (this.KnownPeers.[peerId] :> IActor<_>).Put(EncodeMsg msg)
                     
                 // ---- else ----
                 | FundingConfirmed _  -> ()
                 | TheySentFundingLocked _msg -> ()
                 | ChannelEvent.WeResumedDelayedFundingLocked _ -> ()
                 | WeSentFundingLocked fundingLockedMsg ->
-                    return! this.KnownPeers.[peerId].CommunicationChannel.Writer.WriteAsync(EncodeMsg fundingLockedMsg)
+                    return! (this.KnownPeers.[peerId] :> IActor<_>).Put(EncodeMsg fundingLockedMsg)
                 | BothFundingLocked _ -> ()
                 | WeAcceptedUpdateAddHTLC _
                 | WeAcceptedFulfillHTLC _
@@ -203,17 +203,17 @@ type PeerManager(eventAggregator: IEventAggregator,
                 // The one which includes `CMD` in its names is the one started by us.
                 // So there are no need to think about routing, just send it to specified peer.
                 | ChannelEvent.WeAcceptedCMDAddHTLC (msg, _) ->
-                    return! this.KnownPeers.[peerId].CommunicationChannel.Writer.WriteAsync(EncodeMsg msg)
+                    return! (this.KnownPeers.[peerId] :> IActor<_>).Put(EncodeMsg msg)
                 | ChannelEvent.WeAcceptedCMDFulfillHTLC (msg, _) ->
-                    return! this.KnownPeers.[peerId].CommunicationChannel.Writer.WriteAsync(EncodeMsg msg)
+                    return! (this.KnownPeers.[peerId] :> IActor<_>).Put(EncodeMsg msg)
                 | ChannelEvent.WeAcceptedCMDFailHTLC(msg, _) ->
-                    return! this.KnownPeers.[peerId].CommunicationChannel.Writer.WriteAsync(EncodeMsg msg)
+                    return! (this.KnownPeers.[peerId] :> IActor<_>).Put(EncodeMsg msg)
                 | ChannelEvent.WeAcceptedCMDFailMalformedHTLC(msg, _) ->
-                    return! this.KnownPeers.[peerId].CommunicationChannel.Writer.WriteAsync(EncodeMsg msg)
+                    return! (this.KnownPeers.[peerId] :> IActor<_>).Put(EncodeMsg msg)
                 | ChannelEvent.WeAcceptedCMDUpdateFee(msg, _) ->
-                    return! this.KnownPeers.[peerId].CommunicationChannel.Writer.WriteAsync(EncodeMsg msg)
+                    return! (this.KnownPeers.[peerId] :> IActor<_>).Put(EncodeMsg msg)
                 | ChannelEvent.WeAcceptedCMDSign (msg, _) ->
-                    return! this.KnownPeers.[peerId].CommunicationChannel.Writer.WriteAsync(EncodeMsg msg)
+                    return! (this.KnownPeers.[peerId] :> IActor<_>).Put(EncodeMsg msg)
                 | AcceptedShutdownCMD (_) ->
                     failwith "TODO "
                 | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs _ ->
@@ -247,7 +247,7 @@ type PeerManager(eventAggregator: IEventAggregator,
             let newPeer = { newPeer with ChannelEncryptor = pce }
             let log = loggerFactory.CreateLogger(sprintf "PeerActor (%A)" theirPeerId)
             let peerActor = new PeerActor (newPeer, theirPeerId, keyRepo, log, pipeWriter, nodeParams, eventAggregator)
-            (peerActor :> IActor).StartAsync() |> ignore
+            (peerActor :> IActor<_>).StartAsync() |> ignore
             match this.KnownPeers.TryAdd(theirPeerId, peerActor) with
             | false ->
                 sprintf "duplicate connection with peer %A" theirPeerId
@@ -280,7 +280,7 @@ type PeerManager(eventAggregator: IEventAggregator,
             let peerActor =
                 let log = loggerFactory.CreateLogger(sprintf "PeerActor (%A)" peerId)
                 new PeerActor (newPeer, peerId, keyRepo, log, pipeWriter, nodeParams, eventAggregator)
-            (peerActor :> IActor).StartAsync() |> ignore
+            (peerActor :> IActor<_>).StartAsync() |> ignore
             match this.KnownPeers.TryAdd(peerId, peerActor) with
             | false ->
                 sprintf "peer (%A) (%A) is already connected" peerId theirNodeId |> log.LogError
@@ -298,6 +298,8 @@ type PeerManager(eventAggregator: IEventAggregator,
         
     member this.ReadAsync(peerId: PeerId, pipe: IDuplexPipe, ourEphemeral): ValueTask =
         unitVtask {
+            for v in this.KnownPeers.Values do
+                log.LogTrace(sprintf "Reading. KnownPeers are %A" (v.State.ChannelEncryptor.GetNoiseStep()))
             match this.KnownPeers.TryGetValue(peerId) with
             | false, _ ->
                 sprintf "Going to create new inbound peer against %A" (peerId)
@@ -308,27 +310,24 @@ type PeerManager(eventAggregator: IEventAggregator,
             | true, peer when peer.State.ChannelEncryptor.GetNoiseStep() = ActTwo ->
                 log.LogTrace "reading act two"
                 let! actTwo = pipe.Input.ReadExactAsync(50)
-                do! this.KnownPeers.[peerId].CommunicationChannel.Writer.WriteAsync(ProcessActTwo(actTwo, (keyRepo.GetNodeSecret())))
+                do! (this.KnownPeers.[peerId] :> IActor<_>).PutAndWaitProcess(ProcessActTwo(actTwo, (keyRepo.GetNodeSecret())))
+                log.LogTrace(sprintf "Finished PutAndWaitProcess ProcessActTwo ")
                 
             | true, peer when peer.State.ChannelEncryptor.GetNoiseStep() = ActThree ->
                 log.LogTrace "reading act three"
                 let! actThree = pipe.Input.ReadExactAsync(66)
-                do! this.KnownPeers.[peerId].CommunicationChannel.Writer.WriteAsync(ProcessActThree(actThree))
-            | true, peer when peer.State.ChannelEncryptor.GetNoiseStep() = NoiseComplete && (peer.State.LengthDecoded.IsNone) ->
-                log.LogTrace(sprintf "decoding length")
-                let! lengthHeader = pipe.Input.ReadExactAsync(18)
-                do! this.KnownPeers.[peerId].CommunicationChannel.Writer.WriteAsync(PeerCommand.DecodeLength lengthHeader)
-            | true, peer when peer.State.ChannelEncryptor.GetNoiseStep() = NoiseComplete && (peer.State.LengthDecoded.IsSome) ->
-                log.LogTrace(sprintf "decoding message")
-                let len = peer.State.LengthDecoded.Value
-                let! packet = pipe.Input.ReadExactAsync(int len)
-                do! this.KnownPeers.[peerId].CommunicationChannel.Writer.WriteAsync(PeerCommand.DecodeCipherPacket packet)
+                do! (this.KnownPeers.[peerId] :> IActor<_>).PutAndWaitProcess(ProcessActThree(actThree))
+            | true, peer when peer.State.ChannelEncryptor.GetNoiseStep() = NoiseComplete ->
+                log.LogTrace(sprintf "waiting incoming message")
+                let! l = pipe.Input.ReadExactAsync(18)
+                let reader = fun l -> (pipe.Input.ReadExactAsync (l)).AsTask() |> Async.AwaitTask |> Async.RunSynchronously
+                do! (this.KnownPeers.[peerId] :> IActor<_>).PutAndWaitProcess(DecodeCipherPacket (l, reader))
             | _ -> return failwith "unreachable"
         }
     member this.AcceptCommand(cmd: PeerCommandWithContext) = unitVtask {
         match this.KnownPeers.TryGetValue(cmd.PeerId) with
         | true, peerActor ->
-            do! peerActor.CommunicationChannel.Writer.WriteAsync(cmd.PeerCommand)
+            do! (peerActor :> IActor<_>).Put(cmd.PeerCommand)
         | _ ->
             log.LogError(sprintf "failed to get peer %A" cmd.PeerId)
             ()

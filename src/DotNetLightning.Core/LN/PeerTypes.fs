@@ -12,7 +12,6 @@ type PeerEvent =
     
     // --- else ---
     // --- receiving ---
-    | LengthDecrypted of length: uint16 * newPCE: PeerChannelEncryptor
     | ReceivedError of error: ErrorMessage * newPCE: PeerChannelEncryptor
     | ReceivedPing of ping: Ping * newPCE: PeerChannelEncryptor
     | ReceivedPong of ping: Pong * newPCE: PeerChannelEncryptor
@@ -28,6 +27,5 @@ type PeerCommand =
     | ProcessActOne of actOne: byte[] * ourNodeSecret: Key
     | ProcessActTwo of actTwo: byte[] * ourNodeSecret: Key
     | ProcessActThree of actThree: byte[]
-    | DecodeLength of byte[]
-    | DecodeCipherPacket of byte[]
+    | DecodeCipherPacket of lengthHeader: byte[] * reader: (int -> byte[])
     | EncodeMsg of msg: ILightningMsg

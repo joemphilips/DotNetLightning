@@ -29,8 +29,6 @@ type Peer = {
     TheirNodeId: NodeId option
     TheirGlobalFeatures: GlobalFeatures option
     TheirLocalFeatures: LocalFeatures option
-    LengthDecoded: uint16 option
-
     SyncStatus: InitSyncTracker
 }
     with
@@ -41,7 +39,6 @@ type Peer = {
             TheirNodeId = None
             TheirGlobalFeatures = None
             TheirLocalFeatures = None
-            LengthDecoded = None
             SyncStatus = NoSyncRequested
         }
         
@@ -52,7 +49,6 @@ type Peer = {
             TheirNodeId = Some theirNodeId
             TheirGlobalFeatures = None
             TheirLocalFeatures = None
-            LengthDecoded = None
             SyncStatus = NoSyncRequested
         }
         /// Returns true if the channel announcements/updates for the given channel should be
@@ -83,29 +79,29 @@ module Peer =
         | ActThree, ProcessActThree(actThree) ->
             state.ChannelEncryptor |> PeerChannelEncryptor.processActThree actThree
             |>> (ActThreeProcessed >> List.singleton)
-        | NoiseComplete, DecodeLength packet ->
-            state.ChannelEncryptor |> PeerChannelEncryptor.decryptLengthHeader (fun _ -> ()) packet
-            |>> (LengthDecrypted >> List.singleton)
-        | NoiseComplete, DecodeCipherPacket packet ->
-            state.ChannelEncryptor |> PeerChannelEncryptor.decryptMessage (fun _ -> ()) packet
-            >>= fun (b, newPCE) ->
-                LightningMsg.fromBytes b
-                >>= fun msg ->
-                match msg with
-                | :? ErrorMessage as msg ->
-                    [ReceivedError (msg, newPCE)] |> Good
-                | :? Ping as msg ->
-                    [ReceivedPing (msg, newPCE)] |> Good
-                | :? Pong as msg ->
-                    [ReceivedPong (msg, newPCE)] |> Good
-                | :? Init as msg ->
-                    [ReceivedInit (msg, newPCE)] |> Good
-                | :? IRoutingMsg as msg ->
-                    [ReceivedRoutingMsg (msg, newPCE)] |> Good
-                | :? IChannelMsg as msg ->
-                    [ReceivedChannelMsg (msg, newPCE)] |> Good
-                | _ ->
-                    failwithf "unreachable %A" msg
+        | NoiseComplete, DecodeCipherPacket (lengthPacket, reader) ->
+            state.ChannelEncryptor |> PeerChannelEncryptor.decryptLengthHeader (fun _ -> ()) lengthPacket
+            >>= fun (len, pce) ->
+                let packet = reader (int len + 16)
+                pce |> PeerChannelEncryptor.decryptMessage (fun _ -> ()) packet
+                >>= fun (b, newPCE) ->
+                    LightningMsg.fromBytes b
+                    >>= fun msg ->
+                    match msg with
+                    | :? ErrorMessage as msg ->
+                        [ReceivedError (msg, newPCE)] |> Good
+                    | :? Ping as msg ->
+                        [ReceivedPing (msg, newPCE)] |> Good
+                    | :? Pong as msg ->
+                        [ReceivedPong (msg, newPCE)] |> Good
+                    | :? Init as msg ->
+                        [ReceivedInit (msg, newPCE)] |> Good
+                    | :? IRoutingMsg as msg ->
+                        [ReceivedRoutingMsg (msg, newPCE)] |> Good
+                    | :? IChannelMsg as msg ->
+                        [ReceivedChannelMsg (msg, newPCE)] |> Good
+                    | _ ->
+                        failwithf "unreachable %A" msg
         | NoiseComplete, EncodeMsg (msg) ->
             state.ChannelEncryptor |> PeerChannelEncryptor.encryptMessage (fun _ -> ()) (msg.ToBytes())
             |> (MsgEncoded >> List.singleton >> Good)
@@ -122,19 +118,18 @@ module Peer =
             { state with ChannelEncryptor = pce; TheirNodeId = Some nodeId }
         | ActThree, ActThreeProcessed(nodeId, pce) ->
             { state with ChannelEncryptor = pce; TheirNodeId = Some nodeId }
-        | NoiseComplete, LengthDecrypted (length, pce) ->
-            { state with ChannelEncryptor = pce; LengthDecoded = Some length }
         | NoiseComplete, ReceivedError (_, pce)
         | NoiseComplete, ReceivedPing (_, pce)
         | NoiseComplete, ReceivedPong (_, pce)
         | NoiseComplete, ReceivedRoutingMsg (_, pce)
         | NoiseComplete, ReceivedChannelMsg (_, pce) ->
-            { state with ChannelEncryptor = pce; LengthDecoded = None }
+            { state with ChannelEncryptor = pce; }
         | NoiseComplete, ReceivedInit (init, pce) ->
             { state with
                 ChannelEncryptor = pce;
-                LengthDecoded = None;
                 TheirGlobalFeatures = Some init.GlobalFeatures;
                 TheirLocalFeatures = Some init.LocalFeatures }
-        | _ ->
-            failwith "unreachable"
+        | NoiseComplete, MsgEncoded(_, pce) ->
+            { state with ChannelEncryptor = pce }
+        | state, e ->
+            failwithf "Unreachable! applied event %A while in state %A" e state
