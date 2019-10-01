@@ -18,8 +18,6 @@ type IActor<'TCommand> =
     /// Use this instead of Put if you want caller to be blocked until the state is updated
     /// Usually this is not needed, when you need is caller is referencing actors state directly
     abstract member PutAndWaitProcess: 'TCommand -> Task
-    /// Same with PutAndWaitProcess. But it will run several commands at once.
-    abstract member BatchPutAndWaitProcess: 'TCommand[] -> Task
     
 /// Simple actor model agent utilizing System.Threading.Channels.
 /// All inputs to this should be given through CommunicationChannel (To ensure only one change will take place at the time.)
@@ -83,11 +81,6 @@ type Actor<'TState, 'TCommand, 'TEvent>(aggregate: Aggregate<'TState, 'TCommand,
             communicationChannel.Writer.WriteAsync(([|(cmd)|], Some(tcs))) |> ignore
             tcs.Task :> Task
             
-        member this.BatchPutAndWaitProcess(cmds: 'TCommand[]) =
-            let tcs = TaskCompletionSource()
-            communicationChannel.Writer.WriteAsync((cmds, Some(tcs))) |> ignore
-            tcs.Task :> Task
-        
         member this.Dispose() =
             disposed <- true
             ()
