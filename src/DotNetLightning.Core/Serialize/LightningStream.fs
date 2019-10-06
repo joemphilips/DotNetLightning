@@ -157,6 +157,18 @@ type LightningWriterStream(inner: Stream) =
         | Some d -> this.WriteWithLen(d)
         | None -> ()
 
+    member this.WriteBigSize(x: uint64) =
+        if x < 0xfdUL then
+            this.Write(uint8 x)
+        else if x < 0x10000UL then
+            this.Write(0xfduy)
+            this.Write(uint16 x, false)
+        else if x < 0x100000000UL then
+            this.Write(0xfeuy)
+            this.Write(uint32 x, false)
+        else
+            this.Write(0xffuy)
+            this.Write(x, false)
 type LightningReaderStream(inner: Stream) =
     inherit LightningStream(inner)
     do if (not inner.CanRead) then invalidArg "inner" "inner stream must be readable"
@@ -204,7 +216,7 @@ type LightningReaderStream(inner: Stream) =
     member this.ReadByte(): byte =
         let b = this.Inner.ReadByte()
         if (b = -1) then
-            raise (EndOfStreamException "Inner Stream for LightningReaderStream has been comsumed")
+            raise (EndOfStreamException "Inner Stream for LightningReaderStream has been consumed")
         else
             (byte b)
 
@@ -328,3 +340,25 @@ type LightningReaderStream(inner: Stream) =
             Green = g
             Blue = b
         }
+        
+    member this.ReadBigSize() =
+        let x = this.ReadUInt8()
+        if x < 0xfduy then
+            uint64 x
+        else if x = 0xfduy then
+            let v = this.ReadUInt16(false) |> uint64
+            if (v < 0xfdUL || 0x10000UL <= v) then
+                raise <| FormatException("decoded varint is not canonical")
+            v
+        else if x = 0xfeuy then
+            let v = this.ReadUInt32(false) |> uint64
+            if (v < 0x10000UL || 0x100000000UL <= v) then
+                raise <| FormatException("decoded varint is not canonical")
+            v
+        else
+            let v = this.ReadUInt64(false)
+            if (v < 0x100000000UL) then
+                raise <| FormatException("decoded varint is not canonical")
+            v
+                
+        

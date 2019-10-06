@@ -109,4 +109,12 @@ let testList2 =
             use lrs = new LightningReaderStream(ms2)
             let actual = ILightningSerializable.deserializeWithFlag (lrs)
             Expect.equal (actual) (msg) ""
+            
+        testPropertyWithConfig config "lightning p2p msg 2" <| fun (msg: ILightningMsg) ->
+            let actualRR = LightningMsg.fromBytes(msg.ToBytes())
+            match actualRR with
+            | Good x -> Expect.equal (msg) x
+            | Bad ex ->
+                failwithf "failed to decode %A" ex
+                
     ]

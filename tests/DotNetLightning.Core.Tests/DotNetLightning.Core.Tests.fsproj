@@ -12,6 +12,7 @@
     <Compile Include="Generators/Msgs.fs" />
     <Compile Include="Generators/Generators.fs" />
     <Compile Include="Serialization.fs" />
+    <Compile Include="TLVSerialize.fs" />
     <Compile Include="SerializationPropertyTests.fs" />
     <Compile Include="FunctionalTests.fs" />
     <Compile Include="SphinxTests.fs" />
@@ -24,6 +25,7 @@
     <Compile Include="KeyRepositoryTests.fs" />
     <Compile Include="Main.fs" />
     <Content Include="Data\bolt3-tx.json" />
+    <Content Include="Data\bolt1-bigsize.json" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Expecto" Version="8.*" />

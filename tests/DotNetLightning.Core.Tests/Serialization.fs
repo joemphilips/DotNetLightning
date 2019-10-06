@@ -1,15 +1,10 @@
 module Serialization
+
 open DotNetLightning.Utils
-open DotNetLightning.Utils.Primitives
-open DotNetLightning.Serialize
 open DotNetLightning.Serialize.Msgs
 
 open Expecto
 open NBitcoin
-open NBitcoin.Crypto
-open DotNetLightning.Utils
-open DotNetLightning.Utils.NBitcoinExtensions
-open System.Net
 open System
 
 module SerializationTest =
