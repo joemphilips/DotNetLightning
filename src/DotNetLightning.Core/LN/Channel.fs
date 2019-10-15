@@ -534,7 +534,7 @@ module Channel =
         // --------------- open channel procedure: case we are funder -------------
         | WaitForInitInternal, CreateOutbound inputInitFunder ->
             let openChannelMsgToSend = {
-                OpenChannel.Chainhash = cs.Network.Consensus.HashGenesisBlock
+                OpenChannel.Chainhash = cs.Network.GenesisHashRev
                 TemporaryChannelId = inputInitFunder.TemporaryChannelId
                 FundingSatoshis = inputInitFunder.FundingSatoshis
                 PushMSat = inputInitFunder.PushMSat
@@ -763,7 +763,7 @@ module Channel =
             if (state.HaveWeSentFundingLocked) then
                 let initialChannelUpdate =
                     let feeBase = Helpers.getOurFeeBaseMSat cs.FeeEstimator state.InitialFeeRatePerKw state.Commitments.LocalParams.IsFunder
-                    Helpers.makeChannelUpdate (cs.Network.GenesisHash,
+                    Helpers.makeChannelUpdate (cs.Network.GenesisHashRev,
                                                cs.LocalNodeSecret,
                                                cs.RemoteNodeId,
                                                state.ShortChannelId,
@@ -1108,7 +1108,7 @@ module Channel =
             { c with State = WaitForFundingConfirmed({ s with Deferred = Some(msg) }) }
         | TheySentFundingLocked msg, WaitForFundingLocked s ->
             let feeBase = Helpers.getOurFeeBaseMSat c.FeeEstimator s.InitialFeeRatePerKw s.Commitments.LocalParams.IsFunder
-            let channelUpdate = Helpers.makeChannelUpdate (c.Network.GenesisHash,
+            let channelUpdate = Helpers.makeChannelUpdate (c.Network.GenesisHashRev,
                                                            c.LocalNodeSecret,
                                                            c.RemoteNodeId,
                                                            s.ShortChannelId,
