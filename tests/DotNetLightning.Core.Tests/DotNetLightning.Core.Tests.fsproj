@@ -3,9 +3,12 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <RootNamespace>DotNetLightning.Tests</RootNamespace>
+    <GenerateProgramFile>false</GenerateProgramFile>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Content Include="Data\bolt3-tx.json" />
+    <Content Include="Data\bolt1-bigsize.json" />
     <Compile Include="Utils/Utils.fs" />
     <Compile Include="Utils/FromRustLightning.fs" />
     <Compile Include="Generators/Primitives.fs" />
@@ -24,8 +27,6 @@
     <Compile Include="ChannelCoreTests.fs" />
     <Compile Include="KeyRepositoryTests.fs" />
     <Compile Include="Main.fs" />
-    <Content Include="Data\bolt3-tx.json" />
-    <Content Include="Data\bolt1-bigsize.json" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Expecto" Version="8.*" />
