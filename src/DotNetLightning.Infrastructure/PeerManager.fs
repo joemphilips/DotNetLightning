@@ -313,7 +313,7 @@ type PeerManager(eventAggregator: IEventAggregator,
                 do! (this.KnownPeers.[peerId] :> IActor<_>).PutAndWaitProcess(ProcessActThree(actThree))
             | true, peer when peer.State.ChannelEncryptor.GetNoiseStep() = NoiseComplete ->
                 let! l = pipe.Input.ReadExactAsync(18)
-                let reader = fun l -> (pipe.Input.ReadExactAsync (l)).Result
+                let reader = fun l -> (pipe.Input.ReadExactAsync (l)).GetAwaiter().GetResult()
                 do! (this.KnownPeers.[peerId] :> IActor<_>).PutAndWaitProcess(DecodeCipherPacket (l, reader))
             | _ -> return failwith "unreachable"
         }

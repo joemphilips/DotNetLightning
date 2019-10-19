@@ -13,8 +13,6 @@ type IActor<'TCommand> =
     abstract member StartAsync: unit -> Task
     /// Put specific item on processing queue
     abstract member Put: 'TCommand -> Task
-    /// Same with Put, but it will run several commands at once.
-    abstract member BatchPut: 'TCommand[] -> Task
     /// Use this instead of Put if you want caller to be blocked until the state is updated
     /// Usually this is not needed, when you need is caller is referencing actors state directly
     abstract member PutAndWaitProcess: 'TCommand -> Task
@@ -30,7 +28,7 @@ type Actor<'TState, 'TCommand, 'TEvent>(aggregate: Aggregate<'TState, 'TCommand,
         let options = BoundedChannelOptions(capacity)
         options.SingleReader <- true
         options.SingleWriter <- false
-        System.Threading.Channels.Channel.CreateBounded<'TCommand[] * TaskCompletionSource<unit> option>(options)
+        System.Threading.Channels.Channel.CreateBounded<'TCommand * TaskCompletionSource<unit> option>(options)
         
         
         
@@ -45,23 +43,22 @@ type Actor<'TState, 'TCommand, 'TEvent>(aggregate: Aggregate<'TState, 'TCommand,
                 nonFinished <- cont
                 if nonFinished && (not disposed) then
                     match (communicationChannel.Reader.TryRead()) with
-                    | true, (cmds, maybeTcs)->
-                        let msg = sprintf "read cmd '%A from communication channel" (cmds)
+                    | true, (cmd, maybeTcs)->
+                        let msg = sprintf "read cmd '%A from communication channel" (cmd)
                         log.LogTrace(msg)
-                        for cmd in cmds do
-                            match aggregate.ExecuteCommand this.State cmd with
-                            | Good events ->
-                                let msg = sprintf "Successfully executed command (%A) and got events %A" cmd events
-                                log.LogTrace(msg)
-                                this.State <- events |> List.fold aggregate.ApplyEvent this.State
-                                maybeTcs |> Option.iter(fun tcs -> tcs.SetResult())
-                                for e in events do
-                                    do! this.PublishEvent e
-                            | Bad ex ->
-                                let ex = ex.Flatten()
-                                log.LogTrace(sprintf "failed to execute command and got error %A" ex)
-                                ex |> Array.map (this.HandleError) |> ignore
-                                maybeTcs |> Option.iter(fun tcs -> tcs.SetException(exn(sprintf "%A" ex)))
+                        match aggregate.ExecuteCommand this.State cmd with
+                        | Good events ->
+                            let msg = sprintf "Successfully executed command (%A) and got events %A" cmd events
+                            log.LogTrace(msg)
+                            this.State <- events |> List.fold aggregate.ApplyEvent this.State
+                            maybeTcs |> Option.iter(fun tcs -> tcs.SetResult())
+                            for e in events do
+                                do! this.PublishEvent e
+                        | Bad ex ->
+                            let ex = ex.Flatten()
+                            log.LogTrace(sprintf "failed to execute command and got error %A" ex)
+                            ex |> Array.map (this.HandleError) |> ignore
+                            maybeTcs |> Option.iter(fun tcs -> tcs.SetException(exn(sprintf "%A" ex)))
                     | false, _ ->
                         ()
             log.LogInformation "disposing actor"
@@ -69,16 +66,12 @@ type Actor<'TState, 'TCommand, 'TEvent>(aggregate: Aggregate<'TState, 'TCommand,
         }
         
         member this.Put(cmd: 'TCommand) = unitTask {
-                do! communicationChannel.Writer.WriteAsync(([|(cmd)|], None))
-            }
-        
-        member this.BatchPut(cmd: 'TCommand[]) = unitTask {
                 do! communicationChannel.Writer.WriteAsync((cmd, None))
             }
         
         member this.PutAndWaitProcess(cmd: 'TCommand) =
             let tcs = TaskCompletionSource()
-            communicationChannel.Writer.WriteAsync(([|(cmd)|], Some(tcs))) |> ignore
+            communicationChannel.Writer.WriteAsync((cmd, Some(tcs))) |> ignore
             tcs.Task :> Task
             
         member this.Dispose() =
