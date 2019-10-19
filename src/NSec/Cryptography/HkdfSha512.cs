@@ -7,9 +7,9 @@ using static Interop.Libsodium;
 namespace NSec.Cryptography
 {
     //
-    //  HKDF-SHA-256
+    //  HKDF-SHA-512
     //
-    //      HMAC-based Key Derivation Function (HKDF) using HMAC-SHA-256
+    //      HMAC-based Key Derivation Function (HKDF) using HMAC-SHA-512
     //
     //  References:
     //
@@ -21,9 +21,9 @@ namespace NSec.Cryptography
     //
     //  Parameters
     //
-    //      Pseudorandom Key Size - The first stage of HKDF-SHA-256 takes the
+    //      Pseudorandom Key Size - The first stage of HKDF-SHA-512 takes the
     //          input keying material and extracts from it a pseudorandom key
-    //          of HashLen=32 bytes. The second stage expands a pseudorandom
+    //          of HashLen=64 bytes. The second stage expands a pseudorandom
     //          key of _at least_ HashLen bytes to the desired length.
     //
     //      Salt Size - HKDF is defined to operate with and without random salt.
@@ -33,15 +33,15 @@ namespace NSec.Cryptography
     //      Shared Info Size - Any.
     //
     //      Output Size - The length of the output key material must be less
-    //          than or equal to 255*HashLen=8160 bytes.
+    //          than or equal to 255*HashLen=16320 bytes.
     //
-    public sealed class HkdfSha256 : KeyDerivationAlgorithm
+    public sealed class HkdfSha512 : KeyDerivationAlgorithm
     {
         private static int s_selfTest;
 
-        public HkdfSha256() : base(
+        public HkdfSha512() : base(
             supportsSalt: true,
-            maxCount: byte.MaxValue * crypto_auth_hmacsha256_BYTES)
+            maxCount: byte.MaxValue * crypto_auth_hmacsha512_BYTES)
         {
             if (s_selfTest == 0)
             {
@@ -50,15 +50,15 @@ namespace NSec.Cryptography
             }
         }
 
-        internal /*public*/ int PseudorandomKeySize => crypto_auth_hmacsha256_BYTES;
+        internal /*public*/ int PseudorandomKeySize => crypto_auth_hmacsha512_BYTES;
 
         internal /*public*/ byte[] Expand(
             ReadOnlySpan<byte> pseudorandomKey,
             ReadOnlySpan<byte> info,
             int count)
         {
-            if (pseudorandomKey.Length < crypto_auth_hmacsha256_BYTES)
-                throw Error.Argument_InvalidPrkLength(nameof(pseudorandomKey), crypto_auth_hmacsha256_BYTES);
+            if (pseudorandomKey.Length < crypto_auth_hmacsha512_BYTES)
+                throw Error.Argument_InvalidPrkLength(nameof(pseudorandomKey), crypto_auth_hmacsha512_BYTES);
             if (count < 0)
                 throw Error.ArgumentOutOfRange_DeriveNegativeCount(nameof(count));
             if (count > MaxCount)
@@ -74,8 +74,8 @@ namespace NSec.Cryptography
             ReadOnlySpan<byte> info,
             Span<byte> bytes)
         {
-            if (pseudorandomKey.Length < crypto_auth_hmacsha256_BYTES)
-                throw Error.Argument_InvalidPrkLength(nameof(pseudorandomKey), crypto_auth_hmacsha256_BYTES);
+            if (pseudorandomKey.Length < crypto_auth_hmacsha512_BYTES)
+                throw Error.Argument_InvalidPrkLength(nameof(pseudorandomKey), crypto_auth_hmacsha512_BYTES);
             if (bytes.Length > MaxCount)
                 throw Error.Argument_DeriveInvalidCount(nameof(bytes), MaxCount);
             if (bytes.Overlaps(pseudorandomKey))
@@ -93,7 +93,7 @@ namespace NSec.Cryptography
             if (sharedSecret == null)
                 throw Error.ArgumentNull_SharedSecret(nameof(sharedSecret));
 
-            byte[] pseudorandomKey = new byte[crypto_auth_hmacsha256_BYTES];
+            byte[] pseudorandomKey = new byte[crypto_auth_hmacsha512_BYTES];
             ExtractCore(sharedSecret.Span, salt, pseudorandomKey);
             return pseudorandomKey;
         }
@@ -105,8 +105,8 @@ namespace NSec.Cryptography
         {
             if (sharedSecret == null)
                 throw Error.ArgumentNull_SharedSecret(nameof(sharedSecret));
-            if (pseudorandomKey.Length != crypto_auth_hmacsha256_BYTES)
-                throw Error.Argument_InvalidPrkLengthExact(nameof(pseudorandomKey), crypto_auth_hmacsha256_BYTES);
+            if (pseudorandomKey.Length != crypto_auth_hmacsha512_BYTES)
+                throw Error.Argument_InvalidPrkLengthExact(nameof(pseudorandomKey), crypto_auth_hmacsha512_BYTES);
 
             ExtractCore(sharedSecret.Span, salt, pseudorandomKey);
         }
@@ -117,9 +117,9 @@ namespace NSec.Cryptography
             ReadOnlySpan<byte> info,
             Span<byte> bytes)
         {
-            Debug.Assert(bytes.Length <= byte.MaxValue * crypto_auth_hmacsha256_BYTES);
+            Debug.Assert(bytes.Length <= byte.MaxValue * crypto_auth_hmacsha512_BYTES);
 
-            Span<byte> pseudorandomKey = stackalloc byte[crypto_auth_hmacsha256_BYTES];
+            Span<byte> pseudorandomKey = stackalloc byte[crypto_auth_hmacsha512_BYTES];
             try
             {
                 ExtractCore(inputKeyingMaterial, salt, pseudorandomKey);
@@ -137,10 +137,10 @@ namespace NSec.Cryptography
             ReadOnlySpan<byte> info,
             Span<byte> bytes)
         {
-            Debug.Assert(pseudorandomKey.Length >= crypto_auth_hmacsha256_BYTES);
-            Debug.Assert(bytes.Length <= byte.MaxValue * crypto_auth_hmacsha256_BYTES);
+            Debug.Assert(pseudorandomKey.Length >= crypto_auth_hmacsha512_BYTES);
+            Debug.Assert(bytes.Length <= byte.MaxValue * crypto_auth_hmacsha512_BYTES);
 
-            byte* temp = stackalloc byte[crypto_auth_hmacsha256_BYTES];
+            byte* temp = stackalloc byte[crypto_auth_hmacsha512_BYTES];
 
             try
             {
@@ -157,18 +157,18 @@ namespace NSec.Cryptography
                     {
                         counter++;
 
-                        crypto_auth_hmacsha256_state state;
-                        crypto_auth_hmacsha256_init(&state, key, (UIntPtr)pseudorandomKey.Length);
-                        crypto_auth_hmacsha256_update(&state, temp, (ulong)tempLength);
-                        crypto_auth_hmacsha256_update(&state, @in, (ulong)info.Length);
-                        crypto_auth_hmacsha256_update(&state, &counter, sizeof(byte));
-                        crypto_auth_hmacsha256_final(&state, temp);
+                        crypto_auth_hmacsha512_state state;
+                        crypto_auth_hmacsha512_init(&state, key, (UIntPtr)pseudorandomKey.Length);
+                        crypto_auth_hmacsha512_update(&state, temp, (ulong)tempLength);
+                        crypto_auth_hmacsha512_update(&state, @in, (ulong)info.Length);
+                        crypto_auth_hmacsha512_update(&state, &counter, sizeof(byte));
+                        crypto_auth_hmacsha512_final(&state, temp);
 
-                        tempLength = crypto_auth_hmacsha256_BYTES;
+                        tempLength = crypto_auth_hmacsha512_BYTES;
 
-                        if (chunkSize > crypto_auth_hmacsha256_BYTES)
+                        if (chunkSize > crypto_auth_hmacsha512_BYTES)
                         {
-                            chunkSize = crypto_auth_hmacsha256_BYTES;
+                            chunkSize = crypto_auth_hmacsha512_BYTES;
                         }
 
                         Unsafe.CopyBlockUnaligned(@out + offset, temp, (uint)chunkSize);
@@ -178,7 +178,7 @@ namespace NSec.Cryptography
             }
             finally
             {
-                Unsafe.InitBlockUnaligned(temp, 0, crypto_auth_hmacsha256_BYTES);
+                Unsafe.InitBlockUnaligned(temp, 0, crypto_auth_hmacsha512_BYTES);
             }
         }
 
@@ -187,28 +187,27 @@ namespace NSec.Cryptography
             ReadOnlySpan<byte> salt,
             Span<byte> pseudorandomKey)
         {
-            Debug.Assert(pseudorandomKey.Length == crypto_auth_hmacsha256_BYTES);
+            Debug.Assert(pseudorandomKey.Length == crypto_auth_hmacsha512_BYTES);
 
             // According to RFC 5869, the salt must be set to a string of
             // HashLen zeros if not provided. A ReadOnlySpan<byte> cannot be
-            // "not provided" and an empty span seems to yield the same result
-            // as a string of HashLen zeros, so the corner case is ignored here.
+            // "not provided", so this is not implemented.
 
             fixed (byte* key = salt)
             fixed (byte* @in = inputKeyingMaterial)
             fixed (byte* @out = pseudorandomKey)
             {
-                crypto_auth_hmacsha256_state state;
-                crypto_auth_hmacsha256_init(&state, key, (UIntPtr)salt.Length);
-                crypto_auth_hmacsha256_update(&state, @in, (ulong)inputKeyingMaterial.Length);
-                crypto_auth_hmacsha256_final(&state, @out);
+                crypto_auth_hmacsha512_state state;
+                crypto_auth_hmacsha512_init(&state, key, (UIntPtr)salt.Length);
+                crypto_auth_hmacsha512_update(&state, @in, (ulong)inputKeyingMaterial.Length);
+                crypto_auth_hmacsha512_final(&state, @out);
             }
         }
 
         private static void SelfTest()
         {
-            if ((crypto_auth_hmacsha256_bytes() != (UIntPtr)crypto_auth_hmacsha256_BYTES) ||
-                (crypto_auth_hmacsha256_statebytes() != (UIntPtr)Unsafe.SizeOf<crypto_auth_hmacsha256_state>()))
+            if ((crypto_auth_hmacsha512_bytes() != (UIntPtr)crypto_auth_hmacsha512_BYTES) ||
+                (crypto_auth_hmacsha512_statebytes() != (UIntPtr)Unsafe.SizeOf<crypto_auth_hmacsha512_state>()))
             {
                 throw Error.InvalidOperation_InitializationFailed();
             }

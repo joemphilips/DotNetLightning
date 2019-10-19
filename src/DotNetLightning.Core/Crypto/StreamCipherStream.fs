@@ -1,7 +1,7 @@
 namespace DotNetLightning.Crypto
 
 open System.IO
-open NSec.Cryptography
+open NSec.Experimental
 
 type StreamCipherStream(inner: Stream) =
     inherit System.IO.Stream()
