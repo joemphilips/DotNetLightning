@@ -15,8 +15,8 @@ module internal CryptoUtils =
         let nonceBytes = ReadOnlySpan(Array.concat[| Array.zeroCreate 4; BitConverter.GetBytes(n) |]) // little endian
         NSec.Cryptography.Nonce(nonceBytes, 0)
 
-    let chacha20AD = NSec.Cryptography.ChaCha20Poly1305.ChaCha20Poly1305
-    let chacha20 = NSec.Cryptography.ChaCha20.ChaCha20
+    let chacha20AD = NSec.Cryptography.AeadAlgorithm.ChaCha20Poly1305
+    let chacha20 = NSec.Experimental.StreamCipherAlgorithm.ChaCha20
 
     let internal decryptWithAD(n: uint64, key: uint256, ad: byte[], cipherText: ReadOnlySpan<byte>): RResult<byte[]> =
         let nonce = getNonce n
@@ -26,7 +26,7 @@ module internal CryptoUtils =
         let chachaKey = NSec.Cryptography.Key.Import(chacha20AD, keySpan, blobF)
         match chacha20AD.Decrypt(chachaKey, &nonce, adSpan, cipherText) with
         | true, plainText -> Good plainText
-        | false, _ -> RResult.rmsg "Failed to decyrpt with AD. Bad Mac"
+        | false, _ -> RResult.rmsg "Failed to decrypt with AD. Bad Mac"
 
     /// This is used for filler generation in onion routing (BOLT 4)
     let internal encryptWithoutAD(n: uint64, key: byte[], plainText: ReadOnlySpan<byte>) =
