@@ -12,7 +12,8 @@ open System.IO
 open Expecto
 open GeneratorsTests
 open NBitcoin
-open Secp256k1Net
+
+let newSecp256k1 = DotNetLightning.Crypto.CryptoUtils.impl.newSecp256k1
 
 // let logger = Log.create "bolt3-transaction tests"
 let logger = TestLogger.Create("bolt3-transaction tests")
@@ -27,12 +28,29 @@ let dataPath1 = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "../../..", ("D
 let data1 = dataPath1 |> File.ReadAllText |> JsonDocument.Parse
 
 let localPerCommitmentPoint = PubKey("025f7117a78150fe2ef97db7cfc83bd57b2e2c0d0dd25eaf467a4a1c2a45ce1486")
-let getLocal() =
-    let ctx = new Secp256k1()
+type LocalConfig = {
+    Ctx: ISecp256k1
+    CommitTxNumber: uint64
+    ToSelfDelay: BlockHeightOffset
+    DustLimit: Money
+    PaymentBasePointSecret: Key
+    PaymentBasePoint: PubKey
+    RevocationBasePointSecret: uint256
+    DelayedPaymentBasePointSecret: Key
+    delayedPaymentBasePoint: PubKey
+    PerCommitmentPoint: PubKey
+    PaymentPrivKey: Key
+    DelayedPaymentPrivKey: Key
+    RevocationPubKey: PubKey
+    FeeRatePerKw: FeeRatePerKw
+    FundingPrivKey: Key
+}
+let getLocal(): LocalConfig =
+    let ctx = newSecp256k1()
     let paymentBasePointSecret = "1111111111111111111111111111111111111111111111111111111111111111" |> hex.DecodeData |> Key
     let paymentBasePoint = paymentBasePointSecret.PubKey
     let delayedPaymentBasePointSecret = "3333333333333333333333333333333333333333333333333333333333333333" |> hex.DecodeData |> Key
-    {|
+    {
       Ctx = ctx
       CommitTxNumber = 42UL
       ToSelfDelay = 144us |> BlockHeightOffset
@@ -48,15 +66,28 @@ let getLocal() =
       DelayedPaymentPrivKey = Generators.derivePrivKey(ctx) (delayedPaymentBasePointSecret) (localPerCommitmentPoint)
       RevocationPubKey = PubKey("0212a140cd0c6539d07cd08dfe09984dec3251ea808b892efeac3ede9402bf2b19")
       FeeRatePerKw = 15000u |> FeeRatePerKw
-    |}
+    }
 
-let getRemote() =
-    let ctx = new Secp256k1()
+type RemoteConfig = {
+    Ctx: ISecp256k1
+    CommitTxNumber: uint64
+    ToSelfDelay: BlockHeightOffset
+    DustLimit: Money
+    PaymentBasePointSecret: Key
+    PaymentBasePoint: PubKey
+    RevocationBasePointSecret: Key
+    RevocationBasePoint: PubKey
+    FundingPrivKey: Key
+    PaymentPrivKey: Key
+    PerCommitmentPoint: PubKey
+}
+let getRemote(): RemoteConfig =
+    let ctx = newSecp256k1()
     let paymentBasePointSecret = "4444444444444444444444444444444444444444444444444444444444444444" |> hex.DecodeData |> Key
     let paymentBasePoint = paymentBasePointSecret.PubKey
     let revocationBasePointSecret = "2222222222222222222222222222222222222222222222222222222222222222" |> hex.DecodeData |> Key
     let revocationBasePoint = revocationBasePointSecret.PubKey
-    {|
+    {
       Ctx = ctx
       CommitTxNumber = 42UL
       ToSelfDelay = 144us |> BlockHeightOffset
@@ -68,7 +99,7 @@ let getRemote() =
       FundingPrivKey = "1552dfba4f6cf29a62a0af13c8d6981d36d0ef8d61ba10fb0fe90da7634d7e13" |> hex.DecodeData |> Key
       PaymentPrivKey = Generators.derivePrivKey (ctx) (paymentBasePointSecret) localPerCommitmentPoint
       PerCommitmentPoint = "022c76692fd70814a8d1ed9dedc833318afaaed8188db4d14727e2e99bc619d325" |> PubKey
-    |}
+    }
     
 let n = Network.RegTest
 let coinbaseTx = Transaction.Parse("01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff03510101ffffffff0100f2052a010000001976a9143ca33c2e4446f4a305f23c80df8ad1afdcf652f988ac00000000", n)

@@ -26,6 +26,7 @@
     <Compile Include="PeerChannelEncryptorTests.fs" />
     <Compile Include="ChannelCoreTests.fs" />
     <Compile Include="KeyRepositoryTests.fs" />
+    <Compile Include="EncryptDecrypt.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
   <ItemGroup>
@@ -38,7 +39,10 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\DotNetLightning.Core\DotNetLightning.Core.fsproj" />
-    <ProjectReference Include="..\..\src\Secp256k1.Net\Secp256k1.Net.csproj" />
+    <ProjectReference
+      Condition="'$(BouncyCastle)'=='' OR '$(BouncyCastle)'=='false'"
+      Include="..\..\src\Secp256k1.Net\Secp256k1.Net.csproj"
+    />
   </ItemGroup>
   <Import Project="..\..\fsc.props" />
   <Import Project="..\..\netfx.props" />

@@ -5,38 +5,49 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v1
-    - name: Install wget
-      run: sudo apt install -y wget
-    - name: install .Net Core 2.1
+    - name: Install wget and configure Microsoft apt repository
       run: |
+        sudo apt install -y wget apt-transport-https
         wget -q https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
         sudo dpkg -i packages-microsoft-prod.deb
         sudo add-apt-repository universe
-        sudo apt install apt-transport-https
         sudo apt update
+    - name: install .Net Core 2.1
+      run: |
         sudo apt install dotnet-sdk-2.1
+    - name: Nuke NSec and Secp256k1.Net from source tree to make sure we don't depend on them
+      run: rm -rf src/NSec src/Secp256k1.Net
+    - name: Run tests (BouncyCastle)
+      run: |
+        dotnet test tests/DotNetLightning.Core.Tests -p:BouncyCastle=True
+    - name: Package (BouncyCastle)
+      run: |
+        dotnet pack src/DotNetLightning.Core -p:Configuration=Release -p:Version=1.1.0-date`date +%Y%m%d-%H%M`.git-`echo $GITHUB_SHA | cut -c 1-7` -p:BouncyCastle=True
+    - name: Upload nuget (BouncyCastle)
+      run: |
+        cd $GITHUB_WORKSPACE/src/DotNetLightning.Core
+        if [ ${{ secrets.NUGET_API_KEY }} ] && [ $GITHUB_REF == "refs/heads/master" ]; then
+            dotnet nuget push ./bin/Release/DotNetLightning*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
+        fi
+    - name: install .Net Core 3.0
+      run: |
+        sudo apt install dotnet-sdk-3.0
     - name: Fetch requisite libraries
       run: |
         cd $GITHUB_WORKSPACE/src/DotNetLightning.Core
         dotnet add package -v 0.0.5-joemphilips -s "https://www.myget.org/F/joemphilips/api/v3/index.json" Secp256k1.Native
+    - name: Restore NSec and Secp256k1.Net
+      run: git checkout src/NSec src/Secp256k1.Net
+    - name: Clean to prepare for NSec build
+      run: |
+        dotnet clean
+    - name: Run tests
+      run: |
+        dotnet test
     - name: Package
       run: |
         cd $GITHUB_WORKSPACE/src/DotNetLightning.Core
         dotnet pack -p:Configuration=Release -p:Version=1.1.0-date`date +%Y%m%d-%H%M`.git-`echo $GITHUB_SHA | cut -c 1-7`
-    - name: install .Net Core 3.0
-      run: |
-        wget -q https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-        sudo dpkg -i packages-microsoft-prod.deb
-        sudo add-apt-repository universe
-        sudo apt install apt-transport-https
-        sudo apt update
-        sudo apt install dotnet-sdk-3.0
-    - name: Build whole solution
-      run: |
-        dotnet build -p:Configuration=Release
-    - name: Run tests
-      run: |
-        dotnet test
     - name: Upload nuget
       run: |
         cd $GITHUB_WORKSPACE/src/DotNetLightning.Core

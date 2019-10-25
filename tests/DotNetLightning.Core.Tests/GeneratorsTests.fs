@@ -3,7 +3,8 @@ module GeneratorsTests
 open Expecto
 open NBitcoin
 open DotNetLightning.Crypto.Generators
-open Secp256k1Net
+
+let newSecp256k1 = DotNetLightning.Crypto.CryptoUtils.impl.newSecp256k1
 
 let hex = DataEncoders.HexEncoder()
 let baseSecret =
@@ -28,7 +29,7 @@ let perCommitmentPoint =
 let tests =
     testList "key generator tests" [
         testCase "derivation key from basepoint and per-commitment-point" <| fun _ ->
-            use ctx = new Secp256k1()
+            use ctx = newSecp256k1()
             let localkey = derivePubKey ctx (basePoint) (perCommitmentPoint) 
             let expected =
                 "0235f2dbfaa89b57ec7b055afe29849ef7ddfeb1cefdb9ebdc43f5494984db29e5"
@@ -36,7 +37,7 @@ let tests =
             Expect.equal (localkey.ToBytes()) (expected.ToBytes()) ""
 
         testCase "derivation of secret key from basepoint secret and per-commitment-secret" <| fun _ ->
-            use ctx = new Secp256k1()
+            use ctx = newSecp256k1()
             let localPrivkey = derivePrivKey ctx (baseSecret) (perCommitmentPoint)
             let expected =
                 "cbced912d3b21bf196a766651e436aff192362621ce317704ea2f75d87e7be0f"
@@ -44,7 +45,7 @@ let tests =
             Expect.equal (localPrivkey.ToBytes()) (expected) ""
 
         testCase "derivation of revocation key from basepoint and per_commitment_point" <| fun _ ->
-            use ctx = new Secp256k1()
+            use ctx = newSecp256k1()
             let revocationKey = revocationPubKey ctx (basePoint) (perCommitmentPoint)
             let expected =
                 "02916e326636d19c33f13e8c0c3a03dd157f332f3e99c317c141dd865eb01f8ff0"
@@ -52,7 +53,7 @@ let tests =
             Expect.equal (revocationKey.ToBytes()) expected ""
 
         testCase "derivation of revocation secret from basepoint-secret and per-commitment-secret" <| fun _ ->
-            use ctx = new Secp256k1()
+            use ctx = newSecp256k1()
             let actual = revocationPrivKey ctx (baseSecret) (perCommitmentSecret)
             let expected =
                 "d09ffff62ddb2297ab000cc85bcb4283fdeb6aa052affbc9dddcf33b61078110"

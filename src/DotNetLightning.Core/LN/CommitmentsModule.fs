@@ -1,7 +1,6 @@
 namespace DotNetLightning.LN
 
 open NBitcoin
-open Secp256k1Net
 open DotNetLightning.Utils
 open DotNetLightning.Transactions
 open DotNetLightning.Crypto
@@ -20,7 +19,7 @@ module internal Commitments =
                                     | _ -> false)
 
         let makeRemoteTxs
-            (ctx: Secp256k1)
+            (ctx: ISecp256k1)
             (channelKeys: ChannelKeys)
             (commitTxNumber: uint64)
             (localParams: LocalParams)
@@ -62,7 +61,7 @@ module internal Commitments =
                 (commitTx, htlcTimeoutTxs, htlcSuccessTxs)
 
         let makeLocalTXs
-            (ctx: Secp256k1)
+            (ctx: ISecp256k1)
             (channelKeys: ChannelPubKeys)
             (commitTxNumber: uint64)
             (localParams: LocalParams)
@@ -283,7 +282,7 @@ module internal Commitments =
                         [ WeAcceptedUpdateFee msg ]
                         |> Good
 
-    let sendCommit (ctx: Secp256k1) (keyRepo: IKeysRepository) (n: Network) (cm: Commitments) =
+    let sendCommit (ctx: ISecp256k1) (keyRepo: IKeysRepository) (n: Network) (cm: Commitments) =
         match cm.RemoteNextCommitInfo with
         | Choice2Of2 remoteNextPerCommitmentPoint ->
             // remote commitment will include all local changes + remote acked changes

@@ -159,7 +159,7 @@ type DefaultKeyRepository(seed: uint256) =
             | None -> failwithf "Failed to get signature for %A. by pubkey(%A). This should never happen" psbt pubkey
 
         member this.GenerateKeyFromBasePointAndSign(psbt, pubkey, basePoint) =
-            use ctx = new Secp256k1Net.Secp256k1()
+            use ctx = CryptoUtils.impl.newSecp256k1()
             let basepointSecret: Key = this.BasepointToSecretMap.TryGet pubkey
             let priv2 = Generators.derivePrivKey ctx (basepointSecret)  basePoint 
             psbt.SignWithKeys(priv2) |> ignore
