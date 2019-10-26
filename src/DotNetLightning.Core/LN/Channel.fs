@@ -9,7 +9,6 @@ open DotNetLightning.Transactions
 open DotNetLightning.Serialize.Msgs
 open NBitcoin
 open System
-open Secp256k1Net
 
 
 type ProvideFundingTx = IDestination * Money * FeeRatePerKw -> RResult<FinalizedTx * TxOutIndex> 
@@ -24,12 +23,12 @@ type Channel = {
     LocalNodeSecret: Key
     State: ChannelState
     Network: Network
-    Secp256k1Context: Secp256k1
+    Secp256k1Context: ISecp256k1
  }
         with
         static member Create(config, logger, chainListener, keysRepo, feeEstimator, localNodeSecret, fundingTxProvider, n, remoteNodeId) =
             {
-                Secp256k1Context = new Secp256k1()
+                Secp256k1Context = CryptoUtils.impl.newSecp256k1()
                 Config = config
                 ChainListener = chainListener
                 KeysRepository = keysRepo

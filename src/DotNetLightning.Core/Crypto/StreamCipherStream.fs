@@ -1,12 +1,10 @@
 namespace DotNetLightning.Crypto
 
 open System.IO
-open NSec.Experimental
 
 type StreamCipherStream(inner: Stream) =
     inherit System.IO.Stream()
     let _inner = inner
-    let _streamcipehr = ChaCha20()
 
     override this.CanSeek = _inner.CanSeek
     override this.CanRead = _inner.CanRead

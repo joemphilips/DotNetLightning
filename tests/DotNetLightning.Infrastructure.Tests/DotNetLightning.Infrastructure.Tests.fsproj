@@ -31,6 +31,9 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\DotNetLightning.Infrastructure\DotNetLightning.Infrastructure.fsproj" />
     <ProjectReference Include="..\..\src\EventAggregator\EventAggregator.fsproj" />
-    <ProjectReference Include="..\..\src\NSec.Cryptography\NSec.Cryptography.csproj" />
+    <ProjectReference
+      Condition="'$(BouncyCastle)'!='true'"
+      Include="..\..\src\NSec.Cryptography\NSec.Cryptography.csproj"
+    />
   </ItemGroup>
 </Project>
