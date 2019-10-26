@@ -4,7 +4,7 @@
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
   <Choose>
-    <When Condition="'$(BouncyCastle)'!='' AND '$(BouncyCastle)'!='false'">
+    <When Condition="'$(BouncyCastle)'=='true'">
       <PropertyGroup>
         <OtherFlags>$(OtherFlags) --warnon:1182 -d:BouncyCastle</OtherFlags>
         <PackageId>DotNetLightning</PackageId>
@@ -19,12 +19,12 @@
   </Choose>
   <ItemGroup>
     <ProjectReference
-      Condition="'$(BouncyCastle)'=='' OR '$(BouncyCastle)'=='false'"
+      Condition="'$(BouncyCastle)'!='true'"
       Include="..\Secp256k1.Net\Secp256k1.Net.csproj"
       PrivateAssets="all"
     />
     <ProjectReference
-      Condition="'$(BouncyCastle)'=='' OR '$(BouncyCastle)'=='false'"
+      Condition="'$(BouncyCastle)'!='true'"
       Include="..\NSec\Experimental\NSec.Experimental.csproj"
     />
   </ItemGroup>
@@ -71,7 +71,7 @@
     <PackageReference Include="FSharp.Core" Version="4.5.4" />
     <PackageReference Include="NBitcoin" Version="4.2.7" />
     <PackageReference
-      Condition="'$(BouncyCastle)'!='' AND '$(BouncyCastle)'!='false'"
+      Condition="'$(BouncyCastle)'=='true'"
       Include="Portable.BouncyCastle"
       Version="1.8.5"
     />

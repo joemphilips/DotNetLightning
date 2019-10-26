@@ -32,7 +32,7 @@
     <ProjectReference Include="..\..\src\DotNetLightning.Infrastructure\DotNetLightning.Infrastructure.fsproj" />
     <ProjectReference Include="..\..\src\EventAggregator\EventAggregator.fsproj" />
     <ProjectReference
-      Condition="'$(BouncyCastle)'=='' OR '$(BouncyCastle)'=='false'"
+      Condition="'$(BouncyCastle)'!='true'"
       Include="..\..\src\NSec.Cryptography\NSec.Cryptography.csproj"
     />
   </ItemGroup>

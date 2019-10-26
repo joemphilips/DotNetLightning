@@ -26,4 +26,11 @@ let tests =
     let cryptoImpl = CryptoUtils.impl
     let encrypt = testCase "encrypt" <| fun _ -> encryptTest cryptoImpl
     let decrypt = testCase "decrypt" <| fun _ -> decryptTest cryptoImpl
-    testList "BOLT-08 tests" [ encrypt; decrypt ]
+    let encryptComposedDecryptIsId = testProperty "decrypt after encrypt for any plaintext equals the original plaintext" <|
+        fun (nonce: uint64) (shortKey: uint64) (ad: byte[]) (plaintext: byte[]) ->
+            let encrypted = cryptoImpl.encryptWithAD(nonce, NBitcoin.uint256 shortKey, ReadOnlySpan ad, ReadOnlySpan plaintext)
+            let decryption = cryptoImpl.decryptWithAD(nonce, NBitcoin.uint256 shortKey, ad, ReadOnlySpan encrypted)
+            match decryption with
+            | RResult.Good x -> x = plaintext
+            | RResult.Bad _ -> false
+    testList "BOLT-08 tests" [ encrypt; decrypt; encryptComposedDecryptIsId ]

@@ -88,10 +88,10 @@ type internal BouncySecp256k1() =
     let hex = NBitcoin.DataEncoders.HexEncoder()
     let params: Org.BouncyCastle.Asn1.X9.X9ECParameters = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName "secp256k1"
     let ecParams = ECDomainParameters(params.Curve, params.G, params.N, params.H)
-    let bigint (x: byte[]) = Org.BouncyCastle.Math.BigInteger(1, x)
+    let bcBigint (x: byte[]) = Org.BouncyCastle.Math.BigInteger(1, x)
     let tweakKey (op: Op) (tweak: ReadOnlySpan<byte>) (keyToMutate: Span<byte>) =
-        let k = bigint <| keyToMutate.ToArray()
-        let tweakInt = bigint <| tweak.ToArray()
+        let k = bcBigint <| keyToMutate.ToArray()
+        let tweakInt = bcBigint <| tweak.ToArray()
         let tweaked = match op with
                       | Mul -> k.Multiply tweakInt
                       | Add -> k.Add tweakInt
@@ -101,7 +101,7 @@ type internal BouncySecp256k1() =
         member this.Dispose() = ()
     interface ISecp256k1 with
         member this.PublicKeyCreate privKey =
-            let privInt = bigint <| privKey.ToArray()
+            let privInt = bcBigint <| privKey.ToArray()
             true, ecParams.G.Multiply(privInt).GetEncoded true
         member this.PublicKeySerializeCompressed publicKey =
             let p = params.Curve.DecodePoint <| publicKey.ToArray()
@@ -119,7 +119,7 @@ type internal BouncySecp256k1() =
             tweakKey Mul tweak privKeyToMutate
         member this.PublicKeyTweakMultiply (tweak, publicKeyToMutate) =
             let p = params.Curve.DecodePoint <| publicKeyToMutate.ToArray()
-            let tweakInt = bigint <| tweak.ToArray()
+            let tweakInt = bcBigint <| tweak.ToArray()
             let tweaked = p.Multiply tweakInt
             tweaked.Normalize().GetEncoded(true).AsSpan().CopyTo publicKeyToMutate
             true

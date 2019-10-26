@@ -40,7 +40,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\DotNetLightning.Core\DotNetLightning.Core.fsproj" />
     <ProjectReference
-      Condition="'$(BouncyCastle)'=='' OR '$(BouncyCastle)'=='false'"
+      Condition="'$(BouncyCastle)'!='true'"
       Include="..\..\src\Secp256k1.Net\Secp256k1.Net.csproj"
     />
   </ItemGroup>
