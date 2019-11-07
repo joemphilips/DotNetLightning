@@ -30,16 +30,20 @@ type ChannelActor(nodeParams: IOptions<NodeParams>,
     
     override this.HandleError (b: RBad) = unitTask {
             match b with
-            | RBad.Exception(ChannelException(ChannelError.Close(msg))) ->
-                let closeCMD =
-                    let spk = _nodeParams.ShutdownScriptPubKey |> Option.defaultValue (keysRepository.GetShutdownPubKey().WitHash.ScriptPubKey)
-                    ChannelCommand.Close({ CMDClose.ScriptPubKey = Some spk })
-                log.LogError(sprintf "Closing a channel for a node (%A) due to a following error. \n %s" (this.Channel.RemoteNodeId) msg)
-                log.LogError(sprintf "%s" msg)
-                return! (this :> IActor<_>).Put(closeCMD)
-            | RBad.Exception(ChannelException(ChannelError.Ignore(msg))) ->
-                log.LogWarning("Observed a following error in a channel. But ignoring")
-                log.LogWarning(msg)
+            | RBad.Exception(exp) ->
+                match exp with
+                | :? CloseChannelException as closeExp ->
+                    let closeCMD =
+                        let spk = _nodeParams.ShutdownScriptPubKey |> Option.defaultValue (keysRepository.GetShutdownPubKey().WitHash.ScriptPubKey)
+                        ChannelCommand.Close({ CMDClose.ScriptPubKey = Some spk })
+                    log.LogError(sprintf "Closing a channel for a node (%A) due to a following error:" (this.Channel.RemoteNodeId))
+                    log.LogError(sprintf "Exception message: %s" closeExp.Message)
+                    log.LogError(sprintf "Stack: %s" closeExp.StackTrace)
+                    return! (this :> IActor<_>).Put(closeCMD)
+                | IgnoredChannelException msg ->
+                    log.LogWarning("Observed a following error in a channel. But ignoring")
+                    log.LogWarning(msg)
+                | _ -> sprintf "Observed following unexpected error type in a channel %A: %s" b (exp.GetType().Name) |> log.LogError
             | RBad.Object(o) ->
                 match o with
                 | :? APIError as apiError ->

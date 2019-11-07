@@ -42,11 +42,11 @@ type Channel = {
             }
         static member CreateCurried = curry9 (Channel.Create)
 
-type ChannelError =
-    | Ignore of string
-    | Close of string
+type CloseChannelException(msg: string, stackTrace: string) =
+    inherit System.Exception(msg)
+    override this.StackTrace = stackTrace
 
-exception ChannelException of ChannelError
+exception IgnoredChannelException of string
 
 module Channel =
     /// represents the user has than something wrong with this library
@@ -57,14 +57,11 @@ module Channel =
         msg |> APIMisuseError |> RRApiE
 
     /// Represents the error that something user can not control (e.g. peer has sent invalid msg).
-    let private RRChannelE(ex: ChannelError) =
-        RResult.rexn (ChannelException(ex))
-
-    let private RRClose(msg: string) =
-        RRChannelE(ChannelError.Close(msg))
+    let private RRClose (line: string) (msg: string) =
+        RResult.rexn <| CloseChannelException(msg, (__SOURCE_FILE__ + ": " + line))
 
     let private RRIgnore(msg: string) =
-        RRChannelE(ChannelError.Ignore(msg))
+        RResult.rexn <| IgnoredChannelException msg
 
     let private hex = NBitcoin.DataEncoders.HexEncoder()
     let private ascii = System.Text.ASCIIEncoding.ASCII
@@ -80,7 +77,7 @@ module Channel =
 
     let private checkOrClose left predicate right msg =
         if predicate left right then
-            sprintf msg left right |> RRClose
+            sprintf msg left right |> RRClose __LINE__
         else
             Good()
 
@@ -279,25 +276,25 @@ module Channel =
         module private OpenChannelRequest =
             let checkFundingSatoshisLessThanMax (msg: OpenChannel) =
                 if (msg.FundingSatoshis >= ChannelConstants.MAX_FUNDING_SATOSHIS) then
-                    RRClose("Funding value > 2^24")
+                    RRClose __LINE__ ("Funding value > 2^24")
                 else
                     Good()
 
             let checkChannelReserveSatohisLessThanFundingSatoshis (msg: OpenChannel) =
                 if (msg.ChannelReserveSatoshis > msg.FundingSatoshis) then
-                    RRClose("Bogus channel_reserve_satoshis. Must be bigger than funding_satoshis")
+                    RRClose __LINE__ ("Bogus channel_reserve_satoshis. Must be bigger than funding_satoshis")
                 else
                     Good()
 
             let checkPushMSatLesserThanFundingValue msg =
                 if (msg.PushMSat.ToMoney() > (msg.FundingSatoshis - msg.ChannelReserveSatoshis)) then
-                    RRClose("push_msat larger than funding value")
+                    RRClose __LINE__ ("push_msat larger than funding value")
                 else
                     Good()
 
             let checkFundingSatoshisLessThanDustLimitSatoshis (msg: OpenChannel) =
                 if (msg.DustLimitSatoshis > msg.FundingSatoshis) then
-                    RRClose (sprintf "Peer never wants payout outputs? dust_limit_satoshis: %A; funding_satoshi %A" msg.DustLimitSatoshis msg.FundingSatoshis)
+                    RRClose __LINE__ (sprintf "Peer never wants payout outputs? dust_limit_satoshis: %A; funding_satoshi %A" msg.DustLimitSatoshis msg.FundingSatoshis)
                 else
                     Good()
 
@@ -352,7 +349,7 @@ module Channel =
             let checkChannelAnnouncementPreferenceAcceptable (config: ChannelConfig) (msg) =
                 let theirAnnounce = (msg.ChannelFlags &&& 1uy) = 1uy
                 if (config.PeerChannelConfigLimits.ForceChannelAnnouncementPreference) && config.ChannelOptions.AnnounceChannel <> theirAnnounce then
-                    RRClose("Peer tried to open channel but their announcement preference is different from ours")
+                    RRClose __LINE__ ("Peer tried to open channel but their announcement preference is different from ours")
                 else
                     Good()
 
@@ -378,13 +375,13 @@ module Channel =
                 let (backgroundFeeRate) = feeEst.GetEstSatPer1000Weight(ConfirmationTarget.Background)
                 let backgroundFee = backgroundFeeRate.ToFee COMMITMENT_TX_BASE_WEIGHT
                 if (fundersAmount.ToMoney() < backgroundFee) then
-                    RRClose (sprintf "Insufficient funding amount for initial commitment. BackgroundFee %A. funders amount %A" backgroundFee fundersAmount)
+                    RRClose __LINE__ (sprintf "Insufficient funding amount for initial commitment. BackgroundFee %A. funders amount %A" backgroundFee fundersAmount)
                 else
                     let ourChannelReserve = Helpers.getOurChannelReserve msg.FundingSatoshis
                     let toLocalMSat = msg.PushMSat
                     let toRemoteMSat = fundersAmount - backgroundFeeRate.ToFee(COMMITMENT_TX_BASE_WEIGHT).ToLNMoney()
                     if (toLocalMSat <= (msg.ChannelReserveSatoshis.ToLNMoney()) && toRemoteMSat <= ourChannelReserve.ToLNMoney()) then
-                        RRClose("Insufficient funding amount for initial commitment. ")
+                        RRClose __LINE__ ("Insufficient funding amount for initial commitment. ")
                     else
                         Good()
 
@@ -404,20 +401,20 @@ module Channel =
         module private AcceptChannelValidator =
             let checkDustLimit msg =
                 if msg.DustLimitSatoshis > Money.Satoshis(21000000L * 100000L) then
-                    RRClose (sprintf "Peer never wants payout outputs? dust_limit_satoshis was: %A" msg.DustLimitSatoshis)
+                    RRClose __LINE__ (sprintf "Peer never wants payout outputs? dust_limit_satoshis was: %A" msg.DustLimitSatoshis)
                 else
                     Good()
 
             let checkChannelReserveSatoshis (state: Data.WaitForAcceptChannelData) msg =
                 if msg.ChannelReserveSatoshis > state.LastSent.FundingSatoshis then
                     sprintf "bogus channel_reserve_satoshis %A . Must be larger than funding_satoshis %A" (msg.ChannelReserveSatoshis) (state.InputInitFunder.FundingSatoshis)
-                    |> RRClose
+                    |> RRClose __LINE__
                 else if msg.DustLimitSatoshis > state.LastSent.ChannelReserveSatoshis then
                     sprintf "Bogus channel_reserve and dust_limit. dust_limit: %A; channel_reserve %A" msg.DustLimitSatoshis (state.LastSent.ChannelReserveSatoshis)
-                    |> RRClose
+                    |> RRClose __LINE__
                 else if msg.ChannelReserveSatoshis < state.LastSent.DustLimitSatoshis then
                     sprintf "Peer never wants payout outputs? channel_reserve_satoshis are %A; dust_limit_satoshis in our last sent msg is %A" msg.ChannelReserveSatoshis (state.LastSent.DustLimitSatoshis)
-                    |> RRClose
+                    |> RRClose __LINE__
                 else
                     Good()
 
@@ -425,19 +422,19 @@ module Channel =
                 let reserve = Helpers.getOurChannelReserve state.LastSent.FundingSatoshis
                 checkOrClose
                     msg.DustLimitSatoshis (>) reserve
-                    "dust limit (%A) is bigger than our channel reserve (%A)" 
+                    "dust limit (%A) is bigger than our channel reserve (%A)"
 
             let checkMinimumHTLCValueIsAcceptable (state: Data.WaitForAcceptChannelData) (msg: AcceptChannel) =
                 if (msg.HTLCMinimumMSat.ToMoney() >= (state.LastSent.FundingSatoshis - msg.ChannelReserveSatoshis)) then
                     sprintf "Minimum HTLC value is greater than full channel value HTLCMinimum %A satoshi; funding_satoshis %A; channel_reserve: %A" (msg.HTLCMinimumMSat.ToMoney()) (state.LastSent.FundingSatoshis) (msg.ChannelReserveSatoshis)
-                    |> RRClose
+                    |> RRClose __LINE__
                 else
                     Good()
 
             let checkToSelfDelayIsAcceptable (msg) =
                 if (msg.ToSelfDelay > MAX_LOCAL_BREAKDOWN_TIMEOUT) then
                     sprintf "They wanted our payments to be delayed by a needlessly long period (%A)" msg.ToSelfDelay
-                    |> RRClose
+                    |> RRClose __LINE__
                 else
                     Good()
 
@@ -518,13 +515,13 @@ module Channel =
                 UpdateAddHTLCValidator.checkExpiryIsNotPast currentHeight add.CLTVExpiry
                 *> UpdateAddHTLCValidator.checkExpiryIsInAcceptableRange currentHeight add.CLTVExpiry
                 *> UpdateAddHTLCValidator.checkAmountIsLargerThanMinimum state.LocalParams.HTLCMinimumMSat add.AmountMSat
-                >>>= fun e -> RRClose(e.Describe())
+                >>>= fun e -> RRClose __LINE__ (e.Describe())
 
         let checkTheirUpdateAddHTLCIsAcceptableWithCurrentSpec (currentSpec) (state: Commitments) (add: UpdateAddHTLC) =
             UpdateAddHTLCValidator.checkLessThanHTLCValueInFlightLimit currentSpec state.LocalParams.MaxHTLCValueInFlightMSat add
             *> UpdateAddHTLCValidator.checkLessThanMaxAcceptedHTLC currentSpec state.LocalParams.MaxAcceptedHTLCs
             *> UpdateAddHTLCValidator.checkWeHaveSufficientFunds state currentSpec
-            >>>= fun e -> RRClose(e.Describe())
+            >>>= fun e -> RRClose __LINE__ (e.Describe())
 
 
     let executeCommand (cs: Channel) (command: ChannelCommand): RResult<ChannelEvent list> =
@@ -603,7 +600,7 @@ module Channel =
                 let sigPairs = seq [ remoteSigPairOfLocalTx; ]
                 Transactions.checkTxFinalized signedLocalCommitTx state.LocalCommitTx.WhichInput sigPairs
             finalLocalCommitTxRR
-            >>>= fun e -> RRClose(e.Describe())
+            >>>= fun e -> RRClose __LINE__ (e.Describe())
             |>> fun finalizedLocalCommitTx ->
                 let commitments = { Commitments.LocalParams = state.LocalParams
                                     RemoteParams = state.RemoteParams
@@ -687,7 +684,7 @@ module Channel =
                     let theirSigPair = (state.RemoteParams.FundingPubKey, remoteTxSig)
                     let sigPairs = seq [ theirSigPair ]
                     Transactions.checkTxFinalized (signedLocalCommitTx) (localCommitTx.WhichInput) sigPairs
-                    >>>= fun e -> RRClose(e.Describe())
+                    >>>= fun e -> RRClose __LINE__ (e.Describe())
                     >>= fun finalizedCommitTx ->
                         let localSigOfRemoteCommit, _ = cs.KeysRepository.GetSignatureFor (remoteCommitTx.Value, state.LocalParams.ChannelPubKeys.FundingPubKey)
                         let channelId = OutPoint(msg.FundingTxId.Value, uint32 msg.FundingOutputIndex.Value).ToChannelId()
@@ -745,7 +742,7 @@ module Channel =
                                   HaveWeSentFundingLocked = false
                                   InitialFeeRatePerKw = state.InitialFeeRatePerKw
                                   ChannelId = state.Commitments.ChannelId }
-                
+
                 match (state.Deferred) with
                 | None ->
                     [ FundingConfirmed nextState; WeSentFundingLocked msgToSend ] |> Good
@@ -757,7 +754,7 @@ module Channel =
             else
                 let msg = sprintf "once confirmed funding tx has become less confirmed than threshold %A! This is probably caused by reorg. current depth is: %A " height depth
                 cs.Logger (LogLevel.Error) (msg)
-                RRClose(msg)
+                RRClose __LINE__ (msg)
         | WaitForFundingLocked state, ApplyFundingLocked msg ->
             if (state.HaveWeSentFundingLocked) then
                 let initialChannelUpdate =
@@ -829,7 +826,7 @@ module Channel =
 
         | ChannelState.Normal state, ChannelCommand.ApplyUpdateFulfillHTLC msg ->
             state.Commitments |> Commitments.receiveFulfill msg
-            >>>= fun e -> RRClose(e.Describe())
+            >>>= fun e -> RRClose __LINE__ (e.Describe())
 
         | ChannelState.Normal state, FailHTLC cmd ->
             state.Commitments |> Commitments.sendFail cs.LocalNodeSecret cmd
@@ -841,11 +838,11 @@ module Channel =
 
         | ChannelState.Normal state, ApplyUpdateFailHTLC msg ->
             state.Commitments |> Commitments.receiveFail msg
-            >>>= fun e -> RRClose(e.Describe())
+            >>>= fun e -> RRClose __LINE__ (e.Describe())
 
         | ChannelState.Normal state, ApplyUpdateFailMalformedHTLC msg ->
             state.Commitments |> Commitments.receiveFailMalformed msg
-            >>>= fun e -> RRClose(e.Describe())
+            >>>= fun e -> RRClose __LINE__ (e.Describe())
 
         | ChannelState.Normal state, UpdateFee cmd ->
             state.Commitments |> Commitments.sendFee cmd
@@ -853,7 +850,7 @@ module Channel =
         | ChannelState.Normal state, ApplyUpdateFee msg ->
             let localFeerate = cs.FeeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority)
             state.Commitments |> Commitments.receiveFee cs.Config localFeerate msg
-            >>>= fun e -> e.Describe() |> RRClose
+            >>>= fun e -> e.Describe() |> RRClose __LINE__
 
         | ChannelState.Normal state, SignCommitment ->
             let cm = state.Commitments
@@ -869,17 +866,17 @@ module Channel =
 
         | ChannelState.Normal state, ApplyCommitmentSigned msg ->
             state.Commitments |> Commitments.receiveCommit (cs.Secp256k1Context) cs.KeysRepository msg cs.Network
-            >>>= fun e -> RRClose("Something unexpected happened while handling commitment_signed from remote" + e.Describe())
+            >>>= fun e -> RRClose __LINE__ ("Something unexpected happened while handling commitment_signed from remote" + e.Describe())
 
         | ChannelState.Normal state, ApplyRevokeAndACK msg ->
             let cm = state.Commitments
             match cm.RemoteNextCommitInfo with
             | Choice1Of2 _ when (msg.PerCommitmentSecret.ToPubKey() <> cm.RemoteCommit.RemotePerCommitmentPoint) ->
                 sprintf "Invalid revoke_and_ack %A; must be %A" msg.PerCommitmentSecret cm.RemoteCommit.RemotePerCommitmentPoint
-                |> RRClose
+                |> RRClose __LINE__
             | Choice2Of2 _ ->
                 sprintf "Unexpected revocation"
-                |> RRClose
+                |> RRClose __LINE__
             | Choice1Of2({ NextRemoteCommit = theirNextCommit }) ->
                 let commitments1 = { cm with LocalChanges = { cm.LocalChanges with Signed = []; ACKed = cm.LocalChanges.ACKed @ cm.LocalChanges.Signed }
                                              RemoteChanges = { cm.RemoteChanges with Signed = [] }
@@ -923,14 +920,14 @@ module Channel =
             //              there are no HTLCs => go to NEGOTIATING state
             if (not <| Scripts.isValidFinalScriptPubKey (msg.ScriptPubKey)) then
                 sprintf "Invalid remote final ScriptPubKey %O" (msg.ScriptPubKey.ToString())
-                |> RRClose
+                |> RRClose __LINE__
             else if (cm.RemoteHasUnsignedOutgoingHTLCs()) then
                 sprintf "They sent shutdown msg (%A) while they have pending unsigned HTLCs, this is protocol violation" msg
-                |> RRClose
+                |> RRClose __LINE__
             // Do we have Unsigned Outgoing HTLCs?
             else if (cm.LocalHasUnsignedOutgoingHTLCs()) then
                 if (state.LocalShutdown.IsSome) then
-                    "can't have pending unsigned outgoing htlcs after having sent Shutdown" |> RRClose
+                    "can't have pending unsigned outgoing htlcs after having sent Shutdown" |> RRClose __LINE__
                 else
                     // Are we in the middle of a signature?
                     match cm.RemoteNextCommitInfo with
@@ -985,7 +982,7 @@ module Channel =
             >>>= fun e -> e.Describe() |> RRApiMisuse
         | Shutdown state, ApplyUpdateFulfillHTLC msg ->
             state.Commitments |> Commitments.receiveFulfill msg
-            >>>= fun e -> e.Describe() |> RRClose
+            >>>= fun e -> e.Describe() |> RRClose __LINE__
         | Shutdown state, FailHTLC cmd ->
             state.Commitments |> Commitments.sendFail (cs.LocalNodeSecret) cmd
             >>>= fun e -> e.Describe() |> RRApiMisuse
@@ -994,14 +991,14 @@ module Channel =
             >>>= fun e -> e.Describe() |> RRApiMisuse
         | Shutdown state, ApplyUpdateFailMalformedHTLC msg ->
             state.Commitments |> Commitments.receiveFailMalformed msg
-            >>>= fun e -> e.Describe() |> RRClose
+            >>>= fun e -> e.Describe() |> RRClose __LINE__
         | Shutdown state, UpdateFee cmd ->
             state.Commitments |> Commitments.sendFee cmd
             >>>= fun e -> e.Describe() |> RRApiMisuse
         | Shutdown state, ApplyUpdateFee msg ->
             let localFeerate = cs.FeeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority)
             state.Commitments |> Commitments.receiveFee cs.Config localFeerate msg
-            >>>= fun e -> e.Describe() |> RRClose
+            >>>= fun e -> e.Describe() |> RRClose __LINE__
         | Shutdown state, SignCommitment ->
             let cm = state.Commitments
             match cm.RemoteNextCommitInfo with
@@ -1009,13 +1006,13 @@ module Channel =
                 sprintf "nothing to sign" |> RRIgnore
             | Choice2Of2 _ ->
                 cm |> Commitments.sendCommit (cs.Secp256k1Context) (cs.KeysRepository) (cs.Network)
-                >>>= fun e -> e.Describe() |> RRClose
+                >>>= fun e -> e.Describe() |> RRClose __LINE__
             | Choice1Of2 _waitForRevocation ->
                 sprintf "Already in the process of signing."
                 |> RRIgnore
         | Shutdown state, ApplyCommitmentSigned msg ->
             state.Commitments |> Commitments.receiveCommit (cs.Secp256k1Context) (cs.KeysRepository) msg cs.Network
-            >>>= fun e -> e.Describe() |> RRClose
+            >>>= fun e -> e.Describe() |> RRClose __LINE__
         | Shutdown state, ApplyRevokeAndACK msg ->
             failwith "not implemented"
 
@@ -1066,7 +1063,7 @@ module Channel =
                                     let nextState = { state with ClosingTxProposed = closingTxProposed1; MaybeBestUnpublishedTx = Some(finalizedTx) }
                                     [ WeProposedNewClosingSigned(closingSignedMsg, nextState) ]
                                     |> Good
-            >>>= fun e -> e.Describe() |> RRClose
+            >>>= fun e -> e.Describe() |> RRClose __LINE__
         | Closing state, FulfillHTLC cmd ->
             cs.Logger (LogLevel.Info) (sprintf "got valid payment preimage, recalculating txs to redeem the corresponding htlc on-chain")
             let cm = state.Commitments
