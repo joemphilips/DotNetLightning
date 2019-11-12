@@ -160,7 +160,8 @@ module Channel =
                               (initialFeeRatePerKw: FeeRatePerKw)
                               (fundingOutputIndex: TxOutIndex)
                               (fundingTxId: TxId)
-                              (perCommitmentPoint: PubKey)
+                              (localPerCommitmentPoint: PubKey)
+                              (remotePerCommitmentPoint: PubKey)
                               (secpContext: ISecp256k1)
                               (n: Network): RResult<CommitmentSpec * CommitTx * CommitmentSpec * CommitTx> =
             let toLocal = if (localParams.IsFunder) then fundingSatoshis.ToLNMoney() - pushMSat else pushMSat
@@ -177,9 +178,9 @@ module Channel =
                     Good()
             let makeFirstCommitTxCore() =
                 let sCoin = getFundingSCoin (localParams.ChannelPubKeys) (remoteParams.FundingPubKey) (fundingTxId) (fundingOutputIndex) (fundingSatoshis)
-                let revPubKeyForLocal = Generators.revocationPubKey secpContext remoteParams.RevocationBasePoint perCommitmentPoint
-                let delayedPubKeyForLocal = Generators.derivePubKey secpContext localParams.ChannelPubKeys.DelayedPaymentBasePubKey perCommitmentPoint
-                let paymentPubKeyForLocal = Generators.derivePubKey secpContext remoteParams.PaymentBasePoint perCommitmentPoint
+                let revPubKeyForLocal = Generators.revocationPubKey secpContext remoteParams.RevocationBasePoint localPerCommitmentPoint
+                let delayedPubKeyForLocal = Generators.derivePubKey secpContext localParams.ChannelPubKeys.DelayedPaymentBasePubKey localPerCommitmentPoint
+                let paymentPubKeyForLocal = Generators.derivePubKey secpContext remoteParams.PaymentBasePoint localPerCommitmentPoint
                 let localCommitTx =
                     Transactions.makeCommitTx sCoin
                                               0UL
@@ -195,9 +196,9 @@ module Channel =
                                               (remoteParams.HTLCBasePoint)
                                               localSpec
                                               n
-                let revPubKeyForRemote = Generators.revocationPubKey secpContext localParams.ChannelPubKeys.RevocationBasePubKey perCommitmentPoint
-                let delayedPubKeyForRemote = Generators.derivePubKey secpContext remoteParams.DelayedPaymentBasePoint perCommitmentPoint
-                let paymentPubKeyForRemote = Generators.derivePubKey secpContext localParams.ChannelPubKeys.PaymentBasePubKey perCommitmentPoint
+                let revPubKeyForRemote = Generators.revocationPubKey secpContext localParams.ChannelPubKeys.RevocationBasePubKey remotePerCommitmentPoint
+                let delayedPubKeyForRemote = Generators.derivePubKey secpContext remoteParams.DelayedPaymentBasePoint remotePerCommitmentPoint
+                let paymentPubKeyForRemote = Generators.derivePubKey secpContext localParams.ChannelPubKeys.PaymentBasePubKey remotePerCommitmentPoint
                 let remoteCommitTx =
                     Transactions.makeCommitTx sCoin
                                               0UL
@@ -574,6 +575,7 @@ module Channel =
                 let localParams = state.InputInitFunder.LocalParams
                 assert (state.LastSent.FundingPubKey = localParams.ChannelPubKeys.FundingPubKey)
                 let commitmentSpec = state.InputInitFunder.DeriveCommitmentSpec()
+                let commitmentSeed = state.InputInitFunder.ChannelKeys.CommitmentSeed
                 Helpers.makeFirstCommitTxs localParams
                                            remoteParams
                                            state.LastSent.FundingSatoshis
@@ -581,6 +583,7 @@ module Channel =
                                            state.LastSent.FeeRatePerKw
                                            outIndex
                                            (fundingTx.Value.GetHash() |> TxId)
+                                           (ChannelUtils.buildCommitmentPoint(commitmentSeed, 0UL))
                                            msg.FirstPerCommitmentPoint
                                            cs.Secp256k1Context
                                            cs.Network
@@ -687,6 +690,7 @@ module Channel =
                                        msg.FundingOutputIndex
                                        msg.FundingTxId
                                        state.LastSent.FirstPerCommitmentPoint
+                                       state.RemoteFirstPerCommitmentPoint
                                        cs.Secp256k1Context
                                        cs.Network
             >>= fun (localSpec, localCommitTx, remoteSpec, remoteCommitTx) ->
