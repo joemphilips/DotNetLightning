@@ -156,7 +156,11 @@ module Primitives =
         interface IComparable with
             override this.CompareTo(other) = if isNull other then -1 else this.Value.CompareTo((other :?> NodeId).Value)
         override this.Equals(other) =
-            if isNull other then false else this.Value.Equals((other :?> NodeId).Value)
+            if isNull other then false else
+                try 
+                    this.Value.Equals((other :?> NodeId).Value)
+                with
+                    | :? InvalidCastException -> false
         override this.GetHashCode() =
             this.Value.GetHashCode()
 
