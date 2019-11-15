@@ -244,9 +244,19 @@ let tests =
             
             let bobAcceptedFundingCreatedTask =
                 bob.EventAggregator.AwaitChannelEvent(function WeAcceptedFundingCreated(i, _) -> Some i | _ -> None)
-                
+
+            let handleAcceptedFundingSigned = function
+                WeAcceptedFundingSigned(i, nextState) ->
+                  // Make sure WaitForFundingConfirmedData serializes
+                  let settings = Newtonsoft.Json.JsonSerializerSettings()
+                  NBitcoin.JsonConverters.Serializer.RegisterFrontConverters settings
+                  Newtonsoft.Json.JsonConvert.SerializeObject(nextState, settings) |> ignore
+
+                  Some i
+                | _ -> None
+
             let aliceAcceptedFundingSignedTask =
-                alice.EventAggregator.AwaitChannelEvent(function WeAcceptedFundingSigned(i, _) -> Some i | _ -> None)
+                alice.EventAggregator.AwaitChannelEvent handleAcceptedFundingSigned
                
             let aliceFundingConfirmedTask =
                 alice.EventAggregator.AwaitChannelEvent(function FundingConfirmed _ -> Some () | _ -> None)

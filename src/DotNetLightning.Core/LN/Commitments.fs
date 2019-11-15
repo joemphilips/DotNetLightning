@@ -125,7 +125,9 @@ type Commitments = {
             let lens = Commitments.RemoteChanges_ >-> RemoteChanges.Proposed_
             Optic.map lens (fun proposalList -> proposal :: proposalList) this
 
+        [<Newtonsoft.Json.JsonIgnoreAttribute>]
         member this.IncrLocalHTLCId = { this with LocalNextHTLCId = this.LocalNextHTLCId + 1UL }
+        [<Newtonsoft.Json.JsonIgnoreAttribute>]
         member this.IncrRemoteHTLCId = { this with RemoteNextHTLCId = this.RemoteNextHTLCId + 1UL }
 
         member this.LocalHasChanges() =
