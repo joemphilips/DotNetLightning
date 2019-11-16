@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -33,7 +33,7 @@
     <ProjectReference Include="..\..\src\EventAggregator\EventAggregator.fsproj" />
     <ProjectReference
       Condition="'$(BouncyCastle)'!='true'"
-      Include="..\..\src\NSec.Cryptography\NSec.Cryptography.csproj"
+      Include="..\..\src\NSec\Cryptography\NSec.Cryptography.csproj"
     />
   </ItemGroup>
 </Project>

@@ -421,7 +421,7 @@ module Transactions =
             tx.LockTime <- !> lockTime
             tx
         let psbt =
-            let p = PSBT.FromTransaction(tx)
+            let p = PSBT.FromTransaction(tx, n)
             p.AddCoins(inputInfo)
         { CommitTx.Value = psbt; WhichInput = 0 }
 
@@ -527,7 +527,7 @@ module Transactions =
                             .SetLockTime(!> htlc.CLTVExpiry.Value)
                             .BuildTransaction(false)
                 tx.Version <- 2u
-                PSBT.FromTransaction(tx)
+                PSBT.FromTransaction(tx, n)
                     .AddCoins(scoin)
             let whichInput = psbt.Inputs |> Seq.findIndex(fun i -> not (isNull i.WitnessScript))
             { HTLCTimeoutTx.Value = psbt; WhichInput = whichInput } |> Good
@@ -564,7 +564,7 @@ module Transactions =
                             .SetLockTime(!> 0u)
                             .BuildTransaction(false)
                 tx.Version <- 2u
-                PSBT.FromTransaction(tx)
+                PSBT.FromTransaction(tx, n)
                     .AddCoins(scoin)
             let whichInput = psbt.Inputs |> Seq.findIndex(fun i -> not (isNull i.WitnessScript))
             { HTLCSuccessTx.Value = psbt; WhichInput = whichInput; PaymentHash = htlc.PaymentHash } |> Good
@@ -614,7 +614,7 @@ module Transactions =
                             .BuildTransaction(false)
                 tx.Version <- 2u
                 tx.Inputs.[0].Sequence <- !> 0xffffffffu
-                PSBT.FromTransaction(tx)
+                PSBT.FromTransaction(tx, n)
                     .AddCoins(coin)
             psbt |> ClaimHTLCSuccessTx |> Good
 
@@ -645,7 +645,7 @@ module Transactions =
                           .BuildTransaction(false)
                 tx.Version <- 2u
                 tx.Inputs.[0].Sequence <- !> 0xffffffffu
-                PSBT.FromTransaction(tx)
+                PSBT.FromTransaction(tx, n)
                     .AddCoins(coin)
             psbt |> ClaimHTLCTimeoutTx |> Good
 
@@ -676,7 +676,7 @@ module Transactions =
                           .BuildTransaction(false)
                 tx.Version <- 2u
                 tx.Inputs.[0].Sequence <- !> 0xffffffffu
-                PSBT.FromTransaction(tx)
+                PSBT.FromTransaction(tx, n)
                     .AddCoins(coin)
             psbt |> ClaimP2WPKHOutputTx|> Good
 
@@ -710,7 +710,7 @@ module Transactions =
                           .BuildTransaction(false)
                 tx.Version <- 2u
                 tx.Inputs.[0].Sequence <- !> 0xffffffffu
-                PSBT.FromTransaction(tx)
+                PSBT.FromTransaction(tx, n)
                     .AddCoins(coin)
             psbt |> MainPenaltyTx |> Good
             
@@ -747,7 +747,7 @@ module Transactions =
                 let tx =  txb.BuildTransaction(false)
                 tx.Version <- 2u
                 tx.Inputs.[0].Sequence <- !> 0xffffffffu
-                PSBT.FromTransaction(tx)
+                PSBT.FromTransaction(tx, n)
                     .AddCoins(commitTxInput)
             psbt |> ClosingTx |> Good
 
