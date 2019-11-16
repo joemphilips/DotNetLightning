@@ -20,7 +20,7 @@ type DirectedHTLC = internal {
     Add: UpdateAddHTLC
 }
 
-type CommitmentSpec = internal {
+type CommitmentSpec = {
     HTLCs: Map<HTLCId, DirectedHTLC>
     FeeRatePerKw: FeeRatePerKw
     ToLocal: LNMoney
