@@ -1,11 +1,10 @@
-namespace DotNetLightning.LN
+namespace DotNetLightning.Channel
 
 open NBitcoin
 open DotNetLightning.Utils
 open DotNetLightning.Utils.Aether
 open DotNetLightning.Utils.Aether.Operators
 open DotNetLightning.Crypto
-open DotNetLightning.Chain
 open DotNetLightning.Transactions
 open DotNetLightning.Serialize.Msgs
 

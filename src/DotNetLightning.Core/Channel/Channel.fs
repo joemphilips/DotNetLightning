@@ -1,8 +1,7 @@
-namespace DotNetLightning.LN
+namespace DotNetLightning.Channel
 open DotNetLightning.Utils
 open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Utils.Aether
-open DotNetLightning.Utils.Aether.Operators
 open DotNetLightning.Chain
 open DotNetLightning.Crypto
 open DotNetLightning.Transactions

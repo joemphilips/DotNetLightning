@@ -1,9 +1,6 @@
-namespace DotNetLightning.LN
+namespace DotNetLightning.Channel
 open DotNetLightning.Utils
 open DotNetLightning.Utils.Aether
-open DotNetLightning.Utils.NBitcoinExtensions
-open DotNetLightning.Utils.Error
-open DotNetLightning.Chain
 open DotNetLightning.DomainUtils.Types
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Transactions

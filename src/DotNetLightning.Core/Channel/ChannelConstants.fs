@@ -1,4 +1,4 @@
-namespace DotNetLightning.LN
+namespace DotNetLightning.Channel
 open DotNetLightning.Utils
 open NBitcoin
 type ChannelValueStat = internal {

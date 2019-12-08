@@ -1,4 +1,4 @@
-namespace DotNetLightning.LN
+namespace DotNetLightning.Channel
 
 open NBitcoin
 open DotNetLightning.Utils

@@ -2,11 +2,9 @@ module ChannelCoreTests
 
 open DotNetLightning.Chain
 open DotNetLightning.Serialize.Msgs
-open DotNetLightning.LN
+open DotNetLightning.Channel
 open DotNetLightning.Utils
-open DotNetLightning.Utils.Primitives
 open Expecto
-open Expecto.Logging
 open NBitcoin
 
 let n = Network.RegTest
