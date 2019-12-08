@@ -48,9 +48,9 @@
     <Compile Include="Transactions/CommitmentSpec.fs" />
     <Compile Include="Transactions/Scripts.fs" />
     <Compile Include="Transactions/Transactions.fs" />
-    <Compile Include="LN/PeerChannelEncryptor.fs" />
-    <Compile Include="LN/PeerTypes.fs" />
-    <Compile Include="LN/Peer.fs" />
+    <Compile Include="Peer\PeerChannelEncryptor.fs" />
+    <Compile Include="Peer\PeerTypes.fs" />
+    <Compile Include="Peer\Peer.fs" />
     <Compile Include="Channel\ChannelUtils.fs" />
     <Compile Include="Channel\HTLCChannelType.fs" />
     <Compile Include="Channel\ChannelConstants.fs" />

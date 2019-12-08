@@ -1,4 +1,4 @@
-namespace DotNetLightning.LN
+namespace DotNetLightning.Peer
 
 open DotNetLightning.Utils
 open DotNetLightning.Serialize.Msgs

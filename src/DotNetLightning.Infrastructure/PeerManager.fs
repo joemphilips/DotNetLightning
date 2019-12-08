@@ -7,7 +7,7 @@ open CustomEventAggregator
 
 open NBitcoin
 open DotNetLightning.Chain
-open DotNetLightning.LN
+open DotNetLightning.Peer
 open DotNetLightning.Channel
 
 open System

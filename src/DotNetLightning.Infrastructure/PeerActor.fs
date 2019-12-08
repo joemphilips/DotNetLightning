@@ -11,7 +11,7 @@ open Microsoft.Extensions.Options
 open DotNetLightning.Utils
 open DotNetLightning.Chain
 open DotNetLightning.Serialize.Msgs
-open DotNetLightning.LN
+open DotNetLightning.Peer
 
 open CustomEventAggregator
 

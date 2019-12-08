@@ -1,6 +1,6 @@
 namespace DotNetLightning.Infrastructure
 
-open DotNetLightning.LN
+open DotNetLightning.Peer
 open DotNetLightning.Utils
 open DotNetLightning.Transactions
 open NBitcoin

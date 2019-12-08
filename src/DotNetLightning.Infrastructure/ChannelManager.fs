@@ -2,7 +2,7 @@ namespace DotNetLightning.Infrastructure
 
 open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Chain
-open DotNetLightning.LN
+open DotNetLightning.Peer
 open DotNetLightning.Channel
 
 open Microsoft.Extensions.Logging
