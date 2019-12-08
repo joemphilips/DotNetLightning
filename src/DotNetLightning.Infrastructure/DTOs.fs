@@ -1,6 +1,6 @@
 namespace DotNetLightning.Infrastructure
 open DotNetLightning.Utils
-open DotNetLightning.LN
+open DotNetLightning.Channel
 
 module DTO =
     open System.Text.Json

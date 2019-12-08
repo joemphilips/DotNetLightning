@@ -5,6 +5,7 @@ open DotNetLightning.Utils.Primitives
 open NBitcoin
 open CustomEventAggregator
 open DotNetLightning.LN
+open DotNetLightning.Channel
 open DotNetLightning.Infrastructure
 
 open System

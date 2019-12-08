@@ -4,12 +4,7 @@ open System
 open System.IO
 open System.Threading.Tasks
 open System.Collections.Concurrent
-
-open DTO
 open DotNetLightning.Serialize
-open DotNetLightning.Crypto
-open DotNetLightning.LN
-open DotNetLightning.DomainUtils.Types
 
 type FlatFileDB(path: string, codec: SupportedCodec) =
     let _path = path
