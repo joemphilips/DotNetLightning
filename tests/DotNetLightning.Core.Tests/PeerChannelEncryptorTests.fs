@@ -1,12 +1,10 @@
 module PeerChannelEncryptorTests
 open Expecto
 open Expecto.Logging
-open Expecto.Logging.Message
 open NBitcoin
 open DotNetLightning.Utils.Aether
-open DotNetLightning.Utils.Aether.Operators
 open DotNetLightning.Utils
-open DotNetLightning.LN
+open DotNetLightning.Peer
 
 let hex = NBitcoin.DataEncoders.HexEncoder()
 let logger = Log.create "PeerChannelEncryptor tests"

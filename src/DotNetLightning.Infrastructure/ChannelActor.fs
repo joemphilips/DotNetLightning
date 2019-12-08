@@ -8,8 +8,8 @@ open FSharp.Control.Tasks
 open CustomEventAggregator
 open DotNetLightning.Utils
 open DotNetLightning.Chain
-open DotNetLightning.LN
 
+open DotNetLightning.Channel
 open DotNetLightning.Infrastructure
 
 

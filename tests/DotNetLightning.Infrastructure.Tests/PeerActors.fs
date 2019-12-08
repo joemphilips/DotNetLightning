@@ -10,7 +10,7 @@ open CustomEventAggregator
 open DotNetLightning.Infrastructure
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Chain
-open DotNetLightning.LN
+open DotNetLightning.Peer
 open NBitcoin
 
 type internal PeerManagerEntity = {

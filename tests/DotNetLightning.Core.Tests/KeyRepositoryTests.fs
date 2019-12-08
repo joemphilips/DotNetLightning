@@ -2,7 +2,7 @@ module KeyRepositoryTests
 
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Chain
-open DotNetLightning.LN
+open DotNetLightning.Channel
 open DotNetLightning.Tests.Utils
 open DotNetLightning.Transactions
 open DotNetLightning.Utils

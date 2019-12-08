@@ -4,7 +4,7 @@ open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Chain
 open DotNetLightning.Infrastructure
 open DotNetLightning.Utils
-open DotNetLightning.LN
+open DotNetLightning.Peer
 open CustomEventAggregator
 
 open FSharp.Control.Tasks

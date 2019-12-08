@@ -2,24 +2,18 @@ namespace DotNetLightning.Infrastructure
 
 
 open System.IO.Pipelines
-open System.Collections.Concurrent
-open System.Threading.Tasks
 
 open FSharp.Control.Tasks
 
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Options
 
-open NBitcoin
 open DotNetLightning.Utils
 open DotNetLightning.Chain
 open DotNetLightning.Serialize.Msgs
-open DotNetLightning.LN
+open DotNetLightning.Peer
 
 open CustomEventAggregator
-open DotNetLightning.Utils.Aether
-open FSharp.Control.Reactive
-
 
 type PeerError =
     | DuplicateConnection of PeerId

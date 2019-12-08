@@ -18,15 +18,8 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <ProjectReference
-      Condition="'$(BouncyCastle)'!='true'"
-      Include="..\Secp256k1.Net\Secp256k1.Net.csproj"
-      PrivateAssets="all"
-    />
-    <ProjectReference
-      Condition="'$(BouncyCastle)'!='true'"
-      Include="..\NSec\Experimental\NSec.Experimental.csproj"
-    />
+    <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\Secp256k1.Net\Secp256k1.Net.csproj" PrivateAssets="all" />
+    <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\NSec\Experimental\NSec.Experimental.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
@@ -55,26 +48,22 @@
     <Compile Include="Transactions/CommitmentSpec.fs" />
     <Compile Include="Transactions/Scripts.fs" />
     <Compile Include="Transactions/Transactions.fs" />
-    <Compile Include="LN/PeerChannelEncryptor.fs" />
-    <Compile Include="LN/ChannelUtils.fs" />
-    <Compile Include="LN/HTLCChannelType.fs" />
-    <Compile Include="LN/ChannelConstants.fs" />
-    <Compile Include="LN/ChannelCommands.fs" />
-    <Compile Include="LN/Commitments.fs" />
-    <Compile Include="LN/ChannelTypes.fs" />
-    <Compile Include="LN/CommitmentsModule.fs" />
-    <Compile Include="LN/Channel.fs" />
-    <Compile Include="LN/PeerTypes.fs" />
-    <Compile Include="LN/Peer.fs" />
+    <Compile Include="Peer\PeerChannelEncryptor.fs" />
+    <Compile Include="Peer\PeerTypes.fs" />
+    <Compile Include="Peer\Peer.fs" />
+    <Compile Include="Channel\ChannelUtils.fs" />
+    <Compile Include="Channel\HTLCChannelType.fs" />
+    <Compile Include="Channel\ChannelConstants.fs" />
+    <Compile Include="Channel\ChannelCommands.fs" />
+    <Compile Include="Channel\Commitments.fs" />
+    <Compile Include="Channel\ChannelTypes.fs" />
+    <Compile Include="Channel\CommitmentsModule.fs" />
+    <Compile Include="Channel\Channel.fs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="4.7.0" />
     <PackageReference Include="NBitcoin" Version="5.0.3" />
-    <PackageReference
-      Condition="'$(BouncyCastle)'=='true'"
-      Include="Portable.BouncyCastle"
-      Version="1.8.5.2"
-    />
+    <PackageReference Condition="'$(BouncyCastle)'=='true'" Include="Portable.BouncyCastle" Version="1.8.5.2" />
     <PackageReference Include="System.Memory" Version="4.5.3" />
   </ItemGroup>
 

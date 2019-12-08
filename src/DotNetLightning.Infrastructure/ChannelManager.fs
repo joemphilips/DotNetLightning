@@ -2,18 +2,15 @@ namespace DotNetLightning.Infrastructure
 
 open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Chain
-open DotNetLightning.LN
-open DotNetLightning.Infrastructure
+open DotNetLightning.Peer
+open DotNetLightning.Channel
 
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Options
-open Microsoft.Extensions.DependencyInjection
 
 open CustomEventAggregator
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Utils.Primitives
-open System
-open System.Reactive.Threading.Tasks
 open System.Collections.Concurrent
 open System.Threading.Tasks
 open FSharp.Control.Tasks

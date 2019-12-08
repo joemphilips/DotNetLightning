@@ -2,7 +2,7 @@ namespace DotNetLightning.Infrastructure
 
 open DotNetLightning.Utils
 open DotNetLightning.Serialize.Msgs
-open DotNetLightning.LN
+open DotNetLightning.Channel
 open NBitcoin
 open System
 

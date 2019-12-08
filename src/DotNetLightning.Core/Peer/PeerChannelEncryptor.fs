@@ -1,18 +1,13 @@
-namespace DotNetLightning.LN
+namespace DotNetLightning.Peer
 open NBitcoin
 open NBitcoin.Crypto
 
-open System.IO
 open DotNetLightning.Utils
-open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils.Aether
 open DotNetLightning.Utils.Aether.Operators
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Crypto
 open System
-open System.Diagnostics
-
-open System.Runtime.CompilerServices
 
 
 [<AutoOpen>]

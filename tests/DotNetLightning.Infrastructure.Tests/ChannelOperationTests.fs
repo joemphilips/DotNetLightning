@@ -4,7 +4,8 @@ open FSharp.Control.Reactive
 open DotNetLightning.Utils.Primitives
 open NBitcoin
 open CustomEventAggregator
-open DotNetLightning.LN
+open DotNetLightning.Peer
+open DotNetLightning.Channel
 open DotNetLightning.Infrastructure
 
 open System
@@ -17,7 +18,6 @@ open Expecto
 open Foq
 open Microsoft.Extensions.Options
 open TestConstants
-
 
 let dummyBlockChainInstanceId = 
     "8888888888888888888888888888888888888888888888888888888888888888"

@@ -1,7 +1,6 @@
-namespace DotNetLightning.LN
+namespace DotNetLightning.Channel
 open NBitcoin
 open DotNetLightning.Utils
-open DotNetLightning.Utils.Primitives
 open DotNetLightning.Serialize.Msgs
 
 type PendingForwardHTLCInfo = {
