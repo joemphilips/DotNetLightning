@@ -3,7 +3,6 @@ namespace DotNetLightning.Infrastructure
 open DotNetLightning.Utils
 open DotNetLightning.Peer
 open DotNetLightning.Channel
-
 type ChannelEventWithContext = {
     NodeId: NodeId
     ChannelEvent: ChannelEvent
