@@ -82,7 +82,7 @@ let tests =
             let remoteKeys = remoteRepo.GetChannelKeys(false)
             let remotePubKeys = remoteKeys.ToChannelPubKeys()
             
-            let fundingSCoin = Channel.Helpers.getFundingSCoin(localPubKeys)
+            let fundingSCoin = ChannelHelpers.getFundingSCoin(localPubKeys)
                                                               (remotePubKeys.FundingPubKey)
                                                               (fundingTxId)
                                                               (TxOutIndex 0us)

@@ -58,6 +58,7 @@
     <Compile Include="Channel\Commitments.fs" />
     <Compile Include="Channel\ChannelTypes.fs" />
     <Compile Include="Channel\CommitmentsModule.fs" />
+    <Compile Include="Channel\ChannelValidation.fs" />
     <Compile Include="Channel\Channel.fs" />
   </ItemGroup>
   <ItemGroup>
