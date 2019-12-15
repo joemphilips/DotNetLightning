@@ -653,6 +653,20 @@ module Channel =
         // --------------- open channel procedure: case we are fundee -------------
         | WaitForInitInternal, CreateInbound inputInitFundee ->
             [ NewInboundChannelStarted({ InitFundee = inputInitFundee }) ] |> Good
+        | WaitForFundingConfirmed state, ApplyChannelReestablish theirChannelReestablish ->
+            // TODO validate msg
+            let commitmentSeed = state.Commitments.LocalParams.ChannelPubKeys.CommitmentSeed
+            let ourChannelReestablish =
+                {
+                    ChannelId = state.ChannelId
+                    NextLocalCommitmentNumber = 1UL
+                    NextRemoteCommitmentNumber = 0UL
+                    DataLossProtect = OptionalField.Some({
+                                          YourLastPerCommitmentSecret = PaymentPreimage([|for _ in 0..31 -> 0uy|])
+                                          MyCurrentPerCommitmentPoint = ChannelUtils.buildCommitmentPoint(commitmentSeed, 0UL)
+                                      })
+                }
+            [ WeReplyToChannelReestablish ourChannelReestablish ] |> Good
         | WaitForOpenChannel state, ApplyOpenChannel msg ->
             Validation.checkOpenChannelMsgAcceptable cs msg
             |>> fun _ ->

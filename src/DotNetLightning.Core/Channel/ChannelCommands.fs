@@ -190,6 +190,8 @@ type ChannelCommand =
     | ApplyOpenChannel of OpenChannel
     | ApplyFundingCreated of FundingCreated
 
+    | ApplyChannelReestablish of ChannelReestablish
+
     // normal
     | AddHTLC of CMDAddHTLC
     | ApplyUpdateAddHTLC of msg: UpdateAddHTLC * currentHeight: BlockHeight
