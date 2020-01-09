@@ -689,7 +689,7 @@ module Channel =
                                       FirstPerCommitmentPoint = localCommitmentSecret.PubKey
                                       ShutdownScriptPubKey = cs.Config.ChannelOptions.ShutdownScriptPubKey }
 
-                let remoteParams = RemoteParams.FromOpenChannel cs.RemoteNodeId state.InitFundee.RemoteInit msg
+                let remoteParams = RemoteParams.FromOpenChannel cs.RemoteNodeId state.InitFundee.RemoteInit msg cs.Config.ChannelHandshakeConfig
                 let data = Data.WaitForFundingCreatedData.Create localParams remoteParams msg acceptChannel
                 [ WeAcceptedOpenChannel(acceptChannel, data) ]
         | WaitForOpenChannel _state, ChannelCommand.Close _spk -> [ ChannelEvent.Closed ] |> Good
@@ -753,7 +753,7 @@ module Channel =
             [ TheySentFundingLocked msg ] |> Good
         | WaitForFundingConfirmed state, ApplyFundingConfirmedOnBC(height, txindex, depth) ->
             cs.Logger (LogLevel.Info) (sprintf "Funding tx for ChannelId (%A) was confirmed at block height %A; depth: %A" state.Commitments.ChannelId height.Value depth)
-            if (cs.Config.ChannelHandshakeConfig.MinimumDepth > depth) then
+            if state.Commitments.RemoteParams.MinimumDepth > depth then
                 [] |> Good
             else
                 let nextPerCommitmentPoint =
