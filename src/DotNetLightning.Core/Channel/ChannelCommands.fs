@@ -93,6 +93,7 @@ type RemoteParams = {
     HTLCBasePoint: PubKey
     GlobalFeatures: GlobalFeatures
     LocalFeatures: LocalFeatures
+    MinimumDepth: BlockHeightOffset
 }
     with
         static member FromAcceptChannel nodeId (remoteInit: Init) (msg: AcceptChannel) =
@@ -111,9 +112,10 @@ type RemoteParams = {
                 HTLCBasePoint = msg.HTLCBasepoint
                 GlobalFeatures = remoteInit.GlobalFeatures
                 LocalFeatures = remoteInit.LocalFeatures
+                MinimumDepth = BlockHeightOffset <| uint16 msg.MinimumDepth.Value
             }
 
-        static member FromOpenChannel (nodeId) (remoteInit: Init) (msg: OpenChannel) =
+        static member FromOpenChannel (nodeId) (remoteInit: Init) (msg: OpenChannel) (channelHandshakeConfig: ChannelHandshakeConfig) =
             {
                 NodeId = nodeId
                 DustLimitSatoshis = msg.DustLimitSatoshis
@@ -129,6 +131,7 @@ type RemoteParams = {
                 HTLCBasePoint = msg.HTLCBasepoint
                 GlobalFeatures = remoteInit.GlobalFeatures
                 LocalFeatures = remoteInit.LocalFeatures
+                MinimumDepth = channelHandshakeConfig.MinimumDepth
             }
 
 type InputInitFunder = {
