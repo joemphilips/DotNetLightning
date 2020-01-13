@@ -269,7 +269,7 @@ type PeerManager(eventAggregator: IEventAggregator,
                                        pipeWriter: PipeWriter,
                                        ?ie: Key) =
         unitVtask {
-            let newPeer = Peer.CreateOutbound(peerId, theirNodeId)
+            let newPeer = Peer.CreateOutbound(peerId, theirNodeId, Key ())
             let act1, peerEncryptor =
                 newPeer
                 |> fun p -> if (ie.IsNone) then p

@@ -14,8 +14,7 @@ let getOutBoundPeerForInitiatorTestVectors () =
 
     let outboundPeer =
         let ie = (Key(hex.DecodeData("1212121212121212121212121212121212121212121212121212121212121212")))
-        PeerChannelEncryptor.newOutBound(NodeId theirNodeId)
-        |> Optic.set PeerChannelEncryptor.OutBoundIE_ ie
+        PeerChannelEncryptor.newOutBound(NodeId theirNodeId, ie)
         |> fun c ->
                 Expect.equal (Optic.get (PeerChannelEncryptor.OutBoundIE_) c) (Some(ie)) ""
                 c

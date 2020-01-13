@@ -276,14 +276,14 @@ module PeerChannelEncryptor =
 
 
     module PeerChannelEncryptor =
-        let newOutBound (NodeId theirNodeId) =
+        let newOutBound (NodeId theirNodeId, ourNodeSecret: Key) =
             let hashInput = Array.concat[| NOISE_H; theirNodeId.ToBytes()|]
             let h = uint256(Hashes.SHA256(hashInput))
             {
                 TheirNodeId = Some(NodeId theirNodeId)
                 NoiseState = InProgress {
                         State = PreActOne
-                        DirectionalState = OutBound ({ IE = Key() })
+                        DirectionalState = OutBound ({ IE = ourNodeSecret })
                         BidirectionalState = {H = h; CK = uint256(NOISE_CK)}
                     }
             }
