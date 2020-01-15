@@ -42,9 +42,9 @@ type Peer = {
             SyncStatus = NoSyncRequested
         }
         
-        static member CreateOutbound(peerId, theirNodeId) = {
+        static member CreateOutbound(peerId, theirNodeId, ourNodeSecret: Key) = {
             PeerId = peerId
-            ChannelEncryptor = PeerChannelEncryptor.newOutBound(theirNodeId)
+            ChannelEncryptor = PeerChannelEncryptor.newOutBound(theirNodeId, ourNodeSecret)
             IsOutBound = true
             TheirNodeId = Some theirNodeId
             TheirGlobalFeatures = None
