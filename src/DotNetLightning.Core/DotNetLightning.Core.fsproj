@@ -20,6 +20,7 @@
   <ItemGroup>
     <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\Secp256k1.Net\Secp256k1.Net.csproj" PrivateAssets="all" />
     <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\NSec\Experimental\NSec.Experimental.csproj" />
+    <ProjectReference Include="..\ResultUtils\ResultUtils.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
@@ -27,12 +28,10 @@
     <Compile Include="Utils/LNMoney.fs" />
     <Compile Include="Utils/NBitcoinExtensions.fs" />
     <Compile Include="Utils\Extensions.fs" />
-    <Compile Include="Utils/RResult.fs" />
     <Compile Include="Utils/Utils.fs" />
     <Compile Include="Utils/Aether.fs" />
     <Compile Include="Utils/Config.fs" />
     <Compile Include="Utils/Errors.fs" />
-    <Compile Include="Utils/Logger.fs" />
     <Compile Include="Utils/RouteType.fs" />
     <Compile Include="Serialize/LightningStream.fs" />
     <Compile Include="Serialize/Msgs.fs" />
@@ -45,9 +44,11 @@
     <Compile Include="Crypto/Generators.fs" />
     <Compile Include="Chain/ChainInterface.fs" />
     <Compile Include="Chain/KeysInterface.fs" />
+    <Compile Include="Transactions\TransactionError.fs" />
     <Compile Include="Transactions/CommitmentSpec.fs" />
     <Compile Include="Transactions/Scripts.fs" />
     <Compile Include="Transactions/Transactions.fs" />
+    <Compile Include="Peer\PeerError.fs" />
     <Compile Include="Peer\PeerChannelEncryptor.fs" />
     <Compile Include="Peer\PeerTypes.fs" />
     <Compile Include="Peer\Peer.fs" />
@@ -57,6 +58,7 @@
     <Compile Include="Channel\ChannelCommands.fs" />
     <Compile Include="Channel\Commitments.fs" />
     <Compile Include="Channel\ChannelTypes.fs" />
+    <Compile Include="Channel\ChannelError.fs" />
     <Compile Include="Channel\CommitmentsModule.fs" />
     <Compile Include="Channel\ChannelValidation.fs" />
     <Compile Include="Channel\Channel.fs" />

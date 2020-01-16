@@ -9,14 +9,13 @@ open DotNetLightning.Utils.Error
 // #region serialization
 module rec Msgs =
 
-    [<Struct>]
     type P2PDecodeError =
-        //| UnknownVersion
-        // | UnknownRequiredFeature
-        // | InvalidValue
-        | ShortRead
+        | UnknownVersion
+        | UnknownRequiredFeature
+        | InvalidValue
         | ExtraAddressesPerType
         | BadLengthDescriptor
+        | UnexpectedEndOfStream of EndOfStreamException
         | IO of IOException
 
     type UnknownVersionException(msg) =
@@ -282,14 +281,15 @@ module rec Msgs =
             | x -> failwithf "%A is not known lightning message. This should never happen" x
 
     module LightningMsg =
-        let fromBytes<'T when 'T :> ILightningMsg>(b: byte[]) =
+        let fromBytes<'T when 'T :> ILightningMsg>(b: byte[]): Result<_, P2PDecodeError> =
             try
                 use ms = new MemoryStream(b)
                 use ls = new LightningReaderStream(ms)
                 ILightningSerializable.deserializeWithFlag ls
-                |> Good
+                |> Ok
             with
-            | x -> RResult.rexn x
+            | :? EndOfStreamException as ex -> UnexpectedEndOfStream ex |> Error
+            | :? System.IO.IOException as ex -> P2PDecodeError.IO ex |> Error
 
     [<Extension>]
     type ILightningMsgExtension() =

@@ -350,3 +350,13 @@ type ChannelState =
             (fun v cc -> match cc with
                          | Normal _ -> Normal v
                          | _ -> cc )
+            
+            
+[<StructuredFormatDisplay("{ToString}")>]
+type MessageValidationError =
+    | FeeDeltaTooHigh of actual: float * maxAccepted: float
+    with
+        override this.ToString() =
+            match this with
+            | FeeDeltaTooHigh (actualDelta, maxAccepted) ->
+                sprintf "delta is %.2f%% . But it must be lower than %.2f%%" (actualDelta * 100.0) (maxAccepted * 100.0)

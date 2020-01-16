@@ -55,8 +55,6 @@ module Channel =
         |> fun d -> LNECDSASignature.FromBytesCompact(d, true)
         |> fun ecdsaSig -> TransactionSignature(ecdsaSig.Value, SigHash.All)
 
-        // facades
-
     module Closing =
         let makeClosingTx (keyRepo: IKeysRepository, cm: Commitments, localSpk: Script, remoteSpk: Script, closingFee: Money, localFundingPk, n) =
             assert (Scripts.isValidFinalScriptPubKey (remoteSpk) && Scripts.isValidFinalScriptPubKey (localSpk))

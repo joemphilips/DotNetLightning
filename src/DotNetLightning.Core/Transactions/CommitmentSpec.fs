@@ -1,5 +1,7 @@
 namespace DotNetLightning.Transactions
 
+open ResultUtils
+
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils
@@ -60,23 +62,23 @@ type CommitmentSpec = {
             match this.HTLCs |> Map.filter(fun k v  -> v.Direction <> direction) |>  Map.tryFind(htlcId), direction with
             | Some htlc, Out ->
                 { this with ToLocal = this.ToLocal + htlc.Add.AmountMSat; HTLCs = this.HTLCs.Remove htlcId }
-                |> Good
+                |> Ok
             | Some htlc, In ->
                 { this with ToRemote = this.ToRemote + htlc.Add.AmountMSat; HTLCs = this.HTLCs.Remove(htlcId) }
-                |> Good
+                |> Ok
             | None, _ ->
-                RResult.rmsg(sprintf "cannot find htlc id %A" htlcId)
+                UnknownHTLC htlcId |> Error
 
         member internal this.FailHTLC(direction: Direction, htlcId: HTLCId) =
             match this.HTLCs |> Map.filter(fun k v -> v.Direction <> direction) |> Map.tryFind (htlcId), direction with
             | Some htlc, Out ->
                 { this with ToRemote = this.ToRemote + htlc.Add.AmountMSat; HTLCs = this.HTLCs.Remove(htlcId)}
-                |> Good
+                |> Ok
             | Some htlc, In ->
                 { this with ToLocal = this.ToLocal + htlc.Add.AmountMSat; HTLCs = this.HTLCs.Remove(htlcId)}
-                |> Good
+                |> Ok
             | None, _ ->
-                RResult.rmsg(sprintf "cannot find htlc id %A" htlcId)
+                UnknownHTLC htlcId |> Error
 
         member internal this.Reduce(localChanges: #IUpdateMsg list, remoteChanges: #IUpdateMsg list) =
             let spec1 =
@@ -99,7 +101,7 @@ type CommitmentSpec = {
 
             let spec3RR =
                 localChanges
-                |> List.fold(fun (acc: RResult<CommitmentSpec>) updateMsg ->
+                |> List.fold(fun (acc: Result<CommitmentSpec, TransactionError>) updateMsg ->
                             match box updateMsg with
                             | :? UpdateFulfillHTLC as u ->
                                 acc >>= fun a -> a.FulfillHTLC(Out, u.HTLCId)
@@ -109,11 +111,11 @@ type CommitmentSpec = {
                                 acc >>= fun a -> a.FailHTLC(Out, u.HTLCId)
                             | _ -> acc
                         )
-                    (Good spec2)
+                    (Ok spec2)
 
             let spec4RR =
                 remoteChanges
-                |> List.fold(fun (acc: RResult<CommitmentSpec>) updateMsg ->
+                |> List.fold(fun (acc: Result<CommitmentSpec, TransactionError>) updateMsg ->
                             match box updateMsg with
                             | :? UpdateFulfillHTLC as u ->
                                 acc >>= fun a -> a.FulfillHTLC(In, u.HTLCId)
@@ -130,7 +132,7 @@ type CommitmentSpec = {
                 |> List.fold(fun (acc) updateMsg ->
                         match box updateMsg with
                         | :? UpdateFee as u ->
-                            acc |>> fun a -> { a with CommitmentSpec.FeeRatePerKw = u.FeeRatePerKw }
+                            (fun a -> { a with CommitmentSpec.FeeRatePerKw = u.FeeRatePerKw }) <!> acc
                         | _ -> acc
                     )
                     spec4RR

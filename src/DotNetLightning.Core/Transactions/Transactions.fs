@@ -1,10 +1,13 @@
 namespace DotNetLightning.Transactions
 
 open System
-open System
 open System.Linq
+
 open NBitcoin
 open NBitcoin.Crypto
+
+open ResultUtils
+
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils
 open DotNetLightning.Core.Utils.Extensions
@@ -72,10 +75,11 @@ module private HTLCHelper =
             htlcTx.Value.Inputs.[htlcTx.WhichInput].WitnessScript <- null
             htlcTx.Value.Inputs.[htlcTx.WhichInput].PartialSigs.Clear()
             htlcTx.Value.ExtractTransaction()
-            |> Good
+            |> Ok
         | false ->
             sprintf "Failed to finalize PSBT. error (%A) " errors
-            |> RResult.rmsg
+            |> FailedToFinalizeScript
+            |> Error
         
 type HTLCSuccessTx = {
     Value: PSBT
@@ -183,12 +187,6 @@ type InputInfo = {
     OutPoint: OutPoint
     RedeemScript: Script
 }
-
-exception TxGenerationSkippedException of string
-exception OutputNotFoundException of string
-exception AmountBelowDustLimitException
-exception HTLCNotCleanException
-
 
 // Write
 [<CustomComparison;CustomEquality>]
@@ -429,27 +427,27 @@ module Transactions =
     let private findScriptPubKeyIndex(tx: Transaction) (spk: Script) =
         tx.Outputs |> List.ofSeq |> List.findIndex(fun o -> o.ScriptPubKey = spk)
 
-    let checkTxFinalized (psbt: PSBT) (inputIndex: int) (additionalKnownSigs: (PubKey * TransactionSignature) seq): RResult<FinalizedTx> =
-        let checkTxFinalizedCore (psbt: PSBT): RResult<_> =
+    let checkTxFinalized (psbt: PSBT) (inputIndex: int) (additionalKnownSigs: (PubKey * TransactionSignature) seq): Result<FinalizedTx, _> =
+        let checkTxFinalizedCore (psbt: PSBT): Result<_, _> =
             match psbt.TryFinalize() with
-            | false, e -> RResult.rmsg (sprintf "failed to finalize psbt Errors: %A \n PSBTInput: %A \n base64 PSBT: %s" e psbt.Inputs.[inputIndex] (psbt.ToBase64()))
+            | false, e ->
+                (sprintf "failed to finalize psbt Errors: %A \n PSBTInput: %A \n base64 PSBT: %s" e psbt.Inputs.[inputIndex] (psbt.ToBase64()))
+                |> FailedToFinalizeScript
+                |> Error
             | true, _ ->
-                psbt.ExtractTransaction() |> FinalizedTx |> Good
-        try
-            match psbt.Inputs.[inputIndex].GetTxOut() with
-            | null -> RResult.rmsg ("Unknown prevout")
-            | _ ->
-                additionalKnownSigs |> Seq.iter (fun kv ->
-                    psbt.Inputs.[inputIndex].PartialSigs.AddOrReplace(kv)
-                )
+                psbt.ExtractTransaction() |> FinalizedTx |> Ok
+        match psbt.Inputs.[inputIndex].GetTxOut() with
+        | null -> failwithf "Bug: prevout does not exist in %d for psbt: %A" inputIndex (psbt)
+        | _ ->
+            additionalKnownSigs |> Seq.iter (fun kv ->
+                psbt.Inputs.[inputIndex].PartialSigs.AddOrReplace(kv)
+            )
 
-                checkTxFinalizedCore psbt
-        with
-        | e -> RResult.rexn e
+            checkTxFinalizedCore psbt
 
     let checkSigAndAdd (tx: ILightningTx) (signature: TransactionSignature) (pk: PubKey) =
         if (tx.Value.IsAllFinalized()) then
-            Good tx
+            Ok tx
         else
             let psbt = tx.Value
             let spentOutput = psbt.Inputs.[tx.WhichInput].GetTxOut()
@@ -461,9 +459,10 @@ module Transactions =
             ctx.ScriptVerify <- ScriptVerify.Standard
             if ctx.CheckSig(signature.ToBytes(), pk.ToBytes(), scriptCode, globalTx, tx.WhichInput, 1, spentOutput) then
                 tx.Value.Inputs.[tx.WhichInput].PartialSigs.AddOrReplace(pk, signature)
-                tx |> Good
+                tx |> Ok
             else
-                RResult.rmsg "Invalid signature"
+                InvalidSignature signature |> Error
+                
     /// Sign psbt inside ILightningTx and returns
     /// 1. Newly created signature
     /// 2. ILightningTx updated
@@ -478,6 +477,7 @@ module Transactions =
         with
         /// Sadly, psbt does not support signing for script other than predefined template.
         /// So we must fallback to more low level way.
+        /// This should be removed when NBitcoin supports finalization for Miniscript.
         | :? NotSupportedException ->
             let psbt = tx.Value
             let psbtIn = psbt.Inputs.[tx.WhichInput]
@@ -492,9 +492,11 @@ module Transactions =
                 |> snd
             let txSig = txIn.Sign(key, coin, SigHash.All, psbt.Settings.UseLowR)
             match checkSigAndAdd tx txSig key.PubKey with
-            | Good txWithSig ->
+            | Ok txWithSig ->
                 (txSig, txWithSig)
-            | Bad _ -> failwith "Failed to check signature. This should never happen."
+            | Error(InvalidSignature signature) ->
+                failwithf "Failed to check signature. (%A) This should never happen." signature
+            | Error e -> failwith "%A" e
 
     let makeHTLCTimeoutTx (commitTx: Transaction)
                           (localDustLimit: Money)
@@ -512,7 +514,7 @@ module Transactions =
         let spkIndex = findScriptPubKeyIndex commitTx spk
         let amount = htlc.AmountMSat.ToMoney() - fee
         if (amount < localDustLimit) then
-            RResult.rexn(AmountBelowDustLimitException)
+            AmountBelowDustLimit amount |> Error
         else
             let psbt = 
                 let txb = n.CreateTransactionBuilder()
@@ -530,7 +532,7 @@ module Transactions =
                 PSBT.FromTransaction(tx, n)
                     .AddCoins(scoin)
             let whichInput = psbt.Inputs |> Seq.findIndex(fun i -> not (isNull i.WitnessScript))
-            { HTLCTimeoutTx.Value = psbt; WhichInput = whichInput } |> Good
+            { HTLCTimeoutTx.Value = psbt; WhichInput = whichInput } |> Ok
 
     let makeHTLCSuccessTx (commitTx: Transaction)
                           (localDustLimit: Money)
@@ -548,7 +550,7 @@ module Transactions =
         let spkIndex = findScriptPubKeyIndex commitTx spk
         let amount = htlc.AmountMSat.ToMoney() - fee
         if (amount < localDustLimit) then
-            RResult.rexn(AmountBelowDustLimitException)
+            AmountBelowDustLimit amount |> Error
         else
             let psbt = 
                 let txb = n.CreateTransactionBuilder()
@@ -567,7 +569,7 @@ module Transactions =
                 PSBT.FromTransaction(tx, n)
                     .AddCoins(scoin)
             let whichInput = psbt.Inputs |> Seq.findIndex(fun i -> not (isNull i.WitnessScript))
-            { HTLCSuccessTx.Value = psbt; WhichInput = whichInput; PaymentHash = htlc.PaymentHash } |> Good
+            { HTLCSuccessTx.Value = psbt; WhichInput = whichInput; PaymentHash = htlc.PaymentHash } |> Ok
 
     let makeHTLCTxs (commitTx: Transaction)
                     (localDustLimit: Money)
@@ -577,15 +579,15 @@ module Transactions =
                     (localHTLCPubKey)
                     (remoteHTLCPubKey)
                     (spec: CommitmentSpec)
-                    (n): RResult<(HTLCTimeoutTx list) * (HTLCSuccessTx list)> =
+                    (n): Result<(HTLCTimeoutTx list) * (HTLCSuccessTx list), TransactionError list> =
         let htlcTimeoutTxs = (trimOfferedHTLCs localDustLimit spec)
                              |> List.map(fun htlc -> makeHTLCTimeoutTx (commitTx) (localDustLimit) (localRevocationPubKey) (toLocalDelay) (toLocalDelayedPaymentPubKey) (localHTLCPubKey) (remoteHTLCPubKey) (spec.FeeRatePerKw) (htlc.Add) n)
-                             |> List.sequenceRResult
+                             |> List.sequenceResultA
         
         let htlcSuccessTxs = (trimReceivedHTLCs localDustLimit spec)
                              |> List.map(fun htlc -> makeHTLCSuccessTx (commitTx) (localDustLimit) (localRevocationPubKey) (toLocalDelay) (toLocalDelayedPaymentPubKey) (localHTLCPubKey) (remoteHTLCPubKey) (spec.FeeRatePerKw) (htlc.Add) n)
-                             |> List.sequenceRResult
-        RResult.Good (fun a b -> (a, b)) <*> htlcTimeoutTxs <*> htlcSuccessTxs
+                             |> List.sequenceResultA
+        (fun a b -> (a, b)) <!> htlcTimeoutTxs <*> htlcSuccessTxs
 
     let makeClaimHTLCSuccessTx (commitTx: Transaction)
                                (localDustLimit: Money)
@@ -595,14 +597,14 @@ module Transactions =
                                (localFinalScriptPubKey: Script)
                                (htlc: UpdateAddHTLC)
                                (feeRatePerKw: FeeRatePerKw)
-                               (n: Network): RResult<ClaimHTLCSuccessTx> =
+                               (n: Network): Result<ClaimHTLCSuccessTx, TransactionError> =
         let fee = feeRatePerKw.ToFee(CLAIM_HTLC_SUCCESS_WEIGHT)
         let redeem = Scripts.htlcOffered(remoteHTLCPubKey) (localHTLCPubKey) (remoteRevocationPubKey) (htlc.PaymentHash)
         let spk = redeem.WitHash.ScriptPubKey
         let spkIndex = findScriptPubKeyIndex commitTx spk
         let amount = htlc.AmountMSat.ToMoney() - fee
         if (amount < localDustLimit) then
-            RResult.rexn(AmountBelowDustLimitException)
+            AmountBelowDustLimit amount |> Error
         else
             let psbt = 
                 let txb = n.CreateTransactionBuilder()
@@ -616,7 +618,7 @@ module Transactions =
                 tx.Inputs.[0].Sequence <- !> 0xffffffffu
                 PSBT.FromTransaction(tx, n)
                     .AddCoins(coin)
-            psbt |> ClaimHTLCSuccessTx |> Good
+            psbt |> ClaimHTLCSuccessTx |> Ok
 
     let makeClaimHTLCTimeoutTx (commitTx: Transaction)
                                (localDustLimit: Money)
@@ -626,14 +628,14 @@ module Transactions =
                                (localFinalScriptPubKey: Script)
                                (htlc: UpdateAddHTLC)
                                (feeRatePerKw: FeeRatePerKw)
-                               (n: Network): RResult<_> =
+                               (n: Network): Result<_, _> =
         let fee = feeRatePerKw.ToFee(CLAIM_HTLC_TIMEOUT_WEIGHT)
         let redeem = Scripts.htlcReceived remoteHTLCPubKey localHTLCPubKey remoteRevocationPubKey htlc.PaymentHash htlc.CLTVExpiry.Value
         let spk = redeem.WitHash.ScriptPubKey
         let spkIndex = findScriptPubKeyIndex commitTx spk
         let amount = htlc.AmountMSat.ToMoney() - fee
         if (amount < localDustLimit) then
-            RResult.rexn(AmountBelowDustLimitException)
+            AmountBelowDustLimit amount |> Error
         else
             let psbt = 
                 let coin = Coin(commitTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex))
@@ -647,21 +649,21 @@ module Transactions =
                 tx.Inputs.[0].Sequence <- !> 0xffffffffu
                 PSBT.FromTransaction(tx, n)
                     .AddCoins(coin)
-            psbt |> ClaimHTLCTimeoutTx |> Good
+            psbt |> ClaimHTLCTimeoutTx |> Ok
 
     let makeClaimP2WPKHOutputTx (delayedOutputTx: Transaction)
                                 (localDustLimit: Money)
                                 (localPaymentPubKey: PubKey)
                                 (localFinalDestination: IDestination)
                                 (feeRatePerKw: FeeRatePerKw)
-                                (n: Network): RResult<ClaimP2WPKHOutputTx> =
+                                (n: Network): Result<ClaimP2WPKHOutputTx, _> =
         let fee = feeRatePerKw.ToFee(CLAIM_P2WPKH_OUTPUT_WEIGHT)
         let spk = localPaymentPubKey.WitHash.ScriptPubKey
         let spkIndex = findScriptPubKeyIndex delayedOutputTx spk
         let outPut = delayedOutputTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex)
         let amount = (outPut).TxOut.Value - fee
         if (amount < localDustLimit) then
-            RResult.rexn(AmountBelowDustLimitException)
+            AmountBelowDustLimit amount |> Error
         else
             let psbt = 
                 let coin = Coin(outPut)
@@ -678,7 +680,7 @@ module Transactions =
                 tx.Inputs.[0].Sequence <- !> 0xffffffffu
                 PSBT.FromTransaction(tx, n)
                     .AddCoins(coin)
-            psbt |> ClaimP2WPKHOutputTx|> Good
+            psbt |> ClaimP2WPKHOutputTx|> Ok
 
     let makeMainPenaltyTx (commitTx: Transaction)
                           (localDustLimit: Money)
@@ -687,7 +689,7 @@ module Transactions =
                           (toRemoteDelay: BlockHeightOffset)
                           (remoteDelayedPaymentPubKey: PubKey)
                           (feeRatePerKw: FeeRatePerKw)
-                          (n: Network):RResult<MainPenaltyTx>  =
+                          (n: Network): Result<MainPenaltyTx, _>  =
         let fee = feeRatePerKw.ToFee(MAIN_PENALTY_WEIGHT)
         let redeem = Scripts.toLocalDelayed remoteRevocationKey toRemoteDelay remoteDelayedPaymentPubKey
         let spk = redeem.WitHash.ScriptPubKey
@@ -695,7 +697,7 @@ module Transactions =
         let outPut = commitTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex)
         let amount = (outPut).TxOut.Value - fee
         if (amount < localDustLimit) then
-            RResult.rexn(AmountBelowDustLimitException)
+            AmountBelowDustLimit amount |> Error
         else
             let psbt = 
                 let coin = Coin(outPut)
@@ -712,7 +714,7 @@ module Transactions =
                 tx.Inputs.[0].Sequence <- !> 0xffffffffu
                 PSBT.FromTransaction(tx, n)
                     .AddCoins(coin)
-            psbt |> MainPenaltyTx |> Good
+            psbt |> MainPenaltyTx |> Ok
             
     let makeHTLCPenaltyTx (commitTx: Transaction) (localDustLimit: Money): HTLCPenaltyTx =
         raise <| NotImplementedException()
@@ -724,9 +726,9 @@ module Transactions =
                       (dustLimit: Money)
                       (closingFee: Money)
                       (spec: CommitmentSpec)
-                      (n: Network): RResult<ClosingTx> =
+                      (n: Network): Result<ClosingTx, _> =
         if (not spec.HTLCs.IsEmpty) then
-            RResult.rexn (HTLCNotCleanException)
+            HTLCNotClean (spec.HTLCs |> Map.toList |> List.map(fst)) |> Error
         else
             let toLocalAmount, toRemoteAmount =
                 if (localIsFunder) then
@@ -749,6 +751,6 @@ module Transactions =
                 tx.Inputs.[0].Sequence <- !> 0xffffffffu
                 PSBT.FromTransaction(tx, n)
                     .AddCoins(commitTxInput)
-            psbt |> ClosingTx |> Good
+            psbt |> ClosingTx |> Ok
 
 

@@ -23,6 +23,7 @@ type APIError =
 and FeeRateTooHighContent = { Msg: string; FeeRate: FeeRatePerKw }
 
 
+/// TODO: rename?
 module Error =
     [<Literal>]
     let BADONION = 0x8000us

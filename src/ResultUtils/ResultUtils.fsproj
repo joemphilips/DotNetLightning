@@ -12,5 +12,6 @@
     <Compile Include="ResultOptionOp.fs" />
     <Compile Include="Validation.fs" />
     <Compile Include="ValidationOp.fs" />
+    <Compile Include="List.fs" />
   </ItemGroup>
 </Project>
