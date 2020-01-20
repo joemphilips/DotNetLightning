@@ -5,3 +5,5 @@ module ResultOp =
   let inline (<!>) f x = Result.map f x
   let inline (<*>) f x = Result.apply f x
   let inline (>>=) x f = Result.bind f x
+  let inline ( *> ) m1 m2 = Result.lift2 (fun _ y -> y) m1 m2
+  let inline ( <* ) m1 m2 = Result.lift2 (fun x _ -> x) m1 m2
