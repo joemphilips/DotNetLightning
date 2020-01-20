@@ -1,16 +1,14 @@
 namespace DotNetLightning.Channel
 
+open ResultUtils
+open NBitcoin
+
 open DotNetLightning.Chain
 open DotNetLightning.Crypto
 open DotNetLightning.Utils
 open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Transactions
-open NBitcoin
-
-type ChannelError =
-    | Ignore of string
-    | Close of string
 
 exception ChannelException of ChannelError
 module internal ChannelHelpers =
@@ -85,7 +83,7 @@ module internal ChannelHelpers =
                           (localPerCommitmentPoint: PubKey)
                           (remotePerCommitmentPoint: PubKey)
                           (secpContext: ISecp256k1)
-                          (n: Network): RResult<CommitmentSpec * CommitTx * CommitmentSpec * CommitTx> =
+                          (n: Network): Result<CommitmentSpec * CommitTx * CommitmentSpec * CommitTx, ChannelError> =
         let toLocal = if (localParams.IsFunder) then fundingSatoshis.ToLNMoney() - pushMSat else pushMSat
         let toRemote = if (localParams.IsFunder) then pushMSat else fundingSatoshis.ToLNMoney() - pushMSat
         let localSpec = CommitmentSpec.Create toLocal toRemote initialFeeRatePerKw
@@ -95,9 +93,9 @@ module internal ChannelHelpers =
             let fees = Transactions.commitTxFee remoteParams.DustLimitSatoshis remoteSpec
             let missing = toRemote.ToMoney() - localParams.ChannelReserveSatoshis - fees
             if missing < Money.Zero then
-                RResult.rmsg (sprintf "they are funder but cannot afford their fee. to_remote output is: %A; actual fee is %A; channel_reserve_satoshis is: %A" toRemote fees localParams.ChannelReserveSatoshis)
+                theyCannotAffordFee(toRemote, fees, localParams.ChannelReserveSatoshis)
             else
-                Good()
+                Ok()
         let makeFirstCommitTxCore() =
             let sCoin = getFundingSCoin (localParams.ChannelPubKeys) (remoteParams.FundingPubKey) (fundingTxId) (fundingOutputIndex) (fundingSatoshis)
             let revPubKeyForLocal = Generators.revocationPubKey secpContext remoteParams.RevocationBasePoint localPerCommitmentPoint
@@ -137,7 +135,7 @@ module internal ChannelHelpers =
                                           remoteSpec
                                           n
 
-            (localSpec, localCommitTx, remoteSpec, remoteCommitTx) |> Good
+            (localSpec, localCommitTx, remoteSpec, remoteCommitTx) |> Ok
 
         if (not localParams.IsFunder) then
             checkTheyCanAffordFee() *> (makeFirstCommitTxCore())

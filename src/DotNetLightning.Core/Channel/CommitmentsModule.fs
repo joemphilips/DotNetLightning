@@ -334,7 +334,12 @@ module internal Commitments =
         | Choice1Of2 _ ->
             CanNotSignBeforeRevocation |> Error
 
-    let receiveCommit (ctx) (keyRepo: IKeysRepository) (msg: CommitmentSigned) (n: Network) (cm: Commitments) =
+    let private checkSignatureCountMismatch(sortedHTLCTXs: IHTLCTx list) (msg) =
+        if (sortedHTLCTXs.Length <> msg.HTLCSignatures.Length) then
+            signatureCountMismatch (sortedHTLCTXs.Length, msg.HTLCSignatures.Length)
+        else
+            Ok()
+    let receiveCommit (ctx) (keyRepo: IKeysRepository) (msg: CommitmentSigned) (n: Network) (cm: Commitments): Result<ChannelEvent list, ChannelError> =
         if cm.RemoteHasChanges() |> not then
             ReceivedCommitmentSignedWhenWeHaveNoPendingChanges |> Error
         else
@@ -352,16 +357,14 @@ module internal Commitments =
                     let localSigPair = seq [(chanKeys.FundingPubKey, signature)]
                     let remoteSigPair = seq[ (cm.RemoteParams.FundingPubKey, TransactionSignature(msg.Signature.Value, SigHash.All)) ]
                     Seq.append localSigPair remoteSigPair
-                let! finalizedCommitTx =
+                let tmp = 
                     Transactions.checkTxFinalized signedCommitTx localCommitTx.WhichInput sigPair
                     |> expectTransactionError
+                let! finalizedCommitTx = tmp
                 let sortedHTLCTXs = Helpers.sortBothHTLCs htlcTimeoutTxs htlcSuccessTxs
-                let! _ =
-                    if (sortedHTLCTXs.Length (<>) msg.HTLCSignatures.Length) then
-                        signatureCountMismatch sortedHTLCTXs.Length msg.HTLCSignatures.Length
-                    else
-                        Ok()
-                let localHTLCSigs, sortedHTLCTXs =
+                do! checkSignatureCountMismatch sortedHTLCTXs msg
+                
+                let _localHTLCSigs, sortedHTLCTXs =
                     let localHtlcSigsAndHTLCTxs = sortedHTLCTXs |> List.map(fun htlc -> keyRepo.GenerateKeyFromBasePointAndSign(htlc.Value, cm.LocalParams.ChannelPubKeys.HTLCBasePubKey, localPerCommitmentPoint))
                     localHtlcSigsAndHTLCTxs |> List.map(fst), localHtlcSigsAndHTLCTxs |> List.map(snd) |> Seq.cast<IHTLCTx> |> List.ofSeq
 
@@ -383,6 +386,7 @@ module internal Commitments =
                     List.zip sortedHTLCTXs msg.HTLCSignatures
                     |> List.map(checkHTLCSig)
                     |> List.sequenceResultA
+                    |> expectTransactionErrors
                 let successTxs = txList |> List.choose(fun o -> match o with | :? HTLCSuccessTx as tx -> Some tx | _ -> None)
                 let finalizedTxs = txList |> List.choose(fun o -> match o with | :? FinalizedTx as tx -> Some tx | _ -> None)
                 let localPerCommitmentSecret =
@@ -404,15 +408,15 @@ module internal Commitments =
                     let theirChanges1 = { cm.RemoteChanges with Proposed = []; ACKed = (cm.RemoteChanges.ACKed @ cm.RemoteChanges.Proposed) }
                     let completedOutgoingHTLCs =
                         let t1 = cm.LocalCommit.Spec.HTLCs
-                                 |> Map.filter(fun k v -> v.Direction = Out)
-                                 |> Map.toSeq |> Seq.map (fun (k, v) -> k) |> Set.ofSeq
-                        let t2 = localCommit1.Spec.HTLCs |> Map.filter(fun k v -> v.Direction = Out)
-                                 |> Map.toSeq |> Seq.map (fun (k, v) -> k) |> Set.ofSeq
+                                 |> Map.filter(fun _ v -> v.Direction = Out)
+                                 |> Map.toSeq |> Seq.map (fun (k, _) -> k) |> Set.ofSeq
+                        let t2 = localCommit1.Spec.HTLCs |> Map.filter(fun _ v -> v.Direction = Out)
+                                 |> Map.toSeq |> Seq.map (fun (k, _) -> k) |> Set.ofSeq
                         Set.difference t1 t2
-                    let originChannels1 = cm.OriginChannels |> Map.filter(fun k v -> Set.contains k completedOutgoingHTLCs)
+                    let originChannels1 = cm.OriginChannels |> Map.filter(fun k _ -> Set.contains k completedOutgoingHTLCs)
                     { cm with LocalCommit = localCommit1
                               LocalChanges = ourChanges1
                               RemoteChanges = theirChanges1
                               OriginChannels = originChannels1 }
-                Good ([ WeAcceptedCommitmentSigned(nextMsg, nextCommitments) ;])
+                return [ WeAcceptedCommitmentSigned(nextMsg, nextCommitments) ;]
             }

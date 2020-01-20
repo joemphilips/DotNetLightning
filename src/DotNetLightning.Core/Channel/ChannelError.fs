@@ -2,8 +2,8 @@ namespace DotNetLightning.Channel
 
 open DotNetLightning.Crypto
 open DotNetLightning.Transactions
+open DotNetLightning.Utils
 open DotNetLightning.Utils.Error
-open DotNetLightning.Utils.Primitives
 open NBitcoin
 
 [<StructuredFormatDisplay("{ToString}")>]
@@ -19,10 +19,14 @@ type ChannelError =
     | InvalidFailureCode of ErrorCode
     /// Consumer of the channel domain have given invalid command
     | APIMisuse of string
-    | CannotAffordFee of localChannelReserve: Money * requiredFee: Money * missingAmount: Money
+    | WeCannotAffordFee of localChannelReserve: Money * requiredFee: Money * missingAmount: Money
     | CanNotSignBeforeRevocation
     | ReceivedCommitmentSignedWhenWeHaveNoPendingChanges
     | SignatureCountMismatch of expected: int * actual: int
+    /// When we create the first commitment txs as fundee,
+    /// There might be a case that their initial funding amount is too low that it
+    /// cannot afford fee
+    | TheyCannotAffordFee of toRemote: LNMoney * fee: Money * channelReserve: Money
     
     override this.ToString() =
         match this with
@@ -35,12 +39,14 @@ type ChannelError =
                     e
         | InvalidFailureCode errorCode ->
             sprintf "invalid failure code %A" (errorCode.GetOnionErrorDescription())
-        | CannotAffordFee (channelReserve, fees, missing) ->
+        | WeCannotAffordFee (channelReserve, fees, missing) ->
             sprintf
                 "Cannot afford fees. Missing Satoshis are: %A . Reserve Satoshis are %A . Fees are %A"
                 channelReserve fees (missing)
         | SignatureCountMismatch(expected, actual) ->
             sprintf "Number of signatures went from the remote (%A) does not match the number expected (%A)" actual expected
+        | TheyCannotAffordFee (toRemote, fee, channelReserve) ->
+            sprintf "they are funder but cannot afford their fee. to_remote output is: %A; actual fee is %A; channel_reserve_satoshis is: %A" toRemote fee channelReserve
         | x -> sprintf "%A" x
 
 /// Helpers to create channel error
@@ -67,15 +73,17 @@ module internal ChannelError =
         x |> APIMisuse |> Error
         
     let inline cannotAffordFee x =
-        x |> CannotAffordFee |> Error
+        x |> WeCannotAffordFee |> Error
     
     let inline signatureCountMismatch x =
         x |> SignatureCountMismatch |> Error
+        
+    let inline theyCannotAffordFee x =
+        x |> TheyCannotAffordFee |> Error
     
     let expectTransactionError result =
         Result.mapError (List.singleton >> TransactionRelatedErrors) result
         
     let expectTransactionErrors result =
         Result.mapError (TransactionRelatedErrors) result
-        
         
