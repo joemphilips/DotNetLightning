@@ -1,12 +1,14 @@
 namespace DotNetLightning.Channel
 
-open NBitcoin
+open ResultUtils
 open DotNetLightning.Utils
 open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Utils.Error
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Chain
 open DotNetLightning.Transactions
+
+open NBitcoin
 
 //       .d8888b.   .d88888b.  888b     d888 888b     d888        d8888 888b    888 8888888b.   .d8888b.
 //      d88P  Y88b d88P" "Y88b 8888b   d8888 8888b   d8888       d88888 8888b   888 888  "Y88b d88P  Y88b
@@ -27,15 +29,17 @@ type CMDAddHTLC = {
     CurrentHeight: BlockHeight
 }
     with
-        static member Create amountMSat paymentHash expiry onion upstream commit origin currentHeight =
-            {
-                AmountMSat = amountMSat
-                PaymentHash = paymentHash
-                Expiry = expiry
-                Onion = onion
-                Upstream = upstream
-                Origin = origin
-                CurrentHeight = currentHeight
+        static member Create amountMSat paymentHash expiry onion upstream origin currentHeight =
+            result {
+                return {
+                    AmountMSat = amountMSat
+                    PaymentHash = paymentHash
+                    Expiry = expiry
+                    Onion = onion
+                    Upstream = upstream
+                    Origin = origin
+                    CurrentHeight = currentHeight
+                }
             }
 
 
@@ -60,8 +64,18 @@ type CMDUpdateFee = {
     FeeRatePerKw: FeeRatePerKw
 }
 
-type CMDClose = { ScriptPubKey: Script option }
+type CMDClose = private { ScriptPubKey: Script option }
+    with
+    static member Zero = { ScriptPubKey = None }
+    static member Create scriptPubKey =
+        result {
+            let! spk = Scripts.checkIsValidFinalScriptPubKey scriptPubKey
+            return  { ScriptPubKey = Some spk }
+        }
 
+module CMDClose =
+    let value cmdClose =
+        cmdClose.ScriptPubKey
 
 type LocalParams = {
     NodeId: NodeId

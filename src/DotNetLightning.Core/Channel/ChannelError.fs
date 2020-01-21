@@ -9,6 +9,7 @@ open DotNetLightning.Crypto
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Transactions
 
+open DotNetLightning.DomainUtils.Types
 open NBitcoin
 
 type ChannelError =
@@ -27,16 +28,32 @@ type ChannelError =
     | CanNotSignBeforeRevocation
     | ReceivedCommitmentSignedWhenWeHaveNoPendingChanges
     | SignatureCountMismatch of expected: int * actual: int
+    | ReceivedShutdownWhenRemoteHasUnsignedOutgoingHTLCs of msg: Shutdown
+    
     /// When we create the first commitment txs as fundee,
     /// There might be a case that their initial funding amount is too low that it
     /// cannot afford fee
     | TheyCannotAffordFee of toRemote: LNMoney * fee: Money * channelReserve: Money
+    
+    // --- invalid msg ---
     /// They sent unacceptable open_channel message
     | InvalidOpenChannel of InvalidOpenChannelError
-    
     /// They sent unacceptable accept_channel message
     | InvalidAcceptChannel of InvalidAcceptChannelError
     | InvalidUpdateAddHTLC of InvalidUpdateAddHTLCError
+    | InvalidRevokeAndACK of InvalidRevokeAndACKError
+    // ------------------
+    | ValidationFailed of ValidationError
+    
+    /// Consumer of the api (usually, that is wallet) failed to give an funding tx
+    | FundingTxNotGiven of msg: string
+    | OnceConfirmedFundingTxHasBecomeUnconfirmed of height: BlockHeight * depth: BlockHeightOffset
+    | CannotCloseChannel of msg: string
+    | UndefinedStateAndCmdPair of state: ChannelState * cmd: ChannelCommand
+    | RemoteProposedHigherFeeThanBefore of previous: Money * current: Money
+    // ---- invalid command ----
+    | InvalidCMDAddHTLC of InvalidCMDAddHTLCError
+    // -------------------------
     
     member this.RecommendedAction =
         match this with
@@ -52,11 +69,20 @@ type ChannelError =
         | WeCannotAffordFee _ -> Close
         | CanNotSignBeforeRevocation -> Close
         | ReceivedCommitmentSignedWhenWeHaveNoPendingChanges -> Close
+        | ReceivedShutdownWhenRemoteHasUnsignedOutgoingHTLCs _ -> Close
         | SignatureCountMismatch (_, _) -> Close
         | TheyCannotAffordFee (_, _, _) -> Close
         | InvalidOpenChannel _ -> DistrustPeer
         | InvalidAcceptChannel _ -> DistrustPeer
         | InvalidUpdateAddHTLC _ -> Close
+        | ValidationFailed _ -> Close
+        | FundingTxNotGiven _ -> Ignore
+        | OnceConfirmedFundingTxHasBecomeUnconfirmed _ -> Close
+        | CannotCloseChannel _ -> Ignore
+        | UndefinedStateAndCmdPair _ -> Ignore
+        | InvalidCMDAddHTLC _ -> Ignore
+        | InvalidRevokeAndACK _ -> Close
+        | RemoteProposedHigherFeeThanBefore(_, _) -> Close
     
     override this.ToString() =
         match this with
@@ -79,6 +105,15 @@ type ChannelError =
             sprintf "they are funder but cannot afford their fee. to_remote output is: %A; actual fee is %A; channel_reserve_satoshis is: %A" toRemote fee channelReserve
         | InvalidOpenChannel x ->
             sprintf "Invalid open_channel from the peer. \n %s" (x.ToString())
+        | OnceConfirmedFundingTxHasBecomeUnconfirmed (height, depth) ->
+            sprintf "once confirmed funding tx has become less confirmed than threshold %A! This is probably caused by reorg. current depth is: %A " height depth
+        | ReceivedShutdownWhenRemoteHasUnsignedOutgoingHTLCs msg ->
+            sprintf "They sent shutdown msg (%A) while they have pending unsigned HTLCs, this is protocol violation" msg
+        | UndefinedStateAndCmdPair (state, cmd) ->
+            sprintf "DotNetLightning does not know how to handle command (%A) while in state (%A)" cmd state
+        | RemoteProposedHigherFeeThanBefore(prev, current) ->
+            "remote proposed a commitment fee higher than the last commitment fee in the course of fee negotiation"
+            + sprintf "previous fee=%A; fee remote proposed=%A;" prev current
         | x -> sprintf "%A" x
 and ChannelConsumerAction =
     /// The error which should never happen.
@@ -124,17 +159,33 @@ and InvalidUpdateAddHTLCError = {
         Msg = msg
         Errors = e
     }
-    
-module internal ChannelHelpers =
-    let deriveOurDustLimitSatoshis (feeEstimator: IFeeEstimator): Money =
-        let (FeeRatePerKw atOpenBackGroundFee) = feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background)
-        (Money.Satoshis((uint64 atOpenBackGroundFee) * B_OUTPUT_PLUS_SPENDING_INPUT_WEIGHT / 1000UL), Money.Satoshis(546UL))
-        |> Money.Max
-        
-    let getOurChannelReserve (channelValue: Money) =
-        let q = channelValue / 100L
-        Money.Min(channelValue, Money.Max(q, Money.Satoshis(1L)))
-        
+and InvalidRevokeAndACKError = {
+    Msg: RevokeAndACK
+    Errors: string list
+}
+    with
+    static member Create msg e = {
+        Msg = msg
+        Errors = e
+    } 
+and InvalidCMDAddHTLCError = {
+    CMD: CMDAddHTLC
+    Errors: string list
+}
+    with
+    static member Create cmd e = {
+        CMD = cmd
+        Errors = e
+    }
+[<AutoOpen>]
+module private ValidationHelper =
+    let check left predicate right msg =
+        if predicate left right then
+            sprintf msg left right
+            |> Error
+        else
+            Ok()
+
 /// Helpers to create channel error
 [<AutoOpen>]
 module internal ChannelError =
@@ -166,6 +217,9 @@ module internal ChannelError =
         
     let inline theyCannotAffordFee x =
         x |> TheyCannotAffordFee |> Error
+        
+    let onceConfirmedFundingTxHasBecomeUnconfirmed (height, depth) =
+        (height, depth) |> OnceConfirmedFundingTxHasBecomeUnconfirmed |> Error
     
     let expectTransactionError result =
         Result.mapError (List.singleton >> TransactionRelatedErrors) result
@@ -173,15 +227,28 @@ module internal ChannelError =
     let expectTransactionErrors result =
         Result.mapError (TransactionRelatedErrors) result
         
-[<AutoOpen>]
-module private ValidationHelper =
-    let check left predicate right msg =
-        if predicate left right then
-            sprintf msg left right
-            |> Error
+    let expectFundingTxError msg =
+        Result.mapError(FundingTxNotGiven) msg
+        
+    let expectValidationError result =
+        Result.mapError(ValidationFailed) result
+        
+    let invalidRevokeAndACK msg e =
+        InvalidRevokeAndACKError.Create msg ([e]) |> InvalidRevokeAndACK |> Error
+        
+    let cannotCloseChannel msg =
+        msg |> CannotCloseChannel|> Error
+
+    let receivedShutdownWhenRemoteHasUnsignedOutgoingHTLCs msg =
+        msg |> ReceivedShutdownWhenRemoteHasUnsignedOutgoingHTLCs |> Error
+    let undefinedStateAndCmdPair state cmd =
+        UndefinedStateAndCmdPair (state, cmd) |> Error
+        
+    let checkRemoteProposedHigherFeeThanBefore prev curr =
+        if (prev < curr) then
+            RemoteProposedHigherFeeThanBefore(prev, curr) |> Error
         else
             Ok()
-
 module internal OpenChannelMsgValidation =
     let checkMaxAcceptedHTLCs (msg: OpenChannel) =
         if (msg.MaxAcceptedHTLCs < 1us) || (msg.MaxAcceptedHTLCs > 483us) then
@@ -281,8 +348,8 @@ module internal OpenChannelMsgValidation =
             Ok()
 
     let checkIsAcceptableByCurrentFeeRate (feeEstimator: IFeeEstimator) msg =
-        let ourDustLimit = ChannelHelpers.deriveOurDustLimitSatoshis feeEstimator
-        let ourChannelReserve = ChannelHelpers.getOurChannelReserve (msg.FundingSatoshis)
+        let ourDustLimit = ChannelConstantHelpers.deriveOurDustLimitSatoshis feeEstimator
+        let ourChannelReserve = ChannelConstantHelpers.getOurChannelReserve (msg.FundingSatoshis)
         let check left predicate right msg =
             if predicate left right then
                 sprintf msg left right
@@ -312,7 +379,7 @@ module internal OpenChannelMsgValidation =
             (sprintf "Insufficient funding amount for initial commitment. BackgroundFee %A. funders amount %A" backgroundFee fundersAmount)
             |> Error
         else
-            let ourChannelReserve = ChannelHelpers.getOurChannelReserve msg.FundingSatoshis
+            let ourChannelReserve = ChannelConstantHelpers.getOurChannelReserve msg.FundingSatoshis
             let toLocalMSat = msg.PushMSat
             let toRemoteMSat = fundersAmount - backgroundFeeRate.ToFee(COMMITMENT_TX_BASE_WEIGHT).ToLNMoney()
             if (toLocalMSat <= (msg.ChannelReserveSatoshis.ToLNMoney()) && toRemoteMSat <= ourChannelReserve.ToLNMoney()) then
@@ -357,7 +424,7 @@ module internal AcceptChannelMsgValidation =
             Ok()
 
     let checkDustLimitIsLargerThanOurChannelReserve (state: Data.WaitForAcceptChannelData) msg =
-        let reserve = ChannelHelpers.getOurChannelReserve state.LastSent.FundingSatoshis
+        let reserve = ChannelConstantHelpers.getOurChannelReserve state.LastSent.FundingSatoshis
         check
             msg.DustLimitSatoshis (>) reserve
             "dust limit (%A) is bigger than our channel reserve (%A)" 
@@ -388,7 +455,7 @@ module internal AcceptChannelMsgValidation =
         (check1 |> Validation.ofResult) *^> check2 *^> check3 *^> check4 *^> check5 *^> check6 *^> check7
         
 
-module internal UpdateAddHTLCValidation =
+module UpdateAddHTLCValidation =
     let internal checkExpiryIsNotPast (current: BlockHeight) (expiry) =
         check (expiry) (<=) (current) "AddHTLC's Expiry was %A but it must be larger than current height %A"
 
@@ -401,6 +468,8 @@ module internal UpdateAddHTLCValidation =
     let internal checkAmountIsLargerThanMinimum (htlcMinimum: LNMoney) (amount) =
         check (amount) (<) (htlcMinimum) "htlc value (%A) is too small. must be greater or equal to %A"
 
+    
+module internal UpdateAddHTLCValidationWithContext =
     let checkLessThanHTLCValueInFlightLimit (currentSpec: CommitmentSpec) (limit) (add: UpdateAddHTLC) =
         let htlcValueInFlight = currentSpec.HTLCs |> Map.toSeq |> Seq.sumBy (fun (_, v) -> v.Add.AmountMSat)
         if (htlcValueInFlight > limit) then

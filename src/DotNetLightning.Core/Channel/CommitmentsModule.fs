@@ -213,7 +213,7 @@ module internal Commitments =
             match cm.GetHTLCCrossSigned(Direction.In, cmd.Id) with
             | Some htlc when (cm.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
                 htlc.HTLCId |> htlcAlreadySent
-            | Some htlc ->
+            | Some _htlc ->
                 let msg = { UpdateFailMalformedHTLC.ChannelId = cm.ChannelId
                             HTLCId = cmd.Id
                             Sha256OfOnion = cmd.Sha256OfOnion
@@ -329,7 +329,7 @@ module internal Commitments =
                     { cm with RemoteNextCommitInfo = Choice1Of2(nextRemoteCommitInfo)
                               LocalChanges = { cm.LocalChanges with Proposed = []; Signed = cm.LocalChanges.Proposed }
                               RemoteChanges = { cm.RemoteChanges with ACKed = []; Signed = cm.RemoteChanges.ACKed } }
-                return [ WeAcceptedCMDSign (msg, nextCommitments) ] |> Ok
+                return [ WeAcceptedCMDSign (msg, nextCommitments) ]
             }
         | Choice1Of2 _ ->
             CanNotSignBeforeRevocation |> Error

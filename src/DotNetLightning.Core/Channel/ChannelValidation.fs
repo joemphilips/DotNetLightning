@@ -169,25 +169,27 @@ module internal Validation =
         |> Result.mapError(InvalidAcceptChannelError.Create msg >> InvalidAcceptChannel)
 
 
-
     let checkCMDAddHTLC (state: NormalData) (cmd: CMDAddHTLC) =
         Validation.ofResult(UpdateAddHTLCValidation.checkExpiryIsNotPast cmd.CurrentHeight cmd.Expiry)
         *> UpdateAddHTLCValidation.checkExpiryIsInAcceptableRange cmd.CurrentHeight cmd.Expiry
         *^> UpdateAddHTLCValidation.checkAmountIsLargerThanMinimum state.Commitments.RemoteParams.HTLCMinimumMSat cmd.AmountMSat
+        |> Result.mapError(InvalidCMDAddHTLCError.Create cmd >> InvalidCMDAddHTLC)
 
     let checkOurUpdateAddHTLCIsAcceptableWithCurrentSpec (currentSpec) (state: Commitments) (add: UpdateAddHTLC) =
-        Validation.ofResult(UpdateAddHTLCValidation.checkLessThanHTLCValueInFlightLimit currentSpec state.RemoteParams.MaxHTLCValueInFlightMSat add)
-        *^> UpdateAddHTLCValidation.checkLessThanMaxAcceptedHTLC currentSpec state.RemoteParams.MaxAcceptedHTLCs
-        *^> UpdateAddHTLCValidation.checkWeHaveSufficientFunds state currentSpec
+        Validation.ofResult(UpdateAddHTLCValidationWithContext.checkLessThanHTLCValueInFlightLimit currentSpec state.RemoteParams.MaxHTLCValueInFlightMSat add)
+        *^> UpdateAddHTLCValidationWithContext.checkLessThanMaxAcceptedHTLC currentSpec state.RemoteParams.MaxAcceptedHTLCs
+        *^> UpdateAddHTLCValidationWithContext.checkWeHaveSufficientFunds state currentSpec
         |> Result.mapError(InvalidUpdateAddHTLCError.Create add >> InvalidUpdateAddHTLC)
 
     let checkTheirUpdateAddHTLCIsAcceptable (state: Commitments) (add: UpdateAddHTLC) (currentHeight: BlockHeight) =
-        Validation.ofResult(check add.HTLCId (<>) state.RemoteNextHTLCId "Received Unexpected HTLCId (%A). Must be (%A)")
+        Validation.ofResult(ValidationHelper.check add.HTLCId (<>) state.RemoteNextHTLCId "Received Unexpected HTLCId (%A). Must be (%A)")
             *^> UpdateAddHTLCValidation.checkExpiryIsNotPast currentHeight add.CLTVExpiry
             *> UpdateAddHTLCValidation.checkExpiryIsInAcceptableRange currentHeight add.CLTVExpiry
             *^> UpdateAddHTLCValidation.checkAmountIsLargerThanMinimum state.LocalParams.HTLCMinimumMSat add.AmountMSat
+            |> Result.mapError(InvalidUpdateAddHTLCError.Create add >> InvalidUpdateAddHTLC)
 
     let checkTheirUpdateAddHTLCIsAcceptableWithCurrentSpec (currentSpec) (state: Commitments) (add: UpdateAddHTLC) =
-        Validation.ofResult(UpdateAddHTLCValidation.checkLessThanHTLCValueInFlightLimit currentSpec state.LocalParams.MaxHTLCValueInFlightMSat add)
-        *^> UpdateAddHTLCValidation.checkLessThanMaxAcceptedHTLC currentSpec state.LocalParams.MaxAcceptedHTLCs
-        *^> UpdateAddHTLCValidation.checkWeHaveSufficientFunds state currentSpec
+        Validation.ofResult(UpdateAddHTLCValidationWithContext.checkLessThanHTLCValueInFlightLimit currentSpec state.LocalParams.MaxHTLCValueInFlightMSat add)
+        *^> UpdateAddHTLCValidationWithContext.checkLessThanMaxAcceptedHTLC currentSpec state.LocalParams.MaxAcceptedHTLCs
+        *^> UpdateAddHTLCValidationWithContext.checkWeHaveSufficientFunds state currentSpec
+        |> Result.mapError(InvalidUpdateAddHTLCError.Create add >> InvalidUpdateAddHTLC)
