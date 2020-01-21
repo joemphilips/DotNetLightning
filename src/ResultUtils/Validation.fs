@@ -18,3 +18,7 @@ module Validation =
 
   let map3 f x y z =
     apply (map2 f x y) z
+    
+  let inline lift2 (f: 'a -> 'b -> 'c) (x: Result<'a, _>) (y: Result<'b, _>): Result<'c, _> =
+    apply (apply (Ok f) x) y
+

@@ -33,9 +33,7 @@ module Result =
     match r with
     | Ok x -> onOk x
     | Error y -> onError y
-  let inline lift2 (f: 'a -> 'b -> 'c) (x: Result<'a, _>) (y: Result<'b, _>): Result<'c, _> =
-    apply (apply (Ok f) x) y
-
+    
   let ofChoice c =
     match c with
     | Choice1Of2 x -> Ok x
