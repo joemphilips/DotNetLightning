@@ -1,6 +1,7 @@
 namespace DotNetLightning.Server
 
 open System
+open System.IO
 open System.Net
 open System.Collections.Generic
 open System.Linq
@@ -23,7 +24,6 @@ open Microsoft.Extensions.Logging
 open DotNetLightning.Infrastructure
 open DotNetLightning.Utils
 open DotNetLightning.Serialize.Msgs
-open System.IO
 
 
 
@@ -54,7 +54,7 @@ type Startup private () =
         // overwrite default settings if it is specified in config
         let nodeP = this.Configuration.GetSection("nodeparams")
         services.AddOptions<NodeParams>().Bind(nodeP)
-            .Validate(fun nodeP -> nodeP.Validate() |> function Good _ -> true | Bad tree -> failwith (tree.Describe())) |> ignore
+            .Validate(fun nodeP -> nodeP.Validate() |> function Ok _ -> true | Error errorMsgs -> failwithf "%A" errorMsgs) |> ignore
         services.AddAuthorization() |> ignore
         Services.register(services, this.Env)
 
