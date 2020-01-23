@@ -31,7 +31,6 @@ type ChannelManager(log: ILogger<ChannelActor>,
                     fundingTxProvider: IFundingTxProvider,
                     nodeParams: IOptions<NodeParams>) as this =
     let _nodeParams = nodeParams.Value
-    let _internalLog = Logger.fromMicrosoftLogger log
     
     let _ourNodeId = keysRepository.GetNodeSecret().PubKey |> NodeId
     
@@ -40,7 +39,6 @@ type ChannelManager(log: ILogger<ChannelActor>,
         let c =
             Channel.CreateCurried
                 config
-                _internalLog
                 chainListener
                 keysRepository
                 feeEstimator

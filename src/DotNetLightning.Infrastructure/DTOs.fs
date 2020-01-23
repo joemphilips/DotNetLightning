@@ -1,6 +1,7 @@
 namespace DotNetLightning.Infrastructure
 open DotNetLightning.Utils
 open DotNetLightning.Channel
+open DotNetLightning.DomainUtils.Types
 
 module DTO =
     open System.Text.Json
@@ -58,7 +59,7 @@ module DTO =
                 | WaitForOpenChannel d ->
                     WaitForOpenChannelDTO (InitFundeeDTO.FromDomainObject(d.InitFundee))
 
-            member this.ToDomainObject(): RResult<_> =
+            member this.ToDomainObject(): Result<_, ValidationError> =
                 match this with
                 | WaitForOpenChannelDTO dto ->
                     { WaitForOpenChannelData.InitFundee = { InputInitFundee.TemporaryChannelId = dto.TemporaryChannelId
@@ -67,7 +68,7 @@ module DTO =
                                                             ToLocal = failwith "Not Implemented"
                                                             ChannelKeys = failwith "Not Implemented" } }
                     |> ChannelState.WaitForOpenChannel
-                    |> Good
+                    |> Ok
 
             static member Deserialize(json: string) =
                 use jsonDocument = JsonDocument.Parse(json)
@@ -90,15 +91,15 @@ module DTO =
                 State = ChannelState.ChannelStateDTO.FromDomainObject(c.State)
             }
         
-        member this.ToDomainObject(): RResult<_> =
+        member this.ToDomainObject(): Result<_, _> =
             failwith ""
 
-        static member Deserialize(txt: string): RResult<ChannelDTO> =
+        static member Deserialize(txt: string): Result<ChannelDTO, _> =
             try
                 JsonSerializer.Deserialize<ChannelDTO>(txt)
-                |> Good
+                |> Ok
             with
-                | ex -> RResult.rexn ex
+                | :? JsonException as ex -> ex |> Error
 
         member this.Serialize() =
             JsonSerializer.Serialize<ChannelDTO>(this)

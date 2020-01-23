@@ -1,10 +1,16 @@
 namespace DotNetLightning.Infrastructure
 
+open System
+
+open ResultUtils
+
 open DotNetLightning.Utils
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Channel
+
+open DotNetLightning.Transactions
+open DotNetLightning.Transactions
 open NBitcoin
-open System
 
 type RouterConfig() =
     member val ChannelExcludeDuration: DateTimeOffset = Unchecked.defaultof<DateTimeOffset> with get, set
@@ -157,20 +163,21 @@ type NodeParams() as this =
             LocalFeatures = this.LocalFeatures
         }
 
-module private Validation =
+module private NodeParamsValidation =
     let checkDustLimitSatoshisIsToHigh(np: NodeParams) =
         let limit = Money.Satoshis(100000L)
         if (np.DustLimitSatoshis > limit) then
             sprintf "Dust limit satoshis is absurdly high. The limit is (%A)" limit
-            |> RResult.rmsg 
+            |> Error
         else
-            Good ()
+            Ok ()
  
     /// Currently no needs for check
     let checkMaxHTLCValueInFlightMSat _ =
-        Good ()
+        Ok ()
 
 type NodeParams with
-    member this.Validate(): RResult<unit> =
-        Validation.checkDustLimitSatoshisIsToHigh this
-        *> Validation.checkMaxHTLCValueInFlightMSat this
+    member this.Validate(): Result<unit, string list> =
+        Validation.ofResult(NodeParamsValidation.checkDustLimitSatoshisIsToHigh this)
+        *> NodeParamsValidation.checkMaxHTLCValueInFlightMSat this
+        *^> (this.ShutdownScriptPubKey |> function None -> Ok() | Some spk -> Scripts.checkIsValidFinalScriptPubKey spk)

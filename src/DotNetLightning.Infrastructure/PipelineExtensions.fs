@@ -1,5 +1,7 @@
 namespace DotNetLightning.Infrastructure
 
+open TaskUtils
+
 open System
 open System.Buffers
 open System.Runtime.CompilerServices
