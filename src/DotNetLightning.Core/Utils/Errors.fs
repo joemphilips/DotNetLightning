@@ -24,7 +24,7 @@ and FeeRateTooHighContent = { Msg: string; FeeRate: FeeRatePerKw }
 
 
 /// TODO: rename?
-module Error =
+module OnionError =
     [<Literal>]
     let BADONION = 0x8000us
     [<Literal>]
@@ -101,9 +101,10 @@ module Error =
     let CHANNEL_DISABLED = UPDATE ||| 20us
 
     [<Flags>]
-    type ErrorCode = | ErrorCode of uint16 with
+    [<Struct>]
+    type FailureCode = | FailureCode of uint16 with
 
-        member this.Value = let (ErrorCode v) = this in v
+        member this.Value = let (FailureCode v) = this in v
         member this.GetOnionErrorDescription() =
             match this.Value with
             | (INVALID_REALM) -> ("The realm byte was not understood by the processing node", "invalid_realm")

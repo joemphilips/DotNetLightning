@@ -3,7 +3,7 @@ namespace DotNetLightning.Channel
 open ResultUtils
 open DotNetLightning.Utils
 open DotNetLightning.Utils.NBitcoinExtensions
-open DotNetLightning.Utils.Error
+open DotNetLightning.Utils.OnionError
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Chain
 open DotNetLightning.Transactions
@@ -57,7 +57,7 @@ type CMDFailHTLC = {
 type CMDFailMalformedHTLC = {
     Id: HTLCId
     Sha256OfOnion: uint256
-    FailureCode: ErrorCode
+    FailureCode: FailureCode
 }
 
 type CMDUpdateFee = {

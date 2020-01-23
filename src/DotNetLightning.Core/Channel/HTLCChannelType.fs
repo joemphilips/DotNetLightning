@@ -2,6 +2,7 @@ namespace DotNetLightning.Channel
 open NBitcoin
 open DotNetLightning.Utils
 open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Utils.OnionError
 
 type PendingForwardHTLCInfo = {
     OnionPacket: OnionPacket option
@@ -36,7 +37,7 @@ type HTLCSource =
 
 type HTLCFailureData = {
     Data: byte[]
-    FailureCode: uint16
+    FailureCode: FailureCode
 }
 
 type HTLCFailReason =

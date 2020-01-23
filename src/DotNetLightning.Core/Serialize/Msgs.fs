@@ -4,7 +4,7 @@ open DotNetLightning.Utils
 open System
 open System.Runtime.CompilerServices
 open System.IO
-open DotNetLightning.Utils.Error
+open DotNetLightning.Utils.OnionError
 
 // #region serialization
 module rec Msgs =
@@ -704,7 +704,7 @@ module rec Msgs =
         mutable ChannelId: ChannelId
         mutable HTLCId: HTLCId
         mutable Sha256OfOnion: uint256
-        mutable FailureCode: ErrorCode
+        mutable FailureCode: FailureCode
     }
     with
         interface IHTLCMsg
@@ -714,7 +714,7 @@ module rec Msgs =
                 this.ChannelId <- ls.ReadUInt256(true) |> ChannelId
                 this.HTLCId <- ls.ReadUInt64(false) |> HTLCId
                 this.Sha256OfOnion <- ls.ReadUInt256(true)
-                this.FailureCode <- ls.ReadUInt16(false) |> ErrorCode
+                this.FailureCode <- ls.ReadUInt16(false) |> OnionError.FailureCode
             member this.Serialize(ls) =
                 ls.Write(this.ChannelId.Value.ToBytes())
                 ls.Write(this.HTLCId.Value, false)
@@ -1163,13 +1163,13 @@ module rec Msgs =
     [<CLIMutable>]
     type FailureMsg = {
         mutable Data: FailureMsgData
-        mutable Code: ErrorCode
+        mutable Code: FailureCode
     }
         with
             interface ILightningSerializable<FailureMsg> with
                 member this.Deserialize(r: LightningReaderStream): unit =
                     let t = r.ReadUInt16(false)
-                    this.Code <- t |> ErrorCode
+                    this.Code <- t |> FailureCode
                     match t with
                     | (INVALID_REALM) ->
                         this.Data <- InvalidRealm

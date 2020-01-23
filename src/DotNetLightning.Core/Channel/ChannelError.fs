@@ -3,13 +3,12 @@ namespace DotNetLightning.Channel
 open ResultUtils
 open DotNetLightning.Utils
 open NBitcoinExtensions
-open DotNetLightning.Utils.Error
+open DotNetLightning.Utils.OnionError
 open DotNetLightning.Chain
 open DotNetLightning.Crypto
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Transactions
 
-open DotNetLightning.DomainUtils.Types
 open NBitcoin
 
 type ChannelError =
@@ -21,7 +20,7 @@ type ChannelError =
     | InvalidPaymentPreimage of expectedHash: PaymentHash * actualPreimage: PaymentPreimage
     | UnknownHTLCId of HTLCId
     | HTLCOriginNotKnown of HTLCId
-    | InvalidFailureCode of ErrorCode
+    | InvalidFailureCode of FailureCode
     /// Consumer of the channel domain have given invalid command
     | APIMisuse of string
     | WeCannotAffordFee of localChannelReserve: Money * requiredFee: Money * missingAmount: Money
