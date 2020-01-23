@@ -124,6 +124,10 @@ module Result =
     | Ok x -> x
     | Error _ -> ifErrorThunk ()
 
+  let deref result =
+    match result with
+    | Ok x -> x
+    | Error e -> failwithf "Failed to dereference Result (%A)" e
   /// Same as defaultValue for a result where the Ok value is unit. The name
   /// describes better what is actually happening in this case.
   let ignoreError result =
