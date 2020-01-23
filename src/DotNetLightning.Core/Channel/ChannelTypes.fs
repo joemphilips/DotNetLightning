@@ -350,5 +350,3 @@ type ChannelState =
             (fun v cc -> match cc with
                          | Normal _ -> Normal v
                          | _ -> cc )
-            
-            

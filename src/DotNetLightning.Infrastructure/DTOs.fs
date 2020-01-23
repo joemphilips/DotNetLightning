@@ -59,7 +59,7 @@ module DTO =
                 | WaitForOpenChannel d ->
                     WaitForOpenChannelDTO (InitFundeeDTO.FromDomainObject(d.InitFundee))
 
-            member this.ToDomainObject(): Result<_, ValidationError> =
+            member this.ToDomainObject(): Result<_, string list> =
                 match this with
                 | WaitForOpenChannelDTO dto ->
                     { WaitForOpenChannelData.InitFundee = { InputInitFundee.TemporaryChannelId = dto.TemporaryChannelId

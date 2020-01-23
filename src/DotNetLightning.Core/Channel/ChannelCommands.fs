@@ -30,16 +30,14 @@ type CMDAddHTLC = {
 }
     with
         static member Create amountMSat paymentHash expiry onion upstream origin currentHeight =
-            result {
-                return {
-                    AmountMSat = amountMSat
-                    PaymentHash = paymentHash
-                    Expiry = expiry
-                    Onion = onion
-                    Upstream = upstream
-                    Origin = origin
-                    CurrentHeight = currentHeight
-                }
+            {
+                AmountMSat = amountMSat
+                PaymentHash = paymentHash
+                Expiry = expiry
+                Onion = onion
+                Upstream = upstream
+                Origin = origin
+                CurrentHeight = currentHeight
             }
 
 
