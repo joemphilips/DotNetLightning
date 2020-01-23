@@ -3,8 +3,6 @@ namespace DotNetLightning.Crypto
 open System
 open NBitcoin // For e.g. uint256
 
-open DotNetLightning.Utils // For RResult
-
 #if BouncyCastle
 open Org.BouncyCastle.Crypto.Parameters
 open Org.BouncyCastle.Crypto.Macs // For Poly1305
@@ -178,34 +176,35 @@ module BouncyCastle =
         assert (macreslen = 16)
         tag
 
-    type CryptoImpl() = interface ICryptoImpl with
-        member this.newSecp256k1() = BouncySecp256k1() :> ISecp256k1
-        member this.encryptWithAD(n: uint64, key: uint256, ad: ReadOnlySpan<byte>, plainText: ReadOnlySpan<byte>) =
-            let key = key.ToBytes()
-            let nonce = Array.concat [| Array.zeroCreate 4; BitConverter.GetBytes n |]
-            let plainTextBytes = plainText.ToArray()
-            let ciphertext = encryptOrDecrypt Encrypt plainTextBytes key nonce true
-            let tag = calcMac key nonce ciphertext ad
-            Array.concat [| ciphertext; tag |]
-
-        member this.decryptWithAD(n: uint64, key: uint256, ad: byte[], ciphertext: ReadOnlySpan<byte>) =
-            if ciphertext.Length < 16 then
-                RResult.rmsg "ciphertext too short to have mac tag"
-            else
+    type CryptoImpl() =
+        interface ICryptoImpl with
+            member this.newSecp256k1() = BouncySecp256k1() :> ISecp256k1
+            member this.encryptWithAD(n: uint64, key: uint256, ad: ReadOnlySpan<byte>, plainText: ReadOnlySpan<byte>) =
                 let key = key.ToBytes()
-                let nonce = Array.concat[| Array.zeroCreate 4; BitConverter.GetBytes n |]
-                let ciphertextWithoutMac = ciphertext.Slice(0, ciphertext.Length - 16).ToArray()
-                let macToValidate = ciphertext.Slice(ciphertext.Length - 16).ToArray()
-                let correctMac = calcMac key nonce ciphertextWithoutMac (ReadOnlySpan ad)
-                if correctMac <> macToValidate then
-                    Error(BadMac)
-                else
-                    let plaintext = encryptOrDecrypt Decrypt ciphertextWithoutMac key nonce true
-                    Ok plaintext
+                let nonce = Array.concat [| Array.zeroCreate 4; BitConverter.GetBytes n |]
+                let plainTextBytes = plainText.ToArray()
+                let ciphertext = encryptOrDecrypt Encrypt plainTextBytes key nonce true
+                let tag = calcMac key nonce ciphertext ad
+                Array.concat [| ciphertext; tag |]
 
-        member this.encryptWithoutAD(n: uint64, key: byte[], plainText: ReadOnlySpan<byte>) =
-            let nonce = Array.concat [| Array.zeroCreate 4; BitConverter.GetBytes n |]
-            encryptOrDecrypt Encrypt (plainText.ToArray()) key nonce false
+            member this.decryptWithAD(n: uint64, key: uint256, ad: byte[], ciphertext: ReadOnlySpan<byte>) =
+                if ciphertext.Length < 16 then
+                    CryptoError.InvalidMessageLength ciphertext.Length |> Error
+                else
+                    let key = key.ToBytes()
+                    let nonce = Array.concat[| Array.zeroCreate 4; BitConverter.GetBytes n |]
+                    let ciphertextWithoutMac = ciphertext.Slice(0, ciphertext.Length - 16).ToArray()
+                    let macToValidate = ciphertext.Slice(ciphertext.Length - 16).ToArray()
+                    let correctMac = calcMac key nonce ciphertextWithoutMac (ReadOnlySpan ad)
+                    if correctMac <> macToValidate then
+                        Error(BadMac)
+                    else
+                        let plaintext = encryptOrDecrypt Decrypt ciphertextWithoutMac key nonce true
+                        Ok plaintext
+
+            member this.encryptWithoutAD(n: uint64, key: byte[], plainText: ReadOnlySpan<byte>) =
+                let nonce = Array.concat [| Array.zeroCreate 4; BitConverter.GetBytes n |]
+                encryptOrDecrypt Encrypt (plainText.ToArray()) key nonce false
 
 #endif
 
