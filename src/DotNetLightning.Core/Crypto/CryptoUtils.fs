@@ -95,8 +95,8 @@ type internal Op = Mul | Add
 
 type internal BouncySecp256k1() =
     let hex = NBitcoin.DataEncoders.HexEncoder()
-    let params: Org.BouncyCastle.Asn1.X9.X9ECParameters = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName "secp256k1"
-    let ecParams = ECDomainParameters(params.Curve, params.G, params.N, params.H)
+    let parameters: Org.BouncyCastle.Asn1.X9.X9ECParameters = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName "secp256k1"
+    let ecParams = ECDomainParameters(parameters.Curve, parameters.G, parameters.N, parameters.H)
     let bcBigint (x: byte[]) = Org.BouncyCastle.Math.BigInteger(1, x)
     let tweakKey (op: Op) (tweak: ReadOnlySpan<byte>) (keyToMutate: Span<byte>) =
         let k = bcBigint <| keyToMutate.ToArray()
@@ -104,7 +104,7 @@ type internal BouncySecp256k1() =
         let tweaked = match op with
                       | Mul -> k.Multiply tweakInt
                       | Add -> k.Add tweakInt
-        tweaked.Mod(params.N).ToByteArrayUnsigned().AsSpan().CopyTo keyToMutate
+        tweaked.Mod(parameters.N).ToByteArrayUnsigned().AsSpan().CopyTo keyToMutate
         true
     interface IDisposable with
         member this.Dispose() = ()
@@ -113,21 +113,21 @@ type internal BouncySecp256k1() =
             let privInt = bcBigint <| privKey.ToArray()
             true, ecParams.G.Multiply(privInt).GetEncoded true
         member this.PublicKeySerializeCompressed publicKey =
-            let p = params.Curve.DecodePoint <| publicKey.ToArray()
+            let p = parameters.Curve.DecodePoint <| publicKey.ToArray()
             true, p.GetEncoded true
         member this.PublicKeyParse serializedPubKey =
-            let p = params.Curve.DecodePoint <| serializedPubKey.ToArray()
+            let p = parameters.Curve.DecodePoint <| serializedPubKey.ToArray()
             true, p.GetEncoded true
         member this.PublicKeyCombine (pubkey1, pubkey2) =
-            let p1 = params.Curve.DecodePoint <| pubkey1.ToArray()
-            let p2 = params.Curve.DecodePoint <| pubkey2.ToArray()
+            let p1 = parameters.Curve.DecodePoint <| pubkey1.ToArray()
+            let p2 = parameters.Curve.DecodePoint <| pubkey2.ToArray()
             true, p1.Add(p2).Normalize().GetEncoded true
         member this.PrivateKeyTweakAdd (tweak, privKeyToMutate) =
             tweakKey Add tweak privKeyToMutate
         member this.PrivateKeyTweakMultiply (tweak, privKeyToMutate) =
             tweakKey Mul tweak privKeyToMutate
         member this.PublicKeyTweakMultiply (tweak, publicKeyToMutate) =
-            let p = params.Curve.DecodePoint <| publicKeyToMutate.ToArray()
+            let p = parameters.Curve.DecodePoint <| publicKeyToMutate.ToArray()
             let tweakInt = bcBigint <| tweak.ToArray()
             let tweaked = p.Multiply tweakInt
             tweaked.Normalize().GetEncoded(true).AsSpan().CopyTo publicKeyToMutate
