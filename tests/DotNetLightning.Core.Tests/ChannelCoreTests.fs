@@ -64,7 +64,6 @@ let tests =
                       KeysRepository = failwith "todo"
                       FeeEstimator = failwith "todo"
                       FundingTxProvider = failwith "todo"
-                      Logger = failwith "todo"
                       RemoteNodeId = failwith "todo"
                       LocalNodeSecret = failwith "todo"
                       Network = failwith "todo"

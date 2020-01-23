@@ -111,10 +111,10 @@ let testList2 =
             Expect.equal (actual) (msg) ""
             
         testPropertyWithConfig config "lightning p2p msg 2" <| fun (msg: ILightningMsg) ->
-            let actualRR = LightningMsg.fromBytes(msg.ToBytes())
-            match actualRR with
-            | Good x -> Expect.equal (msg) x
-            | Bad ex ->
+            let actualR = LightningMsg.fromBytes(msg.ToBytes())
+            match actualR with
+            | Ok x -> Expect.equal (msg) x
+            | Error ex ->
                 failwithf "failed to decode %A" ex
                 
     ]

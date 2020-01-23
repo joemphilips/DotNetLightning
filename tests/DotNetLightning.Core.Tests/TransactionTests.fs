@@ -1,9 +1,10 @@
 module TransactionTests
 
+open ResultUtils
+
 open DotNetLightning.Transactions
 open DotNetLightning.Transactions.Transactions
 open DotNetLightning.Utils
-open DotNetLightning.Utils.Primitives
 open Expecto
 open NBitcoin
 
@@ -38,7 +39,7 @@ let testList = [
                                                                           (localPaymentPriv.PubKey)
                                                                           (finalSpk)
                                                                           (feeRatePerKw)
-                                                                          n |> RResult.rderef
+                                                                          n |> Result.defaultWith (fun _  -> failwith "")
             let weight =
                 let tx = claimP2WPKHOutputTx.Value.GetGlobalTransaction()
                 let witScript =

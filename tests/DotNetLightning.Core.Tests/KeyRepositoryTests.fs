@@ -1,5 +1,6 @@
 module KeyRepositoryTests
 
+open ResultUtils
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Chain
 open DotNetLightning.Channel
@@ -134,6 +135,6 @@ let tests =
             let localSigForRemoteCommit, commitTx3 = localRepo.GetSignatureFor(remoteCommitTx2, localPubKeys.FundingPubKey)
             
             let localSigs = seq [(localPubKeys.FundingPubKey, TransactionSignature(localSigForRemoteCommit.Signature, SigHash.All))]
-            let finalizedTx = Transactions.checkTxFinalized remoteCommitTx2 0 localSigs |> function Good tx -> tx | Bad e -> failwithf "%A" e
+            let finalizedTx = Transactions.checkTxFinalized remoteCommitTx2 0 localSigs |> Result.deref
             ()
     ]
