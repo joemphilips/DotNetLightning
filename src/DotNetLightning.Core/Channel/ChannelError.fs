@@ -43,7 +43,7 @@ type ChannelError =
     | InvalidUpdateAddHTLC of InvalidUpdateAddHTLCError
     | InvalidRevokeAndACK of InvalidRevokeAndACKError
     // ------------------
-    | ValidationFailed of ValidationError
+    | ValidationFailed of msg: string
     
     /// Consumer of the api (usually, that is wallet) failed to give an funding tx
     | FundingTxNotGiven of msg: string

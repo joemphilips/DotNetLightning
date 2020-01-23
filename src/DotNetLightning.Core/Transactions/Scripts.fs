@@ -107,8 +107,7 @@ module Scripts =
         
     let checkIsValidFinalScriptPubKey(spk: Script) =
         if (isValidFinalScriptPubKey spk) then
-            Ok (spk)
+            Ok ()
         else
             sprintf "Invalid final script pubkey(%A). it must be one of p2pkh, p2sh, p2wpkh, p2wsh" spk
-            |> ValidationError.Create
             |> Error

@@ -69,8 +69,8 @@ type CMDClose = private { ScriptPubKey: Script option }
     static member Zero = { ScriptPubKey = None }
     static member Create scriptPubKey =
         result {
-            let! spk = Scripts.checkIsValidFinalScriptPubKey scriptPubKey
-            return  { ScriptPubKey = Some spk }
+            do! Scripts.checkIsValidFinalScriptPubKey scriptPubKey
+            return  { ScriptPubKey = Some scriptPubKey }
         }
 
 module CMDClose =
