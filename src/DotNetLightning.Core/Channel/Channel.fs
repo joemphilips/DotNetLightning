@@ -515,7 +515,6 @@ module Channel =
                 //          We did not send a shutdown msg
                 //              There are pending signed htlcs => go to SHUTDOWN state
                 //              there are no HTLCs => go to NEGOTIATING state
-                let! _ = Scripts.checkIsValidFinalScriptPubKey msg.ScriptPubKey |> expectValidationError
                 
                 if (cm.RemoteHasUnsignedOutgoingHTLCs()) then
                     return! receivedShutdownWhenRemoteHasUnsignedOutgoingHTLCs msg

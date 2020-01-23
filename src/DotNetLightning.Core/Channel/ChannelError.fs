@@ -15,18 +15,17 @@ type ChannelError =
     | CryptoError of CryptoError
     | TransactionRelatedErrors of TransactionError list
     
-    | InvalidMessage of MessageValidationError
     | HTLCAlreadySent of HTLCId
     | InvalidPaymentPreimage of expectedHash: PaymentHash * actualPreimage: PaymentPreimage
     | UnknownHTLCId of HTLCId
     | HTLCOriginNotKnown of HTLCId
     | InvalidFailureCode of FailureCode
-    /// Consumer of the channel domain have given invalid command
     | APIMisuse of string
     | WeCannotAffordFee of localChannelReserve: Money * requiredFee: Money * missingAmount: Money
     | CanNotSignBeforeRevocation
     | ReceivedCommitmentSignedWhenWeHaveNoPendingChanges
     | SignatureCountMismatch of expected: int * actual: int
+    /// protocol violation defined in BOLT 02
     | ReceivedShutdownWhenRemoteHasUnsignedOutgoingHTLCs of msg: Shutdown
     
     /// When we create the first commitment txs as fundee,
@@ -34,15 +33,13 @@ type ChannelError =
     /// cannot afford fee
     | TheyCannotAffordFee of toRemote: LNMoney * fee: Money * channelReserve: Money
     
-    // --- invalid msg ---
-    /// They sent unacceptable open_channel message
+    // --- case they sent unacceptable msg ---
     | InvalidOpenChannel of InvalidOpenChannelError
-    /// They sent unacceptable accept_channel message
     | InvalidAcceptChannel of InvalidAcceptChannelError
     | InvalidUpdateAddHTLC of InvalidUpdateAddHTLCError
     | InvalidRevokeAndACK of InvalidRevokeAndACKError
+    | InvalidUpdateFee of InvalidUpdateFeeError
     // ------------------
-    | ValidationFailed of msg: string
     
     /// Consumer of the api (usually, that is wallet) failed to give an funding tx
     | FundingTxNotGiven of msg: string
@@ -58,7 +55,6 @@ type ChannelError =
         match this with
         | CryptoError _ -> ReportAndCrash
         | TransactionRelatedErrors _ -> Close
-        | InvalidMessage _ -> Close
         | HTLCAlreadySent _ -> Ignore
         | InvalidPaymentPreimage (_, _) -> Close
         | UnknownHTLCId _ -> Close
@@ -74,13 +70,13 @@ type ChannelError =
         | InvalidOpenChannel _ -> DistrustPeer
         | InvalidAcceptChannel _ -> DistrustPeer
         | InvalidUpdateAddHTLC _ -> Close
-        | ValidationFailed _ -> Close
+        | InvalidRevokeAndACK _ -> Close
+        | InvalidUpdateFee _ -> Close
         | FundingTxNotGiven _ -> Ignore
         | OnceConfirmedFundingTxHasBecomeUnconfirmed _ -> Close
         | CannotCloseChannel _ -> Ignore
         | UndefinedStateAndCmdPair _ -> Ignore
         | InvalidCMDAddHTLC _ -> Ignore
-        | InvalidRevokeAndACK _ -> Close
         | RemoteProposedHigherFeeThanBefore(_, _) -> Close
     
     override this.ToString() =
@@ -166,7 +162,16 @@ and InvalidRevokeAndACKError = {
     static member Create msg e = {
         Msg = msg
         Errors = e
-    } 
+    }
+and InvalidUpdateFeeError = {
+    Msg: UpdateFee
+    Errors: string list
+}
+    with
+    static member Create msg e = {
+        Msg = msg
+        Errors = e
+    }
 and InvalidCMDAddHTLCError = {
     CMD: CMDAddHTLC
     Errors: string list
@@ -188,8 +193,11 @@ module private ValidationHelper =
 /// Helpers to create channel error
 [<AutoOpen>]
 module internal ChannelError =
-    let inline feeDeltaTooHigh x =
-        x |> (FeeDeltaTooHigh >> InvalidMessage >> Error)
+    let inline feeDeltaTooHigh msg (actualDelta, maxAccepted) =
+        InvalidUpdateFeeError.Create
+            msg
+            [sprintf "delta is %.2f%% . But it must be lower than %.2f%%" (actualDelta * 100.0) (maxAccepted * 100.0)]
+            |> InvalidUpdateFee |> Error
         
     let inline htlcAlreadySent htlcId =
         htlcId |> HTLCAlreadySent |> Error
@@ -228,9 +236,6 @@ module internal ChannelError =
         
     let expectFundingTxError msg =
         Result.mapError(FundingTxNotGiven) msg
-        
-    let expectValidationError result =
-        Result.mapError(ValidationFailed) result
         
     let invalidRevokeAndACK msg e =
         InvalidRevokeAndACKError.Create msg ([e]) |> InvalidRevokeAndACK |> Error
@@ -495,3 +500,15 @@ module internal UpdateAddHTLCValidationWithContext =
             |> Error
         else
             Ok()
+module internal UpdateFeeValidation =
+    let private feeRateMismatch (FeeRatePerKw remote, FeeRatePerKw local) =
+        (2.0 * float (remote - local) / float (remote + local))
+        |> abs
+    let checkFeeDiffTooHigh (msg: UpdateFee) (localFeeRatePerKw: FeeRatePerKw) (maxFeeRateMismatchRatio) =
+        let remoteFeeRatePerKw = msg.FeeRatePerKw
+        let diff = feeRateMismatch(remoteFeeRatePerKw, localFeeRatePerKw)
+        if (diff > maxFeeRateMismatchRatio) then
+            (diff, maxFeeRateMismatchRatio)
+            |> feeDeltaTooHigh msg
+            else
+                Ok ()

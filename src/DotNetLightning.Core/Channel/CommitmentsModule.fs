@@ -118,27 +118,10 @@ module internal Commitments =
             Seq.append timeoutTXsV successTXsV
             |> List.ofSeq
             |> List.sortBy(fun htlc -> htlc.Value.GetGlobalTransaction().Inputs.[htlc.WhichInput].PrevOut.N)
-    module private Validation =
-        let check left predicate right msg =
-            if predicate left right then
-                sprintf msg left right |> Error
-            else
-                Ok ()
-        module private UpdateFeeValidator =
-            let private feeRateMismatch (FeeRatePerKw remote, FeeRatePerKw local) =
-                (2.0 * float (remote - local) / float (remote + local))
-                |> abs
-            let checkFeeDiffTooHigh (remoteFeeRatePerKw: FeeRatePerKw) (localFeeRatePerKw: FeeRatePerKw) (maxFeeRateMismatchRatio) =
-                let diff = feeRateMismatch(remoteFeeRatePerKw, localFeeRatePerKw)
-                if (diff > maxFeeRateMismatchRatio) then
-                    (diff, maxFeeRateMismatchRatio)
-                    |> feeDeltaTooHigh
-                else
-                    Ok ()
 
         let checkUpdateFee (config: ChannelConfig) (msg: UpdateFee) (localFeeRate: FeeRatePerKw) =
             let maxMismatch = config.ChannelOptions.MaxFeeRateMismatchRatio
-            UpdateFeeValidator.checkFeeDiffTooHigh (msg.FeeRatePerKw) (localFeeRate) (maxMismatch)
+            UpdateFeeValidation.checkFeeDiffTooHigh (msg) (localFeeRate) (maxMismatch)
 
     let sendFulfill (cmd: CMDFulfillHTLC) (cm: Commitments) =
         match cm.GetHTLCCrossSigned(Direction.In, cmd.Id) with
@@ -271,7 +254,7 @@ module internal Commitments =
             "Remote is Fundee so it cannot send update fee" |> apiMisuse
         else
             result {
-                do! Validation.checkUpdateFee (config) (msg) (localFeerate)
+                do! Helpers.checkUpdateFee (config) (msg) (localFeerate)
                 let c1 = cm.AddRemoteProposal(msg)
                 let! reduced =
                     c1.LocalCommit.Spec.Reduce(c1.LocalChanges.ACKed, c1.RemoteChanges.Proposed) |> expectTransactionError
