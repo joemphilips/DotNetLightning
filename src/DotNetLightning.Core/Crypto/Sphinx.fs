@@ -8,10 +8,10 @@ open DotNetLightning.Utils
 open DotNetLightning.Serialize
 open DotNetLightning.Serialize.Msgs
 
-module internal Sphinx =
+module Sphinx =
     open NBitcoin.Crypto
 
-    let crypto = CryptoUtils.impl
+    let private crypto = CryptoUtils.impl
 
     [<Literal>]
     let VERSION = 0uy
@@ -28,40 +28,40 @@ module internal Sphinx =
     [<Literal>]
     let PACKET_LENGTH =  1366 // 1 + 33 + MacLength + MaxHops * (PayloadLength + MacLength)
 
-    let hex = NBitcoin.DataEncoders.HexEncoder()
-    let ascii = NBitcoin.DataEncoders.ASCIIEncoder()
+    let private hex = NBitcoin.DataEncoders.HexEncoder()
+    let private ascii = NBitcoin.DataEncoders.ASCIIEncoder()
 
-    let mac (key, msg) = Hashes.HMACSHA256(key, msg) |> uint256
+    let private mac (key, msg) = Hashes.HMACSHA256(key, msg) |> uint256
 
-    let xor (a: byte[], b: byte[]) =
+    let private xor (a: byte[], b: byte[]) =
         Array.zip a b
         |> Array.map(fun (abyte, bbyte) -> (abyte ^^^ bbyte))
 
-    let generateKey (key, secret) =
+    let private generateKey (key, secret) =
         let kb = key |> ascii.DecodeData
         Hashes.HMACSHA256 (kb, secret)
 
-    let zeros (l) = Array.zeroCreate l
+    let private zeros (l) = Array.zeroCreate l
 
-    let generateStream (key, l) : byte[] =
+    let private generateStream (key, l) : byte[] =
         crypto.encryptWithoutAD(0UL, key, ReadOnlySpan(Array.zeroCreate l))
 
-    let computeSharedSecret = Secret.FromKeyPair
+    let private computeSharedSecret = Secret.FromKeyPair
 
-    let computeBlindingFactor(pk: PubKey) (secret: Key) =
+    let private computeBlindingFactor(pk: PubKey) (secret: Key) =
         [| pk.ToBytes(); secret.ToBytes() |]
         |> Array.concat
         |> Crypto.Hashes.SHA256
         |> Key
 
-    let blind (pk: PubKey) (secret: Key) =
+    let private blind (pk: PubKey) (secret: Key) =
         pk.GetSharedPubkey(secret)
 
-    let blindMulti (pk: PubKey) (secrets: Key seq) =
+    let private blindMulti (pk: PubKey) (secrets: Key seq) =
         Seq.fold (blind) pk secrets
 
     // computes ephemeral public keys and shared secretes for all nodes on the route
-    let rec computeEphemeralPublicKeysAndSharedSecretsCore
+    let rec private computeEphemeralPublicKeysAndSharedSecretsCore
         (sessionKey: Key)
         (pubKeys: PubKey list)
         (ephemeralPubKeys: PubKey list)
@@ -79,14 +79,14 @@ module internal Sphinx =
                            (blindingFactors @ [blindingFactor])
                            (sharedSecrets @ [secret])
 
-    let rec computeEphemeralPublicKeysAndSharedSecrets(sessionKey: Key) (pubKeys: PubKey list) =
+    let rec private computeEphemeralPublicKeysAndSharedSecrets(sessionKey: Key) (pubKeys: PubKey list) =
         let ephemeralPK0 = sessionKey.PubKey
         let secret0 = computeSharedSecret(pubKeys.[0], sessionKey) |> Key
         let blindingFactor0 = computeBlindingFactor(ephemeralPK0) (secret0)
         computeEphemeralPublicKeysAndSharedSecretsCore
             (sessionKey) (pubKeys |> List.tail) ([ephemeralPK0]) ([blindingFactor0]) ([secret0])
 
-    let rec generateFiller (keyType: string) (sharedSecrets: Key list) (hopSize: int) (maxNumberOfHops: int option) =
+    let rec private generateFiller (keyType: string) (sharedSecrets: Key list) (hopSize: int) (maxNumberOfHops: int option) =
         let maxHopN = defaultArg maxNumberOfHops MaxHops
         sharedSecrets
         |> List.fold (fun (padding: byte[]) (secret: Key) ->
@@ -141,7 +141,7 @@ module internal Sphinx =
     /// - you first build the last packet
     /// - then you call makeNextPacket(...) until you've build the final onion packet
     ///   that will be sent to the first node
-    let makeNextPacket
+    let internal makeNextPacket
         (payload: byte[],
          ad: byte[],
          ephemeralPubKey: PubKey,
