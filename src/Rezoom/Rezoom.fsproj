@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="ExceptionTypes.fs" />
+        <Compile Include="InternalUtilities.fs" />
+        <Compile Include="Services.fs" />
+        <Compile Include="CacheInfo.fs" />
+        <Compile Include="Errand.fs" />
+        <Compile Include="Plan.fs" />
+        <Compile Include="PlanModule.fs" />
+        <Compile Include="PlanBuilder.fs" />
+        <Compile Include="Caching.fs" />
+        <Compile Include="Execution.fs" />
+        <Compile Include="Replay.fs" />
+        <Compile Include="CS.fs" />
+        <Compile Include="Stdlib.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\TaskUtils\TaskUtils.fsproj" />
+    </ItemGroup>
+
+</Project>

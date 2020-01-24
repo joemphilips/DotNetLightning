@@ -1,0 +1,4 @@
+namespace Rezoom.ExceptionTypes
+
+exception LogicFaultException of string
+exception PlanAbortException of string
