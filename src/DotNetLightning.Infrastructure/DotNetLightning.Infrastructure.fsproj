@@ -6,15 +6,12 @@
   <ItemGroup>
     <ProjectReference Include="..\DotNetLightning.Core\DotNetLightning.Core.fsproj" />
     <ProjectReference Include="..\EventAggregator\EventAggregator.fsproj" />
+    <ProjectReference Include="..\TaskUtils\TaskUtils.fsproj" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Ply.fs" />
-    <Compile Include="ComputationBuilders.fs" />
     <Compile Include="PrimitiveExtensions.fs" />
     <Compile Include="PipelineExtensions.fs" />
-    <Compile Include="RResultExtensions.fs" />
     <Compile Include="Constants.fs" />
-    <Compile Include="Logger.fs" />
     <Compile Include="FundingTxProvider.fs" />
     <Compile Include="Codec.fs" />
     <Compile Include="DTOs.fs" />

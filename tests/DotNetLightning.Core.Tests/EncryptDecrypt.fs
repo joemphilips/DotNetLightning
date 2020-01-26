@@ -19,18 +19,18 @@ let decryptTest(cryptoImpl: ICryptoImpl) =
     let nonce = uint64 0
     let ad = hex.DecodeData "9e0e7de8bb75554f21db034633de04be41a2b8a18da7a319a03c803bf02b396c"
     let ciphertext = ReadOnlySpan(hex.DecodeData "0df6086551151f58b8afe6c195782c6a")
-    Expect.equal (cryptoImpl.decryptWithAD(nonce, key, ad, ciphertext)) (RResult.Good Array.empty) "decryption returns empty plaintext"
+    Expect.equal (cryptoImpl.decryptWithAD(nonce, key, ad, ciphertext)) (Ok [||]) "decryption returns empty plaintext"
 
 [<Tests>]
 let tests =
     let cryptoImpl = CryptoUtils.impl
     let encrypt = testCase "encrypt" <| fun _ -> encryptTest cryptoImpl
     let decrypt = testCase "decrypt" <| fun _ -> decryptTest cryptoImpl
-    let encryptComposedDecryptIsId = testProperty "decrypt after encrypt for any plaintext equals the original plaintext" <|
-        fun (nonce: uint64) (shortKey: uint64) (ad: byte[]) (plaintext: byte[]) ->
+    let encryptComposedDecryptIsId =
+        testProperty "decrypt after encrypt for any plaintext equals the original plaintext" <| fun (nonce: uint64) (shortKey: uint64) (ad: byte[]) (plaintext: byte[]) ->
             let encrypted = cryptoImpl.encryptWithAD(nonce, NBitcoin.uint256 shortKey, ReadOnlySpan ad, ReadOnlySpan plaintext)
             let decryption = cryptoImpl.decryptWithAD(nonce, NBitcoin.uint256 shortKey, ad, ReadOnlySpan encrypted)
             match decryption with
-            | RResult.Good x -> x = plaintext
-            | RResult.Bad _ -> false
+            | Result.Ok x -> x = plaintext
+            | Result.Error _ -> false
     testList "BOLT-08 tests" [ encrypt; decrypt; encryptComposedDecryptIsId ]

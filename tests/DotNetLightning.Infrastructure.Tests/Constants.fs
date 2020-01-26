@@ -59,7 +59,7 @@ type DummyFundingTxProvider(n: Network) =
             let fees = txb.EstimateFees(feerate.AsNBitcoinFeeRate())
             txb.SendFees(fees) |> ignore
             this.DummyTx <- txb.BuildTransaction(true)
-            (this.DummyTx |> FinalizedTx, 0us |> TxOutIndex) |> RResult.Good
+            (this.DummyTx |> FinalizedTx, 0us |> TxOutIndex) |> Ok
 
 type DummyBroadCaster() =
     interface IBroadCaster with

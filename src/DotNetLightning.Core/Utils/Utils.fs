@@ -138,11 +138,3 @@ module List =
     /// using apply.
     let sequenceAsyncA x = traverseAsyncA id x
 
-    let rec traverseRResult f list =
-        let cons head tail = head :: tail
-        let initState = RResult.Good []
-        let folder h t =
-            RResult.Good cons <*> (f h) <*> t
-        List.foldBack folder list initState
-
-    let sequenceRResult x = traverseRResult id x

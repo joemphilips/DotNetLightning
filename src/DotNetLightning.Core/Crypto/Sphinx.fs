@@ -1,6 +1,9 @@
 namespace DotNetLightning.Crypto
 open System
 open NBitcoin
+
+open ResultUtils
+
 open DotNetLightning.Utils
 open DotNetLightning.Serialize
 open DotNetLightning.Serialize.Msgs
@@ -101,14 +104,14 @@ module internal Sphinx =
         NextPacket: OnionPacket
         SharedSecret: byte[]
     }
-    let parsePacket (nodePrivateKey: Key) (ad: byte[]) (rawPacket: byte[]): RResult<ParsedPacket> =
+    let parsePacket (nodePrivateKey: Key) (ad: byte[]) (rawPacket: byte[]): Result<ParsedPacket, CryptoError> =
         if (rawPacket.Length <> PACKET_LENGTH) then
-            sprintf "onion packet length is %d. but it must be %d" rawPacket.Length PACKET_LENGTH
-            |> RResult.rmsg
+             CryptoError.InvalidErrorPacketLength (PACKET_LENGTH, rawPacket.Length)
+            |> Error
         else
             let packet = ILightningSerializable.fromBytes<OnionPacket>(rawPacket)
             if not (PubKey.Check(packet.PublicKey, true)) then
-                RResult.rmsg "Invalid Public Key from the node"
+                InvalidPublicKey(packet.PublicKey) |> Error
             else
                 let pk = packet.PublicKey |> PubKey
                 let ss = computeSharedSecret(pk, nodePrivateKey)
@@ -117,8 +120,7 @@ module internal Sphinx =
                     let msg = Array.concat (seq [ packet.HopData; ad ])
                     mac(mu, msg)
                 if check <> packet.HMAC then
-                    "Invalid header MAC"
-                    |> RResult.rmsg
+                    CryptoError.BadMac |> Error
                 else
                     let rho = generateKey("rho", ss)
                     let bin =
@@ -132,7 +134,7 @@ module internal Sphinx =
                     let nextPubKey = blind(pk) (computeBlindingFactor(pk) (Key ss))
                     { ParsedPacket.Payload = payload
                       NextPacket = { Version = VERSION; PublicKey = nextPubKey.ToBytes(); HMAC= hmac; HopData = nextRouteInfo }
-                      SharedSecret = ss } |> Good
+                      SharedSecret = ss } |> Ok
 
     /// Compute the next packet from the current packet and node parameters.
     /// Packets are constructed in reverse order:
@@ -217,17 +219,17 @@ module internal Sphinx =
 
     let private extractFailureMessage (packet: byte[]) =
         if (packet.Length <> ERROR_PACKET_LENGTH) then
-            sprintf "Invalid Error packet length %d. must be %d" (packet.Length) (ERROR_PACKET_LENGTH)
-            |> RResult.rmsg
+            InvalidErrorPacketLength(ERROR_PACKET_LENGTH, packet.Length)
+            |> Error
         else
             let (mac, payload) = packet |> Array.splitAt(MacLength)
             let len = Utils.ToUInt16(payload.[0..1], false) |> int
             if (len < 0 || (len > MAX_ERROR_PAYLOAD_LENGTH)) then
-                sprintf "message length must be smaller than %d. it was %d" MAX_ERROR_PAYLOAD_LENGTH len
-                |> RResult.rmsg
+                InvalidMessageLength len
+                |> Error
             else
                 let msg = payload.[2..2 + len - 1]
-                ILightningSerializable.fromBytes<FailureMsg>(msg) |> Good
+                ILightningSerializable.fromBytes<FailureMsg>(msg) |> Ok
     type ErrorPacket = {
         OriginNode: NodeId
         FailureMsg: FailureMsg
@@ -252,14 +254,15 @@ module internal Sphinx =
                 let ssB = ss |> List.map(fun (k, pk) -> (k.ToBytes(), pk))
                 ErrorPacket.Parse(packet, ssB)
 
-            static member Parse(packet: byte[], ss: (byte[] * PubKey) list): RResult<ErrorPacket> =
+            static member Parse(packet: byte[], ss: (byte[] * PubKey) list): Result<ErrorPacket, CryptoError> =
                 if (packet.Length <> ERROR_PACKET_LENGTH) then
-                    RResult.rmsg "Invalid error packet length"
+                    InvalidErrorPacketLength (ERROR_PACKET_LENGTH, packet.Length) |> Error
                 else
                     let rec loop (packet: byte[], ss: (byte[] * PubKey) list) =
                         match ss with
-                        | [] -> sprintf "Couldn't parse error packet: %A with shared secrets %A" packet ss
-                                |> RResult.rmsg
+                        | [] ->
+                            FailedToParseErrorPacket (packet, ss)
+                            |> Error
                         | (secret, pk)::tail ->
                             let packet1 = forwardErrorPacket(packet, secret)
                             if ((checkMac(secret, packet1))) then
@@ -267,7 +270,7 @@ module internal Sphinx =
                                 >>= fun msg ->
                                         { OriginNode = pk |> NodeId
                                           FailureMsg = msg }
-                                        |> Good
+                                        |> Ok
                             else
                                 loop (packet1, tail)
                     loop(packet, ss)

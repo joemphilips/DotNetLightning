@@ -1,4 +1,6 @@
 namespace DotNetLightning.Transactions
+
+open DotNetLightning.DomainUtils.Types
 open NBitcoin
 open NBitcoin.Crypto
 open DotNetLightning.Utils
@@ -102,3 +104,10 @@ module Scripts =
         || (PayToScriptHashTemplate.Instance.CheckScriptPubKey(spk))
         || (PayToWitPubKeyHashTemplate.Instance.CheckScriptPubKey(spk))
         || (PayToWitScriptHashTemplate.Instance.CheckScriptPubKey(spk))
+        
+    let checkIsValidFinalScriptPubKey(spk: Script) =
+        if (isValidFinalScriptPubKey spk) then
+            Ok ()
+        else
+            sprintf "Invalid final script pubkey(%A). it must be one of p2pkh, p2sh, p2wpkh, p2wsh" spk
+            |> Error

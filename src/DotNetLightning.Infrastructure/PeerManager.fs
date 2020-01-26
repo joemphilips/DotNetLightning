@@ -1,25 +1,26 @@
 namespace DotNetLightning.Infrastructure
 
-open DotNetLightning.Utils
-open DotNetLightning.Infrastructure
-
-open CustomEventAggregator
-
-open NBitcoin
-open DotNetLightning.Chain
-open DotNetLightning.Peer
-open DotNetLightning.Channel
-
 open System
-open DotNetLightning.Serialize.Msgs
-open DotNetLightning.Utils.Aether
-open DotNetLightning.Utils.Aether.Operators
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.IO.Pipelines
 open System.Threading.Tasks
 open FSharp.Control.Reactive
 open FSharp.Control.Tasks
+
+open TaskUtils
+open CustomEventAggregator
+
+open DotNetLightning.Utils
+open DotNetLightning.Chain
+open DotNetLightning.Peer
+open DotNetLightning.Channel
+open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Utils.Aether
+open DotNetLightning.Utils.Aether.Operators
+open DotNetLightning.Infrastructure
+
+open NBitcoin
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Options
 
@@ -31,6 +32,9 @@ type IPeerManager =
                                            pipeWriter: PipeWriter *
                                            ?ie: Key -> ValueTask
     abstract member OurNodeId: NodeId
+    
+exception PeerException of peerId: PeerId * msg: string
+
 type PeerManager(eventAggregator: IEventAggregator,
                  log: ILogger<PeerManager>,
                  loggerFactory: ILoggerFactory,
@@ -233,8 +237,11 @@ type PeerManager(eventAggregator: IEventAggregator,
         vt.AsTask() |> Async.AwaitTask
         
 
+    /// TODO: Consider using taskResult computation expression
     member this.NewInboundConnection(theirPeerId: PeerId, actOne: byte[], pipeWriter: PipeWriter, ?ourEphemeral) = vtask {
-        if (actOne.Length <> 50) then return (UnexpectedByteLength(50, actOne.Length) |> Result.Error) else
+        if (actOne.Length <> 50) then
+            log.LogWarning(sprintf "Peer (%A) sent invalid Length for noise handshake actone (%d)"  theirPeerId actOne.Length)
+            return () else
         let secret = keyRepo.GetNodeSecret()
         let newPeer = Peer.CreateInbound(theirPeerId, secret)
         let r =
@@ -243,8 +250,11 @@ type PeerManager(eventAggregator: IEventAggregator,
             else
                 (PeerChannelEncryptor.processActOneWithKey actOne secret newPeer.ChannelEncryptor)
         match r with
-        | Bad b -> return (b.Describe() |> PeerError.EncryptorError |> Result.Error)
-        | Good (actTwo, pce) ->
+        | Error b ->
+            log.LogCritical(sprintf "unexpected error from PeerChannelEncryptor")
+            log.LogCritical(sprintf "%A" b)
+            return ()
+        | Ok (actTwo, pce) ->
             let newPeer = { newPeer with ChannelEncryptor = pce }
             let log = loggerFactory.CreateLogger(sprintf "PeerActor (%A)" theirPeerId)
             let peerActor = new PeerActor (newPeer, theirPeerId, keyRepo, log, pipeWriter, nodeParams, eventAggregator)
@@ -252,14 +262,12 @@ type PeerManager(eventAggregator: IEventAggregator,
             match this.KnownPeers.TryAdd(theirPeerId, peerActor) with
             | false ->
                 sprintf "duplicate connection with peer %A" theirPeerId
-                |> log.LogInformation
-                return theirPeerId
-                |> DuplicateConnection
-                |> Result.Error
+                |> log.LogWarning
+                return ()
             | true ->
                 let! _ = pipeWriter.WriteAsync(actTwo)
                 let! _ = pipeWriter.FlushAsync()
-                return Ok ()
+                return  ()
         }
     
     /// Initiate Handshake with peer by sending noise act-one
@@ -304,8 +312,7 @@ type PeerManager(eventAggregator: IEventAggregator,
                 sprintf "Going to create new inbound peer against %A" (peerId)
                 |>  log.LogTrace 
                 let! actOne = pipe.Input.ReadExactAsync(50, true)
-                let! _r = this.NewInboundConnection(peerId, actOne, pipe.Output, ourEphemeral)
-                ()
+                return! this.NewInboundConnection(peerId, actOne, pipe.Output, ourEphemeral)
             | true, peer when peer.State.ChannelEncryptor.GetNoiseStep() = ActTwo ->
                 let! actTwo = pipe.Input.ReadExactAsync(50)
                 do! (this.KnownPeers.[peerId] :> IActor<_>).PutAndWaitProcess(ProcessActTwo(actTwo, (keyRepo.GetNodeSecret())))

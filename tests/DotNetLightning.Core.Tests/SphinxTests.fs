@@ -1,11 +1,12 @@
 module SphinxTests
 
+open ResultUtils
 open Expecto
 open Expecto.Logging
 open Expecto.Logging.Message
 open NBitcoin
 open DotNetLightning.Utils
-open DotNetLightning.Utils.Error
+open DotNetLightning.Utils.OnionError
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Crypto
 open DotNetLightning.Crypto.Sphinx
@@ -82,16 +83,16 @@ let tests =
             let { Payload = payload0; NextPacket = nextPacket0; SharedSecret = ss0 }: ParsedPacket =
                 Sphinx.parsePacket (privKeys.[0]) (associatedData) (onion.ToBytes())
                 |> fun rr -> 
-                    Expect.isOk(rr |> RResult.rtoResult) ""
-                    RResult.rderef rr
-            let { Payload = payload1; NextPacket = nextPacket1; SharedSecret = ss1 }: ParsedPacket =
-                Sphinx.parsePacket (privKeys.[1]) (associatedData) (nextPacket0.ToBytes()) |> RResult.rderef
-            let { Payload = payload2; NextPacket = nextPacket2; SharedSecret = ss2 }: ParsedPacket =
-                Sphinx.parsePacket (privKeys.[2]) (associatedData) (nextPacket1.ToBytes()) |> RResult.rderef
-            let { Payload = payload3; NextPacket = nextPacket3; SharedSecret = ss3 }: ParsedPacket =
-                Sphinx.parsePacket (privKeys.[3]) (associatedData) (nextPacket2.ToBytes()) |> RResult.rderef
-            let { Payload = payload4; NextPacket = nextPacket4; SharedSecret = ss4 }: ParsedPacket =
-                Sphinx.parsePacket (privKeys.[4]) (associatedData) (nextPacket3.ToBytes()) |> RResult.rderef
+                    Expect.isOk(rr) ""
+                    Result.defaultWith (fun _ -> failwith "Unreachable") rr
+            let { Payload = payload1; NextPacket = nextPacket1; }: ParsedPacket =
+                Sphinx.parsePacket (privKeys.[1]) (associatedData) (nextPacket0.ToBytes()) |> Result.defaultWith(fun _ -> failwith "")
+            let { Payload = payload2; NextPacket = nextPacket2; }: ParsedPacket =
+                Sphinx.parsePacket (privKeys.[2]) (associatedData) (nextPacket1.ToBytes()) |> Result.defaultWith(fun _ -> failwith "")
+            let { Payload = payload3; NextPacket = nextPacket3; }: ParsedPacket =
+                Sphinx.parsePacket (privKeys.[3]) (associatedData) (nextPacket2.ToBytes()) |> Result.defaultWith(fun _ -> failwith "")
+            let { Payload = payload4; NextPacket = nextPacket4; }: ParsedPacket =
+                Sphinx.parsePacket (privKeys.[4]) (associatedData) (nextPacket3.ToBytes()) |> Result.defaultWith(fun _ -> failwith "")
 
             Expect.equal [payload0; payload1; payload2; payload3; payload4] payloads ""
 
@@ -106,22 +107,22 @@ let tests =
             let (onion, ss) =
                 let p = PacketAndSecrets.Create (sessionKey, pubKeys, payloads, associatedData)
                 (p.Packet, p.SharedSecrets)
-            let { Payload = payload0; NextPacket = packet1; SharedSecret = ss0 }: ParsedPacket =
+            let { NextPacket = packet1; SharedSecret = ss0 }: ParsedPacket =
                 Sphinx.parsePacket (privKeys.[0]) (associatedData) (onion.ToBytes())
-                |> fun rr -> 
-                    Expect.isOk(rr |> RResult.rtoResult) ""
-                    RResult.rderef rr
-            let { Payload = payload1; NextPacket = packet2; SharedSecret = ss1 }: ParsedPacket =
-                Sphinx.parsePacket (privKeys.[1]) (associatedData) (packet1.ToBytes()) |> RResult.rderef
-            let { Payload = payload2; NextPacket = packet3; SharedSecret = ss2 }: ParsedPacket =
-                Sphinx.parsePacket (privKeys.[2]) (associatedData) (packet2.ToBytes()) |> RResult.rderef
-            let { Payload = payload3; NextPacket = packet4; SharedSecret = ss3 }: ParsedPacket =
-                Sphinx.parsePacket (privKeys.[3]) (associatedData) (packet3.ToBytes()) |> RResult.rderef
-            let { Payload = payload4; NextPacket = packet5; SharedSecret = ss4 }: ParsedPacket =
-                Sphinx.parsePacket (privKeys.[4]) (associatedData) (packet4.ToBytes()) |> RResult.rderef
+                |> fun r -> 
+                    Expect.isOk(r) ""
+                    Result.defaultWith(fun _ -> failwith "") r
+            let { NextPacket = packet2; SharedSecret = ss1 }: ParsedPacket =
+                Sphinx.parsePacket (privKeys.[1]) (associatedData) (packet1.ToBytes()) |> Result.defaultWith(fun _ -> failwith "")
+            let { NextPacket = packet3; SharedSecret = ss2 }: ParsedPacket =
+                Sphinx.parsePacket (privKeys.[2]) (associatedData) (packet2.ToBytes()) |> Result.defaultWith(fun _ -> failwith "")
+            let { NextPacket = packet4; SharedSecret = ss3 }: ParsedPacket =
+                Sphinx.parsePacket (privKeys.[3]) (associatedData) (packet3.ToBytes()) |> Result.defaultWith(fun _ -> failwith "")
+            let { NextPacket = packet5; SharedSecret = ss4 }: ParsedPacket =
+                Sphinx.parsePacket (privKeys.[4]) (associatedData) (packet4.ToBytes()) |> Result.defaultWith(fun _ -> failwith "")
 
             Expect.isTrue (packet5.IsLastPacket) ""
-            let error = ErrorPacket.Create(ss4, { FailureMsg.Code = ErrorCode (Error.TEMPORARY_NODE_FAILURE); Data = TemporaryNodeFailure })
+            let error = ErrorPacket.Create(ss4, { FailureMsg.Code = FailureCode (OnionError.TEMPORARY_NODE_FAILURE); Data = TemporaryNodeFailure })
             let _ =
                 let expected = "a5e6bd0c74cb347f10cce367f949098f2457d14c046fd8a22cb96efb30b0fdcda8cb9168b50f2fd45edd73c1b0c8b33002df376801ff58aaa94000bf8a86f92620f343baef38a580102395ae3abf9128d1047a0736ff9b83d456740ebbb4aeb3aa9737f18fb4afb4aa074fb26c4d702f42968888550a3bded8c05247e045b866baef0499f079fdaeef6538f31d44deafffdfd3afa2fb4ca9082b8f1c465371a9894dd8c243fb4847e004f5256b3e90e2edde4c9fb3082ddfe4d1e734cacd96ef0706bf63c9984e22dc98851bcccd1c3494351feb458c9c6af41c0044bea3c47552b1d992ae542b17a2d0bba1a096c78d169034ecb55b6e3a7263c26017f033031228833c1daefc0dedb8cf7c3e37c9c37ebfe42f3225c326e8bcfd338804c145b16e34e4" |> hex.DecodeData
                 Expect.equal(expected) error ""
@@ -149,7 +150,7 @@ let tests =
                 let expected = "9c5add3963fc7f6ed7f148623c84134b5647e1306419dbe2174e523fa9e2fbed3a06a19f899145610741c83ad40b7712aefaddec8c6baf7325d92ea4ca4d1df8bce517f7e54554608bf2bd8071a4f52a7a2f7ffbb1413edad81eeea5785aa9d990f2865dc23b4bc3c301a94eec4eabebca66be5cf638f693ec256aec514620cc28ee4a94bd9565bc4d4962b9d3641d4278fb319ed2b84de5b665f307a2db0f7fbb757366067d88c50f7e829138fde4f78d39b5b5802f1b92a8a820865af5cc79f9f30bc3f461c66af95d13e5e1f0381c184572a91dee1c849048a647a1158cf884064deddbf1b0b88dfe2f791428d0ba0f6fb2f04e14081f69165ae66d9297c118f0907705c9c4954a199bae0bb96fad763d690e7daa6cfda59ba7f2c8d11448b604d12d"
                                |> hex.DecodeData
                 Expect.equal expected error4 ""
-            let { OriginNode = pubkey; FailureMsg = failure } = ErrorPacket.Parse(error4, ss) |> RResult.rderef
+            let { OriginNode = pubkey; FailureMsg = failure } = ErrorPacket.Parse(error4, ss) |> Result.defaultWith(fun _ -> failwith "")
             Expect.equal (pubKeys.[4]) (pubkey.Value) ""
             Expect.equal (TemporaryNodeFailure) (failure.Data) ""
             ()
@@ -157,18 +158,18 @@ let tests =
         testCase "Intermediate node replies with an error message" <| fun _ ->
             let { Packet = packet; SharedSecrets = ss } =
                 Sphinx.PacketAndSecrets.Create(sessionKey, pubKeys, payloads, associatedData)
-            let { Payload = payload0; NextPacket = packet1; SharedSecret = ss0 } =
-                Sphinx.parsePacket(privKeys.[0]) (associatedData) (packet.ToBytes()) |> RResult.rderef
-            let { Payload = payload1; NextPacket = packet2; SharedSecret = ss1 } =
-                Sphinx.parsePacket(privKeys.[1]) (associatedData) (packet1.ToBytes()) |> RResult.rderef
-            let { Payload = payload2; NextPacket = packet3; SharedSecret = ss2 } =
-                Sphinx.parsePacket(privKeys.[2]) (associatedData) (packet2.ToBytes()) |> RResult.rderef
+            let { NextPacket = packet1; SharedSecret = ss0 } =
+                Sphinx.parsePacket(privKeys.[0]) (associatedData) (packet.ToBytes()) |> Result.defaultWith(fun _ -> failwith "")
+            let { NextPacket = packet2; SharedSecret = ss1 } =
+                Sphinx.parsePacket(privKeys.[1]) (associatedData) (packet1.ToBytes()) |> Result.defaultWith(fun _ -> failwith "")
+            let { SharedSecret = ss2 } =
+                Sphinx.parsePacket(privKeys.[2]) (associatedData) (packet2.ToBytes()) |> Result.defaultWith(fun _ -> failwith "")
             
-            let error = ErrorPacket.Create(ss2, { Code = ErrorCode INVALID_REALM; Data = InvalidRealm })
+            let error = ErrorPacket.Create(ss2, { Code = OnionError.FailureCode INVALID_REALM; Data = InvalidRealm })
             let error1 = forwardErrorPacket(error, ss1)
             let error2 = forwardErrorPacket(error1, ss0)
             let { OriginNode = pubkey; FailureMsg = failure } =
-                ErrorPacket.Parse(error2, ss) |> RResult.rderef
+                ErrorPacket.Parse(error2, ss) |> Result.defaultWith(fun _ -> failwith "")
             Expect.equal (pubkey.Value) (pubKeys.[2]) ""
             Expect.equal (InvalidRealm) (failure.Data) ""
             ()

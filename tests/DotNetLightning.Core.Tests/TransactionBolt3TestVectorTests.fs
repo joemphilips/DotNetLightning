@@ -1,5 +1,6 @@
 module TransactionBolt3TestVectorTests
 
+open ResultUtils
 open System
 open System.Text.Json
 open DotNetLightning.Crypto
@@ -232,7 +233,7 @@ let run (spec: CommitmentSpec): (Transaction * _) =
         Transactions.checkSigAndAdd (tx3) (localSig) (local.FundingPrivKey.PubKey)
         >>= fun tx4 ->
             Transactions.checkSigAndAdd (tx4) (remoteSig) (remote.FundingPrivKey.PubKey)
-        |> function Good e -> e | Bad e -> failwithf "%A" e
+        |> function Ok e -> e | Error e -> failwithf "%A" e
     let baseFee = Transactions.commitTxFee(local.DustLimit)(spec)
     log (sprintf "base commitment transaction fee is %A" baseFee)
     let actualFee = fundingAmount - match commitTx.Value.TryGetFee() with | true, f -> f | false, _ -> failwith ""
@@ -275,7 +276,7 @@ let run (spec: CommitmentSpec): (Transaction * _) =
                                  remote.PaymentPrivKey.PubKey
                                  spec
                                  n
-        |> RResult.rderef
+        |> Result.defaultWith(fun _ -> failwith "")
     let htlcTxs =
         Seq.append (unsignedHTLCSuccessTxs |> Seq.cast<IHTLCTx>) (unsignedHTLCTimeoutTxs |> Seq.cast<IHTLCTx>)
         // test vectors requires us to use RFC6974
@@ -294,14 +295,14 @@ let run (spec: CommitmentSpec): (Transaction * _) =
                                       let paymentPreimage = (paymentPreImages |> List.find(fun p -> p.GetSha256() = tx.PaymentHash))
                                       log (sprintf "Finalizing %A" tx)
                                       match tx.Finalize(localSig, remoteSig, paymentPreimage) with
-                                      | Good tx -> tx
-                                      | Bad e -> failwithf "%A" e
+                                      | Ok tx -> tx
+                                      | Error e -> failwithf "%A" e
                                   | :? HTLCTimeoutTx as tx ->
                                       let localSig, _ = Transactions.sign(tx, local.PaymentPrivKey)
                                       let remoteSig, _ = Transactions.sign(tx, remote.PaymentPrivKey)
                                       match tx.Finalize(localSig, remoteSig) with
-                                      | Good tx -> tx
-                                      | Bad e -> failwithf "%A" e
+                                      | Ok tx -> tx
+                                      | Error e -> failwithf "%A" e
                                   | _ -> failwith "unreachable")
     commitTx.Value.ExtractTransaction(), signedTxs
 

@@ -621,7 +621,7 @@ module SerializationTest =
                     ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
                     HTLCId = HTLCId(2316138423780173UL)
                     Sha256OfOnion = uint256([| for _ in 0..31 -> 1uy |])
-                    FailureCode = Error.ErrorCode(255us)
+                    FailureCode = OnionError.FailureCode(255us)
                 } 
                 let expected = hex.DecodeData("020202020202020202020202020202020202020202020202020202020202020200083a840000034d010101010101010101010101010101010101010101010101010101010101010100ff")
                 Expect.equal (updateFailMalformedHTLC.ToBytes()) expected ""

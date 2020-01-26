@@ -1,7 +1,5 @@
 namespace DotNetLightning.Utils
 
-open DotNetLightning.Utils.RResult
-
 
 module Aether =
     type Lens<'a, 'b> =
@@ -209,27 +207,6 @@ module Aether =
                     | Error _ -> Error v
                     | _ -> x)
 
-        [<RequireQualifiedAccess>]
-        module RResult =
-            let good_: Prism<RResult<_>, _> =
-                (fun x ->
-                    match x with
-                    | RResult.Good v -> Some v
-                    | _ -> None),
-                (fun v x ->
-                    match x with
-                    | Good _ -> Good v
-                    | _ -> x)
-
-            let bad_: Prism<RResult<_>, _> =
-                (fun x ->
-                    match x with
-                    | Bad v -> Some v
-                    | _ -> None),
-                (fun v x ->
-                    match x with
-                    | Bad _ -> RResult.Bad v
-                    | _ -> x)
 
         [<RequireQualifiedAccess>]
         module List =

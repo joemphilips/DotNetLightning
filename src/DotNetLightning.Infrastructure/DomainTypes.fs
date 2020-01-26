@@ -3,6 +3,7 @@ namespace DotNetLightning.Infrastructure
 open DotNetLightning.Utils
 open DotNetLightning.Peer
 open DotNetLightning.Channel
+open DotNetLightning.Channel
 
 type ChannelEventWithContext = {
     NodeId: NodeId
@@ -26,22 +27,22 @@ type PeerCommandWithContext = {
     PeerCommand: PeerCommand
 }
 
-type Aggregate<'TState, 'TCommand, 'TEvent> = {
+type Aggregate<'TState, 'TCommand, 'TEvent, 'TError> = {
     InitialState: 'TState
-    ExecuteCommand: 'TState -> 'TCommand -> RResult<'TEvent list>
+    ExecuteCommand: 'TState -> 'TCommand -> Result<'TEvent list, 'TError>
     ApplyEvent: 'TState -> 'TEvent -> 'TState
 }
 
 [<AutoOpen>]
 module ChannelDomain =
-    let CreateChannelAggregate(c: Channel): Aggregate<Channel, ChannelCommand, ChannelEvent> = {
+    let CreateChannelAggregate(c: Channel): Aggregate<Channel, ChannelCommand, ChannelEvent, ChannelError> = {
         InitialState = c
         ExecuteCommand = Channel.executeCommand
         ApplyEvent = Channel.applyEvent
     }
   
 module PeerDomain =
-    let CreatePeerAggregate(p: Peer): Aggregate<Peer, PeerCommand, PeerEvent> = {
+    let CreatePeerAggregate(p: Peer): Aggregate<Peer, PeerCommand, PeerEvent, PeerError> = {
         InitialState = p
         ExecuteCommand = Peer.executeCommand
         ApplyEvent = Peer.applyEvent

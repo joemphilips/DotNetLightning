@@ -4,6 +4,11 @@ open NBitcoin.Crypto
 open DotNetLightning.Utils
 open System
 
+/// The functions in this module may fail but it does not return Result and just throw Exception in
+/// case of failure. Why? because the error case is very, very unlikely to happen.
+/// (e.g. two keys we operate were complement of each other.)
+/// It is interesting to consider if it is possible for the attacker to intentionally make this happen,
+/// but it is way beyond my skills, so we just ignore for now.
 module Generators =
 
     let private derivePubKeyFromPrivKey (secp256k1: ISecp256k1) (privKey: byte[]) =

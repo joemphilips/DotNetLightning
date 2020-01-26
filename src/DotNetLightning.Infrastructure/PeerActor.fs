@@ -15,12 +15,7 @@ open DotNetLightning.Peer
 
 open CustomEventAggregator
 
-type PeerError =
-    | DuplicateConnection of PeerId
-    | UnexpectedByteLength of expected: int * actual: int
-    | EncryptorError of string
-
-type IPeerActor = Actor<Peer, PeerCommand, PeerEvent>
+type IPeerActor = Actor<Peer, PeerCommand, PeerEvent, PeerError>
 
 type PeerActor(peer: Peer,
                peerId: PeerId,
@@ -29,13 +24,16 @@ type PeerActor(peer: Peer,
                pipeWriter: PipeWriter,
                nodeParams: IOptions<NodeParams>,
                eventAggregator: IEventAggregator) as this =
-    inherit Actor<Peer, PeerCommand, PeerEvent>(PeerDomain.CreatePeerAggregate peer, log)
+    inherit Actor<Peer, PeerCommand, PeerEvent, PeerError>(PeerDomain.CreatePeerAggregate peer, log)
     let nodeParams = nodeParams.Value
     
     let ourNodeId = keyRepo.GetNodeSecret().PubKey |> NodeId
 
-    override this.HandleError (b: RBad) =
+    override this.HandleError (b: PeerError) =
         unitTask {
+            log.LogError(sprintf "Critical error during processing against peer: %A" peerId)
+            log.LogError(sprintf "%A" b)
+            (*
             let handleObj (o: obj) = 
                 unitVtask {
                     match o with
@@ -71,6 +69,7 @@ type PeerActor(peer: Peer,
                     | RBad.Object obj ->
                         do! handleObj obj
                 }
+            *)
             return ()
         }
         

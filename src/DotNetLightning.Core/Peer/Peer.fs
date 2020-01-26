@@ -1,6 +1,9 @@
 namespace DotNetLightning.Peer
 
 open NBitcoin
+
+open ResultUtils
+
 open DotNetLightning.Utils
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Utils.Aether
@@ -71,43 +74,50 @@ module Peer =
         let noiseStep = state.ChannelEncryptor.GetNoiseStep()
         match noiseStep, cmd with
         | ActOne, ProcessActOne (actOne, ourNodeSecret) ->
-            state.ChannelEncryptor |> PeerChannelEncryptor.processActOneWithKey actOne ourNodeSecret
-            |>> (ActOneProcessed >> List.singleton)
+            result {
+                let! actTwo = state.ChannelEncryptor |> PeerChannelEncryptor.processActOneWithKey actOne ourNodeSecret
+                return actTwo |> ActOneProcessed  |> List.singleton
+            }
         | ActTwo, ProcessActTwo (actTwo, ourNodeSecret) ->
-            state.ChannelEncryptor |> PeerChannelEncryptor.processActTwo actTwo ourNodeSecret
-            |>> (ActTwoProcessed >> List.singleton)
+            result {
+                let! actThree = state.ChannelEncryptor |> PeerChannelEncryptor.processActTwo actTwo ourNodeSecret
+                return actThree |> (ActTwoProcessed >> List.singleton)
+            }
         | ActThree, ProcessActThree(actThree) ->
-            state.ChannelEncryptor |> PeerChannelEncryptor.processActThree actThree
-            |>> (ActThreeProcessed >> List.singleton)
+            result {
+                let! theirNodeId = state.ChannelEncryptor |> PeerChannelEncryptor.processActThree actThree
+                return theirNodeId |> (ActThreeProcessed >> List.singleton)
+            }
         | NoiseComplete, DecodeCipherPacket (lengthPacket, reader) ->
-            state.ChannelEncryptor |> PeerChannelEncryptor.decryptLengthHeader (fun _ -> ()) lengthPacket
-            >>= fun (len, pce) ->
+            result {
+                let! (len, pce) =
+                    PeerChannelEncryptor.decryptLengthHeader lengthPacket state.ChannelEncryptor
+                    
                 let packet = reader (int len + 16)
-                pce |> PeerChannelEncryptor.decryptMessage (fun _ -> ()) packet
-                >>= fun (b, newPCE) ->
-                    LightningMsg.fromBytes b
-                    >>= fun msg ->
+                let! (b, newPCE) = pce |> PeerChannelEncryptor.decryptMessage packet
+                let! msg = LightningMsg.fromBytes b |> Result.mapError(PeerError.P2PMessageDecodeError)
+                return
                     match msg with
                     | :? ErrorMessage as msg ->
-                        [ReceivedError (msg, newPCE)] |> Good
+                        [ReceivedError (msg, newPCE)]
                     | :? Ping as msg ->
-                        [ReceivedPing (msg, newPCE)] |> Good
+                        [ReceivedPing (msg, newPCE)]
                     | :? Pong as msg ->
-                        [ReceivedPong (msg, newPCE)] |> Good
+                        [ReceivedPong (msg, newPCE)]
                     | :? Init as msg ->
-                        [ReceivedInit (msg, newPCE)] |> Good
+                        [ReceivedInit (msg, newPCE)]
                     | :? IRoutingMsg as msg ->
-                        [ReceivedRoutingMsg (msg, newPCE)] |> Good
+                        [ReceivedRoutingMsg (msg, newPCE)]
                     | :? IChannelMsg as msg ->
-                        [ReceivedChannelMsg (msg, newPCE)] |> Good
+                        [ReceivedChannelMsg (msg, newPCE)]
                     | _ ->
                         failwithf "unreachable %A" msg
+            }
         | NoiseComplete, EncodeMsg (msg) ->
-            state.ChannelEncryptor |> PeerChannelEncryptor.encryptMessage (fun _ -> ()) (msg.ToBytes())
-            |> (MsgEncoded >> List.singleton >> Good)
+            state.ChannelEncryptor |> PeerChannelEncryptor.encryptMessage (msg.ToBytes())
+            |> (MsgEncoded >> List.singleton >> Ok)
         | s, cmd ->
-            sprintf "Peer does not know how to handle %A while in noise step %A" cmd noiseStep
-            |> RResult.rmsg
+            failwithf "Peer does not know how to handle %A while in noise step %A" cmd noiseStep
         
     let applyEvent (state: Peer) (event: PeerEvent): Peer =
         let noiseStep = state.ChannelEncryptor.GetNoiseStep()

@@ -21,7 +21,7 @@ type IActor<'TCommand> =
 /// All inputs to this should be given through CommunicationChannel (To ensure only one change will take place at the time.)
 /// And all outputs to other services will go through PublishEvent (typically using EventAggregator)
 [<AbstractClass>]
-type Actor<'TState, 'TCommand, 'TEvent>(aggregate: Aggregate<'TState, 'TCommand, 'TEvent>, log: ILogger, ?capacity: int) =
+type Actor<'TState, 'TCommand, 'TEvent, 'TError>(aggregate: Aggregate<'TState, 'TCommand, 'TEvent, 'TError>, log: ILogger, ?capacity: int) =
     let mutable disposed = false
     let capacity = defaultArg capacity 600
     let communicationChannel =
@@ -34,7 +34,7 @@ type Actor<'TState, 'TCommand, 'TEvent>(aggregate: Aggregate<'TState, 'TCommand,
         
     member val State = aggregate.InitialState with get, set
     abstract member PublishEvent: e: 'TEvent -> Task
-    abstract member HandleError: RBad -> Task
+    abstract member HandleError: 'TError -> Task
     interface IActor<'TCommand> with
         member this.StartAsync() = unitTask {
             let mutable nonFinished = true
@@ -47,17 +47,16 @@ type Actor<'TState, 'TCommand, 'TEvent>(aggregate: Aggregate<'TState, 'TCommand,
                         let msg = sprintf "read cmd '%A from communication channel" (cmd)
                         log.LogTrace(msg)
                         match aggregate.ExecuteCommand this.State cmd with
-                        | Good events ->
+                        | Ok events ->
                             let msg = sprintf "Successfully executed command (%A) and got events %A" cmd events
                             log.LogTrace(msg)
                             this.State <- events |> List.fold aggregate.ApplyEvent this.State
                             maybeTcs |> Option.iter(fun tcs -> tcs.SetResult())
                             for e in events do
                                 do! this.PublishEvent e
-                        | Bad ex ->
-                            let ex = ex.Flatten()
+                        | Error ex ->
                             log.LogTrace(sprintf "failed to execute command and got error %A" ex)
-                            ex |> Array.map (this.HandleError) |> ignore
+                            ex |> this.HandleError |> ignore
                             maybeTcs |> Option.iter(fun tcs -> tcs.SetException(exn(sprintf "%A" ex)))
                     | false, _ ->
                         ()

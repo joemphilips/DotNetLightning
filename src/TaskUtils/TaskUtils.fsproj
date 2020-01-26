@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;netcoreapp3.0</TargetFrameworks>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Ply.fs" />
+    <Compile Include="PlyCE.fs" />
+    <Compile Include="Task.fs" />
+    <Compile Include="TaskOp.fs" />
+    <Compile Include="TaskResult.fs" />
+    <Compile Include="TaskResultCE.fs" />
+    <Compile Include="TaskResultOp.fs" />
+    <Compile Include="Result.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ResultUtils\ResultUtils.fsproj" />
+  </ItemGroup>
+</Project>
