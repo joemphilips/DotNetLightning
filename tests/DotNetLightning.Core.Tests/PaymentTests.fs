@@ -18,7 +18,7 @@ let tests =
     let priv = data1.RootElement.GetProperty("priv_key").GetString() |> hex.DecodeData |> Key
 
     testList "BOLT-11 tests" [
-        ftestCase "check minimal unit is used" <| fun _ ->
+        testCase "check minimal unit is used" <| fun _ ->
             Expect.equal 'p' (Amount.unit(LNMoney.MilliSatoshis(1L))) ""
             Expect.equal 'p' (Amount.unit(LNMoney.MilliSatoshis(99L))) ""
             Expect.equal 'n' (Amount.unit(LNMoney.MilliSatoshis(100L))) ""
@@ -30,5 +30,9 @@ let tests =
             Expect.equal 'm' (Amount.unit(LNMoney.Coins(1m / 1000m))) ""
             Expect.equal 'm' (Amount.unit(LNMoney.Coins(10m / 1000m))) ""
             Expect.equal 'm' (Amount.unit(LNMoney.Coins(1m))) ""
-            ()
+            
+        testCase "check that we can still decode non-minimal amount encoding" <| fun _ ->
+            Expect.equal (Amount.decode("1000u")) (Ok(LNMoney.MilliSatoshis(100000000L))) ""
+            Expect.equal (Amount.decode("1000000n")) (Ok(LNMoney.MilliSatoshis(100000000L))) ""
+            Expect.equal (Amount.decode("1000000000p")) (Ok(LNMoney.MilliSatoshis(100000000L))) ""
     ]

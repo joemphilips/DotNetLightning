@@ -4,18 +4,19 @@ open System
 
 open ResultUtils
 
-open DotNetLightning.Chain
-open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Utils
+open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Chain
+
+open System.Text
 open NBitcoin
-open NBitcoin
-open NBitcoin.DataEncoders
-open NBitcoin.DataEncoders
+open NBitcoin.Crypto
 open NBitcoin.DataEncoders
 
 
 module private Helpers =
     let base58check = Base58CheckEncoder()
+    let utf8 = UTF8Encoding()
     
     let base58CheckDecode data =
         try
@@ -120,7 +121,7 @@ type TaggedField =
     | DescriptionHash of PaymentHash
     | FallbackAddress of FallbackAddress
     | RoutingInfo of ExtraHop list
-    | Expiry of DateTimeOffset
+    | Expiry of TimeSpan
     | MinFinalCltvExpiry of DateTimeOffset
     | Features of LocalFeatures
 and ExtraHop = {
@@ -130,6 +131,20 @@ and ExtraHop = {
     FeeProportionalMillionths: int64
     CLTVExpiryDelta: BlockHeightOffset
 }
+
+[<CLIMutable>]
+type Bolt11Data = {
+    mutable Timestamp: DateTimeOffset
+    mutable TaggedFields: TaggedField list
+    mutable Signature: byte[]
+}
+    with
+    interface ILightningSerializable<Bolt11Data> with
+        member this.Serialize(ls) =
+            use bw = new BitWriter()
+            failwith ""
+        member this.Deserialize(ls) =
+            failwith ""
 
 type PaymentRequest = private {
     Prefix: string
@@ -202,12 +217,20 @@ type PaymentRequest = private {
     member this.IsExpired =
         match this.Expiry with
         | Some e ->
-            failwith ""
-            // this.Timestamp + e <= DateTimeOffset.UtcNow
+             (this.Timestamp + e) <= DateTimeOffset.UtcNow
         | None ->
-            // this.Timestamp + DEFAULT_EXPIRY_SECONDS <= DateTimeOffset.UtcNow
-            failwith ""
+            this.Timestamp + PaymentConstants.DEFAULT_EXPIRY_SECONDS <= DateTimeOffset.UtcNow
             
+    /// the hash of this payment request
+    member this.Hash =
+        let hrp =
+            (sprintf "%s%s" (this.Prefix) (Amount.encode(this.Amount))) |> Helpers.utf8.GetBytes
+        let data = { Bolt11Data.Timestamp = this.Timestamp
+                     TaggedFields = this.Tags
+                     Signature = Array.zeroCreate(65) }
+        let bin = data.Serialize()
+        let msg = Array.concat(seq { hrp; bin.[bin.Length - (521)..bin.Length - 1] }) // 520 bits are for signature
+        Hashes.SHA256(msg)
     static member Create (chainhash: BlockId,
                           amount: LNMoney option,
                           paymentHash: PaymentHash,

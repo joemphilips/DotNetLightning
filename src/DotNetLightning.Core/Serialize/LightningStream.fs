@@ -2,11 +2,8 @@ namespace DotNetLightning.Serialize
 
 open System
 open System.IO
-open System.Runtime.Serialization
 open DotNetLightning.Utils
-open DotNetLightning.Utils.NBitcoinExtensions
 open NBitcoin
-open NBitcoin.Crypto
 
 type Scope(openAction: Action, closeAction: Action) =
     let _close = closeAction
