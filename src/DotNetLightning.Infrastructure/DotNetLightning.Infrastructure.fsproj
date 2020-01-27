@@ -6,7 +6,7 @@
   <ItemGroup>
     <ProjectReference Include="..\DotNetLightning.Core\DotNetLightning.Core.fsproj" />
     <ProjectReference Include="..\EventAggregator\EventAggregator.fsproj" />
-    <ProjectReference Include="..\TaskUtils\TaskUtils.fsproj" />
+    <ProjectReference Include="..\TaskUtils\TaskUtils.fsproj" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="PrimitiveExtensions.fs" />
