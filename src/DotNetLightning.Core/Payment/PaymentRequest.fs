@@ -29,22 +29,6 @@ module private Helpers =
         with
         | :? FormatException as fex ->
             fex.ToString() |> Error
-            
-    (*
-    let parseP2WPKHAddress addr (n: Network) =
-        try
-            n.Parse<BitcoinWitPubKeyAddress>(addr) |> Ok
-        with
-        | :? FormatException as fex ->
-            fex.ToString() |> Error
-            
-    let parseP2WSHAddress addr (n: Network) =
-        try
-            n.Parse<BitcoinWitScriptAddress>(addr) |> Ok
-        with
-        | :? FormatException as fex ->
-            fex.ToString() |> Error
-    *)
     
     let tryGetP2WPKHAddressEncoder (n: Network) =
         let maybeEncoder = n.GetBech32Encoder(Bech32Type.WITNESS_PUBKEY_ADDRESS, false)
@@ -123,6 +107,8 @@ type FallbackAddress = {
         | v when prefix = "lnbcrt" ->
             let encoder = Bech32Encoder(Encoders.ASCII.DecodeData("bcrt"))
             encoder.Encode(v, this.Data)
+        | v ->
+            failwithf "Unreachable! Unexpected version %A" v
             
 type TaggedField =
     | UnknownTaggedField of byte[]
@@ -216,9 +202,11 @@ type PaymentRequest = private {
     member this.IsExpired =
         match this.Expiry with
         | Some e ->
-            this.Timestamp + e <= DateTimeOffset.UtcNow
+            failwith ""
+            // this.Timestamp + e <= DateTimeOffset.UtcNow
         | None ->
-            this.Timestamp + DEFAULT_EXPIRY_SECONDS <= DateTimeOffset.UtcNow
+            // this.Timestamp + DEFAULT_EXPIRY_SECONDS <= DateTimeOffset.UtcNow
+            failwith ""
             
     static member Create (chainhash: BlockId,
                           amount: LNMoney option,
@@ -234,5 +222,5 @@ type PaymentRequest = private {
         let expirySeconds = defaultArg expirySeconds None
         let extraHops = defaultArg extraHops []
         let timeStamp = defaultArg timeStamp None
-        let features = defaultArg features (LocalFeatures.Flags())
-        {}
+        let features = defaultArg features (LocalFeatures.Flags([||]))
+        failwith ""

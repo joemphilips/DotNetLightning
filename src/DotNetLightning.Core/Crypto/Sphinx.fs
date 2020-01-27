@@ -79,14 +79,14 @@ module Sphinx =
                            (blindingFactors @ [blindingFactor])
                            (sharedSecrets @ [secret])
 
-    let rec private computeEphemeralPublicKeysAndSharedSecrets(sessionKey: Key) (pubKeys: PubKey list) =
+    let rec internal computeEphemeralPublicKeysAndSharedSecrets(sessionKey: Key) (pubKeys: PubKey list) =
         let ephemeralPK0 = sessionKey.PubKey
         let secret0 = computeSharedSecret(pubKeys.[0], sessionKey) |> Key
         let blindingFactor0 = computeBlindingFactor(ephemeralPK0) (secret0)
         computeEphemeralPublicKeysAndSharedSecretsCore
             (sessionKey) (pubKeys |> List.tail) ([ephemeralPK0]) ([blindingFactor0]) ([secret0])
 
-    let rec private generateFiller (keyType: string) (sharedSecrets: Key list) (hopSize: int) (maxNumberOfHops: int option) =
+    let rec internal generateFiller (keyType: string) (sharedSecrets: Key list) (hopSize: int) (maxNumberOfHops: int option) =
         let maxHopN = defaultArg maxNumberOfHops MaxHops
         sharedSecrets
         |> List.fold (fun (padding: byte[]) (secret: Key) ->

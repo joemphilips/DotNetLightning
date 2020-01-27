@@ -63,6 +63,7 @@
     <Compile Include="Channel\ChannelValidation.fs" />
     <Compile Include="Channel\Channel.fs" />
     <Compile Include="Payment\PaymentEvents.fs" />
+    <Compile Include="Payment\Amount.fs" />
     <Compile Include="Payment\PaymentRequest.fs" />
   </ItemGroup>
   <ItemGroup>
