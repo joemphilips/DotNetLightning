@@ -19,8 +19,8 @@
   </Choose>
   <ItemGroup>
     <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\Secp256k1.Net\Secp256k1.Net.csproj" PrivateAssets="all" />
-    <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\NSec\Experimental\NSec.Experimental.csproj" />
-    <ProjectReference Include="..\ResultUtils\ResultUtils.fsproj" />
+    <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\NSec\Experimental\NSec.Experimental.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\ResultUtils\ResultUtils.fsproj" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
