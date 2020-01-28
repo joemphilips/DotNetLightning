@@ -49,28 +49,24 @@ let tests =
             Expect.equal (d.TagsValue.Length) (2) ""
             Expect.equal (d.ToString(d.Sign(priv))) data ""
             
-        testCase "" <| fun _ ->
+        testCase "Please send $3 for a cup of coffee to the same peer, within one minute" <| fun _ ->
             failwith ""
-        testCase "" <| fun _ ->
+        testCase "Please send 0.0025 BTC for a cup of nonsense (ナンセンス 1杯) to the same peer, within one minute" <| fun _ ->
             failwith ""
-        testCase "" <| fun _ ->
+        testCase "Now send $24 for an entire list of things (hashed)" <| fun _ ->
             failwith ""
-        testCase "" <| fun _ ->
+        testCase "The same, on testnet, with a fallback address mk2QpYatsKicvFVuTAQLBryyccRXMUaGHP" <| fun _ ->
             failwith ""
-        testCase "" <| fun _ ->
+        testCase "On mainnet, with fallback address 1RustyRX2oai4EYYDpQGWvEL62BBGqN9T with extra routing info to go via nodes 029e03a901b85534ff1e92c43c74431f7ce72046060fcf7a95c37e148f78c77255 then 039e03a901b85534ff1e92c43c74431f7ce72046060fcf7a95c37e148f78c77255" <| fun _ ->
             failwith ""
-        testCase "" <| fun _ ->
+        testCase "On mainnet, with fallback (P2SH) address 3EktnHQD7RiAE6uzMj2ZifT9YgRrkSgzQX" <| fun _ ->
             failwith ""
-        testCase "" <| fun _ ->
+        testCase "On mainnet, with fallback (P2WPKH) address bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4" <| fun _ ->
             failwith ""
-        testCase "" <| fun _ ->
+        testCase "On mainnet, with fallback (P2WSH) address bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3" <| fun _ ->
             failwith ""
-        testCase "" <| fun _ ->
+        testCase "Please send $30 for coffee beans to the same peer, which supports features 9, 15 and 99, using secret 0x1111111111111111111111111111111111111111111111111111111111111111" <| fun _ ->
             failwith ""
-        testCase "" <| fun _ ->
-            failwith ""
-        testCase "" <| fun _ ->
-            failwith ""
-        testCase "" <| fun _ ->
+        testCase "Same, but adding invalid unknown feature 100" <| fun _ ->
             failwith ""
     ]

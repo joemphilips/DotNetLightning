@@ -72,7 +72,7 @@ module private Helpers =
     let prefixValues = prefixes |> Map.toList |> List.map(fun (k, v) -> v)
         
     let checkAndGetPrefixFromHrp (hrp: string) =
-        let maybePrefix = prefixValues |> List.filter(fun p -> hrp.StartsWith(hrp)) |> List.tryExactlyOne
+        let maybePrefix = prefixValues |> List.filter(fun p -> hrp.StartsWith(p)) |> List.tryExactlyOne
         match maybePrefix with
         | None ->
             Error(sprintf "Unknown prefix type %s! hrp must be either of %A" hrp prefixValues)
