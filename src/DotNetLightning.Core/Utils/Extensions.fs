@@ -14,6 +14,12 @@ type System.UInt64 with
         let d = BitConverter.GetBytes(this)
         if BitConverter.IsLittleEndian then (d |> Array.rev) else d
 
+type System.Collections.BitArray with
+    member this.ToByteArray() =
+        let ret: byte[] = Array.zeroCreate (this.Length - 1 / (8 + 1))
+        this.CopyTo(ret, 0)
+        ret
+    
 [<Extension>]
 type DictionaryExtensions() =
 

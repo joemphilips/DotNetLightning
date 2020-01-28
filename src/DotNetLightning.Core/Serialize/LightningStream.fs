@@ -216,6 +216,12 @@ type LightningReaderStream(inner: Stream) =
             raise (EndOfStreamException "Inner Stream for LightningReaderStream has been consumed")
         else
             (byte b)
+            
+    member this.ReadBytes(len: int) =
+        let res = Array.zeroCreate(len)
+        this.FillBuffer(len)
+        m_buffer.CopyTo(res, 0)
+        res
 
     member this.ReadUInt8() =
         uint8 (this.ReadByte())

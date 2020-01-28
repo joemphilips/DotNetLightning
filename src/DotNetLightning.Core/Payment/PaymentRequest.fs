@@ -6,8 +6,8 @@ open ResultUtils
 
 open DotNetLightning.Utils
 open DotNetLightning.Serialize.Msgs
-open DotNetLightning.Chain
 
+open DotNetLightning.Serialize
 open System.Text
 open NBitcoin
 open NBitcoin.Crypto
@@ -17,6 +17,8 @@ open NBitcoin.DataEncoders
 module private Helpers =
     let base58check = Base58CheckEncoder()
     let utf8 = UTF8Encoding()
+    
+    let ascii = ASCIIEncoder()
     
     let base58CheckDecode data =
         try
@@ -39,6 +41,13 @@ module private Helpers =
         let maybeEncoder = n.GetBech32Encoder(Bech32Type.WITNESS_SCRIPT_ADDRESS, false)
         if isNull maybeEncoder then Error("Failed to get p2wsh encoder") else Ok maybeEncoder
             
+    let decodeBech32 s =
+        try
+            InternalBech32Encoder.Instance.DecodeData(s).ToTuple()
+            |> Ok
+        with
+        | :? FormatException as fex ->
+            fex.ToString() |> Error
     // ----- base58check prefixes -----
     // ref:https://en.bitcoin.it/wiki/List_of_address_prefixes 
     // (TODO: We might be able to get rid of this by using NBitcoin correctly)
@@ -53,6 +62,22 @@ module private Helpers =
     
     [<Literal>]
     let PREFIX_ADDRESS_SCRIPTHASH_TESTNET = 196uy
+    
+    let prefixes =
+        Map.empty
+        |> Map.add (Network.RegTest.GenesisHash) ("lnbcrt")
+        |> Map.add (Network.TestNet.GenesisHash) ("lntb")
+        |> Map.add (Network.Main.GenesisHash) ("lnbc")
+        
+    let prefixValues = prefixes |> Map.toList |> List.map(fun (k, v) -> v)
+        
+    let checkAndGetPrefixFromHrp (hrp: string) =
+        let maybePrefix = prefixValues |> List.filter(fun p -> hrp.StartsWith(hrp)) |> List.tryExactlyOne
+        match maybePrefix with
+        | None ->
+            Error(sprintf "Unknown prefix type %s! hrp must be either of %A" hrp prefixValues)
+        | Some(prefix) ->
+            Ok(prefix)
         
 type FallbackAddress = {
     Version: uint8
@@ -113,17 +138,69 @@ type FallbackAddress = {
             
 type TaggedField =
     | UnknownTaggedField of byte[]
-    | PaymentHash of PaymentHash
-    | PaymentSecret of PaymentPreimage
-    | Description of string
+    | PaymentHashTaggedField of PaymentHash
+    | PaymentSecretTaggedField of PaymentPreimage
+    | NodeIdTaggedField of NodeId
+    | DescriptionTaggedField of string
     /// Hash that will be included in the payment request, and can be checked against the hash of a
     /// long description, an invoice,
-    | DescriptionHash of PaymentHash
-    | FallbackAddress of FallbackAddress
-    | RoutingInfo of ExtraHop list
-    | Expiry of TimeSpan
-    | MinFinalCltvExpiry of DateTimeOffset
-    | Features of LocalFeatures
+    | DescriptionHashTaggedField of uint256
+    | FallbackAddressTaggedField of FallbackAddress
+    | RoutingInfoTaggedField of ExtraHop list
+    | ExpiryTaggedField of TimeSpan
+    | MinFinalCltvExpiryTaggedField of DateTimeOffset
+    | FeaturesTaggedField of LocalFeatures
+    with
+    static member Deserialize(br: BitReader) =
+        let t = br.ReadBitsBEAsUInt8(5)
+        let readForExpectedLength (br: BitReader) (expectedLength) =
+            let bitLength = br.ReadBitsBEAsUInt16(10) |> int |> (*) 5
+            if (bitLength <> expectedLength) then
+                sprintf "Unexpected length. actual: %d; expected %d" bitLength expectedLength
+                |> Error
+            else
+                br.ReadBytes(bitLength) |> Ok
+        match t with
+        // 'p' payment-hash
+        | 1uy ->
+            readForExpectedLength br 256
+            |> Result.map(uint256 >> PaymentHash.PaymentHash >> PaymentHashTaggedField)
+        // 's' payment-secret
+        | 16uy ->
+            readForExpectedLength br 256
+            |> Result.map(PaymentPreimage.PaymentPreimage >> PaymentSecretTaggedField)
+        // 'd' description
+        | 13uy ->
+            let bitLength = br.ReadBitsBEAsUInt16(10) |> int |> (*) 5
+            let desc = br.ReadBytes(bitLength) |> Helpers.utf8.GetString
+            DescriptionTaggedField(desc) |> Ok
+        // 'n' node id
+        | 19uy ->
+            readForExpectedLength br 264
+            |> Result.map(fun b -> PubKey(b, true) |> NodeId |> NodeIdTaggedField)
+        // 'h' description hash
+        | 23uy ->
+            readForExpectedLength br 256
+            |> Result.map(uint256 >> DescriptionHashTaggedField)
+        // 'x' expiry time
+        | 6uy ->
+            let bitLength = br.ReadBitsBEAsUInt16(10) |> int |> (*) 5
+            let t = br.ReadBytes(bitLength)
+            failwith "TODO"
+        // 'c' min-final-cltv-expiry
+        | 24uy ->
+            let bitLength = br.ReadBitsBEAsUInt16(10) |> int |> (*) 5
+            let data = br.ReadBytes(bitLength)
+            failwith "TODO"
+        // 'f' fallback address
+        | 9uy ->
+            let bitLength = br.ReadBitsBEAsUInt16(10) |> int |> (*) 5
+            let data = br.ReadBytes(bitLength)
+            failwith "TODO"
+        // 'r' 
+        | 3uy ->
+            failwith "TODO"
+            
 and ExtraHop = {
     NodeId: NodeId
     ShortChannelId: ShortChannelId
@@ -139,31 +216,48 @@ type Bolt11Data = {
     mutable Signature: byte[]
 }
     with
+    member this.Deserialize(ls) =
+        use br = new BitReader(ls)
+        this.Timestamp <- br.ReadBit35BEAsDateTime()
+        // this.TaggedField <- List.iter()
+        failwith ""
+    member this.Serialize(ls) =
+        use bw = new BitWriter(ls)
+        // bw.Write(this.Timestamp.ToUnixTimeSeconds)
+        failwith ""
+        
+    static member FromBytes(b: byte[]) =
+        try
+            ILightningSerializable.fromBytes<Bolt11Data>(b) |> Ok
+        with
+        | ex ->
+            Error(ex.ToString())
+            
+        
     interface ILightningSerializable<Bolt11Data> with
-        member this.Serialize(ls) =
-            use bw = new BitWriter()
-            failwith ""
-        member this.Deserialize(ls) =
-            failwith ""
+        member this.Deserialize(ls) = this.Deserialize(ls)
+        member this.Serialize(ls) = this.Serialize(ls)
+        
 
+[<CLIMutable>]
 type PaymentRequest = private {
-    Prefix: string
-    Amount: LNMoney option
-    Timestamp: DateTimeOffset
-    NodeId: NodeId
-    Tags:TaggedField list
-    Signature: LNECDSASignature
+    mutable Prefix: string
+    mutable Amount: LNMoney option
+    mutable Timestamp: DateTimeOffset
+    mutable NodeId: NodeId
+    mutable Tags:TaggedField list
+    mutable Signature: LNECDSASignature
 }
     with
-    static member Create (prefix: string, amount: LNMoney option, timestamp, nodeId, tags, signature) =
+    static member TryCreate (prefix: string, amount: LNMoney option, timestamp, nodeId, tags, signature) =
         result {
             do! amount |> function None -> Ok() | Some a -> Result.requireTrue "amount must be larger than 0" (a > LNMoney.Zero)
             do! tags
-                |> List.filter(function PaymentHash ph -> true | _ -> false)
+                |> List.filter(function PaymentHashTaggedField ph -> true | _ -> false)
                 |> List.length
                 |> Result.requireEqualTo (1) "There must be exactly one payment hash tag"
             do! tags
-                |> List.filter(function Description _ | DescriptionHash _-> true | _ -> false)
+                |> List.filter(function DescriptionTaggedField _ | DescriptionHashTaggedField _-> true | _ -> false)
                 |> List.length
                 |> Result.requireEqualTo (1) "There must be exactly one payment secret tag when feature bit is set"
             return {
@@ -175,43 +269,50 @@ type PaymentRequest = private {
                 Signature = signature
             }
         }
+    member this.PrefixValue = this.Prefix
+    member this.AmountValue = this.Amount
+    member this.TimestampValue = this.Timestamp
+    member this.NodeIdValue = this.NodeId
+    member this.TagsValue = this.Tags
+    member this.SignatureValue = this.Signature
+    
     member this.PaymentHash =
-        this.Tags |> Seq.choose(function TaggedField.PaymentHash p -> Some p | _ -> None) |> Seq.tryExactlyOne
+        this.Tags |> Seq.choose(function TaggedField.PaymentHashTaggedField p -> Some p | _ -> None) |> Seq.tryExactlyOne
         
     member this.PaymentSecret =
-        this.Tags |> Seq.choose(function TaggedField.PaymentSecret ps -> Some ps | _ -> None) |> Seq.tryExactlyOne
+        this.Tags |> Seq.choose(function TaggedField.PaymentSecretTaggedField ps -> Some ps | _ -> None) |> Seq.tryExactlyOne
         
     member this.Description =
         this.Tags
             |> Seq.choose(function
-                          | Description d -> Some(Choice1Of2 d)
-                          | DescriptionHash d -> Some(Choice2Of2 d)
+                          | DescriptionTaggedField d -> Some(Choice1Of2 d)
+                          | DescriptionHashTaggedField d -> Some(Choice2Of2 d)
                           | _ -> None)
             |> Seq.tryExactlyOne
 
     member this.FallbackAddress() =
         this.Tags
-        |> Seq.choose(function FallbackAddress f -> Some f | _ -> None)
+        |> Seq.choose(function FallbackAddressTaggedField f -> Some f | _ -> None)
         |> Seq.map(fun fallbackAddr -> fallbackAddr.ToAddress(this.Prefix))
         |> Seq.tryExactlyOne
         
     member this.RoutingInfo =
         this.Tags
-        |> List.choose(function RoutingInfo r -> Some r | _ -> None)
+        |> List.choose(function RoutingInfoTaggedField r -> Some r | _ -> None)
         
     member this.Expiry =
         this.Tags
-        |> Seq.choose(function Expiry e -> Some (e) | _ -> None)
+        |> Seq.choose(function ExpiryTaggedField e -> Some (e) | _ -> None)
         |> Seq.tryExactlyOne
         
     member this.MinFinalCLTVExpiryDelta =
         this.Tags
-        |> Seq.choose(function MinFinalCltvExpiry cltvE -> Some (cltvE) | _ -> None)
+        |> Seq.choose(function MinFinalCltvExpiryTaggedField cltvE -> Some (cltvE) | _ -> None)
         |> Seq.tryExactlyOne
 
     member this.Features =
         this.Tags
-        |> Seq.choose(function Features f -> Some f | _ -> None)
+        |> Seq.choose(function FeaturesTaggedField f -> Some f | _ -> None)
         |> Seq.tryExactlyOne
         
     member this.IsExpired =
@@ -228,7 +329,7 @@ type PaymentRequest = private {
         let data = { Bolt11Data.Timestamp = this.Timestamp
                      TaggedFields = this.Tags
                      Signature = Array.zeroCreate(65) }
-        let bin = data.Serialize()
+        let bin = data.ToBytes()
         let msg = Array.concat(seq { hrp; bin.[bin.Length - (521)..bin.Length - 1] }) // 520 bits are for signature
         Hashes.SHA256(msg)
     static member Create (chainhash: BlockId,
@@ -247,3 +348,33 @@ type PaymentRequest = private {
         let timeStamp = defaultArg timeStamp None
         let features = defaultArg features (LocalFeatures.Flags([||]))
         failwith ""
+    member this.ToString(signature: ECDSASignature) =
+        failwith ""
+        
+    member this.Sign(privKey: Key): ECDSASignature =
+        failwith ""
+        
+    static member Parse(str: string): Result<PaymentRequest, string> =
+        let mutable s = (str.Clone() :?> string).ToLowerInvariant()
+        if (s.StartsWith("lightning:", StringComparison.OrdinalIgnoreCase)) then
+            s <- s.Substring("lightning:".Length)
+        result {
+            let! (hrp, data) = Helpers.decodeBech32(s)
+            let! prefix = Helpers.checkAndGetPrefixFromHrp hrp
+            let! bolt11Data = Bolt11Data.FromBytes(data)
+            let signature = LNECDSASignature.FromBytesCompact(bolt11Data.Signature)
+            let nodeId =
+                let msg = hrp |> Helpers.ascii.DecodeData
+                PubKey.RecoverFromMessage(msg, bolt11Data.Signature)
+                |> NodeId
+            
+            let maybeAmount = Amount.decode(hrp.Substring(prefix.Length)) |> function Ok s -> Some s | Error _ -> None
+            return {
+                PaymentRequest.Amount = maybeAmount
+                Prefix = hrp
+                Timestamp = bolt11Data.Timestamp
+                NodeId = nodeId
+                Tags = bolt11Data.TaggedFields
+                Signature = signature
+            }
+        }
