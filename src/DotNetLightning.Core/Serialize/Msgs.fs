@@ -674,11 +674,11 @@ module rec Msgs =
             member this.Deserialize(ls) =
                 this.ChannelId <- ls.ReadUInt256(true) |> ChannelId
                 this.HTLCId <- ls.ReadUInt64(false) |> HTLCId
-                this.PaymentPreimage <- PaymentPreimage(ls.ReadBytes(32))
+                this.PaymentPreimage <- ls.ReadBytes PaymentPreimage.LENGTH |> PaymentPreimage.Create
             member this.Serialize(ls) =
                 ls.Write(this.ChannelId.Value.ToBytes())
                 ls.Write(this.HTLCId.Value, false)
-                ls.Write(this.PaymentPreimage.ToBytes())
+                ls.Write(this.PaymentPreimage.ToByteArray())
 
     [<CLIMutable>]
     type UpdateFailHTLC = {
@@ -753,11 +753,11 @@ module rec Msgs =
         interface ILightningSerializable<RevokeAndACK> with
             member this.Deserialize(ls) =
                 this.ChannelId <- ls.ReadUInt256(true) |> ChannelId
-                this.PerCommitmentSecret <- PaymentPreimage(ls.ReadBytes(32))
+                this.PerCommitmentSecret <- ls.ReadBytes PaymentPreimage.LENGTH |> PaymentPreimage.Create
                 this.NextPerCommitmentPoint <- ls.ReadPubKey()
             member this.Serialize(ls) =
                 ls.Write(this.ChannelId.Value.ToBytes())
-                ls.Write(this.PerCommitmentSecret.ToBytes())
+                ls.Write(this.PerCommitmentSecret.ToByteArray())
                 ls.Write(this.NextPerCommitmentPoint.ToBytes())
 
     [<CLIMutable>]
@@ -784,10 +784,10 @@ module rec Msgs =
         with
             interface ILightningSerializable<DataLossProtect> with
                 member this.Deserialize(ls: LightningReaderStream) =
-                    this.YourLastPerCommitmentSecret <- ls.ReadBytes(32) |> PaymentPreimage
+                    this.YourLastPerCommitmentSecret <- ls.ReadBytes PaymentPreimage.LENGTH |> PaymentPreimage.Create
                     this.MyCurrentPerCommitmentPoint <- ls.ReadPubKey()
                 member this.Serialize(ls: LightningWriterStream): unit = 
-                    ls.Write(this.YourLastPerCommitmentSecret.Value)
+                    ls.Write(this.YourLastPerCommitmentSecret.ToByteArray())
                     ls.Write(this.MyCurrentPerCommitmentPoint)
 
 
@@ -810,7 +810,7 @@ module rec Msgs =
                 ls.Write(this.ChannelId.Value.ToBytes())
                 ls.Write(Utils.ToBytes(this.NextLocalCommitmentNumber, false))
                 ls.Write(Utils.ToBytes(this.NextRemoteCommitmentNumber, false))
-                ls.Write(this.DataLossProtect |> Option.map(fun x -> x.YourLastPerCommitmentSecret.ToBytes()))
+                ls.Write(this.DataLossProtect |> Option.map(fun x -> x.YourLastPerCommitmentSecret.ToByteArray()))
                 ls.Write(this.DataLossProtect |> Option.map(fun x -> x.MyCurrentPerCommitmentPoint.ToBytes()))
 
     [<CLIMutable>]

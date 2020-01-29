@@ -235,7 +235,9 @@ module Channel =
                     NextLocalCommitmentNumber = 1UL
                     NextRemoteCommitmentNumber = 0UL
                     DataLossProtect = OptionalField.Some({
-                                          YourLastPerCommitmentSecret = PaymentPreimage([|for _ in 0..31 -> 0uy|])
+                                          YourLastPerCommitmentSecret =
+                                              [|for _ in 0..(PaymentPreimage.LENGTH - 1) -> 0uy|]
+                                                  |> PaymentPreimage.Create
                                           MyCurrentPerCommitmentPoint = ChannelUtils.buildCommitmentPoint(commitmentSeed, 0UL)
                                       })
                 }
@@ -481,7 +483,7 @@ module Channel =
                                              RemoteChanges = { cm.RemoteChanges with Signed = [] }
                                              RemoteCommit = theirNextCommit
                                              RemoteNextCommitInfo = Choice2Of2(msg.NextPerCommitmentPoint)
-                                             RemotePerCommitmentSecrets = cm.RemotePerCommitmentSecrets.AddHash (msg.PerCommitmentSecret.ToBytes(), 0xffffffffffffUL - cm.RemoteCommit.Index) }
+                                             RemotePerCommitmentSecrets = cm.RemotePerCommitmentSecrets.AddHash (msg.PerCommitmentSecret.ToByteArray(), 0xffffffffffffUL - cm.RemoteCommit.Index) }
                 let result = [ WeAcceptedRevokeAndACK(commitments1) ]
                 result |> Ok
                 failwith "needs update"

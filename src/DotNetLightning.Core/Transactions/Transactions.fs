@@ -49,7 +49,7 @@ module private HTLCHelper =
         l.Add(Op.GetPushOp(remoteSig.ToBytes()))
         l.Add(Op.GetPushOp(localSig.ToBytes()))
         match paymentPreimage with
-        | Some p -> l.Add(Op.GetPushOp(p.ToBytes()))
+        | Some p -> l.Add(Op.GetPushOp(p.ToByteArray()))
         | None -> l.Add(!> OpcodeType.OP_0)
         l.Add(Op.GetPushOp(witScript.ToBytes()))
         let s = Script(l)

@@ -1,8 +1,11 @@
 namespace DotNetLightning.Utils
+
 open NBitcoin
 open NBitcoin.Crypto
+
 open System
 open System.Net
+open System.Linq
 
 [<AutoOpen>]
 module Primitives =
@@ -127,20 +130,35 @@ module Primitives =
             let b = x.Value.ToBytes()
             Crypto.Hashes.RIPEMD160(b, b.Length)
 
-    type PaymentPreimage = | PaymentPreimage of byte [] with
-        member x.Value = let (PaymentPreimage v) = x in v
+    type PaymentPreimage =
+        private PaymentPreimage of seq<byte>
+            with
+                // as per BOLT-2:
+                static member LENGTH = 32
 
-        member this.ToBytes() =
-            this.Value
+                static member Create(data: seq<byte>) =
+                    if data.Count() <> PaymentPreimage.LENGTH then
+                        raise <| ArgumentException(sprintf "Payment preimage length should be %i" PaymentPreimage.LENGTH)
+                    PaymentPreimage data
 
-        member this.GetSha256() =
-            this.ToBytes() |> Crypto.Hashes.SHA256 |> uint256 |> PaymentHash
+                member this.Value =
+                    let (PaymentPreimage v) = this in v
 
-        member this.ToKey() =
-            this.ToBytes() |> Key
+                member this.ToBytes() =
+                    this.Value
 
-        member this.ToPubKey() =
-            this.ToKey().PubKey
+                member this.ToByteArray() =
+                    this.Value |> Array.ofSeq
+
+                member this.GetSha256() =
+                    this.ToByteArray() |> Crypto.Hashes.SHA256 |> uint256 |> PaymentHash
+
+                member this.ToPrivKey() =
+                    this.ToByteArray() |> Key
+
+                member this.ToPubKey() =
+                    this.ToPrivKey().PubKey
+
 
     type ChannelId = | ChannelId of uint256 with
         member x.Value = let (ChannelId v) = x in v

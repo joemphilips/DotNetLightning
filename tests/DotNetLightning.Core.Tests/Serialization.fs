@@ -71,7 +71,7 @@ module SerializationTest =
                     NextLocalCommitmentNumber = 3UL
                     NextRemoteCommitmentNumber = 4UL
                     DataLossProtect = OptionalField.Some({
-                                          YourLastPerCommitmentSecret = PaymentPreimage([|for _ in 0..31 -> 9uy|])
+                                          YourLastPerCommitmentSecret = PaymentPreimage([|for _ in 0..(PaymentPreimage.LENGTH - 1) -> 9uy|])
                                           MyCurrentPerCommitmentPoint = pubkey1
                                       })
                 }
