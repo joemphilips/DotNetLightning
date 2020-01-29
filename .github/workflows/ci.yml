@@ -23,10 +23,6 @@ jobs:
         dotnet test tests/DotNetLightning.Infrastructure.Tests -p:BouncyCastle=True
     - name: Restore NSec and Secp256k1.Net
       run: git checkout src/NSec src/Secp256k1.Net
-    - name: Add Secp256k1.Native package
-      run: |
-        cd $GITHUB_WORKSPACE/src/DotNetLightning.Core
-        dotnet add package -v 0.0.5-joemphilips -s "https://www.myget.org/F/joemphilips/api/v3/index.json" Secp256k1.Native
     - name: Clean to prepare for NSec build
       run: |
         dotnet clean
