@@ -117,6 +117,16 @@ module Primitives =
             ec |> LNECDSASignature
 
 
+    type PaymentHash = | PaymentHash of uint256 with
+        member x.Value = let (PaymentHash v) = x in v
+        member x.ToBytes(?lEndian) =
+            let e = defaultArg lEndian true
+            x.Value.ToBytes(e)
+
+        member x.GetRIPEMD160() =
+            let b = x.Value.ToBytes()
+            Crypto.Hashes.RIPEMD160(b, b.Length)
+
     type PaymentPreimage = | PaymentPreimage of byte [] with
         member x.Value = let (PaymentPreimage v) = x in v
 
@@ -131,16 +141,6 @@ module Primitives =
 
         member this.ToPubKey() =
             this.ToKey().PubKey
-
-    and PaymentHash = | PaymentHash of uint256 with
-        member x.Value = let (PaymentHash v) = x in v
-        member x.ToBytes(?lEndian) =
-            let e = defaultArg lEndian true
-            x.Value.ToBytes(e)
-        
-        member x.GetRIPEMD160() =
-            let b = x.Value.ToBytes()
-            Crypto.Hashes.RIPEMD160(b, b.Length)
 
     type ChannelId = | ChannelId of uint256 with
         member x.Value = let (ChannelId v) = x in v
