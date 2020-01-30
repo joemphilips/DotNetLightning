@@ -297,7 +297,7 @@ type ChannelEvent =
     | Closed
     | Disconnected
     | ChannelStateRequestedSignCommitment
-    | WeSentChannelReestablish of msg: ChannelReestablish
+    | WeReplyToChannelReestablish of msg: ChannelReestablish
 
 
 //      .d8888b. 88888888888     d8888 88888888888 8888888888 .d8888b.

@@ -107,19 +107,6 @@ module Channel =
                 failwith "TODO"
             }
 
-    let makeChannelReestablish (data: Data.IHasCommitments): Result<ChannelEvent list, ChannelError> =
-        let commitmentSeed = data.Commitments.LocalParams.ChannelPubKeys.CommitmentSeed
-        let ourChannelReestablish =
-            {
-                ChannelId = data.ChannelId
-                NextLocalCommitmentNumber = 1UL
-                NextRemoteCommitmentNumber = 0UL
-                DataLossProtect = OptionalField.Some({
-                                      YourLastPerCommitmentSecret = PaymentPreimage([|for _ in 0..31 -> 0uy|])
-                                      MyCurrentPerCommitmentPoint = ChannelUtils.buildCommitmentPoint(commitmentSeed, 0UL)
-                                  })
-            }
-        [ WeSentChannelReestablish ourChannelReestablish ] |> Ok
 
     let executeCommand (cs: Channel) (command: ChannelCommand): Result<ChannelEvent list, ChannelError> =
         match cs.State, command with
@@ -239,10 +226,20 @@ module Channel =
         // --------------- open channel procedure: case we are fundee -------------
         | WaitForInitInternal, CreateInbound inputInitFundee ->
             [ NewInboundChannelStarted({ InitFundee = inputInitFundee }) ] |> Ok
-        | WaitForFundingConfirmed state, CreateChannelReestablish ->
-            makeChannelReestablish state
-        | ChannelState.Normal state, CreateChannelReestablish ->
-            makeChannelReestablish state
+        | WaitForFundingConfirmed state, ApplyChannelReestablish theirChannelReestablish ->
+            // TODO validate msg
+            let commitmentSeed = state.Commitments.LocalParams.ChannelPubKeys.CommitmentSeed
+            let ourChannelReestablish =
+                {
+                    ChannelId = state.ChannelId
+                    NextLocalCommitmentNumber = 1UL
+                    NextRemoteCommitmentNumber = 0UL
+                    DataLossProtect = OptionalField.Some({
+                                          YourLastPerCommitmentSecret = PaymentPreimage([|for _ in 0..31 -> 0uy|])
+                                          MyCurrentPerCommitmentPoint = ChannelUtils.buildCommitmentPoint(commitmentSeed, 0UL)
+                                      })
+                }
+            [ WeReplyToChannelReestablish ourChannelReestablish ] |> Ok
         | WaitForOpenChannel state, ApplyOpenChannel msg ->
             result {
                 do! Validation.checkOpenChannelMsgAcceptable (cs.FeeEstimator) (cs.Config) msg
