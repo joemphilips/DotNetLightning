@@ -79,6 +79,18 @@ module private Helpers =
         | Some(prefix) ->
             Ok(prefix)
         
+    /// maxInvoiceLength is the maximum total length an invoice can have.
+    /// This is chosen to be the maximum number of bytes that can fit into a
+    /// single QR code: https://en.wikipedia.org/wiki/QR_code#Storage
+    [<Literal>]
+    let maxInvoiceLength = 7089
+    
+    let checkMaxInvoiceLength (invoice: string) =
+        if invoice.Length <= maxInvoiceLength then
+            Ok()
+        else
+            Error(sprintf "Invoice length too large! max size is %d but it was %d" maxInvoiceLength invoice.Length)
+    
 type FallbackAddress = {
     Version: uint8
     Data: byte[]
@@ -159,7 +171,7 @@ type TaggedField =
                 sprintf "Unexpected length. actual: %d; expected %d" bitLength expectedLength
                 |> Error
             else
-                br.ReadBytes(bitLength) |> Ok
+                br.ReadBits(bitLength) |> Ok
         match t with
         // 'p' payment-hash
         | 1uy ->
@@ -185,8 +197,8 @@ type TaggedField =
         // 'x' expiry time
         | 6uy ->
             let bitLength = br.ReadBitsBEAsUInt16(10) |> int |> (*) 5
-            let t = br.ReadBytes(bitLength)
-            failwith "TODO"
+            let timeInSeconds = br.ReadBits(bitLength)
+            DateTimeOffset.FromUnixTimeSeconds(timeInSeconds) |> Ok
         // 'c' min-final-cltv-expiry
         | 24uy ->
             let bitLength = br.ReadBitsBEAsUInt16(10) |> int |> (*) 5
@@ -219,8 +231,12 @@ type Bolt11Data = {
     member this.Deserialize(ls) =
         use br = new BitReader(ls)
         this.Timestamp <- br.ReadBit35BEAsDateTime()
-        // this.TaggedField <- List.iter()
-        failwith ""
+        let mutable taggedFields = []
+        while (br.Length <> 520L) do
+            let newRecord = TaggedField.Deserialize(br) |> function Ok s -> s | Error e -> raise <| FormatException(e)
+            taggedFields <- newRecord :: taggedFields
+        this.TaggedFields <- taggedFields
+        this.Signature <- br.ReadBytes(65)
     member this.Serialize(ls) =
         use bw = new BitWriter(ls)
         // bw.Write(this.Timestamp.ToUnixTimeSeconds)
@@ -355,10 +371,11 @@ type PaymentRequest = private {
         failwith ""
         
     static member Parse(str: string): Result<PaymentRequest, string> =
-        let mutable s = (str.Clone() :?> string).ToLowerInvariant()
-        if (s.StartsWith("lightning:", StringComparison.OrdinalIgnoreCase)) then
-            s <- s.Substring("lightning:".Length)
         result {
+            do! Helpers.checkMaxInvoiceLength (str) // for DoS protection
+            let mutable s = (str.Clone() :?> string).ToLowerInvariant() // assure reference transparency
+            if (s.StartsWith("lightning:", StringComparison.OrdinalIgnoreCase)) then
+                s <- s.Substring("lightning:".Length)
             let! (hrp, data) = Helpers.decodeBech32(s)
             let! prefix = Helpers.checkAndGetPrefixFromHrp hrp
             let! bolt11Data = Bolt11Data.FromBytes(data)
