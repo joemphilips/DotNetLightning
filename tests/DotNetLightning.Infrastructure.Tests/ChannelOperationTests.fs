@@ -322,7 +322,7 @@ let tests =
                 
             let baseAddHTLCCmd = { CMDAddHTLC.Expiry = BlockHeight (130u)
                                    AmountMSat = LNMoney.Zero
-                                   PaymentHash = paymentPreImages.[0].GetSha256()
+                                   PaymentHash = paymentPreImages.[0].Hash
                                    Onion = OnionPacket.LastPacket
                                    Upstream = None
                                    Origin = None
@@ -345,12 +345,12 @@ let tests =
                 bob.EventAggregator.AwaitChannelEvent(function WeAcceptedUpdateAddHTLC _ -> Some () | _ -> None)
             let addHtlcCmd = { baseAddHTLCCmd with
                                     AmountMSat = LNMoney.MilliSatoshis(100000L)
-                                    PaymentHash = paymentPreImages.[1].GetSha256() }
+                                    PaymentHash = paymentPreImages.[1].Hash }
             do! bob.CM.AcceptCommandAsync({ NodeId = aliceNodeId; ChannelCommand = AddHTLC addHtlcCmd }).AsTask() |> Async.AwaitTask
             
             let addHtlcCmd = { baseAddHTLCCmd with
                                     AmountMSat = LNMoney.MilliSatoshis(40000L)
-                                    PaymentHash = paymentPreImages.[2].GetSha256() }
+                                    PaymentHash = paymentPreImages.[2].Hash }
             do! alice.CM.AcceptCommandAsync({ NodeId = bobNodeId; ChannelCommand = AddHTLC addHtlcCmd }).AsTask() |> Async.AwaitTask
             
             let! r = aliceAcceptedAddHTLCTask

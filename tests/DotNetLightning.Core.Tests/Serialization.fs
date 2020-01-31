@@ -601,7 +601,7 @@ module SerializationTest =
                 let updateFulfillHTLC = {
                     ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
                     HTLCId = HTLCId(2316138423780173UL)
-                    PaymentPreimage = PaymentPreimage.Create([| for _ in 0..31 -> 1uy |])
+                    PaymentPreimage = PaymentPreimage.Create([| for _ in 0..(PaymentPreimage.LENGTH - 1) -> 1uy |])
                 }
                 let expected = hex.DecodeData("020202020202020202020202020202020202020202020202020202020202020200083a840000034d0101010101010101010101010101010101010101010101010101010101010101")
                 CheckArrayEqual (updateFulfillHTLC.ToBytes()) expected
@@ -648,7 +648,7 @@ module SerializationTest =
             testCase "revoke_and_ack" <| fun _ ->
                 let raa = {
                     ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
-                    PerCommitmentSecret = PaymentPreimage.Create([| for _ in 0..31 -> 1uy |])
+                    PerCommitmentSecret = PaymentPreimage.Create([| for _ in 0..(PaymentPreimage.LENGTH - 1) -> 1uy |])
                     NextPerCommitmentPoint = pubkey1
                 }
                 let expected = hex.DecodeData("02020202020202020202020202020202020202020202020202020202020202020101010101010101010101010101010101010101010101010101010101010101031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f")

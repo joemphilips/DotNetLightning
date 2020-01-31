@@ -127,7 +127,7 @@ module internal Commitments =
         match cm.GetHTLCCrossSigned(Direction.In, cmd.Id) with
         | Some htlc when (cm.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
             htlc.HTLCId |> htlcAlreadySent
-        | Some htlc when (htlc.PaymentHash = cmd.PaymentPreimage.GetSha256()) ->
+        | Some htlc when (htlc.PaymentHash = cmd.PaymentPreimage.Hash) ->
             let msgToSend: UpdateFulfillHTLC = { ChannelId = cm.ChannelId; HTLCId = cmd.Id; PaymentPreimage = cmd.PaymentPreimage }
             let newCommitments = cm.AddLocalProposal(msgToSend)
             (msgToSend, newCommitments) |> Ok
@@ -140,7 +140,7 @@ module internal Commitments =
 
     let receiveFulfill(msg: UpdateFulfillHTLC) (cm: Commitments) =
         match cm.GetHTLCCrossSigned(Direction.Out, msg.HTLCId) with
-        | Some htlc when htlc.PaymentHash = msg.PaymentPreimage.GetSha256() ->
+        | Some htlc when htlc.PaymentHash = msg.PaymentPreimage.Hash ->
             let commitments = cm.AddRemoteProposal(msg)
             let origin = cm.OriginChannels |> Map.find(msg.HTLCId)
             [WeAcceptedFulfillHTLC(msg, origin, htlc, commitments)] |> Ok

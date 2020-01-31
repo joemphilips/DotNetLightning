@@ -86,7 +86,7 @@ type ChannelError =
         | InvalidPaymentPreimage(e, actual) ->
             sprintf "Invalid HTLC PreImage %A. Hash (%A) does not match the one expected %A"
                     actual
-                    (actual.GetSha256())
+                    actual.Hash
                     e
         | InvalidFailureCode errorCode ->
             sprintf "invalid failure code %A" (errorCode.GetOnionErrorDescription())
