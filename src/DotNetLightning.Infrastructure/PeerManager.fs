@@ -233,6 +233,7 @@ type PeerManager(eventAggregator: IEventAggregator,
                 | ChannelEvent.Closed _ -> failwith "TODO"
                 | Disconnected _ -> failwith "TODO"
                 | ChannelStateRequestedSignCommitment _ -> failwith "TODO"
+                | ChannelEvent.WeSentChannelReestablish _ -> ()
         }
         vt.AsTask() |> Async.AwaitTask
         

@@ -205,7 +205,7 @@ type ChannelCommand =
     | ApplyOpenChannel of OpenChannel
     | ApplyFundingCreated of FundingCreated
 
-    | ApplyChannelReestablish of ChannelReestablish
+    | CreateChannelReestablish
 
     // normal
     | AddHTLC of CMDAddHTLC
