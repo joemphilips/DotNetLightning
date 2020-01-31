@@ -102,8 +102,13 @@ module private Helpers =
             let mutable nextByte = 0uy
             let mutable filledBits = 0uy
             for b in data do
-                let b2 = b <<< (8uy - fromBits)
-                let remFromBits = fromBits
+                let b2 = b <<< (int (8uy - fromBits))
+                let mutable remFromBits = fromBits // how many bits remaining to extract from the input data
+                while remFromBits > 0uy do
+                    let remToBits = toBits - filledBits
+                    let toExtract = if remToBits < remFromBits then remToBits else remFromBits
+                    let nextByte = ()
+                    failwith ""
             failwith ""
     
 type FallbackAddress = {
