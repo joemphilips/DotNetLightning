@@ -161,7 +161,7 @@ module Primitives =
 
     let (|PaymentPreimage|) x =
         match x with
-        | PaymentPreimage x -> Some (x)
+        | PaymentPreimage x -> x
         
     type ChannelId = | ChannelId of uint256 with
         member x.Value = let (ChannelId v) = x in v
