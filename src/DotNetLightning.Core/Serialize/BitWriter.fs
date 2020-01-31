@@ -1,142 +1,52 @@
 namespace DotNetLightning.Serialize
 
-open DotNetLightning.Core.Utils.Extensions
-open System
 open System.Collections
-open System.IO
+open System.Text
 
-type BitWriter(s: LightningWriterStream) =
-    inherit BinaryWriter(s)
-    let mutable curByte: bool[] = Array.create(8) false
-    let mutable currentBitIndex = 0
-    let mutable ba: BitArray = null
+type BitReader(ba: BitArray, bitCount: int) =
     
-    let ConvertToByte(bools: bool[]) =
-        let mutable b = 0uy
-        let mutable bitIndex = 0
-        for i in 0..7 do
-            if bools.[i] then
-                b <- b ||| (1uy <<< bitIndex)
-            bitIndex <- bitIndex + 1
-        b
+    member val Count = bitCount with get
+    member val Position = 0 with get, set
+    new (ba) = BitReader(ba, ba.Count)
     
-    override this.Flush() =
-        base.Write(ConvertToByte(curByte))
-        base.Flush()
-    override this.Write(value: bool) =
-        curByte.[currentBitIndex] <- value
-        currentBitIndex <- currentBitIndex + 1
-        
-        if (currentBitIndex = 8) then
-            base.Write(ConvertToByte(curByte))
-            currentBitIndex <- 0
-            curByte <- Array.create(0) false
-            
-    override this.Write(v: byte) =
-        ba <- BitArray(Array.singleton(v))
-        for i in 0..7 do
-            this.Write(ba.[i])
-        ba <- null
+    member this.Read() =
+        let v = ba.Get(this.Position)
+        this.Position <- this.Position + 1
+        v
 
-    override this.Write(buf: byte[]) =
-        for i in 0..buf.Length do
-            this.Write(buf.[i])
+    member this.ReadULongBE(bitCount: int) =
+        let mutable value = 0UL
+        for i in 0..(bitCount - 1) do
+            let v = if this.Read() then 1UL else 0UL
+            value <- value + (v <<< (bitCount - i - 1))
+        value
+        
+    member this.ReadBytes(byteSize: int) =
+        let bytes: byte[] = Array.zeroCreate byteSize
+        let mutable maxRead = this.Count - this.Position
+        let mutable byteIndex = 0
+        while (byteIndex < byteSize && maxRead <> 0) do
+            let mutable value = 0uy
+            for i in 0..7 do
+                let v = if this.Read() then 1UL else 0UL
+                value <- value + (byte (v <<< (8 - i - 1)))
+                maxRead <- maxRead - 1
             
-    override this.Write(v: uint32) =
-        ba <- BitArray(BitConverter.GetBytes(v))
-        for i in 0..32 do
-            this.Write(ba.[i])
-        ba <- null
+            if (maxRead <> 0) then
+                bytes.[byteIndex] <- value
+            byteIndex <- byteIndex + 1
+        bytes
         
-    override this.Write(v: uint64) =
-        ba <- BitArray(BitConverter.GetBytes(v))
-        for i in 0..64 do
-            this.Write(ba.[i])
-        ba <- null
+    member this.Consume(count: int) =
+        this.Position <- this.Position + count
         
-    override this.Write(v: uint16) =
-        ba <- BitArray(BitConverter.GetBytes(v))
-        for i in 0..16 do
-            this.Write(ba.[i])
-        ba <- null
+    member this.CanConsume(bitCount: int) =
+        this.Position + bitCount <= this.Count
         
-type BitReader(s: LightningReaderStream) =
-    inherit BinaryReader(s)
-    
-    let mutable currentByte = Array.create 8 false
-    let mutable currentBitIndex = 0
-    let mutable ba: BitArray = BitArray([|base.ReadByte()|])
-    do
-        ba.CopyTo(currentByte, 0)
-        ba <- null
-        
-    member this.Length = s.Length * 8L
-    override this.ReadBoolean() =
-        if currentBitIndex = 8 then
-            ba <- BitArray([|base.ReadByte()|])
-            ba.CopyTo(currentByte, 0)
-            ba <- null
-            currentBitIndex <- 0
-        
-        let b = currentByte.[currentBitIndex]
-        currentBitIndex <- currentBitIndex + 1
-        b
-        
-    override this.ReadByte() =
-        let bar = Array.create 8 false
-        for i in 0..7 do
-            bar.[i] <-  this.ReadBoolean()
-        
-        let mutable b = 0uy
-        let mutable bitIndex = 0
-        for i in 0..7 do
-            if (bar.[i]) then
-                b <- b ||| 1uy <<< bitIndex
-            bitIndex <- bitIndex + 1
-        b
-        
-    member this.ReadBits(bitLength: int) =
-        let bar = Array.create bitLength false
-        for i in 0..(bitLength - 1) do
-            bar.[i] <- this.ReadBoolean()
-        BitArray(bar).ToByteArray()
-        
-    override this.ReadBytes(byteLength: int) =
-        this.ReadBits(byteLength * 8)
-        
-    /// Used for bolt11 timestamp
-    member this.ReadBit35BEAsDateTime() =
-        let mutable ba = Array.create 35 false
-        for i in 0..34 do
-            ba.[i] <- this.ReadBoolean()
-        ba <- Array.concat [ ba |> Array.rev; Array.zeroCreate(64 - 35) ]
-        let bytes = this.ReadBits(35)
-        BitConverter.ToInt64(BitArray(ba).ToByteArray(), 0) |> DateTimeOffset.FromUnixTimeSeconds
-        
-    /// Read `count` number of bits, and convert it to uint8
-    /// count must be 0 < count < 8
-    member this.ReadBitsBEAsUInt8(count: int) =
-        let mutable ba = Array.create count false
-        for i in 0..(count - 1) do
-            ba.[i] <- this.ReadBoolean()
-        ba <- Array.concat [ ba |> Array.rev; Array.zeroCreate(8 - count) ]
-        BitArray(ba).ToByteArray().[0]
-        
-    member this.ReadBitsBEAsUInt16(count: int) =
-        if (count < 1 || 16 <= count) then ArgumentOutOfRangeException(sprintf "count must be in between 0-16 it was %d" count) else
-        let mutable ba = Array.create count false
-        for i in 0..(count - 1) do
-            ba.[i] <- this.ReadBoolean()
-        ba <- Array.concat[ ba |> Array.rev; Array.zeroCreate(16 - count) ]
-        BitConverter.ToUInt16(BitArray(ba).ToByteArray(), 0)
-        
-    override this.ReadUInt16() =
-        let bytes = this.ReadBytes(2)
-        BitConverter.ToUInt16(bytes, 2)
-    override this.ReadUInt32() =
-        let bytes = this.ReadBytes(4)
-        BitConverter.ToUInt32(bytes, 4)
-        
-    override this.ReadUInt64() =
-        let bytes = this.ReadBytes(8)
-        BitConverter.ToUInt64(bytes, 8)
+    override this.ToString() =
+        let sb = StringBuilder(ba.Length)
+        for i in 0..(this.Count - 1) do
+            if (i <> 0 && i % 8 = 0) then
+                sb.Append(' ') |> ignore
+            sb.Append(if ba.Get(i) then "1" else "0") |> ignore
+        sb.ToString()

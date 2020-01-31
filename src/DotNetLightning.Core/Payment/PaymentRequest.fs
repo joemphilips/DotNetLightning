@@ -7,6 +7,8 @@ open ResultUtils
 open DotNetLightning.Utils
 open DotNetLightning.Serialize.Msgs
 
+open System.Collections
+open System.IO
 open DotNetLightning.Serialize
 open System.Text
 open NBitcoin
@@ -90,6 +92,19 @@ module private Helpers =
             Ok()
         else
             Error(sprintf "Invoice length too large! max size is %d but it was %d" maxInvoiceLength invoice.Length)
+            
+    let convertBits(data: byte[]) (fromBits: byte) (toBits: byte) (pad: bool): Result<byte[], _> =
+        if (fromBits < 1uy || 8uy < fromBits || toBits < 1uy || toBits > 8uy) then
+            "only bit groups between 1 and 8 allowed"
+            |> Error
+        else
+            let mutable regrouped: byte[] = Array.zeroCreate(data.Length)
+            let mutable nextByte = 0uy
+            let mutable filledBits = 0uy
+            for b in data do
+                let b2 = b <<< (8uy - fromBits)
+                let remFromBits = fromBits
+            failwith ""
     
 type FallbackAddress = {
     Version: uint8
@@ -221,39 +236,77 @@ and ExtraHop = {
     CLTVExpiryDelta: BlockHeightOffset
 }
 
-[<CLIMutable>]
 type Bolt11Data = {
-    mutable Timestamp: DateTimeOffset
-    mutable TaggedFields: TaggedField list
-    mutable Signature: byte[]
+    Timestamp: DateTimeOffset
+    TaggedFields: TaggedField list
+    Signature: byte[]
 }
     with
-    member this.Deserialize(ls) =
-        use br = new BitReader(ls)
-        this.Timestamp <- br.ReadBit35BEAsDateTime()
-        let mutable taggedFields = []
-        while (br.Length <> 520L) do
-            let newRecord = TaggedField.Deserialize(br) |> function Ok s -> s | Error e -> raise <| FormatException(e)
-            taggedFields <- newRecord :: taggedFields
-        this.TaggedFields <- taggedFields
-        this.Signature <- br.ReadBytes(65)
+    static member TryDeserialize(ls): Result<Bolt11Data, _> =
+        result {
+            use br = new BitReader(ls)
+            let timestamp = br.ReadBit35BEAsDateTime()
+            let mutable taggedFields = []
+            while (br.Length > 520L) do
+                let newRecord = TaggedField.Deserialize(br) |> function Ok s -> s | Error e -> raise <| FormatException(e)
+                taggedFields <- newRecord :: taggedFields
+            if (br.Length <> 520L) then
+                return! Error("Malformed Bolt11Data!")
+            else
+                let signature = br.ReadBytes(65)
+                return {
+                    Timestamp = timestamp
+                    TaggedFields = taggedFields
+                    Signature = signature
+                }
+        }
     member this.Serialize(ls) =
         use bw = new BitWriter(ls)
         // bw.Write(this.Timestamp.ToUnixTimeSeconds)
         failwith ""
         
-    static member FromBytes(b: byte[]) =
-        try
-            ILightningSerializable.fromBytes<Bolt11Data>(b) |> Ok
-        with
-        | ex ->
-            Error(ex.ToString())
+    static member FromBytes(b: byte[]): Result<Bolt11Data, _> =
+        let bitArray = BitArray(b.Length * 5)
+        for di in 0..(b.Length - 1) do
+            bitArray.Set(di * 5 + 0, ((b.[di] >>> 4) &&& 0x01uy) = 1uy)
+            bitArray.Set(di * 5 + 1, ((b.[di] >>> 3) &&& 0x01uy) = 1uy)
+            bitArray.Set(di * 5 + 2, ((b.[di] >>> 2) &&& 0x01uy) = 1uy)
+            bitArray.Set(di * 5 + 3, ((b.[di] >>> 1) &&& 0x01uy) = 1uy)
+            bitArray.Set(di * 5 + 4, ((b.[di] >>> 0) &&& 0x01uy) = 1uy)
+        let reader = BitReader(bitArray)
+        reader.Position <- reader.Count - 520 - 30
+        if (reader.Position < 0) then
+            "Invalid BOLT11: Invalid size" |> Error
+        else if (not <| reader.CanConsume(65)) then
+            "Invalid BOLT11: Invalid size" |> Error
+        else
+            let rs = reader.ReadBytes(65)
+            let signagure = LNECDSASignature.FromBytesCompact(rs)
+            let recvId = rs.[rs.Length - 1]
             
-        
-    interface ILightningSerializable<Bolt11Data> with
-        member this.Deserialize(ls) = this.Deserialize(ls)
-        member this.Serialize(ls) = this.Serialize(ls)
-        
+            reader.Position <- 0
+            let timestamp = Utils.UnixTimeToDateTime(reader.ReadULongBE(35))
+            let checkSize c =
+                if (not <| reader.CanConsume(c)) then
+                    Error("Invalid BOLT11: Invalid size")
+                else
+                    Ok()
+            let expiryDate = timestamp + TimeSpan.FromHours(1.0)
+            let minimalCLTVExpiry = 9
+            let fallbackAddresses = ResizeArray()
+            let routes = ResizeArray()
+            
+            failwith ""
+        // use ms = new MemoryStream(b)
+        // use stream = new LightningReaderStream(ms)
+        // Bolt11Data.TryDeserialize(stream)
+    
+    member this.ToBytes() =
+        use ms = new MemoryStream()
+        use stream = new LightningWriterStream(ms)
+        this.Serialize(stream)
+        ms.ToArray()
+            
 
 [<CLIMutable>]
 type PaymentRequest = private {
@@ -378,6 +431,8 @@ type PaymentRequest = private {
                 s <- s.Substring("lightning:".Length)
             let! (hrp, data) = Helpers.decodeBech32(s)
             let! prefix = Helpers.checkAndGetPrefixFromHrp hrp
+            let maybeAmount = Amount.decode(hrp.Substring(prefix.Length)) |> function Ok s -> Some s | Error _ -> None
+            
             let! bolt11Data = Bolt11Data.FromBytes(data)
             let signature = LNECDSASignature.FromBytesCompact(bolt11Data.Signature)
             let nodeId =
@@ -385,7 +440,6 @@ type PaymentRequest = private {
                 PubKey.RecoverFromMessage(msg, bolt11Data.Signature)
                 |> NodeId
             
-            let maybeAmount = Amount.decode(hrp.Substring(prefix.Length)) |> function Ok s -> Some s | Error _ -> None
             return {
                 PaymentRequest.Amount = maybeAmount
                 Prefix = hrp
