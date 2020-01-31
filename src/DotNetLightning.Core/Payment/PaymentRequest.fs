@@ -223,8 +223,16 @@ type TaggedFields = {
         this.Fields |> List.choose(function FallbackAddressTaggedField a -> Some(a) | _ -> None)
         
     member this.CheckSanity() =
+        let pHashes = this.Fields |> List.choose(function PaymentHashTaggedField x -> Some x | _ -> None)
+        if (pHashes.Length > 1) then "Invalid BOLT11! duplicate 'p' field" |> Error else
+        let secrets = this.Fields |> List.choose(function PaymentSecretTaggedField x -> Some (x) | _ -> None)
+        if (secrets.Length > 1) then "Invalid BOLT11! duplicate 's' field" |> Error else
+        let descriptions = this.Fields |> List.choose(function DescriptionTaggedField d -> Some d | _ -> None)
+        if (descriptions.Length > 1) then Error("Invalid BOLT11! duplicate 'd' field") else
+        let dHashes = this.Fields |> List.choose(function DescriptionHashTaggedField x -> Some x | _ -> None)
+        if (dHashes.Length > 1) then Error ("Invalid BOLT11! duplicate 'h' field") else
+        if (descriptions.Length = 1 && dHashes.Length = 1) then Error("Invalid BOLT11! both 'h' and 'd' field exists") else
         () |> Ok
-        
 type Bolt11Data = {
     Timestamp: DateTimeOffset
     TaggedFields: TaggedFields
@@ -300,8 +308,6 @@ type Bolt11Data = {
                             |  1UL -> // payment hash
                                 if (size <> 52 * 5) then
                                     return! loop r acc // we must omit instead of returning an error (according to the BOLT11)
-                                else if (acc.Fields |> List.exists(function PaymentHashTaggedField _ -> true | _ -> false)) then
-                                    return! Error("Invalid BOLT11: Duplicate 'p'")
                                 else
                                     let ph = r.ReadBytes(32) |> fun x -> uint256(x, false) |> PaymentHash |> PaymentHashTaggedField
                                     return! loop r ({ acc  with Fields = ph :: acc.Fields})
@@ -309,12 +315,12 @@ type Bolt11Data = {
                                 if (size <> 52 * 5) then
                                     return! loop r acc // we must omit instead of returning an error (according to the BOLT11)
                                 else
-                                    let ps = r.ReadBytes(32) |> PaymentPreimage |> PaymentSecretTaggedField
-                                    return()
-                            | 6UL ->
+                                    let ps = r.ReadBytes(32) |> PaymentPreimage.Create |> PaymentSecretTaggedField
+                                    return! loop r { acc with Fields = ps :: acc.Fields }
+                            | 6UL -> // expiry
                                 let expiryDate = timestamp + TimeSpan.FromSeconds(r.ReadULongBE(size) |> float) |> ExpiryTaggedField
                                 return! loop r ({ acc with Fields = expiryDate :: acc.Fields })
-                            | 13UL ->
+                            | 13UL -> // description
                                 let bytesCount = size / 8
                                 let bytes = r.ReadBytes(bytesCount)
                                 try
@@ -323,21 +329,20 @@ type Bolt11Data = {
                                 with
                                 | exp ->
                                     return! loop r acc
-                            /// PubKey
-                            | 19UL ->
+                            | 19UL -> // pubkey for node id
                                 if (size <> 53 * 5) then
-                                    return! loop r acc
+                                    return! loop r acc // we must omit instead of returning an error (according to the BOLT11)
                                 else
                                     let pk = r.ReadBytes(33) |> PubKey |> NodeId |> NodeIdTaggedField
                                     return! loop r ({ acc with Fields = pk :: acc.Fields })
-                            | 24UL ->
+                            | 24UL -> // min_final_cltv_expiry
                                 let v = r.ReadULongBE(size)
                                 if (v > (UInt32.MaxValue |> uint64)) then
                                     return! loop r acc
                                 else
                                     let minFinalCltvExpiry = v |> uint32 |> BlockHeight |> MinFinalCltvExpiryTaggedField
                                     return! loop r ({ acc with Fields = minFinalCltvExpiry :: acc.Fields })
-                            | 9UL ->
+                            | 9UL -> // fallback address
                                 if (size < 5) then
                                     return! loop r acc
                                 else
@@ -363,7 +368,7 @@ type Bolt11Data = {
                                         return! loop r acc
                             | 23UL -> // description hash
                                 if (size <> 52 * 5) then
-                                    return! sprintf "Unexpected length for description hash. (%d)" size |> Error
+                                    return! loop r acc // we must omit instead of returning an error (according to the BOLT11)
                                 else
                                     let dHash = r.ReadBytes(32) |> fun x -> uint256(x, true) |> DescriptionHashTaggedField
                                     return! loop r ({ acc with Fields = dHash :: acc.Fields })
@@ -389,7 +394,9 @@ type Bolt11Data = {
                                     let hopInfoList = hopInfos |> Seq.toList |> RoutingInfoTaggedField
                                     return! loop r { acc with Fields = hopInfoList :: acc.Fields }
                             | 5UL -> // feature bits
-                                l
+                                if (size < 5) then
+                                    return! loop r acc
+                                else
                             | x -> // we must skip unknown field
                                 return! loop r acc
                                     
