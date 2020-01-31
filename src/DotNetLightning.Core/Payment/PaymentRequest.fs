@@ -18,7 +18,7 @@ open NBitcoin.DataEncoders
 
 module private Helpers =
     let base58check = Base58CheckEncoder()
-    let utf8 = UTF8Encoding()
+    let utf8 = UTF8Encoding(false)
     
     let ascii = ASCIIEncoder()
     
@@ -93,6 +93,7 @@ module private Helpers =
         else
             Error(sprintf "Invoice length too large! max size is %d but it was %d" maxInvoiceLength invoice.Length)
             
+    (*
     let convertBits(data: byte[]) (fromBits: byte) (toBits: byte) (pad: bool): Result<byte[], _> =
         if (fromBits < 1uy || 8uy < fromBits || toBits < 1uy || toBits > 8uy) then
             "only bit groups between 1 and 8 allowed"
@@ -110,8 +111,10 @@ module private Helpers =
                     let nextByte = ()
                     failwith ""
             failwith ""
+            *)
     
-type FallbackAddress = {
+/// To make it network-agnostic, it holds data directly in bytes rather than `NBitcoin.BitcoinAddress`
+type FallbackAddress = private {
     Version: uint8
     Data: byte[]
 }
@@ -142,6 +145,21 @@ type FallbackAddress = {
                     | decoded, witVersion -> { Version = witVersion; Data = decoded } |> Ok
                 | Error e2 ->
                     e + e2 |> Error
+    static member TryCreate(version, data: byte[]) =
+        match version with
+        // p2pkh
+        | 17uy when data.Length = 20 ->
+            { Version = version; Data = data } |> Ok
+        // p2sh
+        | 18uy when data.Length = 20 ->
+            { Version = version; Data = data } |> Ok
+        // p2wpkh or p2wsh
+        | v when (data.Length = 20 || data.Length = 32) ->
+            { Version = version; Data = data } |> Ok
+        | v ->
+            sprintf "Unknown combination of bitcoin address version and length! version %d. length: %d" v data.Length
+            |> Error
+            
     member this.ToAddress(prefix: string) =
         match this.Version with
         | 17uy when prefix = "lnbc" ->
@@ -179,59 +197,12 @@ type TaggedField =
     | DescriptionHashTaggedField of uint256
     | FallbackAddressTaggedField of FallbackAddress
     | RoutingInfoTaggedField of ExtraHop list
-    | ExpiryTaggedField of TimeSpan
-    | MinFinalCltvExpiryTaggedField of DateTimeOffset
+    | ExpiryTaggedField of DateTimeOffset
+    | MinFinalCltvExpiryTaggedField of BlockHeight
     | FeaturesTaggedField of LocalFeatures
     with
     static member Deserialize(br: BitReader) =
-        let t = br.ReadBitsBEAsUInt8(5)
-        let readForExpectedLength (br: BitReader) (expectedLength) =
-            let bitLength = br.ReadBitsBEAsUInt16(10) |> int |> (*) 5
-            if (bitLength <> expectedLength) then
-                sprintf "Unexpected length. actual: %d; expected %d" bitLength expectedLength
-                |> Error
-            else
-                br.ReadBits(bitLength) |> Ok
-        match t with
-        // 'p' payment-hash
-        | 1uy ->
-            readForExpectedLength br 256
-            |> Result.map(uint256 >> PaymentHash.PaymentHash >> PaymentHashTaggedField)
-        // 's' payment-secret
-        | 16uy ->
-            readForExpectedLength br 256
-            |> Result.map(PaymentPreimage.PaymentPreimage >> PaymentSecretTaggedField)
-        // 'd' description
-        | 13uy ->
-            let bitLength = br.ReadBitsBEAsUInt16(10) |> int |> (*) 5
-            let desc = br.ReadBytes(bitLength) |> Helpers.utf8.GetString
-            DescriptionTaggedField(desc) |> Ok
-        // 'n' node id
-        | 19uy ->
-            readForExpectedLength br 264
-            |> Result.map(fun b -> PubKey(b, true) |> NodeId |> NodeIdTaggedField)
-        // 'h' description hash
-        | 23uy ->
-            readForExpectedLength br 256
-            |> Result.map(uint256 >> DescriptionHashTaggedField)
-        // 'x' expiry time
-        | 6uy ->
-            let bitLength = br.ReadBitsBEAsUInt16(10) |> int |> (*) 5
-            let timeInSeconds = br.ReadBits(bitLength)
-            DateTimeOffset.FromUnixTimeSeconds(timeInSeconds) |> Ok
-        // 'c' min-final-cltv-expiry
-        | 24uy ->
-            let bitLength = br.ReadBitsBEAsUInt16(10) |> int |> (*) 5
-            let data = br.ReadBytes(bitLength)
-            failwith "TODO"
-        // 'f' fallback address
-        | 9uy ->
-            let bitLength = br.ReadBitsBEAsUInt16(10) |> int |> (*) 5
-            let data = br.ReadBytes(bitLength)
-            failwith "TODO"
-        // 'r' 
-        | 3uy ->
-            failwith "TODO"
+        failwith ""
             
 and ExtraHop = {
     NodeId: NodeId
@@ -240,16 +211,31 @@ and ExtraHop = {
     FeeProportionalMillionths: int64
     CLTVExpiryDelta: BlockHeightOffset
 }
+    with
+    static member Size = 264 + 64 + 32 + 32 + 16
 
+type TaggedFields = {
+    Fields: TaggedField list
+}
+    with
+    static member Zero = { Fields = [] }
+    member this.FallbackAddresses =
+        this.Fields |> List.choose(function FallbackAddressTaggedField a -> Some(a) | _ -> None)
+        
+    member this.CheckSanity() =
+        () |> Ok
+        
 type Bolt11Data = {
     Timestamp: DateTimeOffset
-    TaggedFields: TaggedField list
-    Signature: byte[]
+    TaggedFields: TaggedFields
+    Signature: LNECDSASignature
 }
     with
     static member TryDeserialize(ls): Result<Bolt11Data, _> =
+        failwith "TODO"
+        (*
         result {
-            use br = new BitReader(ls)
+            let br = BitReader(ls)
             let timestamp = br.ReadBit35BEAsDateTime()
             let mutable taggedFields = []
             while (br.Length > 520L) do
@@ -265,43 +251,157 @@ type Bolt11Data = {
                     Signature = signature
                 }
         }
+        *)
     member this.Serialize(ls) =
-        use bw = new BitWriter(ls)
+        // use bw = new BitWriter(ls)
         // bw.Write(this.Timestamp.ToUnixTimeSeconds)
         failwith ""
         
     static member FromBytes(b: byte[]): Result<Bolt11Data, _> =
-        let bitArray = BitArray(b.Length * 5)
-        for di in 0..(b.Length - 1) do
-            bitArray.Set(di * 5 + 0, ((b.[di] >>> 4) &&& 0x01uy) = 1uy)
-            bitArray.Set(di * 5 + 1, ((b.[di] >>> 3) &&& 0x01uy) = 1uy)
-            bitArray.Set(di * 5 + 2, ((b.[di] >>> 2) &&& 0x01uy) = 1uy)
-            bitArray.Set(di * 5 + 3, ((b.[di] >>> 1) &&& 0x01uy) = 1uy)
-            bitArray.Set(di * 5 + 4, ((b.[di] >>> 0) &&& 0x01uy) = 1uy)
-        let reader = BitReader(bitArray)
-        reader.Position <- reader.Count - 520 - 30
-        if (reader.Position < 0) then
-            "Invalid BOLT11: Invalid size" |> Error
-        else if (not <| reader.CanConsume(65)) then
-            "Invalid BOLT11: Invalid size" |> Error
-        else
-            let rs = reader.ReadBytes(65)
-            let signagure = LNECDSASignature.FromBytesCompact(rs)
-            let recvId = rs.[rs.Length - 1]
-            
-            reader.Position <- 0
-            let timestamp = Utils.UnixTimeToDateTime(reader.ReadULongBE(35))
-            let checkSize c =
-                if (not <| reader.CanConsume(c)) then
-                    Error("Invalid BOLT11: Invalid size")
-                else
-                    Ok()
-            let expiryDate = timestamp + TimeSpan.FromHours(1.0)
-            let minimalCLTVExpiry = 9
-            let fallbackAddresses = ResizeArray()
-            let routes = ResizeArray()
-            
-            failwith ""
+        result {
+            let bitArray = BitArray(b.Length * 5)
+            for di in 0..(b.Length - 1) do
+                bitArray.Set(di * 5 + 0, ((b.[di] >>> 4) &&& 0x01uy) = 1uy)
+                bitArray.Set(di * 5 + 1, ((b.[di] >>> 3) &&& 0x01uy) = 1uy)
+                bitArray.Set(di * 5 + 2, ((b.[di] >>> 2) &&& 0x01uy) = 1uy)
+                bitArray.Set(di * 5 + 3, ((b.[di] >>> 1) &&& 0x01uy) = 1uy)
+                bitArray.Set(di * 5 + 4, ((b.[di] >>> 0) &&& 0x01uy) = 1uy)
+            let reader = BitReader(bitArray)
+            reader.Position <- reader.Count - 520 - 30
+            if (reader.Position < 0) then
+                return! "Invalid BOLT11: Invalid size" |> Error
+            else if (not <| reader.CanConsume(65)) then
+                return! "Invalid BOLT11: Invalid size" |> Error
+            else
+                let rs = reader.ReadBytes(65)
+                let signature = LNECDSASignature.FromBytesCompact(rs, true)
+                
+                reader.Position <- 0
+                let timestamp = Utils.UnixTimeToDateTime(reader.ReadULongBE(35))
+                let checkSize (r: BitReader) c =
+                    if (not <| r.CanConsume(c)) then
+                        Error("Invalid BOLT11: Invalid size")
+                    else
+                        Ok()
+                let expiryDate = timestamp + TimeSpan.FromHours(1.0)
+                let minimalCLTVExpiry = 9
+                let rec loop (r: BitReader) (acc: TaggedFields) =
+                    result {
+                        match (r.Position <> r.Position - 52- 30) with
+                        | false ->
+                            return acc
+                        | true ->
+                            do! checkSize r (5 + 10)
+                            let tag = r.ReadULongBE(5)
+                            let mutable size = (r.ReadULongBE(10) * 5UL) |> int
+                            do! checkSize r (size)
+                            let afterReadPosition = r.Position + size
+                            match tag with
+                            |  1UL -> // payment hash
+                                if (size <> 52 * 5) then
+                                    return! loop r acc // we must omit instead of returning an error (according to the BOLT11)
+                                else if (acc.Fields |> List.exists(function PaymentHashTaggedField _ -> true | _ -> false)) then
+                                    return! Error("Invalid BOLT11: Duplicate 'p'")
+                                else
+                                    let ph = r.ReadBytes(32) |> fun x -> uint256(x, false) |> PaymentHash |> PaymentHashTaggedField
+                                    return! loop r ({ acc  with Fields = ph :: acc.Fields})
+                            | 16UL -> // payment secret
+                                if (size <> 52 * 5) then
+                                    return! loop r acc // we must omit instead of returning an error (according to the BOLT11)
+                                else
+                                    let ps = r.ReadBytes(32) |> PaymentPreimage |> PaymentSecretTaggedField
+                                    return()
+                            | 6UL ->
+                                let expiryDate = timestamp + TimeSpan.FromSeconds(r.ReadULongBE(size) |> float) |> ExpiryTaggedField
+                                return! loop r ({ acc with Fields = expiryDate :: acc.Fields })
+                            | 13UL ->
+                                let bytesCount = size / 8
+                                let bytes = r.ReadBytes(bytesCount)
+                                try
+                                    let shortDesc = Helpers.utf8.GetString(bytes, 0 , bytesCount) |> DescriptionTaggedField
+                                    return! loop r ({ acc with Fields = shortDesc :: acc.Fields })
+                                with
+                                | exp ->
+                                    return! loop r acc
+                            /// PubKey
+                            | 19UL ->
+                                if (size <> 53 * 5) then
+                                    return! loop r acc
+                                else
+                                    let pk = r.ReadBytes(33) |> PubKey |> NodeId |> NodeIdTaggedField
+                                    return! loop r ({ acc with Fields = pk :: acc.Fields })
+                            | 24UL ->
+                                let v = r.ReadULongBE(size)
+                                if (v > (UInt32.MaxValue |> uint64)) then
+                                    return! loop r acc
+                                else
+                                    let minFinalCltvExpiry = v |> uint32 |> BlockHeight |> MinFinalCltvExpiryTaggedField
+                                    return! loop r ({ acc with Fields = minFinalCltvExpiry :: acc.Fields })
+                            | 9UL ->
+                                if (size < 5) then
+                                    return! loop r acc
+                                else
+                                    let version = r.ReadULongBE(5)
+                                    match version with
+                                    | 0UL ->
+                                        if (size = 5 + (20 * 8)) then
+                                            let! addr = FallbackAddress.TryCreate(0uy, r.ReadBytes(20))
+                                            return! loop r { acc with Fields = (FallbackAddressTaggedField addr) :: acc.Fields }
+                                        else if (size = (5 + (32 * 8) + 4)) then
+                                            let! addr = FallbackAddress.TryCreate(0uy, r.ReadBytes(32))
+                                            return! loop r { acc with Fields = (FallbackAddressTaggedField addr) :: acc.Fields }
+                                        else
+                                            return! loop r acc
+                                    | 17UL when (size <> 5 + (20 * 8)) ->
+                                        let! addr = FallbackAddress.TryCreate(17uy, r.ReadBytes(20))
+                                        return! loop r { acc with Fields = (FallbackAddressTaggedField addr) :: acc.Fields }
+                                    | 18UL when (size <> 5 + (20 * 8)) ->
+                                        let! addr = FallbackAddress.TryCreate(18uy, r.ReadBytes(20))
+                                        return! loop r { acc with Fields = (FallbackAddressTaggedField addr) :: acc.Fields }
+                                    | x ->
+                                        // in case of unknown version, we should just ignore for future compatibility
+                                        return! loop r acc
+                            | 23UL -> // description hash
+                                if (size <> 52 * 5) then
+                                    return! sprintf "Unexpected length for description hash. (%d)" size |> Error
+                                else
+                                    let dHash = r.ReadBytes(32) |> fun x -> uint256(x, true) |> DescriptionHashTaggedField
+                                    return! loop r ({ acc with Fields = dHash :: acc.Fields })
+                            | 3UL -> // routing info
+                                if (size < ExtraHop.Size) then
+                                    return! sprintf "Unexpected length for routing info (%d)" size |> Error
+                                else
+                                    let positionBefore = r.Position
+                                    let hopInfos = ResizeArray()
+                                    while (size >= ExtraHop.Size) do
+                                        let nodeId = r.ReadBytes(264 / 8) |> PubKey |> NodeId
+                                        let schId = r.ReadULongBE(64) |> ShortChannelId.FromUInt64
+                                        let feeBase = r.ReadULongBE(32) |> LNMoney.MilliSatoshis
+                                        let feeProportional = r.ReadULongBE(32) |> int64
+                                        let cltvExpiryDelta =  r.ReadULongBE(16) |> uint16 |> BlockHeightOffset
+                                        let hopInfo = { NodeId = nodeId
+                                                        ShortChannelId = schId
+                                                        FeeBase = feeBase
+                                                        CLTVExpiryDelta = cltvExpiryDelta
+                                                        FeeProportionalMillionths = feeProportional }
+                                        hopInfos.Add(hopInfo)
+                                        size <- size - ExtraHop.Size
+                                    let hopInfoList = hopInfos |> Seq.toList |> RoutingInfoTaggedField
+                                    return! loop r { acc with Fields = hopInfoList :: acc.Fields }
+                            | 5UL -> // feature bits
+                                l
+                            | x -> // we must skip unknown field
+                                return! loop r acc
+                                    
+                    }
+                let! taggedField = loop reader TaggedFields.Zero
+                do! taggedField.CheckSanity()
+                return {
+                    Timestamp = timestamp
+                    TaggedFields = taggedField
+                    Signature = signature
+                }
+            }
         // use ms = new MemoryStream(b)
         // use stream = new LightningReaderStream(ms)
         // Bolt11Data.TryDeserialize(stream)
