@@ -150,7 +150,7 @@ module Primitives =
                 member this.ToByteArray() =
                     this.Value |> Array.ofSeq
 
-                member this.GetSha256() =
+                member this.Hash =
                     this.ToByteArray() |> Crypto.Hashes.SHA256 |> uint256 |> PaymentHash
 
                 member this.ToPrivKey() =

@@ -151,41 +151,41 @@ let paymentPreImages =
     
 type h = DirectedHTLC
 
-log (sprintf "first payment hash is %A" (paymentPreImages.[0].GetSha256()))
+log (sprintf "first payment hash is %A" paymentPreImages.[0].Hash)
 let htlcs = [
     { DirectedHTLC.Direction = In;
       Add = { UpdateAddHTLC.ChannelId = ChannelId.Zero;
               HTLCId = HTLCId.Zero;
               AmountMSat = LNMoney.MilliSatoshis(1000000L);
-              PaymentHash = paymentPreImages.[0].GetSha256();
+              PaymentHash = paymentPreImages.[0].Hash
               CLTVExpiry = 500u |> BlockHeight;
               OnionRoutingPacket = OnionPacket.LastPacket } }
     { DirectedHTLC.Direction = In;
       Add = { UpdateAddHTLC.ChannelId = ChannelId.Zero;
               HTLCId = HTLCId(1UL);
               AmountMSat = LNMoney.MilliSatoshis(2000000L);
-              PaymentHash = paymentPreImages.[1].GetSha256();
+              PaymentHash = paymentPreImages.[1].Hash
               CLTVExpiry = 501u |> BlockHeight;
               OnionRoutingPacket = OnionPacket.LastPacket } }
     { DirectedHTLC.Direction = Out;
       Add = { UpdateAddHTLC.ChannelId = ChannelId.Zero;
               HTLCId = HTLCId(2UL);
               AmountMSat = LNMoney.MilliSatoshis(2000000L);
-              PaymentHash = paymentPreImages.[2].GetSha256();
+              PaymentHash = paymentPreImages.[2].Hash
               CLTVExpiry = 502u |> BlockHeight;
               OnionRoutingPacket = OnionPacket.LastPacket } }
     { DirectedHTLC.Direction = Out;
       Add = { UpdateAddHTLC.ChannelId = ChannelId.Zero;
               HTLCId = HTLCId(3UL);
               AmountMSat = LNMoney.MilliSatoshis(3000000L);
-              PaymentHash = paymentPreImages.[3].GetSha256();
+              PaymentHash = paymentPreImages.[3].Hash
               CLTVExpiry = 503u |> BlockHeight;
               OnionRoutingPacket = OnionPacket.LastPacket } }
     { DirectedHTLC.Direction = In;
       Add = { UpdateAddHTLC.ChannelId = ChannelId.Zero;
               HTLCId = HTLCId(4UL);
               AmountMSat = LNMoney.MilliSatoshis(4000000L);
-              PaymentHash = paymentPreImages.[4].GetSha256();
+              PaymentHash = paymentPreImages.[4].Hash
               CLTVExpiry = 504u |> BlockHeight;
               OnionRoutingPacket = OnionPacket.LastPacket } }
 ]
@@ -292,7 +292,7 @@ let run (spec: CommitmentSpec): (Transaction * _) =
                                       let localSig, tx2 = Transactions.sign(tx, local.PaymentPrivKey)
                                       let remoteSig, _tx3 = Transactions.sign(tx2, remote.PaymentPrivKey)
                                       // just checking preimage is in global list
-                                      let paymentPreimage = (paymentPreImages |> List.find(fun p -> p.GetSha256() = tx.PaymentHash))
+                                      let paymentPreimage = (paymentPreImages |> List.find(fun p -> p.Hash = tx.PaymentHash))
                                       log (sprintf "Finalizing %A" tx)
                                       match tx.Finalize(localSig, remoteSig, paymentPreimage) with
                                       | Ok tx -> tx
