@@ -159,7 +159,10 @@ module Primitives =
                 member this.ToPubKey() =
                     this.ToPrivKey().PubKey
 
-
+    let (|PaymentPreimage|) x =
+        match x with
+        | PaymentPreimage x -> Some (x)
+        
     type ChannelId = | ChannelId of uint256 with
         member x.Value = let (ChannelId v) = x in v
 
