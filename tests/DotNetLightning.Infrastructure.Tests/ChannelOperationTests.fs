@@ -317,7 +317,7 @@ let tests =
             let aliceNodeId = alice.CM.KeysRepository.GetNodeSecret().PubKey |> NodeId
             let paymentPreImages =
                 List.init 9 (fun i ->
-                    PaymentPreimage([|for _ in 0..31 -> (uint8 i)|])
+                    PaymentPreimage.Create([|for _ in 0..31 -> (uint8 i)|])
                 )
                 
             let baseAddHTLCCmd = { CMDAddHTLC.Expiry = BlockHeight (130u)

@@ -1,8 +1,11 @@
 namespace DotNetLightning.Utils
+
 open NBitcoin
 open NBitcoin.Crypto
+
 open System
 open System.Net
+open System.Linq
 
 [<AutoOpen>]
 module Primitives =
@@ -117,31 +120,49 @@ module Primitives =
             ec |> LNECDSASignature
 
 
-    type PaymentPreimage = | PaymentPreimage of byte [] with
-        member x.Value = let (PaymentPreimage v) = x in v
-
-        member this.ToBytes() =
-            this.Value
-
-        member this.GetSha256() =
-            this.ToBytes() |> Crypto.Hashes.SHA256 |> uint256 |> PaymentHash
-
-        member this.ToKey() =
-            this.ToBytes() |> Key
-
-        member this.ToPubKey() =
-            this.ToKey().PubKey
-
-    and PaymentHash = | PaymentHash of uint256 with
+    type PaymentHash = | PaymentHash of uint256 with
         member x.Value = let (PaymentHash v) = x in v
         member x.ToBytes(?lEndian) =
             let e = defaultArg lEndian true
             x.Value.ToBytes(e)
-        
+
         member x.GetRIPEMD160() =
             let b = x.Value.ToBytes()
             Crypto.Hashes.RIPEMD160(b, b.Length)
 
+    type PaymentPreimage =
+        private PaymentPreimage of seq<byte>
+            with
+                // as per BOLT-2:
+                static member LENGTH = 32
+
+                static member Create(data: seq<byte>) =
+                    if data.Count() <> PaymentPreimage.LENGTH then
+                        raise <| ArgumentException(sprintf "Payment preimage length should be %i" PaymentPreimage.LENGTH)
+                    PaymentPreimage data
+
+                member this.Value =
+                    let (PaymentPreimage v) = this in v
+
+                member this.ToBytes() =
+                    this.Value
+
+                member this.ToByteArray() =
+                    this.Value |> Array.ofSeq
+
+                member this.GetSha256() =
+                    this.ToByteArray() |> Crypto.Hashes.SHA256 |> uint256 |> PaymentHash
+
+                member this.ToPrivKey() =
+                    this.ToByteArray() |> Key
+
+                member this.ToPubKey() =
+                    this.ToPrivKey().PubKey
+
+    let (|PaymentPreimage|) x =
+        match x with
+        | PaymentPreimage x -> Some (x)
+        
     type ChannelId = | ChannelId of uint256 with
         member x.Value = let (ChannelId v) = x in v
 

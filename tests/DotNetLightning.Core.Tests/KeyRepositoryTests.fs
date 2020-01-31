@@ -25,7 +25,8 @@ let paymentPreImages =
             ("0303030303030303030303030303030303030303030303030303030303030303")
             ("0404040404040404040404040404040404040404040404040404040404040404")
         ])
-    _s |> List.map(hex.DecodeData) |> List.map(PaymentPreimage)
+    _s |> List.map(hex.DecodeData) |> List.map(PaymentPreimage.Create)
+    
 /// same with bolt 3
 let htlcs = [
     { DirectedHTLC.Direction = In;
