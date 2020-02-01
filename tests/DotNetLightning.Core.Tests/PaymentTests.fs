@@ -18,7 +18,7 @@ let tests =
     let hex = NBitcoin.DataEncoders.HexEncoder()
     let priv = data1.RootElement.GetProperty("priv_key").GetString() |> hex.DecodeData |> Key
 
-    ftestList "BOLT-11 tests" [
+    testList "BOLT-11 tests" [
         testCase "check minimal unit is used" <| fun _ ->
             Expect.equal 'p' (Amount.unit(LNMoney.MilliSatoshis(1L))) ""
             Expect.equal 'p' (Amount.unit(LNMoney.MilliSatoshis(99L))) ""
@@ -37,7 +37,7 @@ let tests =
             Expect.equal (Amount.decode("1000000n")) (Ok(LNMoney.MilliSatoshis(100000000L))) ""
             Expect.equal (Amount.decode("1000000000p")) (Ok(LNMoney.MilliSatoshis(100000000L))) ""
             
-        testCase "Please make a donation of any amount using payment_hash 0001020304050607080900010203040506070809000102030405060708090102 to me @03e7156ae33b0a208d0744199163177e909e80176e55d97a2f221ede0f934dd9ad" <| fun _ ->
+        ftestCase "Please make a donation of any amount using payment_hash 0001020304050607080900010203040506070809000102030405060708090102 to me @03e7156ae33b0a208d0744199163177e909e80176e55d97a2f221ede0f934dd9ad" <| fun _ ->
             let data = "lnbc1pvjluezpp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypqdpl2pkx2ctnv5sxxmmwwd5kgetjypeh2ursdae8g6twvus8g6rfwvs8qun0dfjkxaq8rkx3yf5tcsyz3d73gafnh3cax9rn449d9p5uxz9ezhhypd0elx87sjle52x86fux2ypatgddc6k63n7erqz25le42c4u4ecky03ylcqca784w"
             let d = PaymentRequest.Parse(data) |> Result.deref
             Expect.equal (d.PrefixValue) ("lnbc") ""

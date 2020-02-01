@@ -1,5 +1,6 @@
 namespace DotNetLightning.Serialize
 
+open System
 open System.Collections
 open System.Text
 
@@ -39,6 +40,14 @@ type BitReader(ba: BitArray, bitCount: int) =
         
     member this.Consume(count: int) =
         this.Position <- this.Position + count
+        
+    member this.SkipTo(position: int) =
+        let skip = position - this.Position
+        if skip < 0 then
+            sprintf "Could not skip BitReader from %d to %d" this.Position position |> Error
+        else
+            this.Consume(skip)
+            Ok()
         
     member this.CanConsume(bitCount: int) =
         this.Position + bitCount <= this.Count
