@@ -93,26 +93,6 @@ module private Helpers =
         else
             Error(sprintf "Invoice length too large! max size is %d but it was %d" maxInvoiceLength invoice.Length)
             
-    (*
-    let convertBits(data: byte[]) (fromBits: byte) (toBits: byte) (pad: bool): Result<byte[], _> =
-        if (fromBits < 1uy || 8uy < fromBits || toBits < 1uy || toBits > 8uy) then
-            "only bit groups between 1 and 8 allowed"
-            |> Error
-        else
-            let mutable regrouped: byte[] = Array.zeroCreate(data.Length)
-            let mutable nextByte = 0uy
-            let mutable filledBits = 0uy
-            for b in data do
-                let b2 = b <<< (int (8uy - fromBits))
-                let mutable remFromBits = fromBits // how many bits remaining to extract from the input data
-                while remFromBits > 0uy do
-                    let remToBits = toBits - filledBits
-                    let toExtract = if remToBits < remFromBits then remToBits else remFromBits
-                    let nextByte = ()
-                    failwith ""
-            failwith ""
-            *)
-    
 /// To make it network-agnostic, it holds data directly in bytes rather than `NBitcoin.BitcoinAddress`
 type FallbackAddress = private {
     Version: uint8
@@ -236,30 +216,9 @@ type TaggedFields = {
 type Bolt11Data = {
     Timestamp: DateTimeOffset
     TaggedFields: TaggedFields
-    Signature: LNECDSASignature
+    Signature: LNECDSASignature option
 }
     with
-    static member TryDeserialize(ls): Result<Bolt11Data, _> =
-        failwith "TODO"
-        (*
-        result {
-            let br = BitReader(ls)
-            let timestamp = br.ReadBit35BEAsDateTime()
-            let mutable taggedFields = []
-            while (br.Length > 520L) do
-                let newRecord = TaggedField.Deserialize(br) |> function Ok s -> s | Error e -> raise <| FormatException(e)
-                taggedFields <- newRecord :: taggedFields
-            if (br.Length <> 520L) then
-                return! Error("Malformed Bolt11Data!")
-            else
-                let signature = br.ReadBytes(65)
-                return {
-                    Timestamp = timestamp
-                    TaggedFields = taggedFields
-                    Signature = signature
-                }
-        }
-        *)
     member this.Serialize(ls) =
         // use bw = new BitWriter(ls)
         // bw.Write(this.Timestamp.ToUnixTimeSeconds)
@@ -303,7 +262,6 @@ type Bolt11Data = {
                             let tag = r.ReadULongBE(5)
                             let mutable size = (r.ReadULongBE(10) * 5UL) |> int
                             do! checkSize r (size)
-                            let afterReadPosition = r.Position + size
                             match tag with
                             |  1UL -> // payment hash
                                 if (size <> 52 * 5) then
@@ -397,21 +355,21 @@ type Bolt11Data = {
                                 if (size < 5) then
                                     return! loop r acc
                                 else
+                                    let feature = r.ReadULongBE(size)
+                                    return failwith ""
                             | x -> // we must skip unknown field
                                 return! loop r acc
                                     
                     }
                 let! taggedField = loop reader TaggedFields.Zero
+                    
                 do! taggedField.CheckSanity()
                 return {
                     Timestamp = timestamp
                     TaggedFields = taggedField
-                    Signature = signature
+                    Signature = signature |> Some
                 }
             }
-        // use ms = new MemoryStream(b)
-        // use stream = new LightningReaderStream(ms)
-        // Bolt11Data.TryDeserialize(stream)
     
     member this.ToBytes() =
         use ms = new MemoryStream()
@@ -426,114 +384,117 @@ type PaymentRequest = private {
     mutable Amount: LNMoney option
     mutable Timestamp: DateTimeOffset
     mutable NodeId: NodeId
-    mutable Tags:TaggedField list
+    mutable Tags:TaggedFields
     mutable Signature: LNECDSASignature
 }
     with
     static member TryCreate (prefix: string, amount: LNMoney option, timestamp, nodeId, tags, signature) =
         result {
             do! amount |> function None -> Ok() | Some a -> Result.requireTrue "amount must be larger than 0" (a > LNMoney.Zero)
-            do! tags
-                |> List.filter(function PaymentHashTaggedField ph -> true | _ -> false)
-                |> List.length
-                |> Result.requireEqualTo (1) "There must be exactly one payment hash tag"
-            do! tags
-                |> List.filter(function DescriptionTaggedField _ | DescriptionHashTaggedField _-> true | _ -> false)
-                |> List.length
-                |> Result.requireEqualTo (1) "There must be exactly one payment secret tag when feature bit is set"
+            do! tags.Tags.CheckSanity()
             return {
                 Prefix = prefix
                 Amount = amount
                 Timestamp = timestamp
                 NodeId = nodeId
-                Tags = tags
+                Tags = tags.Tags
                 Signature = signature
             }
         }
-    member this.PrefixValue = this.Prefix
-    member this.AmountValue = this.Amount
-    member this.TimestampValue = this.Timestamp
-    member this.NodeIdValue = this.NodeId
-    member this.TagsValue = this.Tags
-    member this.SignatureValue = this.Signature
-    
-    member this.PaymentHash =
-        this.Tags |> Seq.choose(function TaggedField.PaymentHashTaggedField p -> Some p | _ -> None) |> Seq.tryExactlyOne
-        
-    member this.PaymentSecret =
-        this.Tags |> Seq.choose(function TaggedField.PaymentSecretTaggedField ps -> Some ps | _ -> None) |> Seq.tryExactlyOne
-        
-    member this.Description =
-        this.Tags
-            |> Seq.choose(function
-                          | DescriptionTaggedField d -> Some(Choice1Of2 d)
-                          | DescriptionHashTaggedField d -> Some(Choice2Of2 d)
-                          | _ -> None)
-            |> Seq.tryExactlyOne
-
-    member this.FallbackAddress() =
-        this.Tags
-        |> Seq.choose(function FallbackAddressTaggedField f -> Some f | _ -> None)
-        |> Seq.map(fun fallbackAddr -> fallbackAddr.ToAddress(this.Prefix))
-        |> Seq.tryExactlyOne
-        
-    member this.RoutingInfo =
-        this.Tags
-        |> List.choose(function RoutingInfoTaggedField r -> Some r | _ -> None)
-        
-    member this.Expiry =
-        this.Tags
-        |> Seq.choose(function ExpiryTaggedField e -> Some (e) | _ -> None)
-        |> Seq.tryExactlyOne
-        
-    member this.MinFinalCLTVExpiryDelta =
-        this.Tags
-        |> Seq.choose(function MinFinalCltvExpiryTaggedField cltvE -> Some (cltvE) | _ -> None)
-        |> Seq.tryExactlyOne
-
-    member this.Features =
-        this.Tags
-        |> Seq.choose(function FeaturesTaggedField f -> Some f | _ -> None)
-        |> Seq.tryExactlyOne
-        
-    member this.IsExpired =
-        match this.Expiry with
-        | Some e ->
-             (this.Timestamp + e) <= DateTimeOffset.UtcNow
-        | None ->
-            this.Timestamp + PaymentConstants.DEFAULT_EXPIRY_SECONDS <= DateTimeOffset.UtcNow
-            
-    /// the hash of this payment request
-    member this.Hash =
-        let hrp =
-            (sprintf "%s%s" (this.Prefix) (Amount.encode(this.Amount))) |> Helpers.utf8.GetBytes
-        let data = { Bolt11Data.Timestamp = this.Timestamp
-                     TaggedFields = this.Tags
-                     Signature = Array.zeroCreate(65) }
-        let bin = data.ToBytes()
-        let msg = Array.concat(seq { hrp; bin.[bin.Length - (521)..bin.Length - 1] }) // 520 bits are for signature
-        Hashes.SHA256(msg)
-    static member Create (chainhash: BlockId,
-                          amount: LNMoney option,
-                          paymentHash: PaymentHash,
-                          privKey: Key,
-                          description: string,
-                          ?fallbackAddr: string option,
-                          ?expirySeconds: DateTimeOffset option,
-                          ?extraHops: ExtraHop list list,
-                          ?timeStamp: DateTimeOffset option,
-                          ?features: LocalFeatures) =
+    static member TryCreate (chainhash: BlockId,
+                             amount: LNMoney option,
+                             paymentHash: PaymentHash,
+                             privKey: Key,
+                             description: string,
+                             ?fallbackAddr: string option,
+                             ?expirySeconds: DateTimeOffset option,
+                             ?extraHops: ExtraHop list list,
+                             ?timeStamp: DateTimeOffset option,
+                             ?features: LocalFeatures) =
         let fallbackAddr = defaultArg fallbackAddr None
         let expirySeconds = defaultArg expirySeconds None
         let extraHops = defaultArg extraHops []
         let timeStamp = defaultArg timeStamp None
         let features = defaultArg features (LocalFeatures.Flags([||]))
         failwith ""
-    member this.ToString(signature: ECDSASignature) =
-        failwith ""
+    member this.PrefixValue = this.Prefix
+    member this.AmountValue = this.Amount
+    member this.TimestampValue = this.Timestamp
+    member this.NodeIdValue = this.NodeId
+    member this.SignatureValue = this.Signature
+    member this.TagsValue = this.Tags
+    
+    member this.PaymentHash =
+        this.Tags.Fields
+        |> Seq.choose(function TaggedField.PaymentHashTaggedField p -> Some p | _ -> None)
+        |> Seq.exactlyOne // we assured in constructor that it has only one
         
-    member this.Sign(privKey: Key): ECDSASignature =
-        failwith ""
+    member this.PaymentSecret =
+        this.Tags.Fields
+        |> Seq.choose(function TaggedField.PaymentSecretTaggedField ps -> Some ps | _ -> None)
+        |> Seq.tryExactlyOne
+        
+    member this.Description =
+        this.Tags.Fields
+            |> Seq.choose(function
+                          | DescriptionTaggedField d -> Some(Choice1Of2 d)
+                          | DescriptionHashTaggedField d -> Some(Choice2Of2 d)
+                          | _ -> None)
+            |> Seq.tryExactlyOne
+
+    member this.FallbackAddresses() =
+        this.Tags.Fields
+        |> List.choose(function FallbackAddressTaggedField f -> Some f | _ -> None)
+        |> List.map(fun fallbackAddr -> fallbackAddr.ToAddress(this.Prefix))
+        
+    member this.RoutingInfo =
+        this.Tags.Fields
+        |> List.choose(function RoutingInfoTaggedField r -> Some r | _ -> None)
+        |> List.tryExactlyOne
+        
+    /// absolute expiry date.
+    member this.Expiry =
+        this.Tags.Fields
+        |> Seq.choose(function ExpiryTaggedField e -> Some (e) | _ -> None)
+        |> Seq.tryExactlyOne
+        
+    member this.MinFinalCLTVExpiryDelta =
+        this.Tags.Fields
+        |> Seq.choose(function MinFinalCltvExpiryTaggedField cltvE -> Some (cltvE) | _ -> None)
+        |> Seq.tryExactlyOne
+
+    member this.Features =
+        this.Tags.Fields
+        |> Seq.choose(function FeaturesTaggedField f -> Some f | _ -> None)
+        |> Seq.tryExactlyOne
+        
+    member this.IsExpired =
+        match this.Expiry with
+        | Some e ->
+             e <= DateTimeOffset.UtcNow
+        | None ->
+            this.Timestamp + PaymentConstants.DEFAULT_EXPIRY_SECONDS <= DateTimeOffset.UtcNow
+            
+    member private this.Hash =
+        let hrp =
+            (sprintf "%s%s" (this.Prefix) (Amount.encode(this.Amount))) |> Helpers.utf8.GetBytes
+        let data = { Bolt11Data.Timestamp = this.Timestamp
+                     TaggedFields = this.Tags
+                     Signature = None }
+        let bin = data.ToBytes()
+        let msg = Array.concat(seq { hrp; bin })
+        Hashes.SHA256(msg) |> uint256
+    member this.Sign(privKey: Key) =
+        let sig64 = privKey.Sign(this.Hash) |> LNECDSASignature
+        { this with Signature = sig64 }
+        
+    member this.ToString(signature: LNECDSASignature) =
+        failwith "TODO"
+        
+    member this.ToString(privKey: Key) =
+        let sign = this.Sign(privKey).SignatureValue
+        this.ToString(sign)
+        
         
     static member Parse(str: string): Result<PaymentRequest, string> =
         result {
@@ -546,10 +507,9 @@ type PaymentRequest = private {
             let maybeAmount = Amount.decode(hrp.Substring(prefix.Length)) |> function Ok s -> Some s | Error _ -> None
             
             let! bolt11Data = Bolt11Data.FromBytes(data)
-            let signature = LNECDSASignature.FromBytesCompact(bolt11Data.Signature)
             let nodeId =
                 let msg = hrp |> Helpers.ascii.DecodeData
-                PubKey.RecoverFromMessage(msg, bolt11Data.Signature)
+                PubKey.RecoverFromMessage(msg, bolt11Data.Signature.Value.ToDER())
                 |> NodeId
             
             return {
@@ -558,6 +518,6 @@ type PaymentRequest = private {
                 Timestamp = bolt11Data.Timestamp
                 NodeId = nodeId
                 Tags = bolt11Data.TaggedFields
-                Signature = signature
+                Signature = bolt11Data.Signature.Value
             }
         }

@@ -103,6 +103,9 @@ module Primitives =
             let r = Array.append (this.BigIntegerToBytes(b = this.Value.R, numBytes = 32)) (this.BigIntegerToBytes(this.Value.S, 32))
             if (isNull <| box r.[0]) then r.[0] <- 255uy
             r
+            
+        member this.ToDER() =
+            this.Value.ToDER()
 
         static member FromBytesCompact(bytes: byte [], ?withRecId: bool) =
             let withRecId = defaultArg withRecId false

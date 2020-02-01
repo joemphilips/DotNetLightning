@@ -21,7 +21,9 @@ module Amount =
         match input with
         | "" -> Error "Empty input"
         | a when a.[a.Length - 1] = 'p' ->
-            parseCore (a.Substring(0, a.Length - 1)) 10L
+            (parseCore (a.Substring(0, a.Length - 1)) 1L)
+            // 1 milli-satoshis == 10 pico-bitcoin, so we must divide it here.
+            |> Result.map(fun lnMoney -> (lnMoney.MilliSatoshi / 10L) |> LNMoney.MilliSatoshis)
         | a when a.[a.Length - 1] = 'n' ->
             parseCore (a.Substring(0, a.Length - 1)) 100L
         | a when a.[a.Length - 1] = 'u' ->
@@ -34,7 +36,7 @@ module Amount =
     let encode (amount: LNMoney option) =
         match amount with
         | None -> ""
-        | Some(amt) when unit(amt) = 'p' -> sprintf "%dp" (amt.MilliSatoshi * 10L)
+        | Some(amt) when unit(amt) = 'p' -> sprintf "%dp" (amt.MilliSatoshi / 10L)
         | Some(amt) when unit(amt) = 'n' -> sprintf "%dn" (amt.MilliSatoshi * 100L)
         | Some(amt) when unit(amt) = 'u' -> sprintf "%du" (amt.MilliSatoshi * 100000L)
         | Some(amt) when unit(amt) = 'm' -> sprintf "%dm" (amt.MilliSatoshi * 100000000L)
