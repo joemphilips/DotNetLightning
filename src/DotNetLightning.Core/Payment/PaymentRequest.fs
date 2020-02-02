@@ -199,10 +199,8 @@ type TaggedFields = {
     Fields: TaggedField list
 }
     with
-    static member CreateDefault(currentTime: DateTimeOffset) =
-        let expiryDate = currentTime + TimeSpan.FromHours(1.0)
-        let minimalCLTVExpiry = 9u
-        { Fields = [ExpiryTaggedField(expiryDate); MinFinalCltvExpiryTaggedField(BlockHeight(minimalCLTVExpiry))] }
+    static member Zero =
+        { Fields = [] }
     member this.FallbackAddresses =
         this.Fields |> List.choose(function FallbackAddressTaggedField a -> Some(a) | _ -> None)
         
@@ -275,10 +273,8 @@ type Bolt11Data = {
                                     return! loop r { acc with Fields = ps :: acc.Fields } afterReadPosition
                             | 6UL -> // expiry
                                 let expiryDate = timestamp + TimeSpan.FromSeconds(r.ReadULongBE(size) |> float) |> ExpiryTaggedField
-                                let newAcc =
-                                    let fieldsWithoutDefaultExpiryDate = (acc.Fields |> List.filter(function ExpiryTaggedField _ -> false | _ -> true))
-                                    { acc with Fields = expiryDate :: fieldsWithoutDefaultExpiryDate }
-                                return! loop r newAcc afterReadPosition
+                                    
+                                return! loop r { acc with Fields = expiryDate :: acc.Fields } afterReadPosition
                             | 13UL -> // description
                                 let bytesCount = size / 8
                                 let bytes = r.ReadBytes(bytesCount)
@@ -300,10 +296,7 @@ type Bolt11Data = {
                                     return! loop r acc afterReadPosition
                                 else
                                     let minFinalCltvExpiry = v |> uint32 |> BlockHeight |> MinFinalCltvExpiryTaggedField
-                                    let newAcc =
-                                        let fieldsWithoutDefaultExpiryDate = (acc.Fields |> List.filter(function MinFinalCltvExpiryTaggedField _ -> false | _ -> true))
-                                        { acc with Fields = minFinalCltvExpiry :: fieldsWithoutDefaultExpiryDate }
-                                    return! loop r newAcc afterReadPosition
+                                    return! loop r { acc with Fields = minFinalCltvExpiry :: acc.Fields } afterReadPosition
                             | 9UL -> // fallback address
                                 if (size < 5) then
                                     return! loop r acc afterReadPosition
@@ -365,7 +358,7 @@ type Bolt11Data = {
                                 return! loop r acc afterReadPosition
                                     
                     }
-                let! taggedField = loop reader (TaggedFields.CreateDefault(timestamp)) reader.Position
+                let! taggedField = loop reader (TaggedFields.Zero) reader.Position
                 do! taggedField.CheckSanity()
                 return {
                     Timestamp = timestamp
@@ -465,11 +458,13 @@ type PaymentRequest = private {
         this.Tags.Fields
         |> Seq.choose(function ExpiryTaggedField e -> Some (e) | _ -> None)
         |> Seq.tryExactlyOne
+        |> Option.defaultValue (this.Timestamp + PaymentConstants.DEFAULT_EXPIRY_SECONDS)
         
     member this.MinFinalCLTVExpiryDelta =
         this.Tags.Fields
         |> Seq.choose(function MinFinalCltvExpiryTaggedField cltvE -> Some (cltvE) | _ -> None)
         |> Seq.tryExactlyOne
+        |> Option.defaultValue (PaymentConstants.DEFAULT_MINIMUM_CLTVEXPIRY)
 
     member this.Features =
         this.Tags.Fields
@@ -477,11 +472,7 @@ type PaymentRequest = private {
         |> Seq.tryExactlyOne
         
     member this.IsExpired =
-        match this.Expiry with
-        | Some e ->
-             e <= DateTimeOffset.UtcNow
-        | None ->
-            this.Timestamp + PaymentConstants.DEFAULT_EXPIRY_SECONDS <= DateTimeOffset.UtcNow
+        this.Expiry <= DateTimeOffset.UtcNow
             
     member private this.Hash =
         let hrp =
