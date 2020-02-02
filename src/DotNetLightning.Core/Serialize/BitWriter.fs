@@ -29,12 +29,12 @@ type BitReader(ba: BitArray, bitCount: int) =
         while (byteIndex < byteSize && maxRead <> 0) do
             let mutable value = 0uy
             for i in 0..7 do
-                let v = if this.Read() then 1UL else 0UL
-                value <- value + (byte (v <<< (8 - i - 1)))
-                maxRead <- maxRead - 1
+                if (maxRead <> 0) then
+                    let v = if this.Read() then 1UL else 0UL
+                    value <- value + (byte (v <<< (8 - i - 1)))
+                    maxRead <- maxRead - 1
             
-            if (maxRead <> 0) then
-                bytes.[byteIndex] <- value
+            bytes.[byteIndex] <- value
             byteIndex <- byteIndex + 1
         bytes
         

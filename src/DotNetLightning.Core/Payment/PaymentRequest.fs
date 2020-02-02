@@ -1,16 +1,17 @@
 namespace DotNetLightning.Payment
 
 open System
+open System.IO
+open System.Text
+open System.Collections
 
 open ResultUtils
 
 open DotNetLightning.Utils
+open DotNetLightning.Core.Utils.Extensions
 open DotNetLightning.Serialize.Msgs
-
-open System.Collections
-open System.IO
 open DotNetLightning.Serialize
-open System.Text
+
 open NBitcoin
 open NBitcoin.Crypto
 open NBitcoin.DataEncoders
@@ -228,13 +229,7 @@ type Bolt11Data = {
     with
     static member FromBytes(b: byte[]): Result<Bolt11Data, _> =
         result {
-            let bitArray = BitArray(b.Length * 5)
-            for di in 0..(b.Length - 1) do
-                bitArray.Set(di * 5 + 0, ((b.[di] >>> 4) &&& 0x01uy) = 1uy)
-                bitArray.Set(di * 5 + 1, ((b.[di] >>> 3) &&& 0x01uy) = 1uy)
-                bitArray.Set(di * 5 + 2, ((b.[di] >>> 2) &&& 0x01uy) = 1uy)
-                bitArray.Set(di * 5 + 3, ((b.[di] >>> 1) &&& 0x01uy) = 1uy)
-                bitArray.Set(di * 5 + 4, ((b.[di] >>> 0) &&& 0x01uy) = 1uy)
+            let bitArray = BitArray.From5BitEncoding(b)
             let reader = BitReader(bitArray)
             reader.Position <- reader.Count - 520 - 30
             if (reader.Position < 0) then
@@ -263,9 +258,8 @@ type Bolt11Data = {
                             do! checkSize r (5 + 10)
                             let tag = r.ReadULongBE(5)
                             let mutable size = (r.ReadULongBE(10) * 5UL) |> int
-                            printfn "Going to read for size %d" size
                             do! checkSize r (size)
-                            let afterReadPosition = reader.Position + size
+                            let afterReadPosition = r.Position + size
                             match tag with
                             |  1UL -> // payment hash
                                 if (size <> 52 * 5) then
@@ -372,7 +366,6 @@ type Bolt11Data = {
                                     
                     }
                 let! taggedField = loop reader (TaggedFields.CreateDefault(timestamp)) reader.Position
-                    
                 do! taggedField.CheckSanity()
                 return {
                     Timestamp = timestamp
@@ -522,17 +515,25 @@ type PaymentRequest = private {
             let maybeAmount = Amount.decode(hrp.Substring(prefix.Length)) |> function Ok s -> Some s | Error _ -> None
             
             let! bolt11Data = Bolt11Data.FromBytes(data)
-            printfn "Finished decoding bolt11data %A" bolt11Data
             let (sigCompact, recv) = bolt11Data.Signature.Value
             let nodeId =
                 match (bolt11Data.TaggedFields.ExplicitNodeId) with
                 | Some n -> n
                 | None ->
-                    let msg = seq { (hrp |> Helpers.ascii.DecodeData); (data.[0..data.Length - 65 - 1]) } |> Array.concat
+                    let msg =
+                        let bitArray = BitArray.From5BitEncoding(data)
+                        let reader = BitReader(bitArray, bitArray.Count - 520 - 30)
+                        let remainder = ref 0;
+                        let mutable byteCount = Math.DivRem(reader.Count, 8, remainder)
+                        if (!remainder <> 0) then
+                            byteCount <- byteCount + 1
+                    
+                        seq { (hrp |> Helpers.utf8.GetBytes); (reader.ReadBytes(byteCount)) }
+                        |> Array.concat
                     let signatureInNBitcoinFormat = Array.zeroCreate(65)
                     Array.blit (sigCompact.ToBytesCompact()) 0 signatureInNBitcoinFormat 1 64
                     signatureInNBitcoinFormat.[0] <- (recv + 27uy)
-                    PubKey.RecoverFromMessage(msg, signatureInNBitcoinFormat).Compress()
+                    PubKey.RecoverCompact(Hashes.SHA256(msg) |> uint256, signatureInNBitcoinFormat).Compress()
                     |> NodeId
             
             return {

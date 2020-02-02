@@ -1,6 +1,7 @@
 module DotNetLightning.Core.Utils.Extensions
 
 open System
+open System.Collections
 open System.Collections.Generic
 open System.Runtime.CompilerServices
 
@@ -19,6 +20,16 @@ type System.Collections.BitArray with
         let ret: byte[] = Array.zeroCreate (((this.Length - 1) / 8) + 1)
         this.CopyTo(ret, 0)
         ret
+        
+    static member From5BitEncoding(b: byte[]) =
+        let bitArray = System.Collections.BitArray(b.Length * 5)
+        for di in 0..(b.Length - 1) do
+            bitArray.Set(di * 5 + 0, ((b.[di] >>> 4) &&& 0x01uy) = 1uy)
+            bitArray.Set(di * 5 + 1, ((b.[di] >>> 3) &&& 0x01uy) = 1uy)
+            bitArray.Set(di * 5 + 2, ((b.[di] >>> 2) &&& 0x01uy) = 1uy)
+            bitArray.Set(di * 5 + 3, ((b.[di] >>> 1) &&& 0x01uy) = 1uy)
+            bitArray.Set(di * 5 + 4, ((b.[di] >>> 0) &&& 0x01uy) = 1uy)
+        bitArray
     
 [<Extension>]
 type DictionaryExtensions() =
