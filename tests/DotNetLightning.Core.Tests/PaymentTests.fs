@@ -13,15 +13,13 @@ open NBitcoin
 
 [<Tests>]
 let tests =
-    let dataPath1 = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "../../..", "Data/bolt11.json")
-    let data1 = dataPath1 |> File.ReadAllText |> JsonDocument.Parse
     let hex = NBitcoin.DataEncoders.HexEncoder()
-    let priv = data1.RootElement.GetProperty("priv_key").GetString() |> hex.DecodeData |> Key
+    let priv = "e126f68f7eafcc8b74f54d269fe206be715000f94dac067d1c04a8ca3b2db734" |> hex.DecodeData |> Key
     let msgSigner  = { new IMessageSigner
                        with
                            member this.SignMessage(data) = let signature = priv.SignCompact(data) in signature }
 
-    ftestList "BOLT-11 tests" [
+    testList "BOLT-11 tests" [
         testCase "check minimal unit is used" <| fun _ ->
             Expect.equal 'p' (Amount.unit(LNMoney.MilliSatoshis(1L))) ""
             Expect.equal 'p' (Amount.unit(LNMoney.MilliSatoshis(99L))) ""

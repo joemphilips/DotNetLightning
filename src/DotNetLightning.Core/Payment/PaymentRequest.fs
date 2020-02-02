@@ -238,7 +238,7 @@ type Bolt11Data = {
                 return! "Invalid BOLT11: Invalid size. could not consume 65" |> Error
             else
                 let rs = reader.ReadBytes(65)
-                let signature = LNECDSASignature.FromBytesCompact(rs, true)
+                let signature = LNECDSASignature.FromBytesCompact(rs.[0..rs.Length - 2])
                 let recvId = rs.[rs.Length - 1]
                 
                 reader.Position <- 0
