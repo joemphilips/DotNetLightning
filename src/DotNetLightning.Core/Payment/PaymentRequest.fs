@@ -72,7 +72,7 @@ module private Helpers =
         |> Map.add (Network.TestNet.GenesisHash) ("lntb")
         |> Map.add (Network.Main.GenesisHash) ("lnbc")
         
-    let prefixValues = prefixes |> Map.toList |> List.map(fun (k, v) -> v)
+    let prefixValues = prefixes |> Map.toList |> List.map(fun (_, v) -> v)
         
     let checkAndGetPrefixFromHrp (hrp: string) =
         let maybePrefix = prefixValues |> List.filter(fun p -> hrp.StartsWith(p)) |> List.tryExactlyOne
@@ -284,7 +284,7 @@ type Bolt11Data = {
                                     let shortDesc = Helpers.utf8.GetString(bytes, 0 , bytesCount) |> DescriptionTaggedField
                                     return! loop r ({ acc with Fields = shortDesc :: acc.Fields }) afterReadPosition
                                 with
-                                | exp ->
+                                | _ ->
                                     return! loop r acc afterReadPosition
                             | 19UL -> // pubkey for node id
                                 if (size <> 53 * 5) then
@@ -333,7 +333,6 @@ type Bolt11Data = {
                                 if (size < ExtraHop.Size) then
                                     return! sprintf "Unexpected length for routing info (%d)" size |> Error
                                 else
-                                    let positionBefore = r.Position
                                     let hopInfos = ResizeArray()
                                     while (size >= ExtraHop.Size) do
                                         let nodeId = r.ReadBytes(264 / 8) |> PubKey |> NodeId
@@ -357,7 +356,7 @@ type Bolt11Data = {
                                     let bytes = r.ReadBits(size)
                                     let features = LocalFeatures.Flags bytes |> FeaturesTaggedField
                                     return! loop r { acc with Fields = features :: acc.Fields } afterReadPosition
-                            | x -> // we must skip unknown field
+                            | _ -> // we must skip unknown field
                                 return! loop r acc afterReadPosition
                                     
                     }
@@ -397,22 +396,6 @@ type PaymentRequest = private {
                 Signature = signature
             }
         }
-    static member TryCreate (chainhash: BlockId,
-                             amount: LNMoney option,
-                             paymentHash: PaymentHash,
-                             privKey: Key,
-                             description: string,
-                             ?fallbackAddr: string option,
-                             ?expirySeconds: DateTimeOffset option,
-                             ?extraHops: ExtraHop list list,
-                             ?timeStamp: DateTimeOffset option,
-                             ?features: LocalFeatures) =
-        let fallbackAddr = defaultArg fallbackAddr None
-        let expirySeconds = defaultArg expirySeconds None
-        let extraHops = defaultArg extraHops []
-        let timeStamp = defaultArg timeStamp None
-        let features = defaultArg features (LocalFeatures.Flags([||]))
-        failwith ""
     member this.PrefixValue = this.Prefix
     member this.AmountValue = this.Amount
     member this.TimestampValue = this.Timestamp
