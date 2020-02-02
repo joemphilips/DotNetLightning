@@ -94,6 +94,10 @@ module private Helpers =
         else
             Error(sprintf "Invoice length too large! max size is %d but it was %d" maxInvoiceLength invoice.Length)
             
+type IMessageSigner =
+    /// take serialized msg hash and returns 65 bytes signature for it.(1byte recovery id + 32 bytes r + 32 bytes s)
+    abstract member SignMessage: uint256 -> byte[]
+    
 /// To make it network-agnostic, it holds data directly in bytes rather than `NBitcoin.BitcoinAddress`
 type FallbackAddress = private {
     Version: uint8
@@ -167,6 +171,15 @@ type FallbackAddress = private {
         | v ->
             failwithf "Unreachable! Unexpected version %A" v
             
+type ExtraHop = {
+    NodeId: NodeId
+    ShortChannelId: ShortChannelId
+    FeeBase: LNMoney
+    FeeProportionalMillionths: int64
+    CLTVExpiryDelta: BlockHeightOffset
+}
+    with
+    static member Size = 264 + 64 + 32 + 32 + 16
 type TaggedField =
     | UnknownTaggedField of byte[]
     | PaymentHashTaggedField of PaymentHash
@@ -181,19 +194,6 @@ type TaggedField =
     | ExpiryTaggedField of DateTimeOffset
     | MinFinalCltvExpiryTaggedField of BlockHeight
     | FeaturesTaggedField of LocalFeatures
-    with
-    static member Deserialize(br: BitReader) =
-        failwith ""
-            
-and ExtraHop = {
-    NodeId: NodeId
-    ShortChannelId: ShortChannelId
-    FeeBase: LNMoney
-    FeeProportionalMillionths: int64
-    CLTVExpiryDelta: BlockHeightOffset
-}
-    with
-    static member Size = 264 + 64 + 32 + 32 + 16
 
 type TaggedFields = {
     Fields: TaggedField list
@@ -210,6 +210,7 @@ type TaggedFields = {
     member this.CheckSanity() =
         let pHashes = this.Fields |> List.choose(function PaymentHashTaggedField x -> Some x | _ -> None)
         if (pHashes.Length > 1) then "Invalid BOLT11! duplicate 'p' field" |> Error else
+        if (pHashes.Length < 1) then "Invalid BOLT11! no payment hash" |> Error else
         let secrets = this.Fields |> List.choose(function PaymentSecretTaggedField x -> Some (x) | _ -> None)
         if (secrets.Length > 1) then "Invalid BOLT11! duplicate 's' field" |> Error else
         let descriptions = this.Fields |> List.choose(function DescriptionTaggedField d -> Some d | _ -> None)
@@ -217,6 +218,7 @@ type TaggedFields = {
         let dHashes = this.Fields |> List.choose(function DescriptionHashTaggedField x -> Some x | _ -> None)
         if (dHashes.Length > 1) then Error ("Invalid BOLT11! duplicate 'h' field") else
         if (descriptions.Length = 1 && dHashes.Length = 1) then Error("Invalid BOLT11! both 'h' and 'd' field exists") else
+        if (descriptions.Length <> 1 && dHashes.Length <> 1) then Error("Invalid BOLT11! must have either description hash or description") else
         () |> Ok
 type Bolt11Data = {
     Timestamp: DateTimeOffset
@@ -349,11 +351,12 @@ type Bolt11Data = {
                                     let hopInfoList = hopInfos |> Seq.toList |> RoutingInfoTaggedField
                                     return! loop r { acc with Fields = hopInfoList :: acc.Fields } afterReadPosition
                             | 5UL -> // feature bits
-                                if (size < 5) then
+                                if (size < 8) then
                                     return! loop r acc afterReadPosition
                                 else
-                                    let feature = r.ReadULongBE(size)
-                                    return failwith ""
+                                    let bytes = r.ReadBits(size)
+                                    let features = LocalFeatures.Flags bytes |> FeaturesTaggedField
+                                    return! loop r { acc with Fields = features :: acc.Fields } afterReadPosition
                             | x -> // we must skip unknown field
                                 return! loop r acc afterReadPosition
                                     
@@ -367,16 +370,8 @@ type Bolt11Data = {
                 }
             }
     
-    member this.Serialize(ls) =
-        // use bw = new BitWriter(ls)
-        // bw.Write(this.Timestamp.ToUnixTimeSeconds)
-        failwith ""
-        
     member this.ToBytes() =
-        use ms = new MemoryStream()
-        use stream = new LightningWriterStream(ms)
-        this.Serialize(stream)
-        ms.ToArray()
+        failwith "TODO"
             
 
 [<CLIMutable>]
@@ -487,11 +482,11 @@ type PaymentRequest = private {
         let sig64 = privKey.Sign(this.Hash) |> LNECDSASignature
         { this with Signature = sig64 }
         
-    member this.ToString(signature: LNECDSASignature) =
+    member this.ToString(signature65bytes: byte[]) =
         failwith "TODO"
         
-    member this.ToString(privKey: Key) =
-        let sign = this.Sign(privKey).SignatureValue
+    member this.ToString(signer: IMessageSigner) =
+        let sign = signer.SignMessage(this.Hash)
         this.ToString(sign)
         
         
