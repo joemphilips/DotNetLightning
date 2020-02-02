@@ -140,7 +140,7 @@ type FallbackAddress = private {
             { Version = version; Data = data } |> Ok
         // p2wpkh or p2wsh
         | v when (data.Length = 20 || data.Length = 32) ->
-            { Version = version; Data = data } |> Ok
+            { Version = v; Data = data } |> Ok
         | v ->
             sprintf "Unknown combination of bitcoin address version and length! version %d. length: %d" v data.Length
             |> Error
@@ -314,13 +314,13 @@ type Bolt11Data = {
                                             return! loop r { acc with Fields = (FallbackAddressTaggedField addr) :: acc.Fields } afterReadPosition
                                         else
                                             return! loop r acc afterReadPosition
-                                    | 17UL when (size <> 5 + (20 * 8)) ->
+                                    | 17UL when (size = 5 + (20 * 8)) ->
                                         let! addr = FallbackAddress.TryCreate(17uy, r.ReadBytes(20))
                                         return! loop r { acc with Fields = (FallbackAddressTaggedField addr) :: acc.Fields } afterReadPosition
-                                    | 18UL when (size <> 5 + (20 * 8)) ->
+                                    | 18UL when (size = 5 + (20 * 8)) ->
                                         let! addr = FallbackAddress.TryCreate(18uy, r.ReadBytes(20))
                                         return! loop r { acc with Fields = (FallbackAddressTaggedField addr) :: acc.Fields } afterReadPosition
-                                    | x ->
+                                    | _ ->
                                         // in case of unknown version, we should just ignore for future compatibility
                                         return! loop r acc afterReadPosition
                             | 23UL -> // description hash
@@ -436,9 +436,9 @@ type PaymentRequest = private {
                           | DescriptionTaggedField d -> Some(Choice1Of2 d)
                           | DescriptionHashTaggedField d -> Some(Choice2Of2 d)
                           | _ -> None)
-            |> Seq.tryExactlyOne
+            |> Seq.exactlyOne
 
-    member this.FallbackAddresses() =
+    member this.FallbackAddresses =
         this.Tags.Fields
         |> List.choose(function FallbackAddressTaggedField f -> Some f | _ -> None)
         |> List.map(fun fallbackAddr -> fallbackAddr.ToAddress(this.Prefix))
@@ -524,7 +524,7 @@ type PaymentRequest = private {
             
             return {
                 PaymentRequest.Amount = maybeAmount
-                Prefix = hrp
+                Prefix = prefix
                 Timestamp = bolt11Data.Timestamp
                 NodeId = nodeId
                 Tags = bolt11Data.TaggedFields
