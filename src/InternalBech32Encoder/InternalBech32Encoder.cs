@@ -259,6 +259,7 @@ namespace DotNetLightning.Utils
         internal InternalBech32Encoder()
         {
         }
+        
         static byte[] GetHrpExpand(byte[] hrp)
         {
             var len = hrp.Length;
@@ -376,6 +377,38 @@ namespace DotNetLightning.Utils
                     throw new Bech32FormatException($"Error in Bech32 string at {String.Join(",", error)}", error);
             }
             return (HumanReadablePart: Encoders.ASCII.EncodeData(hrp), Data: data);
+        }
+        private byte[] CreateChecksum(byte[] data, int offset, int count)
+        {
+            var values = new byte[count + 6];
+            Array.Copy(data, offset, values, 0, count);
+            var polymod = Polymod(values) ^ 1;
+            var ret = new byte[6];
+            foreach (var i in Enumerable.Range(0, 6))
+            {
+                ret[i] = (byte)((polymod >> 5 * (5 - i)) & 31);
+            }
+            return ret;
+        }
+        /// <summary>
+        /// Similar to the method with the same name in NBitcoin's Bech32Encoder, but it does not require hrp
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="offset"></param>
+        /// <param name="count"></param>
+        /// <returns></returns>
+        public string EncodeData(byte[] data, int offset, int count)
+        {
+            var result = new byte[count + 6];
+            Array.Copy(data, offset, result, 0, count);
+            byte[] checksum = CreateChecksum(data, offset, count);
+            Array.Copy(checksum, 0, result, offset + count, 6);
+            for (int i = 0; i < count + 6; i++)
+            {
+                result[i] = Byteset[result[i]];
+            }
+
+            return Encoders.ASCII.EncodeData(result);
         }
     }
 }
