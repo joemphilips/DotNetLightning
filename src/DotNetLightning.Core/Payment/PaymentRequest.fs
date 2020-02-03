@@ -12,7 +12,12 @@ open DotNetLightning.Core.Utils.Extensions
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Serialize
 
+open DotNetLightning.Utils
 open System
+open System
+open System.Diagnostics
+open System.IO
+open System.IO
 open NBitcoin
 open NBitcoin.Crypto
 open NBitcoin.DataEncoders
@@ -98,6 +103,28 @@ module private Helpers =
             Ok()
         else
             Error(sprintf "Invoice length too large! max size is %d but it was %d" maxInvoiceLength invoice.Length)
+            
+    let uint64ToBase32(num: uint64):byte[] =
+        if num = 0UL then [||] else
+            
+        let mutable numMutable = num
+        // To fit an uint64, we need at most is ceil (64 / 5) = 13 groups.
+        let arr = Array.zeroCreate 13
+        let mutable i = 13
+        while numMutable > 0UL do
+            i <- i - 1
+            arr.[i] <- byte(numMutable &&& 0b11111UL)
+            numMutable <- numMutable >>> 5
+        arr.[i..] // we only return non-zero leading groups
+        
+    let convertBits(data, fromBits, toBits, pad: bool) =
+        InternalBech32Encoder.Instance.ConvertBits(data, fromBits, toBits, pad)
+        
+    let convert8BitsTo5 data =
+        convertBits(data, 8, 5, true)
+        
+    let convert5BitsTo8 data =
+        convertBits(data, 5, 8, true)
             
 type IMessageSigner =
     /// take serialized msg hash and returns 65 bytes signature for it.(1byte recovery id + 32 bytes r + 32 bytes s)
@@ -186,6 +213,7 @@ type ExtraHop = {
     with
     static member Size = 264 + 64 + 32 + 32 + 16
 type TaggedField =
+    private
     | PaymentHashTaggedField of PaymentHash
     | PaymentSecretTaggedField of PaymentPreimage
     | NodeIdTaggedField of NodeId
@@ -211,6 +239,61 @@ type TaggedField =
         | FallbackAddressTaggedField _ -> 9uy
         | RoutingInfoTaggedField _ -> 3uy
         | FeaturesTaggedField _ -> 5uy
+        
+    member private this.WriteField(writer: BinaryWriter, data: byte[]) =
+        let mutable dataLengthInBase32 = Helpers.uint64ToBase32(data.Length |> uint64)
+        // data length must be exactly 10 bits
+        if (dataLengthInBase32.Length < 2) then
+            dataLengthInBase32 <- Array.append ([|0uy|]) dataLengthInBase32
+        Debug.Assert(dataLengthInBase32.Length = 2)
+        
+        writer.Write([|this.Type|])
+        writer.Write(dataLengthInBase32)
+        writer.Write(data)
+        
+    member internal this.WriteTo(writer: BinaryWriter) =
+        match this with
+        | PaymentHashTaggedField p ->
+            this.WriteField(writer, Helpers.convert8BitsTo5(p.ToBytes(false)))
+        | PaymentSecretTaggedField p  ->
+            this.WriteField(writer, Helpers.convert8BitsTo5(p.ToBytes()))
+        | DescriptionTaggedField d ->
+            let dBase32 = d |> Helpers.utf8.GetBytes |> Helpers.convert8BitsTo5
+            this.WriteField(writer, dBase32)
+        | DescriptionHashTaggedField h ->
+            let dBase32 = h.ToBytes(false) |> Helpers.convert8BitsTo5
+            this.WriteField(writer, dBase32)
+        | NodeIdTaggedField(NodeId pk) ->
+            let dBase32 = pk.ToBytes() |> Helpers.convert8BitsTo5
+            this.WriteField(writer, dBase32)
+        | MinFinalCltvExpiryTaggedField (BlockHeight c) ->
+            let dBase32 = c |> uint64 |> Helpers.uint64ToBase32
+            this.WriteField(writer, dBase32)
+        | ExpiryTaggedField x ->
+            let dBase32 = x.ToUnixTimeSeconds() |> uint64 |> Helpers.uint64ToBase32
+            this.WriteField(writer, dBase32)
+        | FallbackAddressTaggedField f ->
+            let d =
+                let dBase32 = f.Data |> Helpers.convert8BitsTo5
+                Array.append [|f.Version|] dBase32
+            this.WriteField(writer, d)
+        | RoutingInfoTaggedField r ->
+            let routeInfoBase256  = ResizeArray()
+            for hopInfo in r do
+                let hopInfoBase256 = Array.zeroCreate (51) // 51 is the number of bytes needed to encode the single route
+                Array.blit (hopInfo.NodeId.Value.ToBytes()) 0 hopInfoBase256 0 33
+                Array.blit (hopInfo.ShortChannelId.ToBytes()) 0 hopInfoBase256 33 8
+                Array.blit ((hopInfo.FeeBase.MilliSatoshi |> uint32).GetBytesBigEndian()) 0 hopInfoBase256 41 4
+                Array.blit ((hopInfo.FeeProportionalMillionths |> uint32).GetBytesBigEndian()) 0 hopInfoBase256 45 4
+                Array.blit (hopInfo.CLTVExpiryDelta.Value.GetBytesBigEndian()) 0 hopInfoBase256 49 2
+                routeInfoBase256.Add(hopInfoBase256)
+            let routeInfoBase32 = routeInfoBase256 |> Array.concat |>  Helpers.convert8BitsTo5
+            this.WriteField(writer, routeInfoBase32)
+        | FeaturesTaggedField f ->
+            if f.Value.Length = 0 then () else
+            let dBase32 = f.Value |> Helpers.convert8BitsTo5
+            this.WriteField(writer, dBase32)
+            
 
 type TaggedFields = {
     Fields: TaggedField list
@@ -386,18 +469,34 @@ type Bolt11Data = {
                 }
             }
     
-    member this.ToBytes() =
-        let writer = BitWriter()
-        let timestamp = Utils.DateTimeToUnixTime(this.Timestamp)
-        writer.WriteWithPadding5(timestamp.GetBytesBigEndian())
-        for tagField in this.TaggedFields.Fields do
-            tagField.WriteTo(writer)
+    member this.ToBytesBase32() =
+        use ms = new MemoryStream()
+        use writer = new BinaryWriter(ms)
+        let timestamp =
+            Utils.DateTimeToUnixTime(this.Timestamp)
+            |> uint64
+            |> Helpers.uint64ToBase32
+        Debug.Assert(timestamp.Length <= (35 / 5), sprintf "Timestamp too big: %d" timestamp.Length)
+        let padding: byte[] = Array.zeroCreate(7 - timestamp.Length)
+        writer.Write(padding)
+        writer.Write(timestamp)
+        
+        this.TaggedFields.Fields
+        |> List.rev
+        |> List.iter(fun f ->
+            f.WriteTo(writer)
+            )
+        
         this.Signature
         |> Option.iter(fun (s, recv) ->
-            writer.Write(s.ToBytesCompact())
-            writer.Write([|recv|])
+            let sigBase32 = Array.concat [ s.ToBytesCompact(); [|recv|]] |> Helpers.convert8BitsTo5
+            writer.Write(sigBase32)
             )
-        writer.ToBytes()
+        ms.ToArray()
+        
+    /// Returns binary representation for signing.
+    member this.ToBytes() =
+        failwith ""
             
 
 type PaymentRequest = private {
@@ -455,7 +554,6 @@ type PaymentRequest = private {
     member this.RoutingInfo =
         this.Tags.Fields
         |> List.choose(function RoutingInfoTaggedField r -> Some r | _ -> None)
-        |> List.tryExactlyOne
         
     /// absolute expiry date.
     member this.Expiry =
@@ -502,7 +600,7 @@ type PaymentRequest = private {
                 { Bolt11Data.TaggedFields = this.Tags
                   Timestamp = this.TimestampValue
                   Signature = None }
-            let dataStr = data.ToBytes() |> Helpers.encodeBech32
+            let dataStr = data.ToBytesBase32() |> Helpers.encodeBech32
             sprintf "%s1%s" hrp dataStr
         
     member private this.ToString(signature65bytes: byte[]) =
@@ -513,7 +611,7 @@ type PaymentRequest = private {
             { Bolt11Data.TaggedFields = this.Tags
               Timestamp = this.Timestamp
               Signature = (signature, recvId) |> Some }
-        let dataStr = data.ToBytes() |> Helpers.encodeBech32
+        let dataStr = data.ToBytesBase32() |> Helpers.encodeBech32
         sprintf "%s1%s" hrp dataStr
         
     member this.ToString(signer: IMessageSigner) =

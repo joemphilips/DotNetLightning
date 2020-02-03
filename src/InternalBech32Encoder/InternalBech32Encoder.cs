@@ -338,6 +338,40 @@ namespace DotNetLightning.Utils
             throw new FormatException("Invalid bech32 string, mixed case detected");
         }
 
+        public byte[] ConvertBits(IEnumerable<byte> data, int fromBits, int toBits, bool pad = true)
+        {
+            var acc = 0;
+            var bits = 0;
+            var maxv = (1 << toBits) - 1;
+            var ret = new List<byte>();
+
+            foreach (var value in data)
+            {
+                if (value >> fromBits > 0)
+                    throw new FormatException("Invalid Bech32 string");
+                
+                acc = (acc << fromBits) | value;
+                bits += fromBits;
+                while (bits >= toBits)
+                {
+                    bits -= toBits;
+                    ret.Add((byte)((acc >> bits) & maxv));
+                }
+            }
+            if (pad)
+            {
+                if (bits > 0)
+                {
+                    ret.Add((byte)((acc << (toBits - bits)) & maxv));
+                }
+            }
+            else if (bits >= fromBits || (byte)(((acc << (toBits - bits)) & maxv)) != 0)
+            {
+                throw new FormatException("Invalid Bech32 string");
+            }
+            return ret.ToArray();
+        }
+        
         public (string HumanReadablePart, byte[] Data) DecodeData(string encoded)
         {
             if (encoded == null)

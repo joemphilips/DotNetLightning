@@ -18,6 +18,11 @@ type System.UInt32 with
     member this.GetBytesBigEndian() =
         let d = BitConverter.GetBytes(this)
         if BitConverter.IsLittleEndian then (d |> Array.rev) else d
+type System.UInt16 with
+    member this.GetBytesBigEndian() =
+        let d = BitConverter.GetBytes(this)
+        if BitConverter.IsLittleEndian then (d |> Array.rev) else d
+        
 type System.Collections.BitArray with
     member this.ToByteArray() =
         let ret: byte[] = Array.zeroCreate (((this.Length - 1) / 8) + 1)

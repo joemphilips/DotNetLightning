@@ -3,52 +3,7 @@ namespace DotNetLightning.Serialize
 open System
 open System.Collections
 open System.Text
-
-type BitWriter() =
-    let swapEndianBytes(bytes: byte[]) =
-        let output = Array.zeroCreate bytes.Length
-        for i in 0..output.Length - 1 do
-            let mutable newByte = 0uy
-            for ib in 0..7 do
-                newByte <- (((bytes.[i] >>> ib) &&& 1uy) <<< (7 - ib)) |> byte
-            output.[i] <- newByte
-        output
-        
-    let values = ResizeArray()
-        
-    member val Position = 0 with get, set
-    
-    member this.Write(value: bool) =
-        values.Insert(this.Position, value)
-        this.Position <- this.Position + 1
-        
-    member this.Write(bytes: byte[], bitCount: int) =
-        let bytes = swapEndianBytes bytes
-        let ba = BitArray(bytes)
-        values.InsertRange(this.Position, ba |> Seq.cast |> Seq.take(bitCount))
-        this.Position <- bitCount
-        
-    member this.Write(bytes: byte[]) =
-        this.Write(bytes, bytes.Length * 8)
-        
-    member this.ToBitArray() = BitArray(values.ToArray())
-        
-    member this.ToByteArray(bits: BitArray) =
-        let mutable arrayLength = bits.Length / 8
-        if (bits.Length % 8 <> 0) then
-            arrayLength <- arrayLength + 1
-            
-        let array = Array.zeroCreate arrayLength
-        for i in 0..bits.Length - 1 do
-            let b = i / 8
-            let offset = i % 8
-            array.[b] <- array.[b] ||| if bits.Get(i) then 1uy <<< offset else 0uy
-        array
-        
-    member this.ToBytes() =
-        this.ToBitArray()
-        |> this.ToByteArray
-        |> swapEndianBytes
+open System.Text
 
 type BitReader(ba: BitArray, bitCount: int) =
     
