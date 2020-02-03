@@ -14,7 +14,10 @@ type System.UInt64 with
     member this.GetBytesBigEndian() =
         let d = BitConverter.GetBytes(this)
         if BitConverter.IsLittleEndian then (d |> Array.rev) else d
-
+type System.UInt32 with
+    member this.GetBytesBigEndian() =
+        let d = BitConverter.GetBytes(this)
+        if BitConverter.IsLittleEndian then (d |> Array.rev) else d
 type System.Collections.BitArray with
     member this.ToByteArray() =
         let ret: byte[] = Array.zeroCreate (((this.Length - 1) / 8) + 1)
@@ -30,6 +33,11 @@ type System.Collections.BitArray with
             bitArray.Set(di * 5 + 3, ((b.[di] >>> 1) &&& 0x01uy) = 1uy)
             bitArray.Set(di * 5 + 4, ((b.[di] >>> 0) &&& 0x01uy) = 1uy)
         bitArray
+        
+    static member FromUInt32(d: uint32) =
+        let b = d.GetBytesBigEndian()
+        BitArray.From5BitEncoding(b)
+        
     
 [<Extension>]
 type DictionaryExtensions() =

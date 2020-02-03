@@ -186,7 +186,6 @@ type ExtraHop = {
     with
     static member Size = 264 + 64 + 32 + 32 + 16
 type TaggedField =
-    | UnknownTaggedField of byte[]
     | PaymentHashTaggedField of PaymentHash
     | PaymentSecretTaggedField of PaymentPreimage
     | NodeIdTaggedField of NodeId
@@ -199,6 +198,19 @@ type TaggedField =
     | ExpiryTaggedField of DateTimeOffset
     | MinFinalCltvExpiryTaggedField of BlockHeight
     | FeaturesTaggedField of LocalFeatures
+    with
+    member this.Type =
+        match this with
+        | PaymentHashTaggedField _ -> 1uy
+        | PaymentSecretTaggedField _ -> 16uy
+        | DescriptionTaggedField _ -> 13uy
+        | NodeIdTaggedField _ -> 19uy
+        | DescriptionHashTaggedField _ -> 23uy
+        | ExpiryTaggedField _ -> 6uy
+        | MinFinalCltvExpiryTaggedField _ -> 24uy
+        | FallbackAddressTaggedField _ -> 9uy
+        | RoutingInfoTaggedField _ -> 3uy
+        | FeaturesTaggedField _ -> 5uy
 
 type TaggedFields = {
     Fields: TaggedField list
@@ -377,8 +389,15 @@ type Bolt11Data = {
     member this.ToBytes() =
         let writer = BitWriter()
         let timestamp = Utils.DateTimeToUnixTime(this.Timestamp)
-        writer.Write()
-        failwith "TODO"
+        writer.WriteWithPadding5(timestamp.GetBytesBigEndian())
+        for tagField in this.TaggedFields.Fields do
+            tagField.WriteTo(writer)
+        this.Signature
+        |> Option.iter(fun (s, recv) ->
+            writer.Write(s.ToBytesCompact())
+            writer.Write([|recv|])
+            )
+        writer.ToBytes()
             
 
 type PaymentRequest = private {
