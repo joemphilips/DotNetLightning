@@ -376,17 +376,18 @@ type Bolt11Data = {
     
     member this.ToBytes() =
         let writer = BitWriter()
+        let timestamp = Utils.DateTimeToUnixTime(this.Timestamp)
+        writer.Write()
         failwith "TODO"
             
 
-[<CLIMutable>]
 type PaymentRequest = private {
-    mutable Prefix: string
-    mutable Amount: LNMoney option
-    mutable Timestamp: DateTimeOffset
-    mutable NodeId: NodeId
-    mutable Tags:TaggedFields
-    mutable Signature: (LNECDSASignature * byte) option
+    Prefix: string
+    Amount: LNMoney option
+    Timestamp: DateTimeOffset
+    NodeId: NodeId
+    Tags:TaggedFields
+    Signature: (LNECDSASignature * byte) option
 }
     with
     static member TryCreate (prefix: string, amount: LNMoney option, timestamp, nodeId, tags, signature) =
