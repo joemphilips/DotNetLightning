@@ -261,7 +261,7 @@ type TaggedField =
             let dBase32 = d |> Helpers.utf8.GetBytes |> Helpers.convert8BitsTo5
             this.WriteField(writer, dBase32)
         | DescriptionHashTaggedField h ->
-            let dBase32 = h.ToBytes(false) |> Helpers.convert8BitsTo5
+            let dBase32 = h.ToBytes() |> Helpers.convert8BitsTo5
             this.WriteField(writer, dBase32)
         | NodeIdTaggedField(NodeId pk) ->
             let dBase32 = pk.ToBytes() |> Helpers.convert8BitsTo5
@@ -610,7 +610,6 @@ type PaymentRequest = private {
             { Bolt11Data.TaggedFields = this.Tags
               Timestamp = this.Timestamp
               Signature = (signature, recvId) |> Some }
-        printfn "hrp is %A" hrp
         data.ToBytesBase32() |> Helpers.encodeBech32 hrp
         
     member this.ToString(signer: IMessageSigner) =

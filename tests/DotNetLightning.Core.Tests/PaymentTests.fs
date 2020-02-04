@@ -22,7 +22,7 @@ let tests =
                        with
                            member this.SignMessage(data) = let signature = priv.SignCompact(data) in signature }
 
-    testList "BOLT-11 tests" [
+    ftestList "BOLT-11 tests" [
         testCase "check minimal unit is used" <| fun _ ->
             Expect.equal 'p' (Amount.unit(LNMoney.MilliSatoshis(1L))) ""
             Expect.equal 'p' (Amount.unit(LNMoney.MilliSatoshis(99L))) ""
@@ -41,7 +41,7 @@ let tests =
             Expect.equal (Amount.decode("1000000n")) (Ok(LNMoney.MilliSatoshis(100000000L))) ""
             Expect.equal (Amount.decode("1000000000p")) (Ok(LNMoney.MilliSatoshis(100000000L))) ""
             
-        ftestCase "Please make a donation of any amount using payment_hash 0001020304050607080900010203040506070809000102030405060708090102 to me @03e7156ae33b0a208d0744199163177e909e80176e55d97a2f221ede0f934dd9ad" <| fun _ ->
+        testCase "Please make a donation of any amount using payment_hash 0001020304050607080900010203040506070809000102030405060708090102 to me @03e7156ae33b0a208d0744199163177e909e80176e55d97a2f221ede0f934dd9ad" <| fun _ ->
             let data = "lnbc1pvjluezpp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypqdpl2pkx2ctnv5sxxmmwwd5kgetjypeh2ursdae8g6twvus8g6rfwvs8qun0dfjkxaq8rkx3yf5tcsyz3d73gafnh3cax9rn449d9p5uxz9ezhhypd0elx87sjle52x86fux2ypatgddc6k63n7erqz25le42c4u4ecky03ylcqca784w"
             let d = PaymentRequest.Parse(data) |> Result.deref
             Expect.equal (d.PrefixValue) ("lnbc") ""
@@ -65,11 +65,13 @@ let tests =
             Expect.equal pr.Description (Choice1Of2 "1 cup coffee") ""
             Expect.equal pr.FallbackAddresses ([]) ""
             Expect.equal (pr.TagsValue.Fields.Length) 3 ""
+            Expect.equal (pr.ToString()) data ""
             // Expect.equal (d.ToString(msgSigner)) data ""
             
         testCase "Please send 0.0025 BTC for a cup of nonsense (ナンセンス 1杯) to the same peer, within one minute" <| fun _ ->
             let data = "lnbc2500u1pvjluezpp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypqdpquwpc4curk03c9wlrswe78q4eyqc7d8d0xqzpuyk0sg5g70me25alkluzd2x62aysf2pyy8edtjeevuv4p2d5p76r4zkmneet7uvyakky2zr4cusd45tftc9c5fh0nnqpnl2jfll544esqchsrny"
             let pr = PaymentRequest.Parse(data) |> Result.deref
+            Expect.equal (pr.ToString()) data ""
             ()
             
         testCase "Now send $24 for an entire list of things (hashed)" <| fun _ ->
@@ -83,6 +85,7 @@ let tests =
             Expect.equal pr.Description ("One piece of chocolate cake, one icecream cone, one pickle, one slice of swiss cheese, one slice of salami, one lollypop, one piece of cherry pie, one sausage, one cupcake, and one slice of watermelon" |> ascii.GetBytes |> Hashes.SHA256 |> uint256 |> Choice2Of2) ""
             Expect.equal pr.FallbackAddresses [] ""
             Expect.equal pr.TagsValue.Fields.Length 2 ""
+            Expect.equal (pr.ToString()) data ""
             // Expect.equal (d.ToString(msgSigner)) data ""
             
         testCase "The same, on testnet, with a fallback address mk2QpYatsKicvFVuTAQLBryyccRXMUaGHP" <| fun _ ->
@@ -95,6 +98,7 @@ let tests =
             Expect.equal (pr.NodeIdValue) ("03e7156ae33b0a208d0744199163177e909e80176e55d97a2f221ede0f934dd9ad" |> hex.DecodeData |> PubKey |> NodeId) ""
             Expect.equal (pr.FallbackAddresses) (["mk2QpYatsKicvFVuTAQLBryyccRXMUaGHP"]) ""
             Expect.equal (pr.TagsValue.Fields.Length) 3 ""
+            Expect.equal (pr.ToString()) data ""
             // Expect.equal (d.ToString(msgSigner)) data ""
             
         testCase "On mainnet, with fallback address 1RustyRX2oai4EYYDpQGWvEL62BBGqN9T with extra routing info to go via nodes 029e03a901b85534ff1e92c43c74431f7ce72046060fcf7a95c37e148f78c77255 then 039e03a901b85534ff1e92c43c74431f7ce72046060fcf7a95c37e148f78c77255" <| fun _ ->
@@ -120,6 +124,7 @@ let tests =
                 ]
             Expect.equal pr.RoutingInfo ([routingInfo]) ""
             Expect.equal pr.TagsValue.Fields.Length 4 ""
+            Expect.equal (pr.ToString()) data ""
             // Expect.equal (d.ToString(msgSigner)) data ""
             
         testCase "On mainnet, with fallback (P2SH) address 3EktnHQD7RiAE6uzMj2ZifT9YgRrkSgzQX" <| fun _ ->
@@ -132,6 +137,7 @@ let tests =
             Expect.equal (pr.Description) ("One piece of chocolate cake, one icecream cone, one pickle, one slice of swiss cheese, one slice of salami, one lollypop, one piece of cherry pie, one sausage, one cupcake, and one slice of watermelon" |> ascii.GetBytes |> Hashes.SHA256 |> uint256 |> Choice2Of2) ""
             Expect.equal (pr.FallbackAddresses) (["3EktnHQD7RiAE6uzMj2ZifT9YgRrkSgzQX"]) ""
             Expect.equal (pr.TagsValue.Fields.Length) 3 ""
+            Expect.equal (pr.ToString()) data ""
             // Expect.equal (d.ToString(msgSigner)) data ""
             
         testCase "On mainnet, with fallback (P2WPKH) address bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4" <| fun _ ->
@@ -144,6 +150,7 @@ let tests =
             Expect.equal (pr.Description) ("One piece of chocolate cake, one icecream cone, one pickle, one slice of swiss cheese, one slice of salami, one lollypop, one piece of cherry pie, one sausage, one cupcake, and one slice of watermelon" |> ascii.GetBytes |> Hashes.SHA256 |> uint256 |> Choice2Of2) ""
             Expect.equal (pr.FallbackAddresses) (["bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"]) ""
             Expect.isNone (pr.Features) ""
+            Expect.equal (pr.ToString()) data ""
             // Expect.equal (d.ToString(msgSigner)) data ""
             
         testCase "On mainnet, with fallback (P2WSH) address bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3" <| fun _ ->
@@ -155,6 +162,7 @@ let tests =
             Expect.equal (pr.NodeIdValue) ("03e7156ae33b0a208d0744199163177e909e80176e55d97a2f221ede0f934dd9ad" |> hex.DecodeData |> PubKey |> NodeId) ""
             Expect.equal (pr.Description) ("One piece of chocolate cake, one icecream cone, one pickle, one slice of swiss cheese, one slice of salami, one lollypop, one piece of cherry pie, one sausage, one cupcake, and one slice of watermelon" |> ascii.GetBytes |> Hashes.SHA256 |> uint256 |> Choice2Of2) ""
             Expect.equal (pr.FallbackAddresses) (["bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3"]) ""
+            Expect.equal (pr.ToString()) data ""
             
         testCase "Please send $30 for coffee beans to the same peer, which supports features 9, 15 and 99, using secret 0x1111111111111111111111111111111111111111111111111111111111111111" <| fun _ ->
             let data = "lnbc25m1pvjluezpp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypqdq5vdhkven9v5sxyetpdeessp5zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygs9q5sqqqqqqqqqqqqqqqpqsq67gye39hfg3zd8rgc80k32tvy9xk2xunwm5lzexnvpx6fd77en8qaq424dxgt56cag2dpt359k3ssyhetktkpqh24jqnjyw6uqd08sgptq44qu"
@@ -166,9 +174,11 @@ let tests =
             Expect.equal (pr.Description) (Choice1Of2 "coffee beans") ""
             Expect.isEmpty pr.FallbackAddresses ""
             Expect.isSome (pr.Features) ""
+            Expect.equal (pr.ToString()) data ""
             
         testCase "Same, but adding invalid unknown feature 100" <| fun _ ->
             let data = "lnbc25m1pvjluezpp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypqdq5vdhkven9v5sxyetpdeessp5zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygs9q4psqqqqqqqqqqqqqqqpqsqq40wa3khl49yue3zsgm26jrepqr2eghqlx86rttutve3ugd05em86nsefzh4pfurpd9ek9w2vp95zxqnfe2u7ckudyahsa52q66tgzcp6t2dyk"
             let pr = PaymentRequest.Parse(data) |> Result.deref
             Expect.isSome (pr.Features) ""
+            Expect.equal (pr.ToString()) data ""
     ]

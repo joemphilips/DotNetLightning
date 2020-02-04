@@ -36,8 +36,8 @@ module Amount =
     let encode (amount: LNMoney option) =
         match amount with
         | None -> ""
-        | Some(amt) when unit(amt) = 'p' -> sprintf "%dp" (amt.MilliSatoshi / 10L)
-        | Some(amt) when unit(amt) = 'n' -> sprintf "%dn" (amt.MilliSatoshi * 100L)
-        | Some(amt) when unit(amt) = 'u' -> sprintf "%du" (amt.MilliSatoshi * 100000L)
-        | Some(amt) when unit(amt) = 'm' -> sprintf "%dm" (amt.MilliSatoshi * 100000000L)
+        | Some(amt) when unit(amt) = 'p' -> sprintf "%dp" (amt.MilliSatoshi * 10L)
+        | Some(amt) when unit(amt) = 'n' -> sprintf "%dn" (amt.MilliSatoshi / 100L )
+        | Some(amt) when unit(amt) = 'u' -> sprintf "%du" (amt.MilliSatoshi / 100000L)
+        | Some(amt) when unit(amt) = 'm' -> sprintf "%dm" (amt.MilliSatoshi / 100000000L)
         | x -> failwithf "Unreachable! %A" x
