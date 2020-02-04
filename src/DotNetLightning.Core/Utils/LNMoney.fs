@@ -87,6 +87,7 @@ type LNMoney = | LNMoney of int64 with
 
     member this.MilliSatoshi = let (LNMoney v) = this in v
     member this.Satoshi = this.MilliSatoshi / 1000L
+    member this.BTC = this.MilliSatoshi / (int64 LNMoneyUnit.BTC)
     member this.Value = this.MilliSatoshi
     member this.ToMoney() = this.Satoshi |> Money
 

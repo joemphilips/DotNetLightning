@@ -9,6 +9,7 @@
     <Compile Include="AssemblyInfo.fs" />
     <Content Include="Data\bolt3-tx.json" />
     <Content Include="Data\bolt1-bigsize.json" />
+    <Content Include="Data\bolt11.json" />
     <Compile Include="Utils/Utils.fs" />
     <Compile Include="Utils/FromRustLightning.fs" />
     <Compile Include="Generators/Primitives.fs" />
@@ -27,6 +28,7 @@
     <Compile Include="ChannelCoreTests.fs" />
     <Compile Include="KeyRepositoryTests.fs" />
     <Compile Include="EncryptDecrypt.fs" />
+    <Compile Include="PaymentTests.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
   <ItemGroup>

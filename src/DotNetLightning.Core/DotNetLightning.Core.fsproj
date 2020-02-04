@@ -21,6 +21,7 @@
     <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\Secp256k1.Net\Secp256k1.Net.csproj" PrivateAssets="all" />
     <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\NSec\Experimental\NSec.Experimental.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\ResultUtils\ResultUtils.fsproj" PrivateAssets="all" />
+    <ProjectReference Include="..\InternalBech32Encoder\InternalBech32Encoder.csproj" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
@@ -34,6 +35,7 @@
     <Compile Include="Utils/Errors.fs" />
     <Compile Include="Utils/RouteType.fs" />
     <Compile Include="Serialize/LightningStream.fs" />
+    <Compile Include="Serialize\BitWriter.fs" />
     <Compile Include="Serialize/Msgs.fs" />
     <Compile Include="DomainUtils/Types.fs" />
     <Compile Include="Crypto/CryptoUtils.fs" />
@@ -62,6 +64,10 @@
     <Compile Include="Channel\CommitmentsModule.fs" />
     <Compile Include="Channel\ChannelValidation.fs" />
     <Compile Include="Channel\Channel.fs" />
+    <Compile Include="Payment\PaymentConstants.fs" />
+    <Compile Include="Payment\PaymentEvents.fs" />
+    <Compile Include="Payment\Amount.fs" />
+    <Compile Include="Payment\PaymentRequest.fs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="4.7.0" />

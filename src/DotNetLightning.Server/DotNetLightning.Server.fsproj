@@ -17,6 +17,7 @@
     <ProjectReference Include="..\DotNetLightning.Core\DotNetLightning.Core.fsproj" />
     <ProjectReference Include="..\DotNetLightning.Infrastructure\DotNetLightning.Infrastructure.fsproj" />
     <ProjectReference Include="..\FSharp.SystemTextJson\FSharp.SystemTextJson.fsproj" />
+    <ProjectReference Include="..\TaskUtils\TaskUtils.fsproj" />
   </ItemGroup>
 
 </Project>

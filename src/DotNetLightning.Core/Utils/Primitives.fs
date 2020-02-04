@@ -61,7 +61,7 @@ module Primitives =
     /// Wrapper around NBitcoin's ECDSASignature type for convenience. It has following difference
     /// 1. It is equatable
     /// 2. Some Convenience methods for serialization
-    /// 3. ToString
+    /// 3. Custom `ToString`
     [<CustomEquality;NoComparison;StructuredFormatDisplay("{AsString}")>]
     type LNECDSASignature = | LNECDSASignature of ECDSASignature with
         member x.Value = let (LNECDSASignature v) = x in v
@@ -103,7 +103,12 @@ module Primitives =
             let r = Array.append (this.BigIntegerToBytes(b = this.Value.R, numBytes = 32)) (this.BigIntegerToBytes(this.Value.S, 32))
             if (isNull <| box r.[0]) then r.[0] <- 255uy
             r
-
+            
+        member this.ToDER() =
+            this.Value.ToDER()
+            
+        /// Read 64 bytes as r(32 bytes) and s(32 bytes) value
+        /// If `withRecId` is `true`, skip first 1 byte
         static member FromBytesCompact(bytes: byte [], ?withRecId: bool) =
             let withRecId = defaultArg withRecId false
             if withRecId && bytes.Length <> 65 then
@@ -118,7 +123,6 @@ module Primitives =
 
         static member op_Implicit (ec: ECDSASignature) =
             ec |> LNECDSASignature
-
 
     type PaymentHash = | PaymentHash of uint256 with
         member x.Value = let (PaymentHash v) = x in v
