@@ -127,7 +127,8 @@ module private Helpers =
         convertBits(data, 5, 8, true)
             
 type IMessageSigner =
-    /// take serialized msg hash and returns 65 bytes signature for it.(1byte recovery id + 32 bytes r + 32 bytes s)
+    /// take serialized msg hash and returns 65 bytes signature for it.(1byte header + 32 bytes r + 32 bytes s)
+    /// The header byte must be (recovery id + 27uy + 4uy).
     abstract member SignMessage: uint256 -> byte[]
     
 /// To make it network-agnostic, it holds data directly in bytes rather than `NBitcoin.BitcoinAddress`
@@ -489,14 +490,15 @@ type Bolt11Data = {
         
         this.Signature
         |> Option.iter(fun (s, recv) ->
-            let sigBase32 = Array.concat [ s.ToBytesCompact(); [|recv + 27uy|]] |> Helpers.convert8BitsTo5
+            let sigBase32 = Array.concat [ s.ToBytesCompact(); [|recv|]] |> Helpers.convert8BitsTo5
             writer.Write(sigBase32)
             )
         ms.ToArray()
         
     /// Returns binary representation for signing.
     member this.ToBytes() =
-        failwith ""
+        let bytesBase32 = this.ToBytesBase32()
+        bytesBase32 |> Helpers.convert5BitsTo8
             
 
 type PaymentRequest = private {
@@ -587,25 +589,22 @@ type PaymentRequest = private {
         Hashes.SHA256(msg) |> uint256
     member this.Sign(privKey: Key) =
         let ecdsaSig = privKey.SignCompact(this.Hash)
-        let recvId = ecdsaSig.[0] - 27uy // NBitcoin (for unknown reason) holds recovery id in 27uy larger value.
+        let recvId = ecdsaSig.[0] - 27uy - 4uy
         let sig64 = ecdsaSig |> fun s -> LNECDSASignature.FromBytesCompact(s, true)
         { this with Signature = (sig64, recvId) |> Some }
         
     override this.ToString() =
-        match this.Signature with
-        | Some (s, recv) -> this.ToString(Array.concat [[|recv|]; s.ToBytesCompact()])
-        | None _ ->
-            let hrp = sprintf "%s%s" this.PrefixValue (Amount.encode(this.Amount))
-            let data =
-                { Bolt11Data.TaggedFields = this.Tags
-                  Timestamp = this.TimestampValue
-                  Signature = None }
-            data.ToBytesBase32() |> Helpers.encodeBech32 hrp
+        let hrp = sprintf "%s%s" this.PrefixValue (Amount.encode(this.Amount))
+        let data =
+            { Bolt11Data.TaggedFields = this.Tags
+              Timestamp = this.TimestampValue
+              Signature = this.Signature }
+        data.ToBytesBase32() |> Helpers.encodeBech32 hrp
         
     member private this.ToString(signature65bytes: byte[]) =
         let hrp = sprintf "%s%s" this.PrefixValue (Amount.encode(this.Amount))
         let data =
-            let recvId = signature65bytes.[0] - 27uy // NBitcoin (for unknown reason) holds recovery id in 27uy larger value.
+            let recvId = signature65bytes.[0] - 27uy - 4uy
             let signature = signature65bytes |> fun s -> LNECDSASignature.FromBytesCompact(s, true)
             { Bolt11Data.TaggedFields = this.Tags
               Timestamp = this.Timestamp
@@ -644,7 +643,7 @@ type PaymentRequest = private {
                         |> Array.concat
                     let signatureInNBitcoinFormat = Array.zeroCreate(65)
                     Array.blit (sigCompact.ToBytesCompact()) 0 signatureInNBitcoinFormat 1 64
-                    signatureInNBitcoinFormat.[0] <- (recv + 27uy)
+                    signatureInNBitcoinFormat.[0] <- (recv + 27uy + 4uy)
                     PubKey.RecoverCompact(Hashes.SHA256(msg) |> uint256, signatureInNBitcoinFormat).Compress()
                     |> NodeId
             
