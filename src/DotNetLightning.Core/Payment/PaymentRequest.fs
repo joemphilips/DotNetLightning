@@ -58,8 +58,8 @@ module private Helpers =
         | :? FormatException as fex ->
             fex.ToString() |> Error
             
-    let encodeBech32 s =
-        InternalBech32Encoder.Instance.EncodeData(s, 0, s.Length)
+    let encodeBech32 hrp s =
+        InternalBech32Encoder.Instance.EncodeData(hrp, s, 0, s.Length)
         
     // ----- base58check prefixes -----
     // ref:https://en.bitcoin.it/wiki/List_of_address_prefixes 
@@ -489,7 +489,7 @@ type Bolt11Data = {
         
         this.Signature
         |> Option.iter(fun (s, recv) ->
-            let sigBase32 = Array.concat [ s.ToBytesCompact(); [|recv|]] |> Helpers.convert8BitsTo5
+            let sigBase32 = Array.concat [ s.ToBytesCompact(); [|recv + 27uy|]] |> Helpers.convert8BitsTo5
             writer.Write(sigBase32)
             )
         ms.ToArray()
@@ -600,8 +600,7 @@ type PaymentRequest = private {
                 { Bolt11Data.TaggedFields = this.Tags
                   Timestamp = this.TimestampValue
                   Signature = None }
-            let dataStr = data.ToBytesBase32() |> Helpers.encodeBech32
-            sprintf "%s1%s" hrp dataStr
+            data.ToBytesBase32() |> Helpers.encodeBech32 hrp
         
     member private this.ToString(signature65bytes: byte[]) =
         let hrp = sprintf "%s%s" this.PrefixValue (Amount.encode(this.Amount))
@@ -611,8 +610,8 @@ type PaymentRequest = private {
             { Bolt11Data.TaggedFields = this.Tags
               Timestamp = this.Timestamp
               Signature = (signature, recvId) |> Some }
-        let dataStr = data.ToBytesBase32() |> Helpers.encodeBech32
-        sprintf "%s1%s" hrp dataStr
+        printfn "hrp is %A" hrp
+        data.ToBytesBase32() |> Helpers.encodeBech32 hrp
         
     member this.ToString(signer: IMessageSigner) =
         let sign = signer.SignMessage(this.Hash)

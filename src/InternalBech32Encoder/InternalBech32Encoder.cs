@@ -412,37 +412,43 @@ namespace DotNetLightning.Utils
             }
             return (HumanReadablePart: Encoders.ASCII.EncodeData(hrp), Data: data);
         }
-        private byte[] CreateChecksum(byte[] data, int offset, int count)
+        private byte[] CreateChecksum(byte[] hrpExpand, byte[] data, int offset, int count)
         {
-            var values = new byte[count + 6];
-            Array.Copy(data, offset, values, 0, count);
+            var values = new byte[hrpExpand.Length + count + 6];
+            var valuesOffset = 0;
+            Array.Copy(hrpExpand, 0, values, valuesOffset, hrpExpand.Length);
+            valuesOffset += hrpExpand.Length;
+            Array.Copy(data, offset, values, valuesOffset, count);
+            
             var polymod = Polymod(values) ^ 1;
             var ret = new byte[6];
             foreach (var i in Enumerable.Range(0, 6))
             {
                 ret[i] = (byte)((polymod >> 5 * (5 - i)) & 31);
             }
+
             return ret;
         }
-        /// <summary>
-        /// Similar to the method with the same name in NBitcoin's Bech32Encoder, but it does not require hrp
-        /// </summary>
-        /// <param name="data"></param>
-        /// <param name="offset"></param>
-        /// <param name="count"></param>
-        /// <returns></returns>
-        public string EncodeData(byte[] data, int offset, int count)
+        public string EncodeData(string hrpStr, byte[] data, int offset, int count)
         {
-            var result = new byte[count + 6];
-            Array.Copy(data, offset, result, 0, count);
-            byte[] checksum = CreateChecksum(data, offset, count);
-            Array.Copy(checksum, 0, result, offset + count, 6);
+            var hrp = Encoders.ASCII.DecodeData(hrpStr);
+
+            var combined = new byte[hrp.Length + 1 + count + 6];
+            int combinedOffset = 0;
+            Array.Copy(hrp, 0, combined, 0, hrp.Length);
+            combinedOffset += hrp.Length;
+            combined[combinedOffset] = 49;
+            combinedOffset++;
+            Array.Copy(data, offset, combined, combinedOffset, count);
+            combinedOffset += count;
+            var checkSum = CreateChecksum(GetHrpExpand(hrp), data, offset, count);
+            Array.Copy(checkSum, 0, combined, combinedOffset, 6);
+            
             for (int i = 0; i < count + 6; i++)
             {
-                result[i] = Byteset[result[i]];
+                combined[hrp.Length + 1 + i] = Byteset[combined[hrp.Length + 1 + i]];
             }
-
-            return Encoders.ASCII.EncodeData(result);
+            return Encoders.ASCII.EncodeData(combined);
         }
     }
 }
