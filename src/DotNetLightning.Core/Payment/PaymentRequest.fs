@@ -20,6 +20,7 @@ open System.IO
 open System.IO
 open NBitcoin
 open NBitcoin.Crypto
+open NBitcoin.Crypto
 open NBitcoin.DataEncoders
 
 
@@ -252,7 +253,7 @@ type TaggedField =
         writer.Write(dataLengthInBase32)
         writer.Write(data)
         
-    member internal this.WriteTo(writer: BinaryWriter) =
+    member internal this.WriteTo(writer: BinaryWriter, timestamp) =
         match this with
         | PaymentHashTaggedField p ->
             this.WriteField(writer, Helpers.convert8BitsTo5(p.ToBytes(false)))
@@ -271,7 +272,7 @@ type TaggedField =
             let dBase32 = c |> uint64 |> Helpers.uint64ToBase32
             this.WriteField(writer, dBase32)
         | ExpiryTaggedField x ->
-            let dBase32 = x.ToUnixTimeSeconds() |> uint64 |> Helpers.uint64ToBase32
+            let dBase32 = ((x.ToUnixTimeSeconds() |> uint64) - timestamp) |> Helpers.uint64ToBase32
             this.WriteField(writer, dBase32)
         | FallbackAddressTaggedField f ->
             let d =
@@ -454,7 +455,7 @@ type Bolt11Data = {
                                 if (size < 8) then
                                     return! loop r acc afterReadPosition
                                 else
-                                    let bytes = r.ReadBits(size)
+                                    let bytes = r.ReadBytes(size / 8)
                                     let features = LocalFeatures.Flags bytes |> FeaturesTaggedField
                                     return! loop r { acc with Fields = features :: acc.Fields } afterReadPosition
                             | _ -> // we must skip unknown field
@@ -473,19 +474,21 @@ type Bolt11Data = {
     member this.ToBytesBase32() =
         use ms = new MemoryStream()
         use writer = new BinaryWriter(ms)
-        let timestamp =
+        let timestamp = 
             Utils.DateTimeToUnixTime(this.Timestamp)
             |> uint64
+        let timestampBase32 =
+            timestamp
             |> Helpers.uint64ToBase32
-        Debug.Assert(timestamp.Length <= (35 / 5), sprintf "Timestamp too big: %d" timestamp.Length)
-        let padding: byte[] = Array.zeroCreate(7 - timestamp.Length)
+        Debug.Assert(timestampBase32.Length <= (35 / 5), sprintf "Timestamp too big: %d" timestampBase32.Length)
+        let padding: byte[] = Array.zeroCreate(7 - timestampBase32.Length)
         writer.Write(padding)
-        writer.Write(timestamp)
+        writer.Write(timestampBase32)
         
         this.TaggedFields.Fields
         |> List.rev
         |> List.iter(fun f ->
-            f.WriteTo(writer)
+            f.WriteTo(writer, timestamp)
             )
         
         this.Signature
@@ -578,23 +581,27 @@ type PaymentRequest = private {
     member this.IsExpired =
         this.Expiry <= DateTimeOffset.UtcNow
             
+    member this.HumanReadablePart =
+        (sprintf "%s%s" (this.Prefix) (Amount.encode(this.Amount)))
     member private this.Hash =
         let hrp =
-            (sprintf "%s%s" (this.Prefix) (Amount.encode(this.Amount))) |> Helpers.utf8.GetBytes
+             this.HumanReadablePart |> Helpers.utf8.GetBytes
         let data = { Bolt11Data.Timestamp = this.Timestamp
                      TaggedFields = this.Tags
                      Signature = None }
         let bin = data.ToBytes()
         let msg = Array.concat(seq { hrp; bin })
         Hashes.SHA256(msg) |> uint256
-    member this.Sign(privKey: Key) =
-        let ecdsaSig = privKey.SignCompact(this.Hash)
+        
+    member this.Sign(privKey: Key, ?forceLowR: bool) =
+        let forceLowR = Option.defaultValue true forceLowR
+        let ecdsaSig = privKey.SignCompact(this.Hash, forceLowR)
         let recvId = ecdsaSig.[0] - 27uy - 4uy
         let sig64 = ecdsaSig |> fun s -> LNECDSASignature.FromBytesCompact(s, true)
         { this with Signature = (sig64, recvId) |> Some }
         
     override this.ToString() =
-        let hrp = sprintf "%s%s" this.PrefixValue (Amount.encode(this.Amount))
+        let hrp = this.HumanReadablePart
         let data =
             { Bolt11Data.TaggedFields = this.Tags
               Timestamp = this.TimestampValue
@@ -602,7 +609,7 @@ type PaymentRequest = private {
         data.ToBytesBase32() |> Helpers.encodeBech32 hrp
         
     member private this.ToString(signature65bytes: byte[]) =
-        let hrp = sprintf "%s%s" this.PrefixValue (Amount.encode(this.Amount))
+        let hrp = this.HumanReadablePart
         let data =
             let recvId = signature65bytes.[0] - 27uy - 4uy
             let signature = signature65bytes |> fun s -> LNECDSASignature.FromBytesCompact(s, true)
@@ -644,7 +651,8 @@ type PaymentRequest = private {
                     let signatureInNBitcoinFormat = Array.zeroCreate(65)
                     Array.blit (sigCompact.ToBytesCompact()) 0 signatureInNBitcoinFormat 1 64
                     signatureInNBitcoinFormat.[0] <- (recv + 27uy + 4uy)
-                    PubKey.RecoverCompact(Hashes.SHA256(msg) |> uint256, signatureInNBitcoinFormat).Compress()
+                    let r = Hashes.SHA256(msg) |> uint256
+                    PubKey.RecoverCompact(r, signatureInNBitcoinFormat).Compress()
                     |> NodeId
             
             return {

@@ -20,7 +20,7 @@ let tests =
     let priv = "e126f68f7eafcc8b74f54d269fe206be715000f94dac067d1c04a8ca3b2db734" |> hex.DecodeData |> Key
     let msgSigner  = { new IMessageSigner
                        with
-                           member this.SignMessage(data) = let signature = priv.SignCompact(data) in signature }
+                           member this.SignMessage(data) = let signature = priv.SignCompact(data, false) in signature }
 
     testList "BOLT-11 tests" [
         testCase "check minimal unit is used" <| fun _ ->
@@ -66,12 +66,15 @@ let tests =
             Expect.equal pr.FallbackAddresses ([]) ""
             Expect.equal (pr.TagsValue.Fields.Length) 3 ""
             Expect.equal (pr.ToString()) data ""
+            Expect.equal (pr.Sign(priv, false).ToString()) data ""
             Expect.equal (pr.ToString(msgSigner)) data ""
             
         testCase "Please send 0.0025 BTC for a cup of nonsense (ナンセンス 1杯) to the same peer, within one minute" <| fun _ ->
             let data = "lnbc2500u1pvjluezpp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypqdpquwpc4curk03c9wlrswe78q4eyqc7d8d0xqzpuyk0sg5g70me25alkluzd2x62aysf2pyy8edtjeevuv4p2d5p76r4zkmneet7uvyakky2zr4cusd45tftc9c5fh0nnqpnl2jfll544esqchsrny"
             let pr = PaymentRequest.Parse(data) |> Result.deref
+            Expect.equal (pr.Description) (Choice1Of2 "ナンセンス 1杯") ""
             Expect.equal (pr.ToString()) data ""
+            Expect.equal (pr.ToString(msgSigner)) data ""
             ()
             
         testCase "Now send $24 for an entire list of things (hashed)" <| fun _ ->
