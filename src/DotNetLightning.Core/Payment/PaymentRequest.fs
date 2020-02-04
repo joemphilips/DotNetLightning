@@ -500,8 +500,8 @@ type Bolt11Data = {
         
     /// Returns binary representation for signing.
     member this.ToBytes() =
-        let bytesBase32 = this.ToBytesBase32()
-        bytesBase32 |> Helpers.convert5BitsTo8
+        this.ToBytesBase32()
+        |> Helpers.convert5BitsTo8
             
 
 type PaymentRequest = private {
@@ -625,7 +625,7 @@ type PaymentRequest = private {
     static member Parse(str: string): Result<PaymentRequest, string> =
         result {
             do! Helpers.checkMaxInvoiceLength (str) // for DoS protection
-            let mutable s = (str.Clone() :?> string).ToLowerInvariant() // assure reference transparency
+            let mutable s = str.ToLowerInvariant() // assure reference transparency
             if (s.StartsWith("lightning:", StringComparison.OrdinalIgnoreCase)) then
                 s <- s.Substring("lightning:".Length)
             let! (hrp, data) = Helpers.decodeBech32(s)
