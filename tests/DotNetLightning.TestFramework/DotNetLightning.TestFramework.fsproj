@@ -5,7 +5,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Library.fs" />
+    <Compile Include="DockerComposeGenerator/BuildTimeVariableVisitor.fs" />
+    <Compile Include="Utils.fs" />
+    <Compile Include="LightningNodeLauncher.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\TaskUtils\TaskUtils.fsproj" />
+    <ProjectReference Include="..\..\src\DotNetLightning.Core\DotNetLightning.Core.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BTCPayServer.Lightning.All" Version="1.1.8" />
+    <PackageReference Include="BTCPayServer.Lightning.Lnd" Version="1.1.0.25" />
+    <PackageReference Include="YamlDotnet" Version="8.1.0" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,110 @@
+version: "3"
+
+services:
+  bitcoind:
+    restart: unless-stopped
+    image: nicolasdorier/docker-bitcoin:0.17.0
+    environment:
+      BITCOIN_NETWORK: "${LNLAUNCHER_NETWORK:-regtest}"
+      BITCOIN_EXTRA_ARGS: |
+        rpcuser=0I5rfLbJEXsg
+        rpcpassword=yJt7h7D8JpQy
+        server=1
+        rpcport=${LNLAUNCHER_BITCOIND_RPCPORT:?NoBitcoinRpcPortSpecified}
+        port=${LNLAUNCHER_BITCOIND_PORT:?NoBitcoinPortSpecified}
+        whitelist=0.0.0.0/0
+        zmqpubrawblock=tcp://0.0.0.0:28332
+        zmqpubrawtx=tcp://0.0.0.0:28333
+    ports:
+      - "${LNLAUNCHER_BITCOIND_PORT}:${LNLAUNCHER_BITCOIND_PORT}"
+      - "${LNLAUNCHER_BITCOIND_RPCPORT}:${LNLAUNCHER_BITCOIND_RPCPORT}"
+    expose:
+      - "${LNLAUNCHER_BITCOIND_PORT}"
+      - "${LNLAUNCHER_BITCOIND_RPCPORT}"
+    volumes:
+      - "${LNLAUNCHER_DATADIR:?NoDataDirSpecified}/bitcoind_dir:/home/bitcoin/.bitcoin"
+  lnd_for_balancer:
+    restart: unless-stopped
+    image: btcpayserver/lnd:v0.5.1-beta-2
+    environment:
+      LND_CHAIN: "btc"
+      LND_ENVIRONMENT: "${LNLAUNCHER_NETWORK:-regtest}"
+      LND_EXTRA_ARGS: |
+        restlisten=0.0.0.0:8080
+        bitcoin.node=bitcoind
+        bitcoind.rpchost=bitcoind:${LNLAUNCHER_BITCOIND_RPCPORT}
+        bitcoind.rpcuser=0I5rfLbJEXsg
+        bitcoind.rpcpass=yJt7h7D8JpQy
+        bitcoind.zmqpubrawblock=tcp://bitcoind:28332
+        bitcoind.zmqpubrawtx=tcp://bitcoind:28333
+        trickledelay=1000
+        externalip=lnd_for_balancer:9735
+        no-macaroons=1
+        debuglevel=debug
+        noseedbackup=1
+    ports:
+      - "${LNLAUNCHER_BALANCER_RESTPORT:?NoBalancerRESTPort}:8080"
+    expose:
+      - "9735"
+      - "8080"
+    volumes:
+      - "${LNLAUNCHER_DATADIR}/lnd_for_balancer_dir:/data"
+      - "${LNLAUNCHER_DATADIR}/bitcoind_dir:/deps/.bitcoin"
+    links:
+      - bitcoind
+  lnd_in_custody:
+    restart: unless-stopped
+    image: btcpayserver/lnd:v0.5.1-beta-2
+    environment:
+      LND_CHAIN: "btc"
+      LND_ENVIRONMENT: "${LNLAUNCHER_NETWORK:-regtest}"
+      LND_EXTRA_ARGS : |
+        restlisten=0.0.0.0:8080
+        bitcoin.node=bitcoind
+        bitcoind.rpchost=bitcoind:${LNLAUNCHER_BITCOIND_RPCPORT}
+        bitcoind.zmqpubrawblock=tcp://bitcoind:28332
+        bitcoind.zmqpubrawtx=tcp://bitcoind:28333
+        bitcoind.rpcuser=0I5rfLbJEXsg
+        bitcoind.rpcpass=yJt7h7D8JpQy
+        trickledelay=1000
+        externalip=lnd_in_custody:9735
+        no-macaroons=1
+        debuglevel=debug
+        noseedbackup=1
+    ports:
+      - "${LNLAUNCHER_CUSTODY_RESTPORT:?NoBalancerRESTPort}:8080"
+    expose:
+      - "9735"
+    volumes:
+      - "${LNLAUNCHER_DATADIR}/lnd_for_custody_dir:/data"
+      - "${LNLAUNCHER_DATADIR}/bitcoind_dir:/deps/.bitcoin"
+    links:
+      - bitcoind
+  lnd_3rd_party:
+    restart: unless-stopped
+    image: btcpayserver/lnd:v0.5.1-beta-2
+    environment:
+      LND_CHAIN: "btc"
+      LND_ENVIRONMENT: "${LNLAUNCHER_NETWORK:-regtest}"
+      LND_EXTRA_ARGS : |
+        restlisten=0.0.0.0:8080
+        bitcoin.node=bitcoind
+        bitcoind.rpchost=bitcoind:${LNLAUNCHER_BITCOIND_RPCPORT}
+        bitcoind.zmqpubrawblock=tcp://bitcoind:28332
+        bitcoind.zmqpubrawtx=tcp://bitcoind:28333
+        bitcoind.rpcuser=0I5rfLbJEXsg
+        bitcoind.rpcpass=yJt7h7D8JpQy
+        trickledelay=1000
+        externalip=lnd_3rd_party:9735
+        no-macaroons=1
+        debuglevel=debug
+        noseedbackup=1
+    ports:
+      - "${LNLAUNCHER_THIRDPARTY_RESTPORT:?NoBalancerRESTPort}:8080"
+    expose:
+      - "9735"
+    volumes:
+      - "${LNLAUNCHER_DATADIR}/lnd_for_3rd_party_dir:/data"
+      - "${LNLAUNCHER_DATADIR}/bitcoind_dir:/deps/.bitcoin"
+    links:
+      - bitcoind
