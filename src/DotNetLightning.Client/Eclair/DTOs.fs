@@ -1,4 +1,4 @@
-namespace EclairRPCClient
+namespace DotNetLightning.Client.Eclair
 
 open DotNetLightning.Utils
 open DotNetLightning.Payment

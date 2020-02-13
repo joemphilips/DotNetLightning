@@ -1,4 +1,4 @@
-namespace EclairRPCClient
+namespace DotNetLightning.Client.Eclair
 
 type PeerState =
     | Connected

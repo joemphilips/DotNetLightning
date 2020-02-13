@@ -6,7 +6,7 @@ open System.Text.Json
 
 open System.Net.Http
 
-type Client() =
+type DotNetLightningClient() =
     let _client = new HttpClient()
     member this.GetNewAddress() = task {
         let! response = _client.GetAsync("/api/v1/address")
@@ -19,7 +19,7 @@ type Client() =
         
     member this.SendAsync(method: HttpMethod, body: obj, relativePath:string, parameters: obj[]) = task {
         let httpRequestMessage = this.CreateMessage()
-        let! result = _client.SendAsync(message)
+        let! result = _client.SendAsync(httpRequestMessage)
         return failwith ""
     }
     

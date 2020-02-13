@@ -1,4 +1,4 @@
-namespace EclairRPCClient
+namespace DotNetLightning.Client.Eclair
 
 open System
 open System.Net
@@ -9,7 +9,7 @@ open System.Text.Json
 type IAuth =
     abstract member RefreshCode: unit -> bool
     abstract member SetAuthorization: HttpRequestMessage -> HttpRequestMessage
-    abstract member SegWebSocketAuth: ClientWebSocket -> ClientWebSocket
+    abstract member SetWebSocketAuth: ClientWebSocket -> ClientWebSocket
 
 type ClientConfig = {
     Host: string
@@ -69,9 +69,10 @@ module Client =
         async {
             let! response = sendRequest(conf, req)
             let! payload = getPayload(response)
-            let validated = payload.validate<'T>()
-            let parsed = parseResult(validated, payload, command)
-            return parsed
+            // let validated = payload.validate<'T>()
+            // let parsed = parseResult(validated, payload, command)
+            // return parsed
+            return failwith ""
         }
         
     let allChannelsImpl() =

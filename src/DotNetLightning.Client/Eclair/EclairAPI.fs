@@ -1,4 +1,4 @@
-namespace EclairRPCClient
+namespace DotNetLightning.Client.Eclair
 
 type EclairAPIOperation<'a> =
     | AllChannels of unit * (ChannelDesc list -> 'a)
