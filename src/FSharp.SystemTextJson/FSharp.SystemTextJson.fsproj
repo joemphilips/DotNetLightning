@@ -6,6 +6,10 @@
 
   <ItemGroup>
     <Compile Include="TypeCache.fs" />
+    <Compile Include="Options.fs" />
+    <Compile Include="Helpers.fs" />
+    <Compile Include="Collections.fs" />
+    <Compile Include="Tuple.fs" />
     <Compile Include="Record.fs" />
     <Compile Include="Union.fs" />
     <Compile Include="All.fs" />

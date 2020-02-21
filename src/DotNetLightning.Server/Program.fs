@@ -18,13 +18,11 @@ open Microsoft.Extensions.Logging
 
 open FSharp.Control.Tasks
 
-open Ply
-
 open DotNetLightning.Infrastructure
 
 
 type ServerParams() =
-    member val P2PIpEndpoint = System.Net.IPEndPoint.Parse("tcp://localhost:127.0.0.1:9735") with get, set
+    member val P2PIpEndpoint = System.Net.IPEndPoint.Parse("127.0.0.1:9735") with get, set
 
 module Program =
     let exitCode = 0
@@ -56,8 +54,8 @@ module Program =
                 webBuilder.UseStartup<Startup>() |> ignore
 
                 // for p2p connections
-                webBuilder.UseKestrel(fun (webhostBuilder) ->
-                    webhostBuilder.Listen(serverP.P2PIpEndpoint, fun options ->
+                webBuilder.UseKestrel(fun (kestrelServerOptions) ->
+                    kestrelServerOptions.Listen(serverP.P2PIpEndpoint, fun options ->
                         options.UseConnectionLogging() |> ignore
                         options.UseConnectionHandler<P2PConnectionHandler>() |> ignore
                         ()

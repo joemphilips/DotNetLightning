@@ -10,6 +10,7 @@ open CustomEventAggregator
 open DotNetLightning.Infrastructure
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Chain
+open DotNetLightning.Infrastructure.ActorManagers
 open DotNetLightning.Peer
 open NBitcoin
 
@@ -18,14 +19,14 @@ type internal PeerManagerEntity = {
     Id: PeerId
     CM: IChannelManager
     EventAggregator: IEventAggregator
-    NodeParams: NodeParams
+    NodeParams: ChainConfig
     mutable CurrentHeight: int
     FundingTxProvider: IFundingTxProvider
 }
     with
     member this.PublishDummyBlockWith(txIncluded: Transaction list) =
         this.CurrentHeight <- this.CurrentHeight + 1
-        let dummyBlockHeader = this.NodeParams.ChainNetwork.GetGenesis().Header
+        let dummyBlockHeader = this.NodeParams.Network.NBitcoinNetwork.GetGenesis().Header
         let dummyBlock : BlockContent =
             let txWithIndex = txIncluded |> List.indexed |> List.map(fun iTx -> (fst iTx |> uint32), (snd iTx))
             dummyBlockHeader, (this.CurrentHeight |> uint32 |> BlockHeight), txWithIndex

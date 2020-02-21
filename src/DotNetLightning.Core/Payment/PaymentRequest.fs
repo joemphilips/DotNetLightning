@@ -4,6 +4,7 @@ open System
 open System.IO
 open System.Text
 open System.Collections
+open System.Diagnostics
 
 open ResultUtils
 
@@ -12,14 +13,7 @@ open DotNetLightning.Core.Utils.Extensions
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Serialize
 
-open DotNetLightning.Utils
-open System
-open System
-open System.Diagnostics
-open System.IO
-open System.IO
 open NBitcoin
-open NBitcoin.Crypto
 open NBitcoin.Crypto
 open NBitcoin.DataEncoders
 
@@ -322,7 +316,7 @@ type TaggedFields = {
         if (descriptions.Length = 1 && dHashes.Length = 1) then Error("Invalid BOLT11! both 'h' and 'd' field exists") else
         if (descriptions.Length <> 1 && dHashes.Length <> 1) then Error("Invalid BOLT11! must have either description hash or description") else
         () |> Ok
-type Bolt11Data = {
+type private Bolt11Data = {
     Timestamp: DateTimeOffset
     TaggedFields: TaggedFields
     // byte is recovery id
@@ -586,6 +580,7 @@ type PaymentRequest = private {
     member private this.Hash =
         let hrp =
              this.HumanReadablePart |> Helpers.utf8.GetBytes
+             
         let data = { Bolt11Data.Timestamp = this.Timestamp
                      TaggedFields = this.Tags
                      Signature = None }

@@ -16,7 +16,6 @@ open System
 type ProvideFundingTx = IDestination * Money * FeeRatePerKw -> Result<FinalizedTx * TxOutIndex, string> 
 type Channel = {
     Config: ChannelConfig
-    ChainListener: IChainListener
     KeysRepository: IKeysRepository
     FeeEstimator: IFeeEstimator
     FundingTxProvider:ProvideFundingTx
@@ -27,11 +26,10 @@ type Channel = {
     Secp256k1Context: ISecp256k1
  }
         with
-        static member Create(config, chainListener, keysRepo, feeEstimator, localNodeSecret, fundingTxProvider, n, remoteNodeId) =
+        static member Create(config, keysRepo, feeEstimator, localNodeSecret, fundingTxProvider, n, remoteNodeId) =
             {
                 Secp256k1Context = CryptoUtils.impl.newSecp256k1()
                 Config = config
-                ChainListener = chainListener
                 KeysRepository = keysRepo
                 FeeEstimator = feeEstimator
                 FundingTxProvider = fundingTxProvider
@@ -40,7 +38,7 @@ type Channel = {
                 State = WaitForInitInternal
                 Network = n
             }
-        static member CreateCurried = curry8 (Channel.Create)
+        static member CreateCurried = curry7 (Channel.Create)
 
 module Channel =
 

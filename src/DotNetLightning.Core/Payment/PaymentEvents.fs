@@ -81,3 +81,5 @@ and PaymentSettlingOnChainEvent = private {
         PaymentHash = paymentHash
         Timestamp = DateTimeOffset.Now
     }
+    
+type OurPaymentResult = Result<PaymentSentEvent, PaymentFailedEvent>

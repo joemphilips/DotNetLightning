@@ -13,7 +13,7 @@ type TestEntity =
     {
         Seed: uint256
         KeyRepo: IKeysRepository
-        NodeParams: NodeParams
+        NodeParams: ChainConfig
     }
 
 let fundingSatoshis = 1000000L |> Money.Satoshis
@@ -67,7 +67,7 @@ type DummyBroadCaster() =
             async { return tx.GetTxId() }
 
 let getAliceParam() =
-    let p = NodeParams()
+    let p = ChainConfig()
     p.Alias <- "alice"
     p.Color <- { RGB.Red = 1uy; Green = 2uy; Blue = 3uy }
     p.PublicAddresses <- [IPEndPoint.Parse("127.0.0.1:9731")]
@@ -92,7 +92,7 @@ let getAliceParam() =
     }
     
 let getBobParam() =
-    let p = NodeParams()
+    let p = ChainConfig()
     let keyRepo = DefaultKeyRepository(bobChannelKeysSeed)
     {
         TestEntity.Seed = [| for _ in 0..31 -> 1uy |] |> uint256

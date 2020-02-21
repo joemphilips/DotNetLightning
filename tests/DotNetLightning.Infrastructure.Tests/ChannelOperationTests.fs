@@ -12,6 +12,9 @@ open System
 open System.Net
 open System.Threading.Tasks
 open DotNetLightning.Chain
+open DotNetLightning.Infrastructure.ActorManagers
+open DotNetLightning.Infrastructure.Actors
+open DotNetLightning.Infrastructure.Interfaces
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Utils
 open Expecto
@@ -44,8 +47,8 @@ type internal ActorCreator =
         let aliceParam = TestConstants.getAliceParam()
         let keyRepo = defaultArg keyRepo (aliceParam.KeyRepo)
         let peerLogger = TestLogger.create<PeerManager>(ConsoleColor.Red)
-        let channelLogger = TestLogger.create<ChannelActor>(ConsoleColor.Magenta)
-        let nodeParams = defaultArg nodeParams (Options.Create<NodeParams>(aliceParam.NodeParams))
+        let channelLogger = TestLogger.create<ChannelManager>(ConsoleColor.Magenta)
+        let nodeParams = defaultArg nodeParams (Options.Create<ChainConfig>(aliceParam.NodeParams))
         let chainWatcher =
             Mock<IChainWatcher>()
                 .Setup(fun x -> <@ x.InstallWatchTx(any(), any()) @>).Returns(true)
@@ -54,7 +57,7 @@ type internal ActorCreator =
                 .Create()
         let broadCaster = DummyBroadCaster()
         let eventAggregator = ReactiveEventAggregator() :> IEventAggregator
-        let fundingTxProvider = DummyFundingTxProvider(aliceParam.NodeParams.ChainNetwork)
+        let fundingTxProvider = DummyFundingTxProvider(aliceParam.NodeParams.Network.NBitcoinNetwork)
         {
             NodeParams = aliceParam.NodeParams
             PeerManagerEntity.Id = IPEndPoint.Parse("127.1.1.1") :> EndPoint |> PeerId
@@ -62,26 +65,26 @@ type internal ActorCreator =
                              peerLogger,
                              getTestLoggerFactory(),
                              keyRepo,
-                             nodeParams,
+                             nodeParams.Value,
                              chainWatcher,
                              broadCaster
                              )
             CM =
                 let channelEventRepo =
-                    Mock<IChannelEventRepository>
+                    Mock<IChannelEventStream>
                         .Method(fun x -> <@ x.SetEventsAsync @>).Returns(Task.CompletedTask)
                 let chainListener = Mock<IChainListener>().Create()
                 let feeEstimator =
                     Mock<IFeeEstimator>.Method(fun x -> <@ x.GetEstSatPer1000Weight @>).Returns(5000u |> FeeRatePerKw)
+                    
                 ChannelManager(channelLogger,
                                getTestLoggerFactory(),
-                               chainListener,
                                eventAggregator,
                                keyRepo,
                                channelEventRepo,
                                feeEstimator,
                                fundingTxProvider,
-                               nodeParams
+                               nodeParams.Value
                                )
             EventAggregator = eventAggregator
             CurrentHeight = 100
@@ -96,8 +99,8 @@ type internal ActorCreator =
             TestLogger.create<PeerManager>(ConsoleColor.Blue)
         let channelLogger =
             // Mock<ILogger<ChannelManager>>().Create()
-            TestLogger.create<ChannelActor>(ConsoleColor.Green)
-        let nodeParams = defaultArg nodeParams (Options.Create<NodeParams>(bobParam.NodeParams))
+            TestLogger.create<ChannelManager>(ConsoleColor.Green)
+        let nodeParams = defaultArg nodeParams (Options.Create<ChainConfig>(bobParam.NodeParams))
         let chainWatcher =
             Mock<IChainWatcher>()
                 .Setup(fun x -> <@ x.InstallWatchTx(any(), any()) @>).Returns(true)
@@ -106,7 +109,7 @@ type internal ActorCreator =
                 .Create()
         let broadCaster = DummyBroadCaster()
         let eventAggregator = ReactiveEventAggregator() :> IEventAggregator
-        let fundingTxProvider = DummyFundingTxProvider(bobParam.NodeParams.ChainNetwork)
+        let fundingTxProvider = DummyFundingTxProvider(bobParam.NodeParams.Network.NBitcoinNetwork)
         {
             NodeParams = bobParam.NodeParams
             PeerManagerEntity.Id = IPEndPoint.Parse("127.1.1.2") :> EndPoint |> PeerId
@@ -114,26 +117,25 @@ type internal ActorCreator =
                              peerLogger,
                              getTestLoggerFactory(),
                              keyRepo,
-                             nodeParams,
+                             nodeParams.Value,
                              chainWatcher,
                              broadCaster
                              )
             CM =
                 let channelEventRepo =
-                    Mock<IChannelEventRepository>
+                    Mock<IChannelEventStream>
                         .Method(fun x -> <@ x.SetEventsAsync @>).Returns(Task.CompletedTask)
                 let chainListener = Mock<IChainListener>().Create()
                 let feeEstimator =
                     Mock<IFeeEstimator>.Method(fun x -> <@ x.GetEstSatPer1000Weight @>).Returns(5000u |> FeeRatePerKw)
                 ChannelManager(channelLogger,
                                getTestLoggerFactory(),
-                               chainListener,
                                eventAggregator,
                                keyRepo,
                                channelEventRepo,
                                feeEstimator,
                                fundingTxProvider,
-                               nodeParams
+                               nodeParams.Value
                                )
             EventAggregator = eventAggregator
             CurrentHeight = 100

@@ -269,4 +269,5 @@ coverage.*.xml
 ## others
 .vscode
 
-tests/DotNetLightning.Infrastructure.Tests/data
+# custom
+tests/DotNetLightning.Infrastructure.Tests/data/

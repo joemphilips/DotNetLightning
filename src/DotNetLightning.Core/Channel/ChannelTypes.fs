@@ -311,6 +311,12 @@ type ChannelEvent =
     // --- setup ---
 
 open Data
+type ChannelStatePhase =
+    | Opening
+    | Normal
+    | Closing
+    | Closed
+    | Abnormal
 type ChannelState =
     /// Establishing
     | WaitForInitInternal
@@ -333,7 +339,6 @@ type ChannelState =
     /// Abnormal
     | Offline of IChannelStateData
     | Syncing of IChannelStateData
-    | WaitForRemotePublishFutureCommitment of WaitForRemotePublishFutureCommitmentData
 
     /// Error
     | ErrFundingLost of IChannelStateData
@@ -350,3 +355,22 @@ type ChannelState =
             (fun v cc -> match cc with
                          | Normal _ -> Normal v
                          | _ -> cc )
+        member this.Phase =
+            match this with
+            | WaitForInitInternal
+            | WaitForOpenChannel _ 
+            | WaitForAcceptChannel _
+            | WaitForFundingCreated _
+            | WaitForFundingSigned _
+            | WaitForFundingConfirmed _
+            | WaitForFundingLocked _ -> Opening
+            | Normal _ -> ChannelStatePhase.Normal
+            | Shutdown _
+            | Negotiating _
+            | Closing _ -> ChannelStatePhase.Closing
+            | Closed _ -> ChannelStatePhase.Closed
+            | Offline _
+            | Syncing _
+            | ErrFundingLost _
+            | ErrFundingTimeOut _
+            | ErrInformationLeak _ -> Abnormal

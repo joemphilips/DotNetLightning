@@ -25,7 +25,6 @@
     <Compile Include="ClaimReceivedHTLCTests.fs" />
     <Compile Include="TransactionTests.fs" />
     <Compile Include="PeerChannelEncryptorTests.fs" />
-    <Compile Include="ChannelCoreTests.fs" />
     <Compile Include="KeyRepositoryTests.fs" />
     <Compile Include="EncryptDecrypt.fs" />
     <Compile Include="PaymentTests.fs" />
