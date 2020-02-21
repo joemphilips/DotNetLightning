@@ -1,4 +1,4 @@
-namespace DotNetLightning.Infrastructure
+namespace DotNetLightning.Infrastructure.Actors
 
 
 open System.IO.Pipelines
@@ -6,14 +6,15 @@ open System.IO.Pipelines
 open FSharp.Control.Tasks
 
 open Microsoft.Extensions.Logging
-open Microsoft.Extensions.Options
+
+open CustomEventAggregator
 
 open DotNetLightning.Utils
 open DotNetLightning.Chain
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Peer
 
-open CustomEventAggregator
+open DotNetLightning.Infrastructure
 
 type IPeerActor = Actor<Peer, PeerCommand, PeerEvent, PeerError>
 
@@ -22,12 +23,10 @@ type PeerActor(peer: Peer,
                keyRepo: IKeysRepository,
                log: ILogger,
                pipeWriter: PipeWriter,
-               nodeParams: IOptions<NodeParams>,
                eventAggregator: IEventAggregator) as this =
     inherit Actor<Peer, PeerCommand, PeerEvent, PeerError>(PeerDomain.CreatePeerAggregate peer, log)
-    let nodeParams = nodeParams.Value
     
-    let ourNodeId = keyRepo.GetNodeSecret().PubKey |> NodeId
+    let _ourNodeId = keyRepo.GetNodeSecret().PubKey |> NodeId
 
     override this.HandleError (b: PeerError) =
         unitTask {

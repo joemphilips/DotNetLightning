@@ -1,5 +1,5 @@
 [<AutoOpen>]
-module DotnetLightning.Infrastructure.PrimitiveExtensions
+module DotNetLightning.Infrastructure.PrimitiveExtensions
 
 open System.Threading
 open System.Threading.Tasks

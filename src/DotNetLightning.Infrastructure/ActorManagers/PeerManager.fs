@@ -1,4 +1,4 @@
-namespace DotNetLightning.Infrastructure
+namespace DotNetLightning.Infrastructure.ActorManagers
 
 open System
 open System.Collections.Concurrent
@@ -18,20 +18,24 @@ open DotNetLightning.Channel
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Utils.Aether
 open DotNetLightning.Utils.Aether.Operators
+
 open DotNetLightning.Infrastructure
+open DotNetLightning.Infrastructure.Interfaces
+open DotNetLightning.Infrastructure.Actors
+
 
 open NBitcoin
 open Microsoft.Extensions.Logging
-open Microsoft.Extensions.Options
 
 type IPeerManager =
+    inherit IActorManager<PeerCommandWithContext>
     abstract member ReadAsync: PeerId * IDuplexPipe -> ValueTask
-    abstract member AcceptCommand: cmd: PeerCommandWithContext -> ValueTask
     abstract member NewOutBoundConnection: theirNodeId: NodeId *
                                            peerId: PeerId *
                                            pipeWriter: PipeWriter *
                                            ?ie: Key -> ValueTask
     abstract member OurNodeId: NodeId
+    abstract member GetNumPeers: unit -> int
     
 exception PeerException of peerId: PeerId * msg: string
 
@@ -39,12 +43,12 @@ type PeerManager(eventAggregator: IEventAggregator,
                  log: ILogger<PeerManager>,
                  loggerFactory: ILoggerFactory,
                  keyRepo: IKeysRepository,
-                 nodeParams: IOptions<NodeParams>,
+                 nodeParams: ChainConfig,
                  chainWatcher: IChainWatcher,
                  broadCaster: IBroadCaster
                  ) as this =
     
-    let nodeParamsValue = nodeParams.Value
+    let nodeParamsValue = nodeParams
     let _channelEventObservable =
         eventAggregator.GetObservable<ChannelEventWithContext>()
         |> Observable.filter(fun cec -> this.NodeIdToPeerId.ContainsKey(cec.NodeId))
@@ -258,7 +262,7 @@ type PeerManager(eventAggregator: IEventAggregator,
         | Ok (actTwo, pce) ->
             let newPeer = { newPeer with ChannelEncryptor = pce }
             let log = loggerFactory.CreateLogger(sprintf "PeerActor (%A)" theirPeerId)
-            let peerActor = new PeerActor (newPeer, theirPeerId, keyRepo, log, pipeWriter, nodeParams, eventAggregator)
+            let peerActor = new PeerActor (newPeer, theirPeerId, keyRepo, log, pipeWriter, eventAggregator)
             (peerActor :> IActor<_>).StartAsync() |> ignore
             match this.KnownPeers.TryAdd(theirPeerId, peerActor) with
             | false ->
@@ -289,7 +293,7 @@ type PeerManager(eventAggregator: IEventAggregator,
             |> log.LogTrace
             let peerActor =
                 let log = loggerFactory.CreateLogger(sprintf "PeerActor (%A)" peerId)
-                new PeerActor (newPeer, peerId, keyRepo, log, pipeWriter, nodeParams, eventAggregator)
+                new PeerActor (newPeer, peerId, keyRepo, log, pipeWriter, eventAggregator)
             (peerActor :> IActor<_>).StartAsync() |> ignore
             match this.KnownPeers.TryAdd(peerId, peerActor) with
             | false ->
@@ -341,11 +345,13 @@ type PeerManager(eventAggregator: IEventAggregator,
     interface IPeerManager with
         member this.OurNodeId = ourNodeId
         member this.ReadAsync(peerId, pipe) = this.ReadAsync(peerId, pipe)
-        member this.AcceptCommand(cmd) = this.AcceptCommand cmd
+        member this.AcceptCommandAsync(cmd) = this.AcceptCommand cmd
         member this.NewOutBoundConnection (nodeId, peerId, pipeWriter, ?key) =
             match key with
             | Some key ->
                 this.NewOutBoundConnection(nodeId, peerId, pipeWriter, key)
             | None ->
                 this.NewOutBoundConnection(nodeId, peerId, pipeWriter)
-
+ 
+        member this.GetNumPeers() =
+            this.KnownPeers.Count

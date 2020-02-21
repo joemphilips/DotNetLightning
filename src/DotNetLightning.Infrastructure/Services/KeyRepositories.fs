@@ -4,11 +4,6 @@ open DotNetLightning.Chain
 open NBitcoin
 open DotNetLightning.Utils
 
-type SupportedKeyRepositoryTypes =
-    /// Only for testing
-    | InMemory
-    | FlatFile of path: string
-
 type FlatFileKeyRepository() =
     interface IKeysRepository with
         member this.GenerateKeyFromBasePointAndSign(psbt: PSBT, pubkey: PubKey, basePoint: PubKey): TransactionSignature * PSBT = 

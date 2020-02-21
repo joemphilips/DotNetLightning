@@ -8,9 +8,26 @@ open DotNetLightning.Utils
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Channel
 
+open System.Collections.Generic
 open DotNetLightning.Transactions
 open DotNetLightning.Transactions
 open NBitcoin
+
+[<AutoOpen>]
+module SupportedTypes =
+    type SupportedDBType =
+        | Null
+        /// Only for testing
+        | InMemory
+        | MongoDB of connectionString: string
+
+    type SupportedChainWatcherType =
+        | BitcoindPolling
+    
+    type SupportedKeyRepositoryTypes =
+        /// Only for testing
+        | InMemory
+        | FlatFile of path: string
 
 type RouterConfig() =
     member val ChannelExcludeDuration: DateTimeOffset = Unchecked.defaultof<DateTimeOffset> with get, set
@@ -32,19 +49,18 @@ type RouterConfig() =
     member val SearchRatioChannelAge: float = 0.35 with get, set
     member val SearchRatioChannelCapacity: float = 0.5 with get, set
 
-
-/// Our own node's parameter
-type NodeParams() as this =
-    member val DataDirPath: string = Constants.homePath with get, set
+/// configuration specific to particular chain
+type ChainConfig() =
     member val Alias: string = "" with get, set
-    // default color will be the same with github's `F#`
+    // default color is the same with github's `F#`
     // refs: https://github.com/ozh/github-colors
     member val Color: RGB = { RGB.Red = 184uy; Green = 69uy; Blue = 252uy } with get, set
-
-    member val ChainNetwork: Network = Network.RegTest with get
+    member val RouterConfig = RouterConfig() with get
+    member val DataDirPath: string = null with get, set
     
+    member val Network = DotNetLightningNetwork() with get, set
     // ---- infrastructure types -----
-    member val WatcherType: SupportedChainWatcherType = Bitcoind(RPC.RPCClient(Network.RegTest)) with get, set
+    member val ChainWatcherType: SupportedChainWatcherType = BitcoindPolling with get, set
     member val DBType: SupportedDBType = SupportedDBType.Null with get, set
     member val KeyRepoType: SupportedKeyRepositoryTypes = SupportedKeyRepositoryTypes.FlatFile(Constants.homePath) with get, set
 
@@ -164,7 +180,7 @@ type NodeParams() as this =
         }
 
 module private NodeParamsValidation =
-    let checkDustLimitSatoshisIsToHigh(np: NodeParams) =
+    let checkDustLimitSatoshisIsToHigh(np: ChainConfig) =
         let limit = Money.Satoshis(100000L)
         if (np.DustLimitSatoshis > limit) then
             sprintf "Dust limit satoshis is absurdly high. The limit is (%A)" limit
@@ -176,7 +192,7 @@ module private NodeParamsValidation =
     let checkMaxHTLCValueInFlightMSat _ =
         Ok ()
 
-type NodeParams with
+type ChainConfig with
     member this.Validate(): Result<unit, string list> =
         Validation.ofResult(NodeParamsValidation.checkDustLimitSatoshisIsToHigh this)
         *> NodeParamsValidation.checkMaxHTLCValueInFlightMSat this

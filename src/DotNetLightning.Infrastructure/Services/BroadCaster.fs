@@ -1,4 +1,4 @@
-namespace DotnetLightning.Infrastructure
+namespace DotNetLightning.Infrastructure
 open DotNetLightning.Chain
 open DotNetLightning.Utils.Primitives
 open NBitcoin.RPC

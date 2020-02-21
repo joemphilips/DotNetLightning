@@ -10,9 +10,9 @@ open Microsoft.AspNetCore.Connections
 open Microsoft.Extensions.Logging
 
 open DotNetLightning.Utils
-open DotNetLightning.Infrastructure
+open DotNetLightning.Infrastructure.ActorManagers
 
-[<Extension>]
+[<Extension;AbstractClass;Sealed>]
 type SegmentExtensions() = 
 
     [<Extension>]
@@ -21,7 +21,7 @@ type SegmentExtensions() =
         if (this.IsEmpty) then [||] else
         this.Slice(int64 length).ToArray()
 
-type P2PConnectionHandler(peerManager: IPeerManager, logger: ILogger<P2PConnectionHandler>, serviceProvider: IServiceProvider) =
+type P2PConnectionHandler(peerManager: IPeerManager, logger: ILogger<P2PConnectionHandler>) =
     inherit ConnectionHandler()
 
     override this.OnConnectedAsync(connectionCtx: ConnectionContext) =

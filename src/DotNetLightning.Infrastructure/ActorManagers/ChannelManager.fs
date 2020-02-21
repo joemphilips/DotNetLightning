@@ -1,53 +1,58 @@
-namespace DotNetLightning.Infrastructure
+namespace DotNetLightning.Infrastructure.ActorManagers
+
+open System.Collections.Concurrent
+open System.Threading.Tasks
+
+open FSharp.Control.Tasks
+open FSharp.Control.Reactive
 
 open DotNetLightning.Utils.NBitcoinExtensions
+open DotNetLightning.Utils.Primitives
+open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Chain
 open DotNetLightning.Peer
 open DotNetLightning.Channel
 
-open Microsoft.Extensions.Logging
-open Microsoft.Extensions.Options
+open DotNetLightning.Infrastructure
+open DotNetLightning.Infrastructure.Interfaces
+open DotNetLightning.Infrastructure.Actors
 
 open CustomEventAggregator
-open DotNetLightning.Serialize.Msgs
-open DotNetLightning.Utils.Primitives
-open System.Collections.Concurrent
-open System.Threading.Tasks
-open FSharp.Control.Tasks
-open FSharp.Control.Reactive
+
+open Microsoft.Extensions.Logging
 
 type IChannelManager =
-    abstract AcceptCommandAsync: ChannelCommandWithContext -> ValueTask
+    inherit IActorManager<ChannelCommandWithContext>
     abstract KeysRepository : IKeysRepository with get
-    
+    abstract GetPendingChannels: unit -> ChannelState seq
+    abstract GetActiveChannels: unit -> ChannelState seq
+    abstract GetInactiveChannels: unit -> ChannelState seq
 
-type ChannelManager(log: ILogger<ChannelActor>,
+type ChannelManager(log: ILogger<ChannelManager>,
                     loggerProvider: ILoggerFactory,
-                    chainListener: IChainListener,
                     eventAggregator: IEventAggregator,
                     keysRepository: IKeysRepository,
-                    channelEventRepo: IChannelEventRepository,
+                    channelEventRepo: IChannelEventStream,
                     feeEstimator: IFeeEstimator,
                     fundingTxProvider: IFundingTxProvider,
-                    nodeParams: IOptions<NodeParams>) as this =
-    let _nodeParams = nodeParams.Value
+                    chainConfig: ChainConfig) as this =
+    let _chainConfig = chainConfig
     
     let _ourNodeId = keysRepository.GetNodeSecret().PubKey |> NodeId
     
     let createChannel nodeId =
-        let config = _nodeParams.GetChannelConfig()
+        let config = _chainConfig.GetChannelConfig()
         let c =
             Channel.CreateCurried
                 config
-                chainListener
                 keysRepository
                 feeEstimator
                 (keysRepository.GetNodeSecret())
                 (fundingTxProvider.ProvideFundingTx)
-                _nodeParams.ChainNetwork
+                _chainConfig.Network.NBitcoinNetwork
                 nodeId
         let logger = loggerProvider.CreateLogger(sprintf "%A" nodeId)
-        let channelActor = new ChannelActor(nodeParams, logger, eventAggregator, c, channelEventRepo, keysRepository)
+        let channelActor = new ChannelActor(chainConfig, logger, eventAggregator, c, channelEventRepo, keysRepository)
         (channelActor :> IActor<_>).StartAsync() |> ignore
         match this.Actors.TryAdd(nodeId, channelActor) with
         | true ->
@@ -96,7 +101,7 @@ type ChannelManager(log: ILogger<ChannelActor>,
     member val CurrentBlockHeight = BlockHeight.Zero with get, set
     member val RemoteInits: ConcurrentDictionary<NodeId, Init> = ConcurrentDictionary<_,_>()
     
-    member val Actors: ConcurrentDictionary<NodeId, IChannelActor> = ConcurrentDictionary<_,_>()
+    member val Actors: ConcurrentDictionary<NodeId, ChannelActor> = ConcurrentDictionary<_,_>() with get
     
     member this.OnChainEventListener e =
         let t = unitTask {
@@ -174,8 +179,8 @@ type ChannelManager(log: ILogger<ChannelActor>,
                     let channelKeys = keysRepository.GetChannelKeys(true)
                     let initFundee = { InputInitFundee.LocalParams =
                                            let channelPubKeys = channelKeys.ToChannelPubKeys()
-                                           let spk = _nodeParams.ShutdownScriptPubKey |> Option.defaultValue (keysRepository.GetShutdownPubKey().WitHash.ScriptPubKey)
-                                           _nodeParams.MakeLocalParams(_ourNodeId, channelPubKeys, spk, false, m.FundingSatoshis)
+                                           let spk = _chainConfig.ShutdownScriptPubKey |> Option.defaultValue (keysRepository.GetShutdownPubKey().WitHash.ScriptPubKey)
+                                           _chainConfig.MakeLocalParams(_ourNodeId, channelPubKeys, spk, false, m.FundingSatoshis)
                                        TemporaryChannelId = m.TemporaryChannelId
                                        RemoteInit = this.RemoteInits.[e.NodeId.Value]
                                        ToLocal = m.PushMSat
@@ -237,3 +242,26 @@ type ChannelManager(log: ILogger<ChannelActor>,
     interface IChannelManager with
         member this.AcceptCommandAsync(cmd) = this.AcceptCommandAsync(cmd)
         member val KeysRepository = keysRepository with get
+        member this.GetPendingChannels() =
+            this.Actors
+            |> Seq.choose(fun kv ->
+                              let s = kv.Value.State.State
+                              s.Phase
+                              |> function
+                                | ChannelStatePhase.Opening _ -> Some s | _ -> None)
+        member this.GetActiveChannels() =
+            this.Actors
+            |> Seq.choose(fun kv ->
+                              kv.Value.State.State
+                              |> function ChannelState.Normal _ as normalState -> Some normalState | _ -> None)
+                
+        member this.GetInactiveChannels() =
+            this.Actors
+            |> Seq.choose(fun kv ->
+                              let s = kv.Value.State.State
+                              s.Phase
+                              |> function
+                                | ChannelStatePhase.Closing _ -> Some s
+                                | ChannelStatePhase.Closed _ -> Some s
+                                | ChannelStatePhase.Abnormal _ -> Some s
+                                | _ -> None)

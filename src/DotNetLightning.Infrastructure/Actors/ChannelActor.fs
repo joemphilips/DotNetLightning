@@ -1,47 +1,41 @@
-namespace DotNetLightning.Infrastructure
+namespace DotNetLightning.Infrastructure.Actors
 
 open FSharp.Control.Tasks
 open CustomEventAggregator
 open ResultUtils
 
-open DotNetLightning.Utils
 open DotNetLightning.Chain
 open DotNetLightning.Channel
-open DotNetLightning.Channel
-open DotNetLightning.Infrastructure
 
-open DotNetLightning.Channel
-open Microsoft.Extensions.Options
+open DotNetLightning.Infrastructure
+open DotNetLightning.Infrastructure.Interfaces
+
 open Microsoft.Extensions.Logging
 
-
 /// Actor for specific channel.
-type IChannelActor = Actor<Channel, ChannelCommand, ChannelEvent, ChannelError>
-
-type ChannelActor(nodeParams: IOptions<NodeParams>,
+type ChannelActor(nodeParams: ChainConfig,
                   log: ILogger,
                   eventAggregator: IEventAggregator,
                   channel: Channel,
-                  channelEventRepo: IChannelEventRepository,
+                  channelEventRepo: IChannelEventStream,
                   keysRepository: IKeysRepository) as this =
     
     inherit Actor<Channel, ChannelCommand, ChannelEvent, ChannelError>(CreateChannelAggregate(channel), log)
-    let _nodeParams = nodeParams.Value
     
-    member val Channel = channel with get, set
+    member val ChannelState = channel
     
     override this.HandleError (b: ChannelError) = unitTask {
             match b.RecommendedAction with
             | ChannelConsumerAction.Close ->
                 let closeCMD =
-                    _nodeParams.ShutdownScriptPubKey
+                    nodeParams.ShutdownScriptPubKey
                     |> Option.defaultValue (keysRepository.GetShutdownPubKey().WitHash.ScriptPubKey)
                     |> CMDClose.Create
                     // should never return Error in here. That means nodeParams has never done validation
                     // or, keysRepository is bogus
                     |> Result.deref
                     |> ChannelCommand.Close
-                log.LogError(sprintf "Closing a channel for a node (%A) due to a following error. \n" (this.Channel.RemoteNodeId))
+                log.LogError(sprintf "Closing a channel for a node (%A) due to a following error. \n" (this.ChannelState.RemoteNodeId))
                 log.LogError((b.ToString()))
                 return! (this :> IActor<_>).Put(closeCMD)
             | Ignore ->
@@ -59,7 +53,7 @@ type ChannelActor(nodeParams: IOptions<NodeParams>,
     
     override this.PublishEvent(e) = unitTask {
             let contextEvents =
-                { ChannelEventWithContext.ChannelEvent = e; NodeId = this.Channel.RemoteNodeId }
+                { ChannelEventWithContext.ChannelEvent = e; NodeId = this.ChannelState.RemoteNodeId }
             do! channelEventRepo.SetEventsAsync([contextEvents])
             eventAggregator.Publish<ChannelEventWithContext> contextEvents
         }

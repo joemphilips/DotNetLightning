@@ -3,7 +3,7 @@
 module ObservableExtensions
 
 open System
-open DotnetLightning.Infrastructure
+open DotNetLightning.Infrastructure
 open FSharp.Control.Reactive
 open System.Reactive.Threading.Tasks
 open CustomEventAggregator

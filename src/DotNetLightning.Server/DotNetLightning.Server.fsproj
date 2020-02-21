@@ -5,10 +5,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Common.fs" />
+    <Compile Include="Controllers\ControllerUtils.fs" />
     <Compile Include="Controllers/ValuesController.fs" />
     <Compile Include="Controllers/InfoController.fs" />
     <Compile Include="P2PConnectionHandler.fs" />
-    <Compile Include="Services.fs" />
+    <Compile Include="P2PConnectionMiddleware.fs" />
     <Compile Include="Startup.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

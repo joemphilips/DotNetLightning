@@ -1,4 +1,4 @@
-namespace DotNetLightning.Infrastructure
+namespace DotNetLightning.Infrastructure.Actors
 
 open System
 open System.Threading.Tasks
@@ -6,6 +6,7 @@ open System.Threading.Channels
 open FSharp.Control.Tasks
 
 open DotNetLightning.Utils
+open DotNetLightning.Infrastructure
 open Microsoft.Extensions.Logging
     
 type IActor<'TCommand> =

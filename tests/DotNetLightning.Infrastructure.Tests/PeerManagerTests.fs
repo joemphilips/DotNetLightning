@@ -13,6 +13,8 @@ open System.IO.Pipelines
 open System.Net
 open Microsoft.Extensions.Options
 
+open DotNetLightning.Infrastructure.ActorManagers
+open DotNetLightning.Infrastructure.Interfaces
 open System
 open System.Threading.Tasks
 open DotNetLightning.Utils.Aether
@@ -39,8 +41,8 @@ let broadCasterMock = Mock<IBroadCaster>().Create()
 
 let chainWatcherMock = Mock<IChainWatcher>().Create()
 
-let aliceNodeParams = Options.Create<NodeParams>(TestConstants.getAliceParam().NodeParams)
-let bobNodeParams = Options.Create<NodeParams>(TestConstants.getBobParam().NodeParams)
+let aliceNodeParams = Options.Create<ChainConfig>(TestConstants.getAliceParam().NodeParams)
+let bobNodeParams = Options.Create<ChainConfig>(TestConstants.getBobParam().NodeParams)
 
 
 let createPipe() =
@@ -68,7 +70,7 @@ let tests = testList "PeerManagerTests" [
                                     TestLogger.create(ConsoleColor.White),
                                     getTestLoggerFactory(),
                                     keysRepoMock,
-                                    aliceNodeParams,
+                                    aliceNodeParams.Value,
                                     chainWatcherMock,
                                     broadCasterMock)
       do! peerManager.NewOutBoundConnection(theirNodeId, theirPeerId, dPipe.Output, ie).AsTask()
@@ -102,7 +104,7 @@ let tests = testList "PeerManagerTests" [
                                      TestLogger.create(ConsoleColor.White),
                                      getTestLoggerFactory(),
                                      keyRepoMock,
-                                     aliceNodeParams,
+                                     aliceNodeParams.Value,
                                      chainWatcherMock,
                                      broadCasterMock)
 
@@ -146,7 +148,7 @@ let tests = testList "PeerManagerTests" [
                                      TestLogger.create(ConsoleColor.Red),
                                      getTestLoggerFactory(),
                                      keysRepoMock,
-                                     aliceNodeParams,
+                                     aliceNodeParams.Value,
                                      chainWatcherMock,
                                      broadCasterMock)
                     CM = Mock<IChannelManager>().Create()
@@ -165,7 +167,7 @@ let tests = testList "PeerManagerTests" [
                                    TestLogger.create(ConsoleColor.Blue),
                                    getTestLoggerFactory(),
                                    keyRepoBob,
-                                   Options.Create<NodeParams>(new NodeParams()),
+                                   new ChainConfig(),
                                    chainWatcherMock,
                                    broadCasterMock)
                   CM = Mock<IChannelManager>().Create()

@@ -1,7 +1,6 @@
 ﻿namespace DotNetLightning.TestFramework
 
 open BTCPayServer.Lightning
-open BTCPayServer.Lightning.LND
 open FSharp.Control.Tasks
 open System
 open System.Linq

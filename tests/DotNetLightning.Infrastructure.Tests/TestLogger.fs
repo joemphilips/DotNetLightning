@@ -3,7 +3,7 @@ module TestLogger
 
 open System
 open Expecto
-open DotnetLightning.Infrastructure.PrimitiveExtensions
+open DotNetLightning.Infrastructure.PrimitiveExtensions
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Logging.Abstractions
 

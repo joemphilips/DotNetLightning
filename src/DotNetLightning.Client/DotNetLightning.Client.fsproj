@@ -1,13 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
         <TargetFramework>netcoreapp3.1</TargetFramework>
+        <RootNamespace>DotnetLightning.Client</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="Client.fs" />
         <Compile Include="Common.fs" />
+        <Compile Include="ILightningClient.fs" />
+        <Compile Include="Client.fs" />
         <Compile Include="CLightning\DTO.fs" />
         <Compile Include="CLightning\Error.fs" />
         <Compile Include="CLightning/Client.fs" />
@@ -15,6 +16,7 @@
         <Compile Include="Eclair/DTOs.fs" />
         <Compile Include="Eclair/EclairAPI.fs" />
         <Compile Include="Eclair/Client.fs" />
+        <Compile Include="LightningClient.fs" />
     </ItemGroup>
 
     <ItemGroup>
@@ -23,5 +25,4 @@
       <ProjectReference Include="..\TaskUtils\TaskUtils.fsproj" />
       <ProjectReference Include="..\FSharp.SystemTextJson\FSharp.SystemTextJson.fsproj" />
     </ItemGroup>
-
 </Project>
