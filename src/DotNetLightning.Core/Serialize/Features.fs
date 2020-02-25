@@ -121,7 +121,6 @@ module internal Feature =
         |> Seq.exists(fun i -> reversed.[i] && not <| supportedMandatoryFeatures.Contains(i))
         |> not
         
-        
 type FeatureBit private (v: byte[], bitArray) =
     member val BitArray = bitArray with get, set
     member val Value = v with get, set

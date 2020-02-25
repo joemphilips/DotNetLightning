@@ -741,7 +741,7 @@ module SerializationTest =
                 Expect.isTrue (Feature.hasFeature("0b0000001000000000" |> BitArray.Parse) (Feature.VariableLengthOnion) (Some(Optional))) ""
                 ()
                 
-            ftestProperty "BitArray serialization" <| fun (ba : NonNull<byte[]>) ->
+            testProperty "BitArray serialization" <| fun (ba : NonNull<byte[]>) ->
                 Expect.sequenceEqual (BitArray.FromBytes(ba.Get).ToByteArray()) (ba.Get) ""
                 
             testCase "features dependencies" <| fun _ ->
