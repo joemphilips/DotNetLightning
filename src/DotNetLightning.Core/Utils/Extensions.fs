@@ -29,8 +29,8 @@ type System.Byte
         ((a &&& 0x1uy)  <<< 7) ||| ((a &&& 0x2uy)  <<< 5) |||
         ((a &&& 0x4uy)  <<< 3) ||| ((a &&& 0x8uy)  <<< 1) |||
         ((a &&& 0x10uy) >>> 1) ||| ((a &&& 0x20uy) >>> 3) |||
-        ((a &&& 0x40uy) >>> 5) ||| ((a &&& 0x80uy) >>> 7);
-
+        ((a &&& 0x40uy) >>> 5) ||| ((a &&& 0x80uy) >>> 7)
+        
 type System.Collections.BitArray with
     member this.ToByteArray() =
         if this.Length = 0 then [||] else

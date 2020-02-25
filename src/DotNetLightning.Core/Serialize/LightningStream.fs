@@ -1,5 +1,6 @@
 namespace DotNetLightning.Serialize
 
+open DotNetLightning.Core.Utils
 open System
 open System.IO
 open DotNetLightning.Utils
@@ -166,6 +167,15 @@ type LightningWriterStream(inner: Stream) =
         else
             this.Write(0xffuy)
             this.Write(x, false)
+            
+    member this.WriteTLV(tlv: GenericTLV) =
+        this.WriteBigSize(tlv.Type)
+        this.WriteBigSize(uint64 tlv.Value.LongLength)
+        this.Write(tlv.Value)
+        
+    member this.WriteTLVStream(tlvs: #seq<GenericTLV>) =
+        tlvs |> Seq.iter(fun tlv -> this.WriteTLV(tlv))
+        
 type LightningReaderStream(inner: Stream) =
     inherit LightningStream(inner)
     do if (not inner.CanRead) then invalidArg "inner" "inner stream must be readable"
@@ -177,7 +187,6 @@ type LightningReaderStream(inner: Stream) =
 
     member this.ReadAll(): byte[] =
         this.ReadBytes(int32 this.Length - int32 this.Position)
-        // if (this.Length)  t
 
     member this.TryReadAll(): byte[] option =
         if (this.Length > this.Position) then
@@ -358,4 +367,18 @@ type LightningReaderStream(inner: Stream) =
                 raise <| FormatException("decoded varint is not canonical")
             v
                 
+     member this.ReadTLV() =
+         let ty = this.ReadBigSize()
+         let length = this.ReadBigSize()
+         let value = this.ReadBytes(int32 length)
+         { GenericTLV.Type = ty; Value = value }
+         
+     member this.ReadTLVStream() =
+         let mutable rest = int32 this.Length - int32 this.Position
+         let result = ResizeArray<GenericTLV>()
+         while rest > 0 do
+             result.Add(this.ReadTLV())
+             rest <- int32 this.Length - int32 this.Position
+         result |> Seq.toArray
+         
         

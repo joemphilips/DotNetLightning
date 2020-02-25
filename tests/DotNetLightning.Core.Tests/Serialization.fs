@@ -849,4 +849,29 @@ module SerializationTest =
                 |> Map.iter(fun testCase expected ->
                     Expect.equal (Feature.areSupported(testCase |> BitArray.Parse)) expected ""
                     )
+                
+                let testCases =
+                    Map.empty
+                    |> Map.add "            00000000000000001011"  true
+                    |> Map.add "            00010000100001000000" true
+                    |> Map.add "            00100000100000100000" true
+                    |> Map.add "            00010100000000001000" true
+                    |> Map.add "            00011000001000000000" true
+                    |> Map.add "            00101000000000000000" true
+                    |> Map.add "            00000000010001000000" true
+                    // unknown optional feature bits
+                    |> Map.add "            10000000000000000000" true
+                    |> Map.add "        001000000000000000000000" true
+                    // those are useful for nonreg testing of the areSupported method (which needs to be updated with every new supported mandatory bit)
+                    |> Map.add "        000001000000000000000000" false
+                    |> Map.add "        000100000000000000000000" false
+                    |> Map.add "        010000000000000000000000" false
+                    |> Map.add "    0001000000000000000000000000" false
+                    |> Map.add "    0100000000000000000000000000" false
+                    |> Map.add "00010000000000000000000000000000" false
+                    |> Map.add "01000000000000000000000000000000" false
+                testCases
+                |> Map.iter(fun testCase expected ->
+                    Expect.equal (Feature.areSupported(testCase |> BitArray.FromByteArray)) expected ""
+                    )
         ]
