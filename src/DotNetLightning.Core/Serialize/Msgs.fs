@@ -353,7 +353,7 @@ module rec Msgs =
     [<CLIMutable>]
     type Init =
         {
-            mutable Features: byte[]
+            mutable Features: BitArray
             mutable TLVStream: InitTLV array
         }
         with
@@ -363,13 +363,13 @@ module rec Msgs =
                     // For backwards compatibility reason, we must consider legacy `global features` section. (see bolt 1)
                     let globalFeatures = ls.ReadWithLen()
                     let localFeatures = ls.ReadWithLen()
-                    this.Features <- Array.concat [globalFeatures; localFeatures]
+                    this.Features <- Array.concat [globalFeatures; localFeatures] |> BitArray.FromBytes
                     this.TLVStream <- ls.ReadTLVStream() |> Array.map(InitTLV.FromGenericTLV)
                 member this.Serialize(ls) =
                     // For backwards compatibility reason, we must consider legacy `global features` section. (see bolt 1)
                     let g: byte[] = [||]
                     ls.WriteWithLen(g)
-                    ls.WriteWithLen(this.Features)
+                    ls.WriteWithLen(this.Features.ToByteArray())
                     ls.WriteTLVStream(this.TLVStream |> Array.map(fun tlv -> tlv.ToGenericTLV()))
 
     [<CLIMutable>]
@@ -1002,7 +1002,7 @@ module rec Msgs =
 
     [<CLIMutable>]
     type UnsignedChannelAnnouncement = {
-        mutable Features: byte[]
+        mutable Features: BitArray
         mutable ChainHash: uint256
         mutable ShortChannelId: ShortChannelId
         mutable NodeId1: NodeId
@@ -1015,9 +1015,9 @@ module rec Msgs =
         interface ILightningSerializable<UnsignedChannelAnnouncement> with
             member this.Deserialize(ls) =
                 this.Features <-
-                    let g = ls.ReadWithLen() |> BitArray.FromInt64
-                    if g.RequiresUnknownBits() then
-                        raise <| UnknownRequiredFeatureException(sprintf "Channel Annoucement contains Unknown requied feature %A" g)
+                    let g = ls.ReadWithLen() |> BitArray.FromBytes
+                    if Feature.areSupported(g) then
+                        raise <| UnknownRequiredFeatureException(sprintf "Channel Annoucement contains Unknown requied feature %A" (g.PrintBits()))
                     else
                         g
                 this.ChainHash <- ls.ReadUInt256(false)
