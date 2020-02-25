@@ -60,27 +60,26 @@ module Graph =
     let private toContext (v: 'Vertex) (mc: MContext<'Vertex, 'Label, 'Edge>) : Context<'Vertex, 'Label, 'Edge> =
         mc |> fun (p, l, s) -> toAdj p, v, l, toAdj s
 
-    let private composeGraph c v p s (g: Graph<'Vertex, 'Label, 'Edge>) =
+    let private composeGraph (c: Context<_,_,_>) v p s (g: Graph<'Vertex, 'Label, 'Edge>) =
         let g1 = (Optic.set (Map.value_ v) (Some (fromContext c))) g
         let g2 =
-            List.fold(fun g (v, e) ->
-                let composedPrism = (Compose.prism (Map.key_ v) Lenses.msucc_)
-                let adjListMapping = Map.add v e
+            List.fold(fun g (value, edge) ->
+                let composedPrism = (Compose.prism (Map.key_ value) Lenses.msucc_)
+                let adjListMapping = Map.add value edge
                 let adjListInGraphMapping = Optic.map composedPrism adjListMapping
                 adjListInGraphMapping g)
                 g1 p
-        List.fold(fun g (e, v) ->
-                let composedPrism = (Compose.prism (Map.key_ v) Lenses.mpred_)
-                let adjListMapping = Map.add v e
+        List.fold(fun g (edge, value) ->
+                let composedPrism = (Compose.prism (Map.key_ value) Lenses.mpred_)
+                let adjListMapping = Map.add value edge
                 let adjListInGraphMapping = Optic.map composedPrism adjListMapping
                 adjListInGraphMapping g)
                 g2 s
 
-    let private compose c g =
+    let compose c g: Graph<'a,'b,'c> =
         composeGraph c (Optic.get Lenses.val_ c) (Optic.get Lenses.pred_ c) (Optic.get Lenses.succ_ c) g
 
     (* Decompose graphs *)
-
     let private decomposeContext v c : Context<'Vertex, 'Label, 'Edge> =
         c
         |> Optic.map Lenses.mpred_ (Map.remove v)

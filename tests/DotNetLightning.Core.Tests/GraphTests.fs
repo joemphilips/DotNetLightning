@@ -8,6 +8,7 @@ open DotNetLightning.Serialize.Msgs
 open NBitcoin
 open Expecto
 open NBitcoin.DataEncoders
+open DotNetLightning.FGL
 
 let hex = Encoders.Hex
 
@@ -81,9 +82,29 @@ let makeTestGraph() =
     ]
     failwith ""
 
+let genUNodes n =
+    Seq.zip [1..n] (Seq.initInfinite (fun _ -> ()))
+let genLNodes<'T, 'a when 'T :> seq<'a>>(q: 'a) (i: int) =
+    let rec loop xs =
+        seq { yield! xs; yield! loop xs }
+    Seq.zip (loop [1]) (loop [q]) |>  Seq.take i
+    
+// denote unlabeled edges
+let labUEdges: Edge<int> seq -> LEdge<int, unit> seq =
+    Seq.map (fun (i, j) -> (i, j, ()))
+
+let noEdges: LEdge<int, unit> seq = Seq.empty
+
+let a: Graph<int, char, _> =
+    Graph.compose ([], 1, 'a', []) (Graph.empty)
+    
+let b =
+    Graph.empty
+    |> Undirected.Vertices.add()
+
 [<Tests>]
 let graphTests =
     testList "GraphTests" [
-        testCase "from eclair" <| fun _ ->
-            ()
+        testCase "examples" <| fun _ ->
+            failwith ""
     ]

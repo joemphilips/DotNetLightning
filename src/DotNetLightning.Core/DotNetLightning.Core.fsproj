@@ -80,6 +80,7 @@
     <Compile Include="Payment\PaymentEvents.fs" />
     <Compile Include="Payment\Amount.fs" />
     <Compile Include="Payment\PaymentRequest.fs" />
+    <Compile Include="Routing\Announcements.fs" />
     <Compile Include="Routing\Graph.fs" />
     <Compile Include="Routing/Router.fs" />
   </ItemGroup>
