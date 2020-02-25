@@ -23,7 +23,14 @@ type System.UInt16 with
     member this.GetBytesBigEndian() =
         let d = BitConverter.GetBytes(this)
         if BitConverter.IsLittleEndian then (d |> Array.rev) else d
-    
+type System.Byte
+    with
+    member a.FlipBit() =
+        ((a &&& 0x1uy)  <<< 7) ||| ((a &&& 0x2uy)  <<< 5) |||
+        ((a &&& 0x4uy)  <<< 3) ||| ((a &&& 0x8uy)  <<< 1) |||
+        ((a &&& 0x10uy) >>> 1) ||| ((a &&& 0x20uy) >>> 3) |||
+        ((a &&& 0x40uy) >>> 5) ||| ((a &&& 0x80uy) >>> 7);
+
 type System.Collections.BitArray with
     member this.ToByteArray() =
         let ret: byte[] = Array.zeroCreate (((this.Length - 1) / 8) + 1)
@@ -65,6 +72,11 @@ type System.Collections.BitArray with
             array.[i] <- (v &&& 1L) = 1L
             v <- v >>> 1
         BitArray(array |> Array.rev)
+        
+    /// This flips bits for each byte before passing to the BitArray constructor.
+    /// This is necessary for representing bolt 9 feature bits as BitArray
+    static member FromBytes(ba: byte[]) =
+        ba |> Array.map(fun b -> b.FlipBit()) |> BitArray
         
     static member Parse(str: string) =
         let mutable str = str.Trim().Clone() :?> string

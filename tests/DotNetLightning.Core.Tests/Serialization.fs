@@ -771,6 +771,36 @@ module SerializationTest =
                         Expect.isError(result) ""
                     )
                 
+                let testCases =
+                    Map.empty
+                    |> Map.add [||] true
+                    |> Map.add [|                            0b00000000uy |] true
+                    |> Map.add [|                            0b01011000uy |] true
+                    // gossip_queries_ex depend on gossip_queries
+                    |> Map.add [|0b00000000uy; 0b00001000uy; 0b00000000uy |] false
+                    |> Map.add [|0b00000000uy; 0b00000100uy; 0b00000000uy |] false
+                    |> Map.add [|0b00000010uy; 0b01000001uy; 0b00000000uy |] true
+                    |> Map.add [|0b00000000uy; 0b00001000uy; 0b10000000uy |] true
+                    |> Map.add [|0b00000000uy; 0b10000000uy; 0b00000000uy |] true
+                    |> Map.add [|0b00000000uy; 0b01000000uy; 0b00000000uy |] true
+                    |> Map.add [|0b00000000uy; 0b01000010uy; 0b00000000uy |] true
+                    // basic_mpp depends on payment_secret
+                    |> Map.add [|0b00000010uy; 0b00000000uy; 0b00000000uy |] false
+                    |> Map.add [|0b00000001uy; 0b00000000uy; 0b00000000uy |] false
+                    |> Map.add [|0b00000010uy; 0b10000000uy; 0b00000000uy |] true // we allow not setting var_onion_optin
+                    |> Map.add [|0b00000001uy; 0b10000000uy; 0b00000000uy |] true // we allow not setting var_onion_optin
+                    |> Map.add [|0b00000001uy; 0b10000010uy; 0b00000000uy |] true
+                    |> Map.add [|0b00000010uy; 0b01000001uy; 0b00000000uy |] true
+                     
+                testCases
+                |> Map.iter(fun testCase valid ->
+                    let result = Feature.validateFeatureGraph (testCase |> BitArray.FromBytes)
+                    if valid then
+                        Expect.isOk(result) ""
+                    else
+                        Expect.isError(result) ""
+                    )
+                
             testCase "features compatibility" <| fun _ ->
                 let testCases =
                     [
