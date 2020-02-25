@@ -33,9 +33,12 @@ type System.Byte
 
 type System.Collections.BitArray with
     member this.ToByteArray() =
+        if this.Length = 0 then [||] else
         let ret: byte[] = Array.zeroCreate (((this.Length - 1) / 8) + 1)
-        this.CopyTo(ret, 0)
-        ret
+        let boolArray: bool[] = this.Reverse()
+        let t = BitArray(boolArray)
+        t.CopyTo(ret, 0)
+        ret |> Array.rev
         
     static member From5BitEncoding(b: byte[]) =
         let bitArray = System.Collections.BitArray(b.Length * 5)

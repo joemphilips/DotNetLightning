@@ -9,6 +9,7 @@ open NBitcoin
 open System
 open System.Collections
 open DotNetLightning.Core.Utils.Extensions
+open FsCheck
 
 module SerializationTest =
 
@@ -739,6 +740,9 @@ module SerializationTest =
                 Expect.isTrue (Feature.hasFeature("0b0000001000000000" |> BitArray.Parse) (Feature.VariableLengthOnion) (None)) ""
                 Expect.isTrue (Feature.hasFeature("0b0000001000000000" |> BitArray.Parse) (Feature.VariableLengthOnion) (Some(Optional))) ""
                 ()
+                
+            ftestProperty "BitArray serialization" <| fun (ba : NonNull<byte[]>) ->
+                Expect.sequenceEqual (BitArray.FromBytes(ba.Get).ToByteArray()) (ba.Get) ""
                 
             testCase "features dependencies" <| fun _ ->
                 let testCases =
