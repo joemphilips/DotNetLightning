@@ -1,20 +1,26 @@
 module Serialization
 
+open ResultUtils
 open DotNetLightning.Utils
+open DotNetLightning.Core.Utils.Extensions
 open DotNetLightning.Serialize.Msgs
 
-open DotNetLightning.Core.Serialize
+open DotNetLightning.Serialize
 open Expecto
 open NBitcoin
 open System
 open System.Collections
-open DotNetLightning.Core.Utils.Extensions
 open FsCheck
 
 module SerializationTest =
 
     open Utils
     /// helper for more clean error message
+    
+    let parseBitArray (str: string) =
+        match BitArray.TryParse str with
+        | Ok ba -> ba
+        | Error e -> failwith e
 
     let hex = NBitcoin.DataEncoders.HexEncoder()
     let base64 = NBitcoin.DataEncoders.Base64Encoder()
@@ -42,7 +48,7 @@ module SerializationTest =
                 let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
                 let msg = { NodeAnnouncement.Signature = sig1
                             Contents = { UnsignedNodeAnnouncement.NodeId = NodeId(PubKey("03f3c15dbc4d425a4f4c36162a9159bb83511fa920dba1cc2785c434ecaf094015"))
-                                         Features = GlobalFeatures.Flags ([|0uy|])
+                                         Features = FeatureBit.CreateUnsafe([|0uy|])
                                          Timestamp = 1u
                                          RGB = { Red = 217uy; Green = 228uy; Blue = 166uy }
                                          Alias = uint256.Zero
@@ -101,14 +107,12 @@ module SerializationTest =
                 CheckArrayEqual (actual.ToBytes()) expected
 
             testCase "channel_announcement" <| fun _ ->
-                let channelAnnouncementTestCore (unknownFeatureBits: bool, nonbitcoinChainHash: bool, excessData: bool) = 
+                let channelAnnouncementTestCore (nonbitcoinChainHash: bool, excessData: bool) = 
                     let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
                     let sig2 = signMessageWith privKey2 "01010101010101010101010101010101"
                     let sig3 = signMessageWith privKey3 "01010101010101010101010101010101"
                     let sig4 = signMessageWith privKey4 "01010101010101010101010101010101"
-                    let mutable features = Flags([||])
-                    if (unknownFeatureBits) then
-                        features <- Flags([| 0xFFuy; 0xFFuy |])
+                    let mutable features = FeatureBit.CreateUnsafe([||])
 
                     let unsignedChannelAnnoucement = {
                         Features = features
@@ -129,10 +133,7 @@ module SerializationTest =
                                               }
 
                     let mutable expected = hex.DecodeData("d977cb9b53d93a6ff64bb5f1e158b4094b66e798fb12911168a3ccdf80a83096340a6a95da0ae8d9f776528eecdbb747eb6b545495a4319ed5378e35b21e073a1735b6a427e80d5fe7cd90a2f4ee08dc9c27cda7c35a4172e5d85b12c49d4232537e98f9b1f3c5e6989a8b9644e90e8918127680dbd0d4043510840fc0f1e11a216c280b5395a2546e7e4b2663e04f811622f15a4f91e83aa2e92ba2a573c139142c54ae63072a1ec1ee7dc0c04bde5c847806172aa05c92c22ae8e308d1d2692b12cc195ce0a2d1bda6a88befa19fa07f51caa75ce83837f28965600b8aacab0855ffb0e741ec5f7c41421e9829a9d48611c8c831f71be5ea73e66594977ffd")
-                    if (unknownFeatureBits) then
-                        expected <- Array.append expected (hex.DecodeData("0002ffff"))
-                    else
-                        expected <- Array.append expected (hex.DecodeData("0000"))
+                    expected <- Array.append expected (hex.DecodeData("0000"))
                     if nonbitcoinChainHash then
                         expected <- Array.append expected (hex.DecodeData("43497fd7f826957108f4a30fd9cec3aeba79972084e90ead01ea330900000000"))
                     else
@@ -142,20 +143,18 @@ module SerializationTest =
                         expected <- Array.append expected (hex.DecodeData("0a00001400001e000028"))
                     Expect.equal (channelAnnouncement.ToBytes().[300..]) expected.[300..] "mismatch in postfix"
                     Expect.equal (channelAnnouncement.ToBytes()) expected ""
-                channelAnnouncementTestCore (false, false, false)
-                channelAnnouncementTestCore (true, false, false)
-                channelAnnouncementTestCore (true, true, false)
-                channelAnnouncementTestCore (true, true, true)
-                channelAnnouncementTestCore (false, true, true)
-                channelAnnouncementTestCore (false, false, true)
-                channelAnnouncementTestCore (false, true, false)
-                channelAnnouncementTestCore (true, false, true)
+                channelAnnouncementTestCore (false, false)
+                channelAnnouncementTestCore (false, false)
+                channelAnnouncementTestCore (true, false)
+                channelAnnouncementTestCore (true, true)
+                channelAnnouncementTestCore (true, true)
+                channelAnnouncementTestCore (false, true)
+                channelAnnouncementTestCore (true, false)
+                channelAnnouncementTestCore (false, true)
             testCase "node_announcement" <| fun _ ->
-                let nodeAnnouncementTestCore(unknownFeatureBits: bool, ipv4: bool, ipv6: bool, onionv2: bool, onionv3: bool, excessAddressData: bool, excessData: bool) =
+                let nodeAnnouncementTestCore(ipv4: bool, ipv6: bool, onionv2: bool, onionv3: bool, excessAddressData: bool, excessData: bool) =
                     let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
-                    let mutable features = GlobalFeatures.Flags [||]
-                    if unknownFeatureBits then
-                        features <- Flags [| 0xFFuy; 0xFFuy |]
+                    let mutable features = FeatureBit.CreateUnsafe [||]
                     let mutable addresses = List.Empty
                     if ipv4 then
                         addresses <- addresses @ [NetAddress.IPv4 ({ IPv4Or6Data.Addr = [|255uy;254uy; 253uy; 252uy; |]
@@ -379,10 +378,7 @@ module SerializationTest =
 
                     let actual = nodeAnnouncement.ToBytes()
                     let mutable expected = hex.DecodeData("d977cb9b53d93a6ff64bb5f1e158b4094b66e798fb12911168a3ccdf80a83096340a6a95da0ae8d9f776528eecdbb747eb6b545495a4319ed5378e35b21e073a")
-                    if unknownFeatureBits then
-                        expected <- Array.append expected (hex.DecodeData("0002ffff"))
-                    else
-                        expected <- Array.append expected (hex.DecodeData("0000"))
+                    expected <- Array.append expected (hex.DecodeData("0000"))
                     expected <- Array.append expected (hex.DecodeData("013413a7031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f2020201010101010101010101010101010101010101010101010101010101010101010"))
                     expected <- Array.append expected ([| byte(addrLen >>> 8); byte addrLen |])
                     if ipv4 then
@@ -400,15 +396,15 @@ module SerializationTest =
                     // CheckArrayEqual actual expected
                     Expect.sequenceContainsOrder actual expected ""
                     Expect.equal actual expected ""
-                nodeAnnouncementTestCore(true, true, true, true, true, true, true)
-                nodeAnnouncementTestCore(false, false, false, false, false, false, false)
-                nodeAnnouncementTestCore(false, true, false, false, false, false, false)
-                nodeAnnouncementTestCore(false, false, true, false, false, false, false)
-                nodeAnnouncementTestCore(false, false, false, true, false, false, false)
-                nodeAnnouncementTestCore(false, false, false, false, true, false, false)
-                nodeAnnouncementTestCore(false, false, false, false, false, true, false)
-                nodeAnnouncementTestCore(false, true, false, true, false, true, false)
-                nodeAnnouncementTestCore(false, false, true, false, true, false, false)
+                nodeAnnouncementTestCore(true, true, true, true, true, true)
+                nodeAnnouncementTestCore(false, false, false, false, false, false)
+                nodeAnnouncementTestCore(true, false, false, false, false, false)
+                nodeAnnouncementTestCore(false, true, false, false, false, false)
+                nodeAnnouncementTestCore(false, false, true, false, false, false)
+                nodeAnnouncementTestCore(false, false, false, true, false, false)
+                nodeAnnouncementTestCore(false, false, false, false, true, false)
+                nodeAnnouncementTestCore(true, false, true, false, true, false)
+                nodeAnnouncementTestCore(false, true, false, true, false, false)
             testCase "channel_update msg" <| fun _ ->
                 let channelUpdateTestCore (nonBitcoinChainHash: bool, direction: bool, disable: bool, htlcMaximumMSat: bool) =
                     let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
@@ -667,31 +663,26 @@ module SerializationTest =
                 Expect.equal (updateFee.ToBytes()) expected ""
 
             testCase "init" <| fun _ ->
-                let initTestCore (unknownGlobalBits: bool, initialRoutingSync: bool) =
-                    let flags = if unknownGlobalBits then [| 0xffuy; 0xffuy |] else [||]
-                    let globalFeatures = GlobalFeatures.Flags(flags)
-                    let mutable localFeatures = LocalFeatures.Flags([||])
-                    if initialRoutingSync then
-                        localFeatures <- localFeatures.SetInitialRoutingSync()
+                let initTestCore (initialRoutingSync: bool) =
+                    let flags = [||]
+                    let globalFeatures = flags |> BitArray.FromBytes
+                    let localFeatures =
+                        if initialRoutingSync then "0b1000" |> BitArray.TryParse else BitArray.TryParse("")
+                        |> function Ok ba -> ba | Error e -> failwith e
 
                     let init = {
-                        GlobalFeatures = globalFeatures
-                        LocalFeatures = localFeatures
+                        Features = [| globalFeatures; localFeatures |] |> BitArray.Concat |> FeatureBit.CreateUnsafe
+                        TLVStream = [||]
                     }
                     let mutable expected = [||]
-                    if unknownGlobalBits then
-                        expected <- Array.append expected (hex.DecodeData("0002ffff"))
-                    else
-                        expected <- Array.append expected (hex.DecodeData("0000"))
+                    expected <- Array.append expected (hex.DecodeData("0000"))
                     if initialRoutingSync then
                         expected <- Array.append expected (hex.DecodeData("000108"))
                     else
                         expected <- Array.append expected (hex.DecodeData("0000"))
                     Expect.equal (init.ToBytes()) (expected) ""
-                initTestCore(false, false)
-                initTestCore(true, false)
-                initTestCore(false, true)
-                initTestCore(true, true)
+                initTestCore(false)
+                initTestCore(true)
 
             testCase "error" <| fun _ ->
                 let err = {
@@ -721,24 +712,24 @@ module SerializationTest =
     let testFeaturesSerialization =
         testList "Features serialization" [
             testCase "initial_routing_sync" <| fun _ ->
-                Expect.isTrue (Feature.hasFeature(BitArray.Parse"0b00001000") (Feature.InitialRoutingSync) (Some Optional)) ""
-                Expect.isFalse(Feature.hasFeature(BitArray.Parse"0b00001000") (Feature.InitialRoutingSync) (Some Mandatory)) ""
+                Expect.isTrue (Feature.hasFeature(parseBitArray"0b00001000") (Feature.InitialRoutingSync) (Some Optional)) ""
+                Expect.isFalse(Feature.hasFeature(parseBitArray"0b00001000") (Feature.InitialRoutingSync) (Some Mandatory)) ""
                 
             testCase "data_loss_protect" <| fun _ ->
-                Expect.isTrue (Feature.hasFeature(BitArray.Parse"0b00000001") (Feature.OptionDataLossProtect) (Some Mandatory)) ""
-                Expect.isTrue (Feature.hasFeature(BitArray.Parse"0b00000010") (Feature.OptionDataLossProtect) (Some Optional)) ""
+                Expect.isTrue (Feature.hasFeature(parseBitArray"0b00000001") (Feature.OptionDataLossProtect) (Some Mandatory)) ""
+                Expect.isTrue (Feature.hasFeature(parseBitArray"0b00000010") (Feature.OptionDataLossProtect) (Some Optional)) ""
                 
             testCase "initial_routing_sync, data_loss_protect and variable_length_onion features" <| fun _ ->
-                let features = BitArray.Parse("0000000100001010")
+                let features = parseBitArray("0000000100001010")
                 Expect.isTrue (Feature.areSupported(features)) ""
                 Expect.isTrue (Feature.hasFeature(features) (Feature.OptionDataLossProtect) (None)) ""
                 Expect.isTrue (Feature.hasFeature(features) (Feature.VariableLengthOnion) (None)) ""
                 
             testCase "variable_length_onion feature" <| fun _ ->
-                Expect.isTrue (Feature.hasFeature("0b0000000100000000" |> BitArray.Parse) (Feature.VariableLengthOnion) (None)) ""
-                Expect.isTrue (Feature.hasFeature("0b0000000100000000" |> BitArray.Parse) (Feature.VariableLengthOnion) (Some(Mandatory))) ""
-                Expect.isTrue (Feature.hasFeature("0b0000001000000000" |> BitArray.Parse) (Feature.VariableLengthOnion) (None)) ""
-                Expect.isTrue (Feature.hasFeature("0b0000001000000000" |> BitArray.Parse) (Feature.VariableLengthOnion) (Some(Optional))) ""
+                Expect.isTrue (Feature.hasFeature("0b0000000100000000" |> parseBitArray) (Feature.VariableLengthOnion) (None)) ""
+                Expect.isTrue (Feature.hasFeature("0b0000000100000000" |> parseBitArray) (Feature.VariableLengthOnion) (Some(Mandatory))) ""
+                Expect.isTrue (Feature.hasFeature("0b0000001000000000" |> parseBitArray) (Feature.VariableLengthOnion) (None)) ""
+                Expect.isTrue (Feature.hasFeature("0b0000001000000000" |> parseBitArray) (Feature.VariableLengthOnion) (Some(Optional))) ""
                 ()
                 
             testProperty "BitArray serialization" <| fun (ba : NonNull<byte[]>) ->
@@ -768,7 +759,8 @@ module SerializationTest =
                      
                 testCases
                 |> Map.iter(fun testCase valid ->
-                    let result = Feature.validateFeatureGraph (testCase |> BitArray.Parse)
+                    let ba = testCase |> parseBitArray
+                    let result = Feature.validateFeatureGraph (ba)
                     if valid then
                         Expect.isOk(result) ""
                     else
@@ -847,7 +839,7 @@ module SerializationTest =
                     |> Map.add "01000000000000000000000000000000" false
                 testCases
                 |> Map.iter(fun testCase expected ->
-                    Expect.equal (Feature.areSupported(testCase |> BitArray.Parse)) expected ""
+                    Expect.equal (Feature.areSupported(testCase |> parseBitArray)) expected ""
                     )
                 
                 let testCases =
@@ -872,6 +864,6 @@ module SerializationTest =
                     |> Map.add "01000000000000000000000000000000" false
                 testCases
                 |> Map.iter(fun testCase expected ->
-                    Expect.equal (Feature.areSupported(testCase |> BitArray.FromByteArray)) expected ""
+                    Expect.equal (Feature.areSupported(testCase |> parseBitArray)) expected ""
                     )
         ]

@@ -41,7 +41,7 @@ module private ActorManagerFactory =
                 let loggerProvider = sp.GetRequiredService<ILoggerFactory>()
                 let keyRepo = sp.GetRequiredService<IKeysRepository>()
                 let broadCaster = sp.GetRequiredService<IBroadCaster>()
-                PeerManager(ea, logger, loggerProvider, keyRepo, conf, watcher, broadCaster)
+                PeerManager(ea, logger, loggerProvider, keyRepo, conf, watcher, broadCaster, network)
             )
         )
         

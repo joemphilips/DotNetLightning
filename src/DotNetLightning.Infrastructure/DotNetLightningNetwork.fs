@@ -11,6 +11,8 @@ type DotNetLightningNetwork(nType: NetworkType, nSet: INetworkSet) =
     member val DefaultSettings = DotNetLightningDefaultSettings.getSettings(nType)
     member val NetworkType = nType
     
+    member this.ChainHash =
+        this.NBitcoinNetwork.Consensus.HashGenesisBlock
     new () = DotNetLightningNetwork(Network.Main.NetworkType, Bitcoin.Instance)
     
     override this.ToString() =

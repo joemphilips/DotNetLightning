@@ -45,7 +45,8 @@ type PeerManager(eventAggregator: IEventAggregator,
                  keyRepo: IKeysRepository,
                  nodeParams: ChainConfig,
                  chainWatcher: IChainWatcher,
-                 broadCaster: IBroadCaster
+                 broadCaster: IBroadCaster,
+                 network: DotNetLightningNetwork
                  ) as this =
     
     let nodeParamsValue = nodeParams
@@ -73,10 +74,16 @@ type PeerManager(eventAggregator: IEventAggregator,
     member val KnownPeers: ConcurrentDictionary<_,_> = ConcurrentDictionary<PeerId, PeerActor>() with get, set
     member val NodeIdToPeerId: ConcurrentDictionary<_,_> = ConcurrentDictionary<NodeId, PeerId>() with get, set
     
+    member val Network: DotNetLightningNetwork = network with get
+    
     member private this.Disconnect(peerId) =
         log.LogInformation(sprintf "disconnecting peer %A" peerId)
         (this.KnownPeers.[peerId] :> IDisposable).Dispose()
         this.KnownPeers.Remove(peerId) |> ignore
+    member val Init = {
+            Init.Features = nodeParamsValue.Features
+            TLVStream = [| InitTLV.Networks[|network.ChainHash|] |]
+        } with get
         
     /// event which should not be handled by the peer (e.g. ReceivedRoutingMsg) will be ignored
     member private this.PeerEventListener e =
@@ -87,15 +94,8 @@ type PeerManager(eventAggregator: IEventAggregator,
                 match this.NodeIdToPeerId.TryAdd(nodeId, e.PeerId) with
                 | true -> ()
                 | _ -> failwithf "Duplicate Connection with %A" nodeId
-                let localFeatures = 
-                    let lf = (LocalFeatures.Flags [||])
-                    if nodeParamsValue.RequireInitialRoutingSync then
-                        lf.SetInitialRoutingSync()
-                    else
-                        lf
-                let init = { Init.GlobalFeatures = GlobalFeatures.Flags [||]; LocalFeatures = localFeatures }
                 log.LogTrace "sending init"
-                do! (this.KnownPeers.[e.PeerId] :> IActor<_>). Put(PeerCommand.EncodeMsg (init))
+                do! (this.KnownPeers.[e.PeerId] :> IActor<_>). Put(PeerCommand.EncodeMsg (this.Init))
             | ActThreeProcessed(nodeId, _) ->
                 match this.NodeIdToPeerId.TryAdd(nodeId, e.PeerId) with
                 | true -> ()
@@ -129,27 +129,14 @@ type PeerManager(eventAggregator: IEventAggregator,
                 let peerId = e.PeerId
                 let peerActor = this.KnownPeers.[peerId]
                 let peer = peerActor.State
-                if (init.GlobalFeatures.RequiresUnknownBits()) then
-                    log.LogError("Peer global features required unknown version bits")
-                    this.Disconnect(peerId)
-                else if (init.LocalFeatures.RequiresUnknownBits()) then
-                    log.LogError("Peer local features required unknown version bits")
-                    this.Disconnect(peerId)
-                else
-                    sprintf "Received peer Init message: data_loss_protect: %s, initial_routing_sync: %s , upfront_shutdown_script: %s, unknown local flags: %s, unknown global flags %s" 
-                        (if init.LocalFeatures.SupportsDataLossProect() then "supported" else "not supported")
-                        (if init.LocalFeatures.InitialRoutingSync() then "supported" else "not supported")
-                        (if init.LocalFeatures.SupportsUpfrontShutdownScript() then "supported" else "not supported")
-                        (if init.LocalFeatures.SupportsUnknownBits() then "present" else "not present")
-                        (if init.GlobalFeatures.SupportsUnknownBits() then "present" else "not present")
-                        |> log.LogInformation
-                    let theirNodeId = if peer.TheirNodeId.IsSome then peer.TheirNodeId.Value else
-                                        let msg = "peer node id is not set. This should never happen"
-                                        log.LogError msg
-                                        failwith msg
-                    if (not peer.IsOutBound) then
-                        let lf = LocalFeatures.Flags([||]).SetInitialRoutingSync()
-                        do! (peerActor :> IActor<_>). Put(EncodeMsg { Init.GlobalFeatures = GlobalFeatures.Flags([||]); Init.LocalFeatures = lf })
+                sprintf "Received peer Init message: %A" init
+                    |> log.LogInformation
+                let theirNodeId = if peer.TheirNodeId.IsSome then peer.TheirNodeId.Value else
+                                    let msg = "peer node id is not set. This should never happen"
+                                    log.LogError msg
+                                    failwith msg
+                if (not peer.IsOutBound) then
+                    do! (peerActor :> IActor<_>). Put(EncodeMsg this.Init)
             | _ -> ()
         }
         vt.AsTask() |> Async.AwaitTask

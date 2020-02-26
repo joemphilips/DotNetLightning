@@ -1,4 +1,4 @@
-namespace DotNetLightning.Core.Utils
+namespace DotNetLightning.Utils
 
 
 type GenericTLV = {

@@ -8,6 +8,7 @@ open DotNetLightning.Utils
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Channel
 
+open DotNetLightning.Serialize
 open System.Collections.Generic
 open DotNetLightning.Transactions
 open DotNetLightning.Transactions
@@ -67,8 +68,7 @@ type ChainConfig() =
     member val PublicAddresses: System.Net.IPEndPoint list = [] with get, set
 
     // ---- channel parameters ---
-    member val LocalFeatures: LocalFeatures = LocalFeatures.Flags [||] with get, set
-    member val GlobalFeatures: GlobalFeatures = GlobalFeatures.Flags[||] with get, set
+    member val Features: FeatureBit = defaultFeatureBits with get, set
     
     /// `dust_limit_satoshis` we are going to send.
     member val DustLimitSatoshis: Money = Money.Satoshis(546L) with get, set
@@ -142,7 +142,6 @@ type ChainConfig() =
     /// If None is given, we will call `IKeysRepository.GetShutDownPubKey()` and
     /// send it to its P2WPKH
     member val ShutdownScriptPubKey: Script option = None
-    member val RequireInitialRoutingSync: bool = true
     with
     member this.GetChannelConfig() =
         {
@@ -175,8 +174,7 @@ type ChainConfig() =
             MaxAcceptedHTLCs = this.MaxAcceptedHTLCs
             IsFunder = isFunder
             DefaultFinalScriptPubKey = defaultFinalScriptPubKey
-            GlobalFeatures = this.GlobalFeatures
-            LocalFeatures = this.LocalFeatures
+            Features = this.Features
         }
 
 module private NodeParamsValidation =

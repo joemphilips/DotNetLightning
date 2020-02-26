@@ -8,6 +8,8 @@ open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Chain
 open DotNetLightning.Transactions
 
+open DotNetLightning.Serialize
+open System.Collections
 open NBitcoin
 
 //       .d8888b.   .d88888b.  888b     d888 888b     d888        d8888 888b    888 8888888b.   .d8888b.
@@ -86,8 +88,7 @@ type LocalParams = {
     MaxAcceptedHTLCs: uint16
     IsFunder: bool
     DefaultFinalScriptPubKey: Script
-    GlobalFeatures: GlobalFeatures
-    LocalFeatures: LocalFeatures
+    Features: FeatureBit
 }
 
 type RemoteParams = {
@@ -103,8 +104,7 @@ type RemoteParams = {
     RevocationBasePoint: PubKey
     DelayedPaymentBasePoint: PubKey
     HTLCBasePoint: PubKey
-    GlobalFeatures: GlobalFeatures
-    LocalFeatures: LocalFeatures
+    Features: FeatureBit
     MinimumDepth: BlockHeightOffset
 }
     with
@@ -122,8 +122,7 @@ type RemoteParams = {
                 RevocationBasePoint = msg.RevocationBasepoint
                 DelayedPaymentBasePoint = msg.DelayedPaymentBasepoint
                 HTLCBasePoint = msg.HTLCBasepoint
-                GlobalFeatures = remoteInit.GlobalFeatures
-                LocalFeatures = remoteInit.LocalFeatures
+                Features = remoteInit.Features
                 MinimumDepth = BlockHeightOffset <| uint16 msg.MinimumDepth.Value
             }
 
@@ -141,8 +140,7 @@ type RemoteParams = {
                 RevocationBasePoint = msg.RevocationBasepoint
                 DelayedPaymentBasePoint = msg.DelayedPaymentBasepoint
                 HTLCBasePoint = msg.HTLCBasepoint
-                GlobalFeatures = remoteInit.GlobalFeatures
-                LocalFeatures = remoteInit.LocalFeatures
+                Features = remoteInit.Features
                 MinimumDepth = channelHandshakeConfig.MinimumDepth
             }
 

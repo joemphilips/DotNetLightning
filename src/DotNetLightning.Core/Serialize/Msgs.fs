@@ -15,7 +15,7 @@ module rec Msgs =
 
     type P2PDecodeError =
         | UnknownVersion
-        | UnknownRequiredFeature
+        | FeatureError of FeatureError
         | InvalidValue
         | ExtraAddressesPerType
         | BadLengthDescriptor
@@ -25,9 +25,6 @@ module rec Msgs =
     type UnknownVersionException(msg) =
         inherit FormatException(msg)
     
-    type UnknownRequiredFeatureException(msg) =
-        inherit FormatException(msg)
-
     module internal TypeFlag =
         [<Literal>]
         let Init = 16us
@@ -335,10 +332,10 @@ module rec Msgs =
             match tlv.Type with
             | 1UL ->
                 let n, rem = Math.DivRem(tlv.Value.Length, 32)
-                if rem <> 0 then raise <| FormatException(sprintf "Bogus length for TLV in init message %d" tlv.Value.Length) else
+                if rem <> 0 then raise <| FormatException(sprintf "Bogus length for TLV in init message (%d), remainder was (%d)" tlv.Value.Length rem) else
                 let result = Array.zeroCreate n
                 for i in 0..n - 1 do
-                    result.[i] <- tlv.Value.[(n * 32)..(n * 32 + 31)] |> uint256
+                    result.[i] <- tlv.Value.[(i * 32)..((i * 32) + 31)] |> uint256
                 result |> Networks
             | _ -> Unknown (tlv)
             
@@ -353,7 +350,7 @@ module rec Msgs =
     [<CLIMutable>]
     type Init =
         {
-            mutable Features: BitArray
+            mutable Features: FeatureBit
             mutable TLVStream: InitTLV array
         }
         with
@@ -363,7 +360,7 @@ module rec Msgs =
                     // For backwards compatibility reason, we must consider legacy `global features` section. (see bolt 1)
                     let globalFeatures = ls.ReadWithLen()
                     let localFeatures = ls.ReadWithLen()
-                    this.Features <- Array.concat [globalFeatures; localFeatures] |> BitArray.FromBytes
+                    this.Features <- Array.concat [globalFeatures; localFeatures] |> FeatureBit.CreateUnsafe
                     this.TLVStream <- ls.ReadTLVStream() |> Array.map(InitTLV.FromGenericTLV)
                 member this.Serialize(ls) =
                     // For backwards compatibility reason, we must consider legacy `global features` section. (see bolt 1)
@@ -907,7 +904,7 @@ module rec Msgs =
     /// The unsigned part of node_anouncement
     [<CLIMutable>]
     type UnsignedNodeAnnouncement = {
-        mutable Features: byte[]
+        mutable Features: FeatureBit
         mutable Timestamp: uint32
         mutable NodeId: NodeId
         mutable RGB: RGB
@@ -919,7 +916,7 @@ module rec Msgs =
     with
         interface ILightningSerializable<UnsignedNodeAnnouncement> with
             member this.Deserialize(ls) =
-                this.Features <- ls.ReadWithLen()
+                this.Features <- ls.ReadWithLen() |> FeatureBit.CreateUnsafe
                 this.Timestamp <- ls.ReadUInt32(false)
                 this.NodeId <- ls.ReadPubKey() |> NodeId
                 this.RGB <- ls.ReadRGB()
@@ -970,7 +967,7 @@ module rec Msgs =
 
                 this.ExcessData <- match ls.TryReadAll() with Some b -> b | None -> [||]
             member this.Serialize(ls) =
-                ls.WriteWithLen(this.Features)
+                ls.WriteWithLen(this.Features.ToByteArray())
                 ls.Write(this.Timestamp, false)
                 ls.Write(this.NodeId.Value)
                 ls.Write(this.RGB)
@@ -1002,7 +999,7 @@ module rec Msgs =
 
     [<CLIMutable>]
     type UnsignedChannelAnnouncement = {
-        mutable Features: BitArray
+        mutable Features: FeatureBit
         mutable ChainHash: uint256
         mutable ShortChannelId: ShortChannelId
         mutable NodeId1: NodeId
@@ -1015,11 +1012,7 @@ module rec Msgs =
         interface ILightningSerializable<UnsignedChannelAnnouncement> with
             member this.Deserialize(ls) =
                 this.Features <-
-                    let g = ls.ReadWithLen() |> BitArray.FromBytes
-                    if Feature.areSupported(g) then
-                        raise <| UnknownRequiredFeatureException(sprintf "Channel Annoucement contains Unknown requied feature %A" (g.PrintBits()))
-                    else
-                        g
+                    ls.ReadWithLen() |> FeatureBit.CreateUnsafe
                 this.ChainHash <- ls.ReadUInt256(false)
                 this.ShortChannelId <- ls.ReadUInt64(false) |> ShortChannelId.FromUInt64
                 this.NodeId1 <- ls.ReadPubKey() |> NodeId
@@ -1028,7 +1021,7 @@ module rec Msgs =
                 this.BitcoinKey2 <- ls.ReadPubKey()
                 this.ExcessData <- match ls.TryReadAll() with Some b -> b | None -> [||]
             member this.Serialize(ls) =
-                ls.WriteWithLen(this.Features.Value)
+                ls.WriteWithLen(this.Features.ToByteArray())
                 ls.Write(this.ChainHash, false)
                 ls.Write(this.ShortChannelId)
                 ls.Write(this.NodeId1.Value)
@@ -1205,7 +1198,7 @@ module rec Msgs =
                         this.Data <- expiry |> FinalIncorrectCLTVAmount
                     | (EXPIRY_TOO_FAR) ->
                         this.Data <- ExpiryTooFar
-                    | d ->
+                    | _ ->
                         this.Data <- r.ReadAll() |> Unknown
                 member this.Serialize(w: LightningWriterStream): unit =
                     w.Write(this.Code.Value, false)
