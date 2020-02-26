@@ -307,12 +307,21 @@ type TaggedFields = {
     member this.ExplicitNodeId =
         this.Fields |> Seq.choose(function NodeIdTaggedField x -> Some x | _ -> None) |> Seq.tryExactlyOne
         
+    member this.FeatureBit =
+        this.Fields |> Seq.choose(function FeaturesTaggedField fb -> Some fb | _ -> None) |> Seq.tryExactlyOne
+        
     member this.CheckSanity() =
         let pHashes = this.Fields |> List.choose(function PaymentHashTaggedField x -> Some x | _ -> None)
         if (pHashes.Length > 1) then "Invalid BOLT11! duplicate 'p' field" |> Error else
         if (pHashes.Length < 1) then "Invalid BOLT11! no payment hash" |> Error else
         let secrets = this.Fields |> List.choose(function PaymentSecretTaggedField x -> Some (x) | _ -> None)
         if (secrets.Length > 1) then "Invalid BOLT11! duplicate 's' field" |> Error else
+        if (secrets.Length = 1 && this.FeatureBit.IsNone) then
+            sprintf "Invalid BOLT11! secret (%A) is set but there were no feature bits" secrets.[0] |> Error
+        else if (secrets.Length = 1 && not <| this.FeatureBit.Value.HasFeature(Feature.PaymentSecret)) then
+            let fb = this.FeatureBit.Value
+            sprintf "Invalid BOLT11! secret (%A) is set but feature bit (%s) is not set (%A)" (secrets.[0]) (fb.ToString()) (fb)
+            |> Error else
         let descriptions = this.Fields |> List.choose(function DescriptionTaggedField d -> Some d | _ -> None)
         if (descriptions.Length > 1) then Error("Invalid BOLT11! duplicate 'd' field") else
         let dHashes = this.Fields |> List.choose(function DescriptionHashTaggedField x -> Some x | _ -> None)
