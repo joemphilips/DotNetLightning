@@ -32,6 +32,15 @@ type System.Byte
         ((a &&& 0x10uy) >>> 1) ||| ((a &&& 0x20uy) >>> 3) |||
         ((a &&& 0x40uy) >>> 5) ||| ((a &&& 0x80uy) >>> 7)
         
+[<Extension;AbstractClass;Sealed>]
+type BitArrayExtensions() =
+    [<Extension>]
+    static member ToHex(this: #seq<byte>) =
+        let db = StringBuilder()
+        db.Append("0x") |> ignore
+        this |> Seq.iter(fun b -> sprintf "%X" b |> db.Append |> ignore)
+        db.ToString()
+        
 type System.Collections.BitArray with
     member this.ToByteArray() =
         if this.Length = 0 then [||] else
@@ -101,6 +110,9 @@ type System.Collections.BitArray with
     /// This is necessary for representing bolt 9 feature bits as BitArray
     static member FromBytes(ba: byte[]) =
         ba |> Array.map(fun b -> b.FlipBit()) |> BitArray
+        
+    member this.ToHex() =
+        this.ToByteArray().ToHex()
         
 [<Extension;AbstractClass;Sealed>]
 type DictionaryExtensions() =
