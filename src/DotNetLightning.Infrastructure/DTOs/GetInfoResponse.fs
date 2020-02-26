@@ -1,6 +1,6 @@
 namespace DotNetLightning.Infrastructure.DTOs
 
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialize
 open DotNetLightning.Utils.Primitives
 
 
@@ -20,7 +20,7 @@ type GetInfoResponse = {
     SyncedToGraph: bool
     NodeId: string
     ChainSynchronizationProgress: float
-    Features: LocalFeatures
+    Features: FeatureBit
     Version: string
     Uris: string []
     BlockHash: string

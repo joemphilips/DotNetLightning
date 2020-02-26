@@ -67,7 +67,8 @@ type internal ActorCreator =
                              keyRepo,
                              nodeParams.Value,
                              chainWatcher,
-                             broadCaster
+                             broadCaster,
+                             DotNetLightningNetworkProvider.getNetwork (NetworkType.Mainnet) ("BTC")
                              )
             CM =
                 let channelEventRepo =
@@ -119,7 +120,8 @@ type internal ActorCreator =
                              keyRepo,
                              nodeParams.Value,
                              chainWatcher,
-                             broadCaster
+                             broadCaster,
+                             DotNetLightningNetworkProvider.getNetwork (NetworkType.Mainnet) ("BTC")
                              )
             CM =
                 let channelEventRepo =

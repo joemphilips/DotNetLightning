@@ -1,17 +1,21 @@
 namespace DotNetLightning.Serialize
+open DotNetLightning.Core.Utils
 open NBitcoin
 open DotNetLightning.Utils
 open System
+open System.Collections
+open System.Collections
 open System.Runtime.CompilerServices
 open System.IO
 open DotNetLightning.Utils.OnionError
+open DotNetLightning.Core.Utils.Extensions
 
 // #region serialization
 module rec Msgs =
 
     type P2PDecodeError =
         | UnknownVersion
-        | UnknownRequiredFeature
+        | FeatureError of FeatureError
         | InvalidValue
         | ExtraAddressesPerType
         | BadLengthDescriptor
@@ -21,62 +25,6 @@ module rec Msgs =
     type UnknownVersionException(msg) =
         inherit FormatException(msg)
     
-    type UnknownRequiredFeatureException(msg) =
-        inherit FormatException(msg)
-
-    [<Struct>]
-    type LocalFeatures =
-        Flags of byte[]
-            member x.Value = let (Flags v) = x in v
-            member x.SupportsDataLossProect(): bool =
-                (x.Value.[0] &&& 3uy) <> 0uy
-
-            member x.RequiresDataLossProect(): bool =
-                (x.Value.[0] &&& 1uy) <> 0uy
-
-            member x.InitialRoutingSync(): bool =
-                (x.Value.[0] &&& (1uy <<< 3)) <> 0uy
-
-            member x.SetInitialRoutingSync() =
-                if
-                    x.Value.Length = 0
-                then
-                    Flags [|1uy <<< 3|]
-                else
-                    x.Value.[0] <- (x.Value.[0] ||| (1uy <<< 3))
-                    x
-
-            member x.SupportsUpfrontShutdownScript() =
-                x.Value.Length > 0 && (x.Value.[0] &&& (3uy <<< 4) <> 0uy)
-
-            member x.RequiresUpfrontShutdownScript() =
-                x.Value.Length > 0 && (x.Value.[0] &&& (1uy <<< 4) <> 0uy)
-
-            member x.RequiresUnknownBits() =
-                x.Value
-                |> Array.indexed
-                |> Array.exists(fun (i, b) -> (i <> 0 && (b &&& 0b01010101uy) <> 0uy) ||
-                                              (i =  0 && (b &&& 0b00010100uy) <> 0uy))
-
-            member x.SupportsUnknownBits() =
-                x.Value
-                |> Array.indexed
-                |> Array.exists(fun (i, b) -> (i <> 0 && b <> 0uy) ||
-                                              (i =  0 && (b &&& 0b11000100uy) <> 0uy))
-    [<Struct>]
-    type GlobalFeatures =
-        Flags of uint8[]
-            member x.Value = let (Flags v) = x in v
-
-            member x.RequiresUnknownBits() =
-                x.Value
-                |> Array.exists(fun b -> b &&& 0b01010101uy <> 0uy)
-            
-            member x.SupportsUnknownBits() =
-                x.Value
-                |> Array.exists(fun b -> b <> 0uy)
-
-
     module internal TypeFlag =
         [<Literal>]
         let Init = 16us
@@ -375,24 +323,51 @@ module rec Msgs =
         Data: byte[]
     }
 
+    type InitTLV =
+        /// genesis chain hash that the node is interested in
+        | Networks of uint256 array
+        | Unknown of GenericTLV
+        with
+        static member FromGenericTLV(tlv: GenericTLV) =
+            match tlv.Type with
+            | 1UL ->
+                let n, rem = Math.DivRem(tlv.Value.Length, 32)
+                if rem <> 0 then raise <| FormatException(sprintf "Bogus length for TLV in init message (%d), remainder was (%d)" tlv.Value.Length rem) else
+                let result = Array.zeroCreate n
+                for i in 0..n - 1 do
+                    result.[i] <- tlv.Value.[(i * 32)..((i * 32) + 31)] |> uint256
+                result |> Networks
+            | _ -> Unknown (tlv)
+            
+        member this.ToGenericTLV() =
+            match this with
+            | Networks networks ->
+                let v = networks |> Array.map(fun x -> x.ToBytes()) |> Array.concat
+                { GenericTLV.Type = 1UL; Value = v }
+            | Unknown tlv -> tlv
+            
 
     [<CLIMutable>]
     type Init =
         {
-            mutable GlobalFeatures: GlobalFeatures
-            mutable LocalFeatures: LocalFeatures
+            mutable Features: FeatureBit
+            mutable TLVStream: InitTLV array
         }
         with
             interface ISetupMsg
             interface ILightningSerializable<Init> with
                 member this.Deserialize(ls: LightningReaderStream) =
-                    this.GlobalFeatures <- GlobalFeatures.Flags(ls.ReadWithLen())
-                    this.LocalFeatures <- LocalFeatures.Flags(ls.ReadWithLen())
+                    // For backwards compatibility reason, we must consider legacy `global features` section. (see bolt 1)
+                    let globalFeatures = ls.ReadWithLen()
+                    let localFeatures = ls.ReadWithLen()
+                    this.Features <- Array.concat [globalFeatures; localFeatures] |> FeatureBit.CreateUnsafe
+                    this.TLVStream <- ls.ReadTLVStream() |> Array.map(InitTLV.FromGenericTLV)
                 member this.Serialize(ls) =
-                    let g: byte[] = this.GlobalFeatures.Value
-                    let l: byte[] = this.LocalFeatures.Value
+                    // For backwards compatibility reason, we must consider legacy `global features` section. (see bolt 1)
+                    let g: byte[] = [||]
                     ls.WriteWithLen(g)
-                    ls.WriteWithLen(l)
+                    ls.WriteWithLen(this.Features.ToByteArray())
+                    ls.WriteTLVStream(this.TLVStream |> Array.map(fun tlv -> tlv.ToGenericTLV()))
 
     [<CLIMutable>]
     type Ping = {
@@ -929,7 +904,7 @@ module rec Msgs =
     /// The unsigned part of node_anouncement
     [<CLIMutable>]
     type UnsignedNodeAnnouncement = {
-        mutable Features: GlobalFeatures
+        mutable Features: FeatureBit
         mutable Timestamp: uint32
         mutable NodeId: NodeId
         mutable RGB: RGB
@@ -941,7 +916,7 @@ module rec Msgs =
     with
         interface ILightningSerializable<UnsignedNodeAnnouncement> with
             member this.Deserialize(ls) =
-                this.Features <- ls.ReadWithLen() |> GlobalFeatures.Flags
+                this.Features <- ls.ReadWithLen() |> FeatureBit.CreateUnsafe
                 this.Timestamp <- ls.ReadUInt32(false)
                 this.NodeId <- ls.ReadPubKey() |> NodeId
                 this.RGB <- ls.ReadRGB()
@@ -992,7 +967,7 @@ module rec Msgs =
 
                 this.ExcessData <- match ls.TryReadAll() with Some b -> b | None -> [||]
             member this.Serialize(ls) =
-                ls.WriteWithLen(this.Features.Value)
+                ls.WriteWithLen(this.Features.ToByteArray())
                 ls.Write(this.Timestamp, false)
                 ls.Write(this.NodeId.Value)
                 ls.Write(this.RGB)
@@ -1024,7 +999,7 @@ module rec Msgs =
 
     [<CLIMutable>]
     type UnsignedChannelAnnouncement = {
-        mutable Features: GlobalFeatures
+        mutable Features: FeatureBit
         mutable ChainHash: uint256
         mutable ShortChannelId: ShortChannelId
         mutable NodeId1: NodeId
@@ -1037,11 +1012,7 @@ module rec Msgs =
         interface ILightningSerializable<UnsignedChannelAnnouncement> with
             member this.Deserialize(ls) =
                 this.Features <-
-                    let g = ls.ReadWithLen() |> GlobalFeatures.Flags
-                    if g.RequiresUnknownBits() then
-                        raise <| UnknownRequiredFeatureException(sprintf "Channel Annoucement contains Unknown requied feature %A" g)
-                    else
-                        g
+                    ls.ReadWithLen() |> FeatureBit.CreateUnsafe
                 this.ChainHash <- ls.ReadUInt256(false)
                 this.ShortChannelId <- ls.ReadUInt64(false) |> ShortChannelId.FromUInt64
                 this.NodeId1 <- ls.ReadPubKey() |> NodeId
@@ -1050,7 +1021,7 @@ module rec Msgs =
                 this.BitcoinKey2 <- ls.ReadPubKey()
                 this.ExcessData <- match ls.TryReadAll() with Some b -> b | None -> [||]
             member this.Serialize(ls) =
-                ls.WriteWithLen(this.Features.Value)
+                ls.WriteWithLen(this.Features.ToByteArray())
                 ls.Write(this.ChainHash, false)
                 ls.Write(this.ShortChannelId)
                 ls.Write(this.NodeId1.Value)
@@ -1227,7 +1198,7 @@ module rec Msgs =
                         this.Data <- expiry |> FinalIncorrectCLTVAmount
                     | (EXPIRY_TOO_FAR) ->
                         this.Data <- ExpiryTooFar
-                    | d ->
+                    | _ ->
                         this.Data <- r.ReadAll() |> Unknown
                 member this.Serialize(w: LightningWriterStream): unit =
                     w.Write(this.Code.Value, false)

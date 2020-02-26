@@ -1,23 +1,46 @@
 module MsgGenerators
 
+open System.Collections
 open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Core.Utils.Extensions
+open DotNetLightning.Serialize
 open DotNetLightning.Utils.OnionError
 open PrimitiveGenerators
 open FsCheck
 open DotNetLightning.Utils.Primitives
+open DotNetLightning.Utils
 
 let (<*>) = Gen.apply
 
-let private globalFeaturesGen =
-    Gen.constant ([|0b00000000uy|]) |> Gen.map GlobalFeatures.Flags
+let private featuresGen =
+    Gen.constant (1L <<< Feature.InitialRoutingSync.OptionalBitPosition)
+    |> Gen.map(FeatureBit.CreateUnsafe)
 
-let private localFeaturesGen =
-    Gen.constant ([|0b01010101uy|]) |> Gen.map LocalFeatures.Flags
-
+let private chainHashGen =
+    Gen.oneof(seq {
+        yield Gen.constant NBitcoin.Consensus.Main.HashGenesisBlock;
+        yield Gen.constant NBitcoin.Consensus.TestNet.HashGenesisBlock;
+        yield Gen.constant NBitcoin.Consensus.RegTest.HashGenesisBlock;
+    })
+    
+let genericTLVGen (known: uint64 list) =
+    gen {
+        let! t =
+            Arb.generate<uint64>
+            |> Gen.filter(fun v -> not <| List.exists(fun knownInt -> v = knownInt) known)
+        let! v = Arb.generate<NonNull<byte[]>>
+        return { GenericTLV.Type = t; Value = v.Get }
+    }
+let initTLVGen =
+    Gen.frequency[|
+        (1, chainHashGen |> Gen.map(Array.singleton >> InitTLV.Networks))
+        (1, genericTLVGen([1UL]) |> Gen.map(InitTLV.Unknown))
+    |]
+    
 let initGen =
-    Gen.map2 (fun g l -> { GlobalFeatures = g; LocalFeatures = l})
-        globalFeaturesGen
-        localFeaturesGen
+    Gen.map2 (fun f tlvS -> { Features = f; TLVStream = tlvS })
+        featuresGen
+        (initTLVGen |> Gen.map(Array.singleton))
 
 let errorMsgGen = gen {
     let specificC = SpecificChannel <!> (ChannelId <!> uint256Gen)
@@ -322,7 +345,7 @@ let private netAddressesGen = gen {
 } 
 
 let unsignedNodeAnnouncementGen = gen {
-    let! f = globalFeaturesGen
+    let! f = featuresGen
     let! t = Arb.generate<uint32>
     let! nodeId = NodeId <!> pubKeyGen
     let! rgb = (fun r g b -> {Red = r; Green = g; Blue = b})
@@ -357,7 +380,7 @@ let nodeAnnouncementGen = gen {
 }
 
 let private unsignedChannelAnnouncementGen = gen {
-    let! g = globalFeaturesGen
+    let! g = featuresGen
     let! ch = uint256Gen
     let! s = ShortChannelId.FromUInt64 <!> Arb.generate<uint64>
     let! n1 = NodeId <!> pubKeyGen

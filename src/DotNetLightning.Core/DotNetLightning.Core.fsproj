@@ -26,6 +26,7 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Utils/Primitives.fs" />
+    <Compile Include="Utils\GenericTLV.fs" />
     <Compile Include="Utils/LNMoney.fs" />
     <Compile Include="Utils/NBitcoinExtensions.fs" />
     <Compile Include="Utils\Extensions.fs" />

@@ -39,25 +39,11 @@ type BitReader(ba: BitArray, bitCount: int) =
             byteIndex <- byteIndex + 1
         bytes
         
-    /// If bitCount is not multiple of 8, this will pad the result with zero
-    member this.ReadBits(bitCount: int): byte[] =
-        match Math.DivRem(bitCount, 8) with
-        | div, remainder ->
-            let bytes = this.ReadBytes(div)
-            if remainder = 0 then bytes else
-                
-            let result = Array.zeroCreate (bytes.Length + 1)
-            Array.blit bytes 0 result 0 div
-                
-            let mutable maxRead = this.Count - this.Position
-            let mutable value = 0uy
-            for i in 0..remainder - 1 do
-                if (maxRead <> 0) then
-                    let v = if this.Read() then 1uy else 0uy
-                    value <- value + (byte (v <<< (8 - i - 1)))
-                    maxRead <- maxRead - 1
-            result.[result.Length - 1] <- value
-            result
+    member this.ReadBits(bitCount: int) =
+        let result = Array.zeroCreate (bitCount)
+        for i in 0..bitCount - 1 do
+            result.[i] <- this.Read()
+        BitArray(result)
         
     member this.Consume(count: int) =
         this.Position <- this.Position + count

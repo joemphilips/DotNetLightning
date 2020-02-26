@@ -4,6 +4,8 @@ open NBitcoin
 
 open ResultUtils
 
+open DotNetLightning.Serialize
+open System.Collections
 open DotNetLightning.Utils
 open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Utils.Aether
@@ -30,8 +32,7 @@ type Peer = {
     ChannelEncryptor: PeerChannelEncryptor
     IsOutBound : bool
     TheirNodeId: NodeId option
-    TheirGlobalFeatures: GlobalFeatures option
-    TheirLocalFeatures: LocalFeatures option
+    TheirFeatures: FeatureBit option
     SyncStatus: InitSyncTracker
 }
     with
@@ -40,8 +41,7 @@ type Peer = {
             ChannelEncryptor = PeerChannelEncryptor.newInBound(ourNodeSecret)
             IsOutBound = false
             TheirNodeId = None
-            TheirGlobalFeatures = None
-            TheirLocalFeatures = None
+            TheirFeatures = None
             SyncStatus = NoSyncRequested
         }
         
@@ -50,8 +50,7 @@ type Peer = {
             ChannelEncryptor = PeerChannelEncryptor.newOutBound(theirNodeId, ourNodeSecret)
             IsOutBound = true
             TheirNodeId = Some theirNodeId
-            TheirGlobalFeatures = None
-            TheirLocalFeatures = None
+            TheirFeatures = None
             SyncStatus = NoSyncRequested
         }
         /// Returns true if the channel announcements/updates for the given channel should be
@@ -137,8 +136,7 @@ module Peer =
         | NoiseComplete, ReceivedInit (init, pce) ->
             { state with
                 ChannelEncryptor = pce;
-                TheirGlobalFeatures = Some init.GlobalFeatures;
-                TheirLocalFeatures = Some init.LocalFeatures }
+                TheirFeatures = Some init.Features }
         | NoiseComplete, MsgEncoded(_, pce) ->
             { state with ChannelEncryptor = pce }
         | state, e ->

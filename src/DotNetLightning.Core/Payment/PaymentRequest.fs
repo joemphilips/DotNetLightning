@@ -10,7 +10,6 @@ open ResultUtils
 
 open DotNetLightning.Utils
 open DotNetLightning.Core.Utils.Extensions
-open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Serialize
 
 open NBitcoin
@@ -221,7 +220,7 @@ type TaggedField =
     | RoutingInfoTaggedField of ExtraHop list
     | ExpiryTaggedField of DateTimeOffset
     | MinFinalCltvExpiryTaggedField of BlockHeight
-    | FeaturesTaggedField of LocalFeatures
+    | FeaturesTaggedField of FeatureBit
     with
     member this.Type =
         match this with
@@ -286,8 +285,13 @@ type TaggedField =
             let routeInfoBase32 = routeInfoBase256 |> Array.concat |>  Helpers.convert8BitsTo5
             this.WriteField(writer, routeInfoBase32)
         | FeaturesTaggedField f ->
-            if f.Value.Length = 0 then () else
-            let dBase32 = f.Value |> Helpers.convert8BitsTo5
+            if f.BitArray.Length = 0 then () else
+            let pad = if (f.BitArray.Length % 40 = 0) then 0 else 40 - (f.BitArray.Length % 40)
+            let dBase32 =
+                let ba =
+                    [BitArray(pad, false); f.BitArray] |> BitArray.Concat |> fun baa -> baa.ToByteArray()
+                ba |> Helpers.convert8BitsTo5
+                |> Array.skipWhile((=)0uy)
             this.WriteField(writer, dBase32)
             
 
@@ -446,12 +450,14 @@ type private Bolt11Data = {
                                     let hopInfoList = hopInfos |> Seq.toList |> RoutingInfoTaggedField
                                     return! loop r { acc with Fields = hopInfoList :: acc.Fields } afterReadPosition
                             | 5UL -> // feature bits
-                                if (size < 8) then
-                                    return! loop r acc afterReadPosition
-                                else
-                                    let bytes = r.ReadBytes(size / 8)
-                                    let features = LocalFeatures.Flags bytes |> FeaturesTaggedField
-                                    return! loop r { acc with Fields = features :: acc.Fields } afterReadPosition
+                                let bits = r.ReadBits(size)
+                                let! fb =
+                                    bits
+                                    |> FeatureBit.TryCreate
+                                    |> Result.mapError(fun x ->
+                                        "Invalid BOLT11! Feature field is bogus " + x.ToString())
+                                let features = fb |> FeaturesTaggedField
+                                return! loop r { acc with Fields = features :: acc.Fields } afterReadPosition
                             | _ -> // we must skip unknown field
                                 return! loop r acc afterReadPosition
                                     

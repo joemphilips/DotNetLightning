@@ -67,7 +67,7 @@ module PeerChannelEncryptor =
                 (fun state ->
                     match state with
                     | OutBound o -> Some o
-                    | InBound i -> None),
+                    | InBound _i -> None),
                 (fun o state ->
                     match state with
                     | OutBound _ -> OutBound o
@@ -371,9 +371,9 @@ module PeerChannelEncryptor =
 
         let processActOneWithEphemeralKey (actOne: byte[]) (ourNodeSecret: Key) (ourEphemeral: Key) (pce: PeerChannelEncryptor): Result<byte[] * _, PeerError> =
             match pce.NoiseState with
-            | InProgress { State = state; DirectionalState = dState; BidirectionalState = bState1} ->
+            | InProgress { State = state; DirectionalState = dState; } ->
                 match dState with
-                | InBound { IE = ie; RE = re; TempK2 = tempk2 } ->
+                | InBound _ ->
                     if state <> PreActOne then 
                         failwith "Requested act at wrong step"
 
@@ -646,6 +646,6 @@ module PeerChannelEncryptorMonad =
         member this.Return(x) = returnP x
         member this.ReturnFrom(x) = x
         member this.Bind(x, f) = bindP f x
-        member this.Zero(x) = returnP ()
+        member this.Zero() = returnP ()
 
     let noise = PeerChannelEncryptorComputationBuilder()

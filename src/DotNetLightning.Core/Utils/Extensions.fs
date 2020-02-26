@@ -1,5 +1,6 @@
 module DotNetLightning.Core.Utils.Extensions
 
+open System.Linq
 open System
 open System.Collections
 open System.Collections.Generic
@@ -29,8 +30,8 @@ type System.Byte
         ((a &&& 0x1uy)  <<< 7) ||| ((a &&& 0x2uy)  <<< 5) |||
         ((a &&& 0x4uy)  <<< 3) ||| ((a &&& 0x8uy)  <<< 1) |||
         ((a &&& 0x10uy) >>> 1) ||| ((a &&& 0x20uy) >>> 3) |||
-        ((a &&& 0x40uy) >>> 5) ||| ((a &&& 0x80uy) >>> 7);
-
+        ((a &&& 0x40uy) >>> 5) ||| ((a &&& 0x80uy) >>> 7)
+        
 type System.Collections.BitArray with
     member this.ToByteArray() =
         if this.Length = 0 then [||] else
@@ -49,6 +50,10 @@ type System.Collections.BitArray with
             bitArray.Set(di * 5 + 3, ((b.[di] >>> 1) &&& 0x01uy) = 1uy)
             bitArray.Set(di * 5 + 4, ((b.[di] >>> 0) &&& 0x01uy) = 1uy)
         bitArray
+        
+    static member Concat(ba: #seq<BitArray>) =
+        let a = ba |> Seq.map(fun b -> b.Cast<bool>()) |> Seq.concat |> Seq.toArray
+        BitArray(a)
     static member FromUInt32(d: uint32) =
         let b = d.GetBytesBigEndian()
         BitArray.From5BitEncoding(b)
@@ -75,25 +80,28 @@ type System.Collections.BitArray with
             array.[i] <- (v &&& 1L) = 1L
             v <- v >>> 1
         BitArray(array |> Array.rev)
+    static member TryParse(str: string) =
+        let mutable str = str.Trim().Clone() :?> string
+        if str.StartsWith("0b", StringComparison.OrdinalIgnoreCase) then
+            str <- str.Substring("0b".Length)
+        let array = Array.zeroCreate(str.Length)
+        let mutable hasFunnyChar = -1
+        for i in 0..str.Length - 1 do
+            if hasFunnyChar <> -1 then () else
+            if str.[i] = '0' then array.[i] <- false else
+            if str.[i] = '1' then array.[i] <- true else
+            hasFunnyChar <- i
+        if hasFunnyChar <> -1 then
+            sprintf "Failed to parse BitArray! it must have only '0' or '1' but we found %A" str.[hasFunnyChar]
+            |> Error
+        else
+            BitArray(array) |> Ok
         
     /// This flips bits for each byte before passing to the BitArray constructor.
     /// This is necessary for representing bolt 9 feature bits as BitArray
     static member FromBytes(ba: byte[]) =
         ba |> Array.map(fun b -> b.FlipBit()) |> BitArray
         
-    static member Parse(str: string) =
-        let mutable str = str.Trim().Clone() :?> string
-        if str.StartsWith("0b", StringComparison.OrdinalIgnoreCase) then
-            str <- str.Substring("0b".Length)
-        let array = Array.zeroCreate(str.Length)
-        for i in 0..str.Length - 1 do
-            array.[i] <-
-                if str.[i] = '0' then false else
-                if str.[i] = '1' then true else
-                raise <| FormatException(sprintf "Failed to parse BitArray! it must have only '0' or '1' but we found %A" str.[i])
-        array |> BitArray
-        
-    
 [<Extension;AbstractClass;Sealed>]
 type DictionaryExtensions() =
 
