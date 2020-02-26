@@ -56,7 +56,7 @@ type Feature = private {
         Mandatory = 16
     }
     
-module Feature =
+module internal Feature =
     /// Features may depend on other features, as specified in BOLT 9
     let private featuresDependency =
         Map.empty
@@ -120,3 +120,17 @@ module Feature =
         }
         |> Seq.exists(fun i -> reversed.[i] && not <| supportedMandatoryFeatures.Contains(i))
         |> not
+        
+        
+type FeatureBit private (v: byte[], bitArray) =
+    member val BitArray = bitArray with get, set
+    member val Value = v with get, set
+    static member TryCreate(bytes:byte[]) =
+        result {
+            let ba = BitArray.FromBytes(bytes)
+            do! Feature.validateFeatureGraph(ba)
+            if not <| Feature.areSupported(ba) then
+                return! Error(sprintf "feature bits (%s) contains a mandatory flag that we don't know!" (ba.PrintBits()))
+            else
+                return (FeatureBit(bytes, ba))
+        }
