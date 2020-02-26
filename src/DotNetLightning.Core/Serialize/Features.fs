@@ -202,6 +202,9 @@ type FeatureBit private (bitArray) =
     override this.ToString() =
         this.BitArray.PrintBits()
         
+    member this.HasFeature(f, ?featureType) =
+        Feature.hasFeature this.BitArray (f) (featureType)
+        
     member this.PrettyPrint =
         let sb = StringBuilder()
         let reversed = this.BitArray.Reverse()
@@ -215,6 +218,7 @@ type FeatureBit private (bitArray) =
         sb.ToString()
     
     member this.ToByteArray() = this.ByteArray
+        
     member this.Equals(o: FeatureBit) =
         if this.BitArray.Length <> o.BitArray.Length then false else
         let mutable result = true
