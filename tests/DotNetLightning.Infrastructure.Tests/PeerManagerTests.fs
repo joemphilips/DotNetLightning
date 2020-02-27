@@ -7,8 +7,6 @@ open DotNetLightning.Utils
 open DotNetLightning.Peer
 open CustomEventAggregator
 
-open FSharp.Control.Tasks
-open FSharp.Control.Reactive
 open System.IO.Pipelines
 open System.Net
 open Microsoft.Extensions.Options
@@ -27,12 +25,12 @@ open Expecto.Logging.Message
 let hex = NBitcoin.DataEncoders.HexEncoder()
 
 let logger = Log.create "PeerManager tests"
-let log (logLevel) =
+let log (_logLevel) =
     let logCore = eventX >> logger.info
     logCore
     //fun s -> () //printfn "%s"
 
-let eventAggregatorMock = new ReactiveEventAggregator()
+let eventAggregatorMock = ReactiveEventAggregator()
 
 let ourNodeSecret = Key(hex.DecodeData("1111111111111111111111111111111111111111111111111111111111111111"))
 let keysRepoMock = Mock<IKeysRepository>.Method(fun repo -> <@ repo.GetNodeSecret @>).Returns(ourNodeSecret)
@@ -72,7 +70,8 @@ let tests = testList "PeerManagerTests" [
                                     keysRepoMock,
                                     aliceNodeParams.Value,
                                     chainWatcherMock,
-                                    broadCasterMock)
+                                    broadCasterMock,
+                                    DotNetLightningNetworkProvider.getNetwork (NetworkType.Mainnet) ("BTC"))
       do! peerManager.NewOutBoundConnection(theirNodeId, theirPeerId, dPipe.Output, ie).AsTask()
       updateIEForTestVector (peerManager, theirPeerId)
       let actOneExpected = "0x00036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6a"
@@ -106,7 +105,8 @@ let tests = testList "PeerManagerTests" [
                                      keyRepoMock,
                                      aliceNodeParams.Value,
                                      chainWatcherMock,
-                                     broadCasterMock)
+                                     broadCasterMock,
+                                     DotNetLightningNetworkProvider.getNetwork (NetworkType.Mainnet) ("BTC"))
 
       // processing act 1 ...
       let act1 = hex.DecodeData ("00036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6a")
@@ -150,7 +150,8 @@ let tests = testList "PeerManagerTests" [
                                      keysRepoMock,
                                      aliceNodeParams.Value,
                                      chainWatcherMock,
-                                     broadCasterMock)
+                                     broadCasterMock,
+                                     DotNetLightningNetworkProvider.getNetwork (NetworkType.Mainnet) ("BTC"))
                     CM = Mock<IChannelManager>().Create()
                     Id = IPEndPoint.Parse("127.0.0.3") :> EndPoint |> PeerId
                     EventAggregator = aliceEventAggregator
@@ -167,9 +168,10 @@ let tests = testList "PeerManagerTests" [
                                    TestLogger.create(ConsoleColor.Blue),
                                    getTestLoggerFactory(),
                                    keyRepoBob,
-                                   new ChainConfig(),
+                                   ChainConfig(),
                                    chainWatcherMock,
-                                   broadCasterMock)
+                                   broadCasterMock,
+                                   DotNetLightningNetworkProvider.getNetwork (NetworkType.Mainnet) ("BTC"))
                   CM = Mock<IChannelManager>().Create()
                   Id = IPEndPoint.Parse("127.0.0.2") :> EndPoint |> PeerId
                   EventAggregator = bobEventAggregator

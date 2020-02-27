@@ -7,6 +7,7 @@ open System.Text.Json
 open DotNetLightning.Payment
 open DotNetLightning.Utils
 
+open DotNetLightning.Serialize
 open DotNetLightning.Utils
 open ResultUtils
 open Expecto
@@ -178,13 +179,13 @@ let tests =
             Expect.equal (pr.Description) (Choice1Of2 "coffee beans") ""
             Expect.isEmpty pr.FallbackAddresses ""
             Expect.isSome (pr.Features) ""
+            Expect.isTrue(pr.Features.Value.HasFeature(Feature.PaymentSecret, Optional)) ""
+            Expect.isTrue(pr.Features.Value.HasFeature(Feature.VariableLengthOnion, Optional)) ""
             Expect.equal (pr.ToString()) data ""
             Expect.equal (pr.ToString(msgSigner)) data ""
             
         testCase "Same, but adding invalid unknown feature 100" <| fun _ ->
             let data = "lnbc25m1pvjluezpp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypqdq5vdhkven9v5sxyetpdeessp5zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygs9q4psqqqqqqqqqqqqqqqpqsqq40wa3khl49yue3zsgm26jrepqr2eghqlx86rttutve3ugd05em86nsefzh4pfurpd9ek9w2vp95zxqnfe2u7ckudyahsa52q66tgzcp6t2dyk"
-            let pr = PaymentRequest.Parse(data) |> Result.deref
-            Expect.isSome (pr.Features) ""
-            Expect.equal (pr.ToString()) data ""
-            Expect.equal (pr.ToString(msgSigner)) data ""
+            let pr = PaymentRequest.Parse(data)
+            Expect.isError(pr) ""
     ]

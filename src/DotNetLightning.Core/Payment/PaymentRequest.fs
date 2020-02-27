@@ -10,7 +10,6 @@ open ResultUtils
 
 open DotNetLightning.Utils
 open DotNetLightning.Core.Utils.Extensions
-open DotNetLightning.Serialize.Msgs
 open DotNetLightning.Serialize
 
 open NBitcoin
@@ -221,7 +220,7 @@ type TaggedField =
     | RoutingInfoTaggedField of ExtraHop list
     | ExpiryTaggedField of DateTimeOffset
     | MinFinalCltvExpiryTaggedField of BlockHeight
-    | FeaturesTaggedField of LocalFeatures
+    | FeaturesTaggedField of FeatureBit
     with
     member this.Type =
         match this with
@@ -286,8 +285,13 @@ type TaggedField =
             let routeInfoBase32 = routeInfoBase256 |> Array.concat |>  Helpers.convert8BitsTo5
             this.WriteField(writer, routeInfoBase32)
         | FeaturesTaggedField f ->
-            if f.Value.Length = 0 then () else
-            let dBase32 = f.Value |> Helpers.convert8BitsTo5
+            if f.BitArray.Length = 0 then () else
+            let pad = if (f.BitArray.Length % 40 = 0) then 0 else 40 - (f.BitArray.Length % 40)
+            let dBase32 =
+                let ba =
+                    [BitArray(pad, false); f.BitArray] |> BitArray.Concat |> fun baa -> baa.ToByteArray()
+                ba |> Helpers.convert8BitsTo5
+                |> Array.skipWhile((=)0uy)
             this.WriteField(writer, dBase32)
             
 
@@ -303,19 +307,31 @@ type TaggedFields = {
     member this.ExplicitNodeId =
         this.Fields |> Seq.choose(function NodeIdTaggedField x -> Some x | _ -> None) |> Seq.tryExactlyOne
         
+    member this.FeatureBit =
+        this.Fields |> Seq.choose(function FeaturesTaggedField fb -> Some fb | _ -> None) |> Seq.tryExactlyOne
+        
     member this.CheckSanity() =
         let pHashes = this.Fields |> List.choose(function PaymentHashTaggedField x -> Some x | _ -> None)
-        if (pHashes.Length > 1) then "Invalid BOLT11! duplicate 'p' field" |> Error else
-        if (pHashes.Length < 1) then "Invalid BOLT11! no payment hash" |> Error else
+        if (pHashes.Length > 1) then "duplicate 'p' field" |> Error else
+        if (pHashes.Length < 1) then "no payment hash" |> Error else
         let secrets = this.Fields |> List.choose(function PaymentSecretTaggedField x -> Some (x) | _ -> None)
-        if (secrets.Length > 1) then "Invalid BOLT11! duplicate 's' field" |> Error else
+        if (secrets.Length > 1) then "duplicate 's' field" |> Error else
+        if (secrets.Length = 1 && this.FeatureBit.IsNone) then
+            sprintf "secret (%A) is set but there were no feature bits" secrets.[0] |> Error
+        else if (secrets.Length = 1 && not <| this.FeatureBit.Value.HasFeature(Feature.PaymentSecret)) then
+            let fb = this.FeatureBit.Value
+            sprintf "secret (%A) is set but feature bit (%s) is not set (%A)" (secrets.[0]) (fb.ToString()) (fb)
+            |> Error else
+        if (secrets.Length = 0 && this.FeatureBit.IsSome && (this.FeatureBit.Value.HasFeature(Feature.PaymentSecret, Mandatory))) then
+            Error "feature bit for payment secret is set but payment secret is not set" else
         let descriptions = this.Fields |> List.choose(function DescriptionTaggedField d -> Some d | _ -> None)
-        if (descriptions.Length > 1) then Error("Invalid BOLT11! duplicate 'd' field") else
+        if (descriptions.Length > 1) then Error("duplicate 'd' field") else
         let dHashes = this.Fields |> List.choose(function DescriptionHashTaggedField x -> Some x | _ -> None)
-        if (dHashes.Length > 1) then Error ("Invalid BOLT11! duplicate 'h' field") else
-        if (descriptions.Length = 1 && dHashes.Length = 1) then Error("Invalid BOLT11! both 'h' and 'd' field exists") else
-        if (descriptions.Length <> 1 && dHashes.Length <> 1) then Error("Invalid BOLT11! must have either description hash or description") else
+        if (dHashes.Length > 1) then Error ("duplicate 'h' field") else
+        if (descriptions.Length = 1 && dHashes.Length = 1) then Error("both 'h' and 'd' field exists") else
+        if (descriptions.Length <> 1 && dHashes.Length <> 1) then Error("must have either description hash or description") else
         () |> Ok
+        |> Result.mapError(fun s -> "Invalid BOLT11! " + s)
 type private Bolt11Data = {
     Timestamp: DateTimeOffset
     TaggedFields: TaggedFields
@@ -446,12 +462,14 @@ type private Bolt11Data = {
                                     let hopInfoList = hopInfos |> Seq.toList |> RoutingInfoTaggedField
                                     return! loop r { acc with Fields = hopInfoList :: acc.Fields } afterReadPosition
                             | 5UL -> // feature bits
-                                if (size < 8) then
-                                    return! loop r acc afterReadPosition
-                                else
-                                    let bytes = r.ReadBytes(size / 8)
-                                    let features = LocalFeatures.Flags bytes |> FeaturesTaggedField
-                                    return! loop r { acc with Fields = features :: acc.Fields } afterReadPosition
+                                let bits = r.ReadBits(size)
+                                let! fb =
+                                    bits
+                                    |> FeatureBit.TryCreate
+                                    |> Result.mapError(fun x ->
+                                        "Invalid BOLT11! Feature field is bogus " + x.ToString())
+                                let features = fb |> FeaturesTaggedField
+                                return! loop r { acc with Fields = features :: acc.Fields } afterReadPosition
                             | _ -> // we must skip unknown field
                                 return! loop r acc afterReadPosition
                                     
