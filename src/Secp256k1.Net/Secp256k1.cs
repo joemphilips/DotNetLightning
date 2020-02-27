@@ -313,13 +313,13 @@ namespace Secp256k1Net
                 throw new ArgumentException($"{nameof(publicKey)} must be {PUBKEY_LENGTH} bytes");
             }
 
-            uint newLength = (uint)serializedPubKeyLength;
+            UIntPtr newLength = (UIntPtr)serializedPubKeyLength;
 
             fixed (byte* serializedPtr = serializedPublicKeyOutput)
             fixed (byte* pubKeyPtr = publicKey)
             {
                 var result = secp256k1_ec_pubkey_serialize.Value(_ctx, serializedPtr, ref newLength, pubKeyPtr, (uint) flags);
-                return result == 1 && newLength == serializedPubKeyLength;
+                return result == 1 && (uint)newLength == serializedPubKeyLength;
             }
         }
 
@@ -352,7 +352,7 @@ namespace Secp256k1Net
             fixed (byte* pubKeyPtr = publicKeyOutput)
             fixed (byte* serializedPtr = serializedPublicKey)
             {
-                return secp256k1_ec_pubkey_parse.Value(_ctx, pubKeyPtr, serializedPtr, (uint) inputLen) == 1;
+                return secp256k1_ec_pubkey_parse.Value(_ctx, pubKeyPtr, serializedPtr, (UIntPtr) inputLen) == 1;
             }
         }
 
@@ -408,7 +408,7 @@ namespace Secp256k1Net
                 throw new ArgumentException($"{nameof(signatureOutput)} must be {SIGNATURE_LENGTH} bytes");
             }
 
-            uint inputlen = (uint)signatureInput.Length;
+            UIntPtr inputlen = (UIntPtr)signatureInput.Length;
 
             fixed (byte* sig = signatureOutput)
             fixed (byte* input = signatureInput)
