@@ -19,6 +19,7 @@ type FeatureError =
         match this with
         | UnknownRequiredFeature msg
         | BogusFeatureDependency msg -> msg
+
 /// Feature bits specified in BOLT 9.
 /// It has no constructors, use its static members to instantiate
 type Feature = private {
@@ -40,6 +41,11 @@ type Feature = private {
         Mandatory = 2
     }
     
+    static member OptionUpfrontShutdownScript = {
+        RfcName = "option_upfront_shutdown_script"
+        Mandatory = 4
+    }
+    
     static member ChannelRangeQueries = {
         RfcName = "gossip_queries"
         Mandatory = 6
@@ -55,6 +61,11 @@ type Feature = private {
         Mandatory = 10
     }
     
+    static member OptionStaticRemoteKey = {
+        RfcName = "option_static_remotekey"
+        Mandatory = 12
+    }
+    
     static member PaymentSecret = {
         RfcName = "payment_secret"
         Mandatory = 14
@@ -65,12 +76,18 @@ type Feature = private {
         Mandatory = 16
     }
     
+    static member OptionSupportLargeChannel = {
+        RfcName = "option_support_large_channel"
+        Mandatory = 18
+    }
+    
 module internal Feature =
     /// Features may depend on other features, as specified in BOLT 9
     let private featuresDependency =
         Map.empty
         |> Map.add (Feature.ChannelRangeQueriesExtended) ([Feature.ChannelRangeQueries])
         |> Map.add (Feature.BasicMultiPartPayment) ([Feature.PaymentSecret])
+        |> Map.add (Feature.PaymentSecret) ([Feature.VariableLengthOnion])
         
     let private isFeatureOn(features: BitArray) (bit: int) =
         (features.Length > bit) && features.Reverse().[bit]
@@ -111,11 +128,17 @@ module internal Feature =
         
     let private supportedMandatoryFeatures =
         seq { Feature.OptionDataLossProtect
+              Feature.InitialRoutingSync
+              Feature.OptionUpfrontShutdownScript
               Feature.ChannelRangeQueries
               Feature.VariableLengthOnion
-              Feature.ChannelRangeQueriesExtended
+              // TODO: support this feature
+              // Feature.ChannelRangeQueriesExtended
+              Feature.OptionStaticRemoteKey
               Feature.PaymentSecret
-              Feature.BasicMultiPartPayment }
+              // TODO: support this feature
+              // Feature.BasicMultiPartPayment
+          }
         |> Seq.map(fun f -> f.Mandatory)
         |> Set
     /// Check that the features that we understand are correctly specified, and that there are no mandatory features
@@ -128,18 +151,23 @@ module internal Feature =
                 if (i % 2 = 0) then
                     yield i
         }
-        |> Seq.exists(fun i -> reversed.[i] && not <| supportedMandatoryFeatures.Contains(i))
+        |> Seq.exists(fun i ->
+            reversed.[i] && not <| supportedMandatoryFeatures.Contains(i)
+            )
         |> not
         
     let allFeatures =
         seq {
-            Feature.InitialRoutingSync
             Feature.OptionDataLossProtect
+            Feature.InitialRoutingSync
+            Feature.OptionUpfrontShutdownScript
             Feature.ChannelRangeQueries
             Feature.VariableLengthOnion
             Feature.ChannelRangeQueriesExtended
+            Feature.OptionStaticRemoteKey
             Feature.PaymentSecret
             Feature.BasicMultiPartPayment
+            Feature.OptionSupportLargeChannel
         }
         |> Set
         
@@ -210,9 +238,9 @@ type FeatureBit private (bitArray) =
         let reversed = this.BitArray.Reverse()
         for f in Feature.allFeatures do
             if (reversed.[f.MandatoryBitPosition]) then
-                sb.Append(sprintf "%s is mandatory." f.RfcName) |> ignore
+                sb.Append(sprintf "%s is mandatory. " f.RfcName) |> ignore
             else if (reversed.[f.OptionalBitPosition]) then
-                sb.Append(sprintf "%s is optional " f.RfcName) |> ignore
+                sb.Append(sprintf "%s is optional. " f.RfcName) |> ignore
             else
                 ()
         sb.ToString()

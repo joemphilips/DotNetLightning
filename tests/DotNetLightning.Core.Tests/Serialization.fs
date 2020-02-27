@@ -719,11 +719,12 @@ module SerializationTest =
                 Expect.isTrue (Feature.hasFeature(parseBitArray"0b00000001") (Feature.OptionDataLossProtect) (Some Mandatory)) ""
                 Expect.isTrue (Feature.hasFeature(parseBitArray"0b00000010") (Feature.OptionDataLossProtect) (Some Optional)) ""
                 
-            testCase "initial_routing_sync, data_loss_protect and variable_length_onion features" <| fun _ ->
-                let features = parseBitArray("0000000100001010")
+            testCase "initial_routing_sync, data_loss_protect and option_upfront_shutdown_script features" <| fun _ ->
+                let features = parseBitArray("0000000000101010")
                 Expect.isTrue (Feature.areSupported(features)) ""
+                Expect.isTrue (Feature.hasFeature(features) (Feature.InitialRoutingSync) (None)) ""
                 Expect.isTrue (Feature.hasFeature(features) (Feature.OptionDataLossProtect) (None)) ""
-                Expect.isTrue (Feature.hasFeature(features) (Feature.VariableLengthOnion) (None)) ""
+                Expect.isTrue (Feature.hasFeature(features) (Feature.OptionUpfrontShutdownScript) (None)) ""
                 
             testCase "variable_length_onion feature" <| fun _ ->
                 Expect.isTrue (Feature.hasFeature("0b0000000100000000" |> parseBitArray) (Feature.VariableLengthOnion) (None)) ""
@@ -797,35 +798,58 @@ module SerializationTest =
                         Expect.isError(result) ""
                     )
                 
-            testCase "features compatibility" <| fun _ ->
+            ftestCase "features compatibility (in int64)" <| fun _ ->
                 let testCases =
                     [
-                        1L <<< Feature.InitialRoutingSync.OptionalBitPosition
-                        1L <<< Feature.OptionDataLossProtect.MandatoryBitPosition
-                        1L <<< Feature.OptionDataLossProtect.OptionalBitPosition
-                        1L <<< Feature.ChannelRangeQueries.MandatoryBitPosition
-                        1L <<< Feature.ChannelRangeQueries.OptionalBitPosition
-                        1L <<< Feature.VariableLengthOnion.MandatoryBitPosition
-                        1L <<< Feature.VariableLengthOnion.OptionalBitPosition
-                        1L <<< Feature.ChannelRangeQueriesExtended.MandatoryBitPosition
-                        1L <<< Feature.ChannelRangeQueriesExtended.OptionalBitPosition
-                        1L <<< Feature.PaymentSecret.MandatoryBitPosition
-                        1L <<< Feature.PaymentSecret.OptionalBitPosition
-                        1L <<< Feature.BasicMultiPartPayment.MandatoryBitPosition
-                        1L <<< Feature.BasicMultiPartPayment.OptionalBitPosition
+                        1L <<< Feature.OptionDataLossProtect.MandatoryBitPosition, true
+                        1L <<< Feature.OptionDataLossProtect.OptionalBitPosition, true
+                        
+                        1L <<< Feature.InitialRoutingSync.OptionalBitPosition, true
+                        
+                        1L <<< Feature.OptionUpfrontShutdownScript.MandatoryBitPosition, true
+                        1L <<< Feature.OptionUpfrontShutdownScript.OptionalBitPosition, true
+                        
+                        1L <<< Feature.ChannelRangeQueries.MandatoryBitPosition, true
+                        1L <<< Feature.ChannelRangeQueries.OptionalBitPosition, true
+                        
+                        1L <<< Feature.VariableLengthOnion.MandatoryBitPosition, true
+                        1L <<< Feature.VariableLengthOnion.OptionalBitPosition, true
+                        
+                        1L <<< Feature.ChannelRangeQueriesExtended.MandatoryBitPosition, false
+                        1L <<< Feature.ChannelRangeQueriesExtended.OptionalBitPosition, true
+                        
+                        1L <<< Feature.OptionStaticRemoteKey.MandatoryBitPosition, true
+                        1L <<< Feature.OptionStaticRemoteKey.OptionalBitPosition, true
+                        
+                        1L <<< Feature.PaymentSecret.MandatoryBitPosition, true
+                        1L <<< Feature.PaymentSecret.OptionalBitPosition, true
+                        
+                        1L <<< Feature.BasicMultiPartPayment.MandatoryBitPosition, false
+                        1L <<< Feature.BasicMultiPartPayment.OptionalBitPosition, true
+                        
+                        1L <<< Feature.OptionSupportLargeChannel.MandatoryBitPosition, false
+                        1L <<< Feature.OptionSupportLargeChannel.OptionalBitPosition, true
                     ]
-                for s in testCases do
-                    Expect.isTrue(Feature.areSupported(BitArray.FromInt64(s))) ""
+                for (s, expected) in testCases do
+                    let ba = BitArray.FromInt64(s)
+                    Expect.equal(Feature.areSupported(ba)) expected (sprintf "%s" (ba.PrintBits()))
                     
+            testCase "features compatibility (in parsed string)" <| fun _ ->
                 let testCases =
                     Map.empty
-                    |> Map.add "            00000000000000001011"  true
-                    |> Map.add "            00010000100001000000" true
-                    |> Map.add "            00100000100000100000" true
-                    |> Map.add "            00010100000000001000" true
-                    |> Map.add "            00011000001000000000" true
-                    |> Map.add "            00101000000000000000" true
-                    |> Map.add "            00000000010001000000" true
+                    |> Map.add "            00000000000000001011" true
+                    // option_upfront_shutdown_script
+                    |> Map.add "            00000000000000010000" true
+                    // gossip_queries (mandatory), gossip_queries_ex (optional)
+                    |> Map.add "            00000000100001000000" true
+                    // gossip_queries_ex (mandatory)
+                    |> Map.add "            00000000010001000000" false
+                    // option_static_remote_key
+                    |> Map.add "            00000001000000000000" true
+                    // initial_routing_sync, payment_secret(mandatory)
+                    |> Map.add "            00000100000000001000" true
+                    // var_onion_secret(optional) payment_secret(optional)
+                    |> Map.add "            00001000001000000000" true
                     // unknown optional feature bits
                     |> Map.add "            10000000000000000000" true
                     |> Map.add "        001000000000000000000000" true
@@ -839,31 +863,7 @@ module SerializationTest =
                     |> Map.add "01000000000000000000000000000000" false
                 testCases
                 |> Map.iter(fun testCase expected ->
-                    Expect.equal (Feature.areSupported(testCase |> parseBitArray)) expected ""
-                    )
-                
-                let testCases =
-                    Map.empty
-                    |> Map.add "            00000000000000001011"  true
-                    |> Map.add "            00010000100001000000" true
-                    |> Map.add "            00100000100000100000" true
-                    |> Map.add "            00010100000000001000" true
-                    |> Map.add "            00011000001000000000" true
-                    |> Map.add "            00101000000000000000" true
-                    |> Map.add "            00000000010001000000" true
-                    // unknown optional feature bits
-                    |> Map.add "            10000000000000000000" true
-                    |> Map.add "        001000000000000000000000" true
-                    // those are useful for nonreg testing of the areSupported method (which needs to be updated with every new supported mandatory bit)
-                    |> Map.add "        000001000000000000000000" false
-                    |> Map.add "        000100000000000000000000" false
-                    |> Map.add "        010000000000000000000000" false
-                    |> Map.add "    0001000000000000000000000000" false
-                    |> Map.add "    0100000000000000000000000000" false
-                    |> Map.add "00010000000000000000000000000000" false
-                    |> Map.add "01000000000000000000000000000000" false
-                testCases
-                |> Map.iter(fun testCase expected ->
-                    Expect.equal (Feature.areSupported(testCase |> parseBitArray)) expected ""
+                    let fb = testCase |> parseBitArray
+                    Expect.equal (Feature.areSupported(fb)) expected (sprintf "%A" (fb.PrintBits()))
                     )
         ]

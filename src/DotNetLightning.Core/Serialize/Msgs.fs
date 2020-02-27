@@ -323,29 +323,6 @@ module rec Msgs =
         Data: byte[]
     }
 
-    type InitTLV =
-        /// genesis chain hash that the node is interested in
-        | Networks of uint256 array
-        | Unknown of GenericTLV
-        with
-        static member FromGenericTLV(tlv: GenericTLV) =
-            match tlv.Type with
-            | 1UL ->
-                let n, rem = Math.DivRem(tlv.Value.Length, 32)
-                if rem <> 0 then raise <| FormatException(sprintf "Bogus length for TLV in init message (%d), remainder was (%d)" tlv.Value.Length rem) else
-                let result = Array.zeroCreate n
-                for i in 0..n - 1 do
-                    result.[i] <- tlv.Value.[(i * 32)..((i * 32) + 31)] |> uint256
-                result |> Networks
-            | _ -> Unknown (tlv)
-            
-        member this.ToGenericTLV() =
-            match this with
-            | Networks networks ->
-                let v = networks |> Array.map(fun x -> x.ToBytes()) |> Array.concat
-                { GenericTLV.Type = 1UL; Value = v }
-            | Unknown tlv -> tlv
-            
 
     [<CLIMutable>]
     type Init =
@@ -1229,7 +1206,7 @@ module rec Msgs =
                         w.Write(expiry.Value, false)
                     | FinalIncorrectCLTVAmount (amountMSat) ->
                         w.Write(amountMSat.Value, false)
-                    | Unknown b ->
+                    | FailureMsgData.Unknown b ->
                         w.Write(b)
                     | _ ->
                         ()
@@ -1275,6 +1252,14 @@ module rec Msgs =
         Action: ErrorAction option
     }
 
+
+    [<CLIMutable>]
+    type QueryShortChannelIds = {
+        mutable ChainHash: uint256
+        mutable ShortIds: ShortChannelId array
+        mutable TLVs: QueryShortChannelIdsTLV []
+    }
+    
     /// Struct used to return valeus from revoke_and_ack messages, cotaining a bunch of commitment
     /// transaction updates if they were pending.
     type CommitmentUpdate = {
