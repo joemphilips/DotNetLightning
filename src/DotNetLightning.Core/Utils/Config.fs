@@ -1,4 +1,5 @@
 namespace DotNetLightning.Utils
+open System
 open NBitcoin
 open Aether
 
@@ -129,3 +130,30 @@ and ChannelOptions = {
     static member AnnouncedChannel_: Lens<_, _> =
         (fun cc -> cc.AnnounceChannel),
         (fun v cc -> { cc with AnnounceChannel = v })
+        
+type RouterConfig() =
+    member val RandomizeRouteSelection: bool = true with get, set
+    member val ChannelExcludeDuration: DateTimeOffset = Unchecked.defaultof<DateTimeOffset> with get, set
+    member val RouterBroadcastInterval: DateTimeOffset = Unchecked.defaultof<DateTimeOffset> with get, set
+    member val NetworkStatsRefreshInterval = Unchecked.defaultof<TimeSpan>
+    member val RequestNodeAnnouncement = false
+    
+    member val EncodingType = EncodingType.Uncompressed
+    
+    member val ChannelRangeChunkSize = 0
+    member val SearchMaxRouteLength: int = 6 with get, set
+    // max acceptable cltv expiry fo the payment (1008 ~ 1 week)
+    member val SearchMaxCLTV: int = 1008 with get, set
+    // if fee is below this value we skip the MaxFeePct check
+    member val SearchMaxFeeBaseSat: int = 21 with get, set
+    // route will be discarded if fee is above this value
+    member val SearchMaxFeePct: float = 0.03 with get, set
+    // channel 'weight' is computed with the following formula
+    // channelFee * (cltvDelta * ratio-cltv + channelAge + channelCapacity * ratio-channel-capacity)
+    // following parameters can be used to ask the router to use heuristics to find i.e: 'cltv-optimized' routes,
+    // **the sum of the three ratios must be > 0 and <= 1 **
+    member val SearchHeuristicsEnabled: bool = true with get, set
+    member val SearchRatioCLTV: float = 0.15 with get, set
+    member val SearchRatioChannelAge: float = 0.35 with get, set
+    member val SearchRatioChannelCapacity: float = 0.5 with get, set
+

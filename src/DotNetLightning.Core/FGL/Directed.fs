@@ -125,7 +125,7 @@ module Edges =
         List.fold (fun g e -> add e g) g edges
 
     ///Removes an edge from the graph.
-    let remove ((v1, v2): Edge<'Vertex>) (g: Graph<'Vertex,'Label,'Edge>) =
+    let remove ((v1, v2): Edge<'Vertex>) (g: Graph<'Vertex,'Label,'Edge>): Graph<'Vertex, 'Label, 'Edge> =
         let g1 =
             let composedPrism = Compose.prism (Map.key_ v1) Lenses.msucc_
             let adjListMapping = Map.remove v2

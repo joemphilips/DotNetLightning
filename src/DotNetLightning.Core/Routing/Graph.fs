@@ -114,12 +114,67 @@ module Graph =
         member x.CompareTo(y: WeightedPath)=
             x.Weight.CompareTo(y.Weight)
     
-    type DirectedLNGraph = DirectedLNGraph of Graph<NodeId, string, GraphEdge>
+    type DirectedLNGraph = private DirectedLNGraph of Map<NodeId, GraphEdge list>
         with
-        static member Create(vertices: (NodeId * _) list) (edges: GraphEdge) =
-            let h = Directed.Vertices.addMany vertices
-            let e = Directed.Edges.addMany
+        static member Create(vertices: (NodeId * _) list) (edges: GraphEdge list) =
+            Graph.empty
+            |> Directed.Vertices.addMany vertices
+            |> Directed.Edges.addMany edges
+            |> DirectedLNGraph
+            
+        member this.Value = let (DirectedLNGraph v) = this in  v
+        member this.ContainsEdge(desc: ChannelDesc) =
+            match this.Value |> Edges.tryFind desc.A desc.B with
+            | None -> false
+            | Some (a, b, e) -> true
+            
+        member this.RemoveEdge(desc: ChannelDesc): DirectedLNGraph =
+            match this.Value |> Edges.tryFind desc.A desc.B with
+            | None -> this
+            | _ ->
+                this.Value |> Edges.remove (desc.A, desc.B) |> DirectedLNGraph
+        member this.RemoveEdges(descriptions: #seq<ChannelDesc>) =
+            descriptions |> Seq.fold(fun (acc: DirectedLNGraph) d -> acc.RemoveEdge(d)) this
+            
+        member this.TryGetEdge(desc: ChannelDesc) =
+            this.Value |> Edges.tryFind(desc.A) (desc.B)
+            
+        member this.TryGetEdge(edge: GraphEdge) =
+            this.TryGetEdge(edge.Desc)
+            
+        member this.GetEdgesBetween(keyA: NodeId, keyB: NodeId) =
+            match this.Value |> Graph.tryGetContext keyB with
+            | None -> Seq.empty
+            | Some ctx ->
+                let (_predecessor, _v, _l, successor) = ctx
+                successor |> Seq.choose(fun (v, e) -> if e.Desc.A = keyA then Some (e) else None)
+                
+        member this.GetIncomingEdgesOf(keyB: NodeId) =
+            match this.Value |> Graph.tryGetContext keyB with
+            | None -> Seq.empty
+            | Some (p, v, l, s) ->
+                p |> Seq.ofList
+              
+        member this.RemoveVertex(key: NodeId) =
+            this.GetIncomingEdgesOf key
+            |> Seq.map(fun (v, e) -> e.Desc)
+            |> this.RemoveEdges
+            |> fun (DirectedLNGraph g) -> g |> Vertices.remove(key)
+            |> DirectedLNGraph
+            
+        member this.AddVertex(key: NodeId) =
             failwith ""
+            
+        member this.AddEdge(edge: GraphEdge) =
+            let vertIn = edge.Desc.A
+            let vertOut = edge.Desc.B
+            if this.ContainsEdge(edge.Desc) then
+                this.RemoveEdge(edge.Desc).AddEdge(edge)
+            else
+                this.Value
+                |> Edges.add (vertIn, vertOut, edge)
+                |> DirectedLNGraph
+                
     
     let makeGraph(descAndUpdates: SortedDictionary<ShortChannelId, PublicChannel>): DirectedLNGraph =
         let h1 =
