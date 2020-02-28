@@ -288,6 +288,7 @@ module Primitives =
                 BlockIndex = bi |> TxIndexInBlock
                 TxOutIndex = txOutIndex |> TxOutIndex
             }
+            
         member this.ToBytes(): byte [] =
             Array.concat [|
                         NBitcoin.Utils.ToBytes(this.BlockHeight.Value, false).[0..2]

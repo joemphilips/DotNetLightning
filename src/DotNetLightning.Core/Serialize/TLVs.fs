@@ -1,16 +1,12 @@
-namespace DotNetLightning.Utils
+namespace DotNetLightning.Serialize
 
 
+open DotNetLightning.Utils.Primitives
 open System
 open NBitcoin
 
-type GenericTLV = {
-    Type: uint64
-    Value: byte[]
-}
-
 type QueryShortChannelIdsTLV =
-    | QueryFlags of uint8
+    | QueryFlags of encodedType: ShortChannelIdEncoding * encodedQueryFlags: byte[]
     | Unknown of GenericTLV
     with
     static member FromGenericTLV(tlv: GenericTLV) =
@@ -18,6 +14,21 @@ type QueryShortChannelIdsTLV =
         | 1UL ->
             failwith ""
         | _ -> QueryShortChannelIdsTLV.Unknown (tlv)
+        
+    member this.ToGenericTLV() =
+        match this with
+        | QueryFlags (t, flags) ->
+            let encodedFlags: byte[] =
+                match t with
+                | ShortChannelIdEncoding.SortedPlain ->
+                    flags
+                | ShortChannelIdEncoding.ZLib ->
+                    failwith ""
+                | _ -> failwith "unreachable!"
+            let v = Array.concat(seq { [|(uint8)t|]; encodedFlags })
+            { Type = 1UL; Value = v }
+        | Unknown tlv -> tlv
+        
         
 type InitTLV =
     /// genesis chain hash that the node is interested in

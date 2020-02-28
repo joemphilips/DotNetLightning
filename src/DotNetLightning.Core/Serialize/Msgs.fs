@@ -323,7 +323,6 @@ module rec Msgs =
         Data: byte[]
     }
 
-
     [<CLIMutable>]
     type Init =
         {
@@ -1253,13 +1252,6 @@ module rec Msgs =
     }
 
 
-    [<CLIMutable>]
-    type QueryShortChannelIds = {
-        mutable ChainHash: uint256
-        mutable ShortIds: ShortChannelId array
-        mutable TLVs: QueryShortChannelIdsTLV []
-    }
-    
     /// Struct used to return valeus from revoke_and_ack messages, cotaining a bunch of commitment
     /// transaction updates if they were pending.
     type CommitmentUpdate = {
