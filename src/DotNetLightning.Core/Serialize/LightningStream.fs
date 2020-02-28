@@ -366,19 +366,27 @@ type LightningReaderStream(inner: Stream) =
             if (v < 0x100000000UL) then
                 raise <| FormatException("decoded varint is not canonical")
             v
+            
+    member this.ReadAllAsBigSize() =
+        let mutable rest = int32 this.Length - int32 this.Position
+        let result = ResizeArray<uint64>()
+        while rest > 0 do
+            result.Add(this.ReadBigSize())
+            rest <- int32 this.Length - int32 this.Position
+        result |> Seq.toArray
                 
-     member this.ReadTLV() =
-         let ty = this.ReadBigSize()
-         let length = this.ReadBigSize()
-         let value = this.ReadBytes(int32 length)
-         { GenericTLV.Type = ty; Value = value }
+    member this.ReadTLV() =
+        let ty = this.ReadBigSize()
+        let length = this.ReadBigSize()
+        let value = this.ReadBytes(int32 length)
+        { GenericTLV.Type = ty; Value = value }
          
-     member this.ReadTLVStream() =
-         let mutable rest = int32 this.Length - int32 this.Position
-         let result = ResizeArray<GenericTLV>()
-         while rest > 0 do
-             result.Add(this.ReadTLV())
-             rest <- int32 this.Length - int32 this.Position
-         result |> Seq.toArray
+    member this.ReadTLVStream() =
+        let mutable rest = int32 this.Length - int32 this.Position
+        let result = ResizeArray<GenericTLV>()
+        while rest > 0 do
+            result.Add(this.ReadTLV())
+            rest <- int32 this.Length - int32 this.Position
+        result |> Seq.toArray
          
         

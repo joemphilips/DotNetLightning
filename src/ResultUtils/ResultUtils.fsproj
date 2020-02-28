@@ -13,5 +13,6 @@
     <Compile Include="Validation.fs" />
     <Compile Include="ValidationOp.fs" />
     <Compile Include="List.fs" />
+    <Compile Include="Seq.fs" />
   </ItemGroup>
 </Project>

@@ -6,7 +6,7 @@ open System
 open NBitcoin
 
 type QueryShortChannelIdsTLV =
-    | QueryFlags of encodedType: ShortChannelIdEncoding * encodedQueryFlags: byte[]
+    | QueryFlags of encodingType: EncodingType * encodedQueryFlags: byte[]
     | Unknown of GenericTLV
     with
     static member FromGenericTLV(tlv: GenericTLV) =
@@ -20,9 +20,9 @@ type QueryShortChannelIdsTLV =
         | QueryFlags (t, flags) ->
             let encodedFlags: byte[] =
                 match t with
-                | ShortChannelIdEncoding.SortedPlain ->
+                | EncodingType.SortedPlain ->
                     flags
-                | ShortChannelIdEncoding.ZLib ->
+                | EncodingType.ZLib ->
                     failwith ""
                 | _ -> failwith "unreachable!"
             let v = Array.concat(seq { [|(uint8)t|]; encodedFlags })

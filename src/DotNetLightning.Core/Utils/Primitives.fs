@@ -277,8 +277,7 @@ module Primitives =
     }
         with
 
-        static member FromUInt64(rawData: uint64): ShortChannelId =
-            let b = NBitcoin.Utils.ToBytes(rawData, false)
+        static member From8Bytes(b: byte[]): ShortChannelId =
             let bh = NBitcoin.Utils.ToUInt32 (Array.concat [| b.[0..2]; [| 0uy |] |], false)
             let bi = NBitcoin.Utils.ToUInt32 (Array.concat [| b.[3..5]; [| 0uy |] |], false)
             let txOutIndex = NBitcoin.Utils.ToUInt16(b.[6..7], false)
@@ -288,6 +287,9 @@ module Primitives =
                 BlockIndex = bi |> TxIndexInBlock
                 TxOutIndex = txOutIndex |> TxOutIndex
             }
+            
+        static member FromUInt64(rawData: uint64) =
+            NBitcoin.Utils.ToBytes(rawData, false) |> ShortChannelId.From8Bytes
             
         member this.ToBytes(): byte [] =
             Array.concat [|
@@ -307,3 +309,25 @@ module Primitives =
         Green: uint8
         Blue: uint8
     }
+    
+    type QueryFlags = private QueryFlags of uint8
+        with
+        static member Create (data) = QueryFlags(data)
+        static member TryCreate(data: uint64) =
+            if data > 255UL then
+                Error(sprintf "Too large query flag! It must be represented as 1 byte, but it was %A" data)
+            else
+                QueryFlags(uint8 data) |> Ok
+        member private x.Value = let (QueryFlags v) = x in v
+        member this.RequiresChannelAnnouncement =
+            (this.Value &&& 0b00000001uy) = 1uy
+            
+        member this.RequiresChannelUpdateForNode1 =
+            (this.Value &&& 0b00000010uy) = 1uy
+            
+        member this.RequiresChannelUpdateForNode2 =
+            (this.Value &&& 0b00000100uy) = 1uy
+        member this.RequiresNodeAnnouncementForNode1 =
+            (this.Value &&& 0b00001000uy) = 1uy
+        member this.RequiresNodeAnnouncementForNode2 =
+            (this.Value &&& 0b00010000uy) = 1uy
