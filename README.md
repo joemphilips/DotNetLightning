@@ -18,4 +18,14 @@ That is, it will read in following order.
 
 ## Developer notes
 
+![Alt text](images/Package_Dependency_Graph.png?raw=true "Package dependency graph")
+
+Purple background indicates that the package is included in this repository.
+Important point here is that we should have at least external dependencies which may become possible
+attack vector. (especially for DotNetLightning.Core)
+
 ![Alt text](images/Architecture01.png?raw=true "Infrastructure Architecture in one image")
+
+## footnote
+
+[Slide used for creating images](https://docs.google.com/presentation/d/1GKByCIPef3wwM_RMGQFcdsme2dVyQWHL_kp6t67eFRw/edit?usp=sharing)
