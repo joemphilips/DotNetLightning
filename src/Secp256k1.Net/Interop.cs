@@ -71,9 +71,9 @@ namespace Secp256k1Net
     /// <returns>1 if the public key was fully valid, 0 if the public key could not be parsed or is invalid.</returns>
     [SymbolName(nameof(secp256k1_ec_pubkey_parse))]
     public unsafe delegate int secp256k1_ec_pubkey_parse(IntPtr ctx,
-        byte* pubkey,   // secp256k1_pubkey* pubkey,  
-        byte* input,    // const unsigned char* input,
-        uint inputlen   // size_t inputlen
+        byte* pubkey,       // secp256k1_pubkey* pubkey,
+        byte* input,        // const unsigned char* input,
+        UIntPtr inputlen    // size_t inputlen
     );
 
     /// <summary>
@@ -87,10 +87,10 @@ namespace Secp256k1Net
     /// <returns>1 always</returns>
     [SymbolName(nameof(secp256k1_ec_pubkey_serialize))]
     public unsafe delegate int secp256k1_ec_pubkey_serialize(IntPtr ctx,
-        byte* output,       // unsigned char* output
-        ref uint outputlen, // size_t *outputlen
-        byte* pubkey,       // const secp256k1_pubkey* pubkey
-        uint flags          // unsigned int flags
+        byte* output,           // unsigned char* output
+        ref UIntPtr outputlen,  // size_t *outputlen
+        byte* pubkey,           // const secp256k1_pubkey* pubkey
+        uint flags              // unsigned int flags
     );
 
     /// <summary>
@@ -132,9 +132,9 @@ namespace Secp256k1Net
     /// <returns>1: correct signature, 0: incorrect or unparseable signature</returns>
     [SymbolName(nameof(secp256k1_ecdsa_signature_parse_der))]
     public unsafe delegate int secp256k1_ecdsa_signature_parse_der(IntPtr ctx,
-        byte* sig,    // secp256k1_ecdsa_signature* sig
-        byte* input,  // const unsigned char *input
-        uint inputlen // size_t inputlen
+        byte* sig,          // secp256k1_ecdsa_signature* sig
+        byte* input,        // const unsigned char *input
+        UIntPtr inputlen    // size_t inputlen
     ); 
 
     /// <summary>
