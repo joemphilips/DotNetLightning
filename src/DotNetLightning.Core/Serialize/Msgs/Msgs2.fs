@@ -1,6 +1,7 @@
 namespace DotNetLightning.Serialize.Msgs
 
 open System
+open System
 open DotNetLightning.Serialize
 open NBitcoin
 open DotNetLightning.Utils
@@ -23,17 +24,22 @@ type QueryShortChannelIds = {
             let tlvs =
                 ls.ReadTLVStream()
                 |> Array.map(QueryShortChannelIdsTLV.FromGenericTLV)
-            let numQueryFlags =
+            let queryFlags =
                 tlvs
-                |> Seq.filter(function QueryShortChannelIdsTLV.QueryFlags _ -> true | _ -> false)
-                |> Seq.length
-            if (shortIds.Length <> numQueryFlags) then
-                raise <| FormatException("query_short_channel_ids have different length for short_ids and query_flags!")
-            this.ShortIds <- shortIds
-            this.TLVs <- tlvs
+                |> Seq.choose(function QueryShortChannelIdsTLV.QueryFlags (_, y) -> Some (y) | _ -> None)
+                |> Seq.tryExactlyOne
+            match queryFlags with
+            | None -> raise <| FormatException("no query flags")
+            | Some flags ->
+                if (shortIds.Length <> (flags |> Seq.length)) then
+                    raise <| FormatException(sprintf "query_short_channel_ids have different length for short_ids(%A) and query_flags! (%A)" shortIds flags)
+                this.ShortIds <- shortIds
+                this.TLVs <- tlvs
         member this.Serialize(ls) =
             ls.Write(this.ChainHash, false)
-            ls.Write((byte)this.ShortIdsEncodingType)
-            this.ShortIds |> Encoder.encodeShortChannelIds (this.ShortIdsEncodingType) |> ls.Write
+            let encodedIds = this.ShortIds |> Encoder.encodeShortChannelIds (this.ShortIdsEncodingType)
+            [[|(byte)this.ShortIdsEncodingType|]; encodedIds]
+            |> Array.concat
+            |> ls.WriteWithLen
             this.TLVs |> Array.map(fun tlv -> tlv.ToGenericTLV()) |> ls.WriteTLVStream
 

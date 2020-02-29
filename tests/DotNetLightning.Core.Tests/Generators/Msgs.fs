@@ -9,6 +9,7 @@ open PrimitiveGenerators
 open FsCheck
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils
+open DotNetLightning.Utils.Primitives
 
 let (<*>) = Gen.apply
 
@@ -449,4 +450,36 @@ let channelUpdateGen = gen {
         Signature = s
         Contents = c
     }
+}
+
+let private encodingTypeGen =
+    Gen.oneof[
+        Gen.constant(EncodingType.SortedPlain)
+        Gen.constant(EncodingType.ZLib)
+    ]
+
+let private queryFlagGen: Gen<QueryFlags> =
+    Arb.generate<uint8>
+    |> Gen.filter(fun x -> 0xfduy > x) // query flags should be represented as 1 byte in VarInt encoding
+    |> Gen.map QueryFlags.Create
+    
+let private queryFlagsGen (length: int): Gen<QueryShortChannelIdsTLV> =
+    gen {
+        let! ty = encodingTypeGen
+        let! flags = Gen.arrayOfLength length queryFlagGen
+        return QueryShortChannelIdsTLV.QueryFlags(ty, flags)
+    }
+    
+let queryShortChannelIdsGen = gen {
+    let! n = Arb.generate<PositiveInt>
+    let! s = chainHashGen
+    let! ty = encodingTypeGen
+    let! ids = Gen.arrayOfLength n.Get shortChannelIdsGen
+    let! knownTLVs = queryFlagsGen n.Get |> Gen.map Array.singleton
+    let! unknownTLVs = (genericTLVGen([1UL]) |> Gen.map(QueryShortChannelIdsTLV.Unknown)) |> Gen.optionOf |> Gen.map(Option.toArray)
+    let tlvs = [knownTLVs; unknownTLVs] |> Array.concat
+    return { QueryShortChannelIds.ChainHash = s
+             ShortIdsEncodingType = ty
+             ShortIds = ids
+             TLVs = tlvs }
 }

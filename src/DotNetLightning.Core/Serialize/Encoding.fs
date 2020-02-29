@@ -15,15 +15,16 @@ type EncodingType =
     
 module Decoder =
     let private tryDecode (encodingType: EncodingType) (bytes : byte[]) =
-        let data = bytes.[1..]
+        if bytes.Length = 0 then bytes |> Ok else
+        let data = bytes
         match encodingType with
         | EncodingType.SortedPlain ->
             data |> Ok
         | EncodingType.ZLib ->
             use ms = new MemoryStream(data)
-            use ds = new DeflateStream(ms, CompressionMode.Decompress)
             use outputMs = new MemoryStream()
-            ds.CopyTo(outputMs)
+            use ds = new DeflateStream(outputMs, CompressionMode.Decompress)
+            ms.CopyTo(ds)
             outputMs.ToArray() |> Ok
         | x ->
             Error(sprintf "Unknown encoding type %A" x)
@@ -33,10 +34,11 @@ module Decoder =
         
     let private bytesToShortIds (data: byte[]) =
         result {
+            if data.Length = 0 then return [||] else
             let count, remainder = Math.DivRem(data.Length, 8)
             if (remainder <> 0) then
                 return!
-                    "Bogus encoded_ item! length of short_channel_ids must be multiple of 8"
+                    sprintf "Bogus encoded_ item! length of short_channel_ids must be multiple of 8. it was %d" data.Length
                     |> Error
             else
                 return
@@ -82,14 +84,15 @@ module Decoder =
         
 module Encoder =
     let private encode(ty: EncodingType) (value:byte[]): byte[] =
+        if value.Length = 0 then [||] else
         match ty with
         | EncodingType.SortedPlain ->
             value
         | EncodingType.ZLib ->
             use ms = new MemoryStream(value)
-            use ds = new DeflateStream(ms, CompressionMode.Compress)
             use outputMs = new MemoryStream()
-            ds.CopyTo(outputMs)
+            use ds = new DeflateStream(outputMs, CompressionMode.Compress)
+            ms.CopyTo(ds)
             outputMs.ToArray()
         | x ->
             failwithf "Unreachable! Unknown encoding type %A" x
@@ -100,4 +103,5 @@ module Encoder =
         
     let encodeQueryFlags (ty) (flags: QueryFlags[]) =
         let b = flags |> Array.map(fun i -> i.ToBytes()) |> Array.concat
-        encode (ty) (b)
+        let r = encode (ty) (b)
+        r

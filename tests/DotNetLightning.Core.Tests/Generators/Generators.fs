@@ -91,6 +91,9 @@ type P2PMsgGenerators =
 
     static member ChannelUpdate(): Arbitrary<ChannelUpdate> =
         Arb.fromGen channelUpdateGen
+        
+    static member QueryShortChannelIds(): Arbitrary<QueryShortChannelIds> =
+        Arb.fromGen queryShortChannelIdsGen
 
     static member P2PMsg(): Arbitrary<ILightningMsg> =
         Gen.oneof [

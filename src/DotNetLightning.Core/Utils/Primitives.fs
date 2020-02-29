@@ -314,7 +314,7 @@ module Primitives =
         with
         static member Create (data) = QueryFlags(data)
         static member TryCreate(data: uint64) =
-            if data > 255UL then
+            if data > 0xfcUL then
                 Error(sprintf "Too large query flag! It must be represented as 1 byte, but it was %A" data)
             else
                 QueryFlags(uint8 data) |> Ok
@@ -333,6 +333,4 @@ module Primitives =
             (this.Value &&& 0b00010000uy) = 1uy
             
         member this.ToBytes() =
-            let arr = Array.zeroCreate 8
-            arr.[0] <- this.Value
-            arr
+            [|(byte)this.Value|]
