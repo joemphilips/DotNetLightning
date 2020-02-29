@@ -483,3 +483,12 @@ let queryShortChannelIdsGen = gen {
              ShortIds = ids
              TLVs = tlvs }
 }
+
+let replyShortChannelIdsEndGen = gen {
+    let! b = Arb.generate<bool>
+    let! chainHash = chainHashGen
+    return {
+        ReplyShortChannelIdsEnd.Complete = b
+        ChainHash = chainHash
+    }
+}

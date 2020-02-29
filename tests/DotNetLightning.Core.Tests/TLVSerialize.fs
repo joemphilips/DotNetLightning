@@ -66,9 +66,3 @@ let bigSizeVarIntTests =
             Expect.equal actual v ""
     ]
     
-    
-    
-[<Tests>]
-let tlvEncodingTests =
-    testList "TLV encoding decoding" [
-    ]

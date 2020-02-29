@@ -24,6 +24,7 @@ open DotNetLightning.Infrastructure.Interfaces
 open DotNetLightning.Infrastructure.Actors
 
 
+open DotNetLightning.Serialize
 open NBitcoin
 open Microsoft.Extensions.Logging
 

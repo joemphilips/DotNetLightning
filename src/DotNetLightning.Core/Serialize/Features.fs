@@ -108,9 +108,7 @@ module internal Feature =
         |> String.concat " and "
     let validateFeatureGraph(features: BitArray) =
         result {
-            let mutable c = 0
             for kvp in featuresDependency do
-                c <- c + 1
                 let f = kvp.Key
                 let deps = kvp.Value
                 if hasFeature(features) (f) (None) && deps |> List.exists(fun d -> not <| hasFeature(features) (d) (None)) then

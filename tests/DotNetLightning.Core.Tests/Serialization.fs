@@ -743,18 +743,23 @@ module SerializationTest =
                     |> Map.add                   "00000000" true
                     |> Map.add                   "01011000" true
                     // gossip_queries_ex depend on gossip_queries
-                    |> Map.add "0b000000000000100000000000" false
                     |> Map.add "0b000000000000010000000000" false
+                    |> Map.add "0b000000000000100000000000" false
+                    
                     |> Map.add "0b000000100100000100000000" true
                     |> Map.add "0b000000000000100010000000" true
-                    |> Map.add "0b000000001000000000000000" true
-                    |> Map.add "0b000000000100000000000000" true
+                    // payment_secret depends on var_onion_optin
+                    |> Map.add "0b000000000100000000000000" false
+                    // event the feature is set by odd bit(optional), then deps must set flags (either optional/mandatory)
+                    |> Map.add "0b000000001000000000000000" false
+                    
                     |> Map.add "0b000000000100001000000000" true
                     // basic_mpp depends on payment_secret
                     |> Map.add "0b000000100000000000000000" false
                     |> Map.add "0b000000010000000000000000" false
-                    |> Map.add "0b000000101000000000000000" true // we allow not setting var_onion_optin
-                    |> Map.add "0b000000011000000000000000" true // we allow not setting var_onion_optin
+                    
+                    |> Map.add "0b000000101000000000000000" false
+                    |> Map.add "0b000000011000000000000000" false
                     |> Map.add "0b000000011000001000000000" true
                     |> Map.add "0b000000100100000100000000" true
                      
@@ -763,42 +768,12 @@ module SerializationTest =
                     let ba = testCase |> parseBitArray
                     let result = Feature.validateFeatureGraph (ba)
                     if valid then
-                        Expect.isOk(result) ""
+                        Expect.isOk(result) (testCase)
                     else
-                        Expect.isError(result) ""
+                        Expect.isError(result) (testCase)
                     )
                 
-                let testCases =
-                    Map.empty
-                    |> Map.add [||] true
-                    |> Map.add [|                            0b00000000uy |] true
-                    |> Map.add [|                            0b01011000uy |] true
-                    // gossip_queries_ex depend on gossip_queries
-                    |> Map.add [|0b00000000uy; 0b00001000uy; 0b00000000uy |] false
-                    |> Map.add [|0b00000000uy; 0b00000100uy; 0b00000000uy |] false
-                    |> Map.add [|0b00000010uy; 0b01000001uy; 0b00000000uy |] true
-                    |> Map.add [|0b00000000uy; 0b00001000uy; 0b10000000uy |] true
-                    |> Map.add [|0b00000000uy; 0b10000000uy; 0b00000000uy |] true
-                    |> Map.add [|0b00000000uy; 0b01000000uy; 0b00000000uy |] true
-                    |> Map.add [|0b00000000uy; 0b01000010uy; 0b00000000uy |] true
-                    // basic_mpp depends on payment_secret
-                    |> Map.add [|0b00000010uy; 0b00000000uy; 0b00000000uy |] false
-                    |> Map.add [|0b00000001uy; 0b00000000uy; 0b00000000uy |] false
-                    |> Map.add [|0b00000010uy; 0b10000000uy; 0b00000000uy |] true // we allow not setting var_onion_optin
-                    |> Map.add [|0b00000001uy; 0b10000000uy; 0b00000000uy |] true // we allow not setting var_onion_optin
-                    |> Map.add [|0b00000001uy; 0b10000010uy; 0b00000000uy |] true
-                    |> Map.add [|0b00000010uy; 0b01000001uy; 0b00000000uy |] true
-                     
-                testCases
-                |> Map.iter(fun testCase valid ->
-                    let result = Feature.validateFeatureGraph (testCase |> BitArray.FromBytes)
-                    if valid then
-                        Expect.isOk(result) ""
-                    else
-                        Expect.isError(result) ""
-                    )
-                
-            ftestCase "features compatibility (in int64)" <| fun _ ->
+            testCase "features compatibility (in int64)" <| fun _ ->
                 let testCases =
                     [
                         1L <<< Feature.OptionDataLossProtect.MandatoryBitPosition, true

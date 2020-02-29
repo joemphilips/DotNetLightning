@@ -22,9 +22,10 @@ module Decoder =
             data |> Ok
         | EncodingType.ZLib ->
             use ms = new MemoryStream(data)
+            ms.Position <- 0L
+            use ds = new DeflateStream(ms, CompressionMode.Decompress, true)
             use outputMs = new MemoryStream()
-            use ds = new DeflateStream(outputMs, CompressionMode.Decompress)
-            ms.CopyTo(ds)
+            ds.CopyTo(outputMs)
             outputMs.ToArray() |> Ok
         | x ->
             Error(sprintf "Unknown encoding type %A" x)
@@ -89,10 +90,11 @@ module Encoder =
         | EncodingType.SortedPlain ->
             value
         | EncodingType.ZLib ->
-            use ms = new MemoryStream(value)
             use outputMs = new MemoryStream()
             use ds = new DeflateStream(outputMs, CompressionMode.Compress)
-            ms.CopyTo(ds)
+            ds.Write(value, 0, value.Length)
+            ds.Flush()
+            ds.Close()
             outputMs.ToArray()
         | x ->
             failwithf "Unreachable! Unknown encoding type %A" x
@@ -103,5 +105,4 @@ module Encoder =
         
     let encodeQueryFlags (ty) (flags: QueryFlags[]) =
         let b = flags |> Array.map(fun i -> i.ToBytes()) |> Array.concat
-        let r = encode (ty) (b)
-        r
+        encode (ty) (b)
