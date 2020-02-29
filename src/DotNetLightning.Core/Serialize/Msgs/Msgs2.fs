@@ -1,10 +1,9 @@
-namespace DotNetLightning.Serialize.MsgsV2
+namespace DotNetLightning.Serialize.Msgs
 
 open System
 open DotNetLightning.Serialize
 open NBitcoin
 open DotNetLightning.Utils
-open DotNetLightning.Serialize.Msgs
 
 [<CLIMutable>]
 type QueryShortChannelIds = {
@@ -15,7 +14,7 @@ type QueryShortChannelIds = {
 }
     with
     interface ILightningSerializable<QueryShortChannelIds> with
-        member this.Deserialize(ls) =
+        member this.Deserialize(ls: LightningReaderStream) =
             this.ChainHash <- ls.ReadUInt256(false)
             let shortIdsWithFlag = ls.ReadWithLen()
             this.ShortIdsEncodingType <- LanguagePrimitives.EnumOfValue<byte, EncodingType>(shortIdsWithFlag.[0])
