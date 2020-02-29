@@ -331,3 +331,8 @@ module Primitives =
             (this.Value &&& 0b00001000uy) = 1uy
         member this.RequiresNodeAnnouncementForNode2 =
             (this.Value &&& 0b00010000uy) = 1uy
+            
+        member this.ToBytes() =
+            let arr = Array.zeroCreate 8
+            arr.[0] <- this.Value
+            arr

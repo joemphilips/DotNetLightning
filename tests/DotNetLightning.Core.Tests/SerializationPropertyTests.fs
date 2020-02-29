@@ -99,6 +99,8 @@ let testList2 =
         testPropertyWithConfig config "channel_update" <| fun (msg: ChannelUpdate) ->
             Expect.equal (msg.Clone()) (msg) ""
 
+        testPropertyWithConfig config "query_short_channel_ids" <| fun (msg: QueryShortChannelIds) ->
+            ()
         
         testPropertyWithConfig config "lightning p2p msg" <| fun (msg: ILightningMsg) ->
             use ms = new MemoryStream()

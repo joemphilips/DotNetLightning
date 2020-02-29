@@ -1,6 +1,8 @@
 namespace DotNetLightning.Serialize
+(*
+    Encoder-Decoder for TLV serialization
+*)
 
-open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils.Primitives
 open ResultUtils
 open System
@@ -11,9 +13,8 @@ type EncodingType =
     | SortedPlain = 0uy
     | ZLib = 1uy
     
-module Encoder =
-    let private tryDecode (bytes : byte[]) =
-        let encodingType = LanguagePrimitives.EnumOfValue<byte,EncodingType>(bytes.[0])
+module Decoder =
+    let private tryDecode (encodingType: EncodingType) (bytes : byte[]) =
         let data = bytes.[1..]
         match encodingType with
         | EncodingType.SortedPlain ->
@@ -43,16 +44,20 @@ module Encoder =
                     |> Array.splitInto count
                     |> Array.map(ShortChannelId.From8Bytes)
         }
-    let tryDecodeShortChannelIds d =
+    let tryDecodeShortChannelIds encodingType d =
         result {
-            let! bytes = tryDecode d
+            let! bytes = tryDecode encodingType d
             return! bytes |> bytesToShortIds
         }
         
-    let decodeShortChannelIds =
-        tryDecodeShortChannelIds >> unwrap
+    let decodeShortChannelIds e d =
+        tryDecodeShortChannelIds e d |> unwrap
         
-    let bytesToQueryFlags (data: byte[]) =
+    let decodeShortChanneelIdsFromBytes (d: byte[]) =
+        let encodingType = LanguagePrimitives.EnumOfValue<byte,EncodingType>(d.[0])
+        decodeShortChannelIds encodingType (d.[1..])
+        
+    let private bytesToQueryFlags (data: byte[]) =
         use ms = new MemoryStream(data)
         use ls = new LightningReaderStream(ms)
         let flags =
@@ -62,12 +67,37 @@ module Encoder =
             |> Result.map Seq.toArray
         flags
 
-    let tryDecodeQueryFlags d =
+    let tryDecodeQueryFlags encodingType d =
         result {
-            let! bytes = tryDecode d
+            let! bytes = tryDecode encodingType d
             return! bytes |> bytesToQueryFlags
         }
         
-    let encode<'T>(object: 'T): byte[] =
-        failwith ""
-
+    let decodeQueryFlags encodingType d =
+        tryDecodeQueryFlags encodingType d |> unwrap
+        
+    let decodeQueryFlagsFromBytes (d: byte[]) =
+        let encodingType = LanguagePrimitives.EnumOfValue<byte,EncodingType>(d.[0])
+        decodeQueryFlags encodingType (d.[1..])
+        
+module Encoder =
+    let private encode(ty: EncodingType) (value:byte[]): byte[] =
+        match ty with
+        | EncodingType.SortedPlain ->
+            value
+        | EncodingType.ZLib ->
+            use ms = new MemoryStream(value)
+            use ds = new DeflateStream(ms, CompressionMode.Compress)
+            use outputMs = new MemoryStream()
+            ds.CopyTo(outputMs)
+            outputMs.ToArray()
+        | x ->
+            failwithf "Unreachable! Unknown encoding type %A" x
+            
+    let encodeShortChannelIds (ty) (shortIds: ShortChannelId[]) =
+        let b = shortIds |> Array.map(fun i -> i.ToBytes()) |> Array.concat
+        encode (ty) (b)
+        
+    let encodeQueryFlags (ty) (flags: QueryFlags[]) =
+        let b = flags |> Array.map(fun i -> i.ToBytes()) |> Array.concat
+        encode (ty) (b)
