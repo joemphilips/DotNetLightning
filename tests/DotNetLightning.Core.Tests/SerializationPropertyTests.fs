@@ -99,7 +99,21 @@ let testList2 =
         testPropertyWithConfig config "channel_update" <| fun (msg: ChannelUpdate) ->
             Expect.equal (msg.Clone()) (msg) ""
 
+        testPropertyWithConfig config "query_short_channel_ids" <| fun (msg: QueryShortChannelIds) ->
+            Expect.equal (msg.Clone()) (msg) ""
         
+        testPropertyWithConfig config "reply_short_channel_ids" <| fun (msg: ReplyShortChannelIdsEnd) ->
+            Expect.equal (msg.Clone()) (msg) ""
+            
+        testPropertyWithConfig config "query_channel_range" <| fun (msg: QueryChannelRange) ->
+            Expect.equal (msg.Clone()) (msg) ""
+            
+        testPropertyWithConfig config "reply_channel_range" <| fun (msg: ReplyChannelRange) ->
+            Expect.equal (msg.Clone()) (msg) ""
+            
+        testPropertyWithConfig config "gossip_timestamp_filter" <| fun (msg: GossipTimestampFilter) ->
+            Expect.equal (msg.Clone()) (msg) ""
+            
         testPropertyWithConfig config "lightning p2p msg" <| fun (msg: ILightningMsg) ->
             use ms = new MemoryStream()
             use lws = new LightningWriterStream(ms)

@@ -13,6 +13,7 @@ let temporaryChannelGen = uint256Gen |> Gen.map ChannelId
 let moneyGen = Arb.generate<uint64> |> Gen.map(Money.Satoshis)
 let lnMoneyGen = Arb.generate<uint64> |> Gen.map(LNMoney.MilliSatoshis)
 
+let shortChannelIdsGen = Arb.generate<uint64> |> Gen.map(ShortChannelId.FromUInt64)
 // crypto stuffs
 
 let keyGen = Gen.fresh (fun () -> Key())

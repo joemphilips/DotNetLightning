@@ -1,5 +1,4 @@
-namespace DotNetLightning.Utils
-
+namespace DotNetLightning.Serialize
 
 type GenericTLV = {
     Type: uint64

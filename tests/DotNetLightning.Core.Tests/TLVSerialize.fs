@@ -9,7 +9,7 @@ open Expecto
 open DotNetLightning.Serialize
 
 [<Tests>]
-let tests =
+let bigSizeVarIntTests =
     let hex = NBitcoin.DataEncoders.HexEncoder()
     let dataPath1 = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "../../..", ("Data/bolt1-bigsize.json"))
     let testData1 = dataPath1 |> File.ReadAllText |> JsonDocument.Parse
@@ -65,3 +65,4 @@ let tests =
             let actual = reader.ReadBigSize()
             Expect.equal actual v ""
     ]
+    
