@@ -222,7 +222,7 @@ module Sphinx =
             InvalidErrorPacketLength(ERROR_PACKET_LENGTH, packet.Length)
             |> Error
         else
-            let (mac, payload) = packet |> Array.splitAt(MacLength)
+            let (_mac, payload) = packet |> Array.splitAt(MacLength)
             let len = Utils.ToUInt16(payload.[0..1], false) |> int
             if (len < 0 || (len > MAX_ERROR_PAYLOAD_LENGTH)) then
                 InvalidMessageLength len
