@@ -28,7 +28,7 @@ let genericTLVGen (known: uint64 list) =
     gen {
         let! t =
             Arb.generate<uint64>
-            |> Gen.filter(fun v -> not <| List.exists(fun knownInt -> v = knownInt) known)
+            |> Gen.filter(fun v -> not <| (List.exists(fun knownInt -> v = knownInt) known))
         let! v = Arb.generate<NonNull<byte[]>>
         return { GenericTLV.Type = t; Value = v.Get }
     }
@@ -492,3 +492,73 @@ let replyShortChannelIdsEndGen = gen {
         ChainHash = chainHash
     }
 }
+
+let private queryChannelRangeTLVGen =
+    Gen.frequency[|
+        (1, Arb.generate<uint8>  |> Gen.filter(fun x -> 0xfduy > x) |> Gen.map(QueryOption.Create >> QueryChannelRangeTLV.Opt))
+        (1, genericTLVGen([1UL]) |> Gen.map(QueryChannelRangeTLV.Unknown))
+    |]
+let queryChannelRangeGen: Gen<QueryChannelRange> = gen {
+    let! chainHash = chainHashGen
+    let! firstBlockNum = Arb.generate<uint32> |> Gen.map(BlockHeight)
+    let! nBlocks = Arb.generate<uint32>
+    let! tlvs = queryChannelRangeTLVGen |> Gen.arrayOf
+    return {
+        QueryChannelRange.ChainHash = chainHash
+        FirstBlockNum = firstBlockNum
+        NumberOfBlocks = nBlocks
+        TLVs = tlvs
+    }
+}
+
+let private timestampPairsGen (length: int): Gen<ReplyChannelRangeTLV> =
+    gen {
+        let! ty = encodingTypeGen
+        let! timestampPairs =
+            (Arb.generate<uint32>, Arb.generate<uint32>)
+            ||> Gen.map2(fun a b -> { TwoTimestamps.NodeId1 = a; NodeId2 = b })
+            |> Gen.arrayOfLength length
+        return ReplyChannelRangeTLV.Timestamp(ty, timestampPairs)
+    }
+    
+let private checksumPairsGen n = gen {
+    let! pairs =
+        (Arb.generate<uint32>, Arb.generate<uint32>)
+        ||> Gen.map2(fun a b -> { TwoChecksums.NodeId1 = a; NodeId2 = b })
+        |> Gen.arrayOfLength n
+    return ReplyChannelRangeTLV.Checksums(pairs)
+}
+    
+let private replyChannelRangeTLVGen n =
+    Gen.frequency [
+        (1, timestampPairsGen n)
+        (1, checksumPairsGen n)
+        (1, genericTLVGen([1UL; 3UL]) |> Gen.map(ReplyChannelRangeTLV.Unknown))
+    ]
+let replyChannelRangeGen: Gen<ReplyChannelRange> = gen {
+    let! ch = chainHashGen
+    let! firstBlockNum = Arb.generate<uint32> |> Gen.map(BlockHeight)
+    let! nBlocks = Arb.generate<uint32>
+    let! complete = Arb.generate<bool>
+    let! n = Arb.generate<PositiveInt>
+    let! eType = encodingTypeGen
+    let! shortChannelIds = shortChannelIdsGen |> Gen.arrayOfLength n.Get
+    let! tlvs = replyChannelRangeTLVGen n.Get |> Gen.map(Array.singleton)
+    return {
+        ReplyChannelRange.ChainHash = ch
+        FirstBlockNum = firstBlockNum
+        NumOfBlocks = nBlocks
+        Complete = complete
+        ShortIdsEncodingType = eType
+        ShortIds = shortChannelIds
+        TLVs = tlvs
+    }
+}
+
+let gossipTimestampFilterGen: Gen<GossipTimestampFilter> = gen {
+    let! ch = chainHashGen
+    let! tsFirst = Arb.generate<uint32>
+    let! tsRange = Arb.generate<uint32>
+    return { ChainHash = ch; FirstTimestamp = tsFirst; TimestampRange = tsRange }
+}
+

@@ -37,6 +37,7 @@
     <Compile Include="Serialize\GenericTLV.fs" />
     <Compile Include="Serialize/LightningStream.fs" />
     <Compile Include="Serialize\BitWriter.fs" />
+    <Compile Include="Serialize\EncodedTypes.fs" />
     <Compile Include="Serialize\Encoding.fs" />
     <Compile Include="Serialize\Features.fs" />
     <Compile Include="Serialize\TLVs.fs" />

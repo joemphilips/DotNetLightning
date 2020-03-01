@@ -97,6 +97,11 @@ type P2PMsgGenerators =
 
     static member ReplyShortChannelIds() =
         Arb.fromGen(replyShortChannelIdsEndGen)
+        
+    static member QueryChannelRange() = Arb.fromGen queryChannelRangeGen
+    
+    static member ReplyChannelRange = Arb.fromGen replyChannelRangeGen
+    static member GossipTimestampFilter = Arb.fromGen gossipTimestampFilterGen
     static member P2PMsg(): Arbitrary<ILightningMsg> =
         Gen.oneof [
             initGen |> Gen.map(fun i -> i :> ILightningMsg)
@@ -124,5 +129,8 @@ type P2PMsgGenerators =
             channelUpdateGen |> Gen.map(fun i -> i :> ILightningMsg)
             queryShortChannelIdsGen |> Gen.map(fun i -> i :> ILightningMsg)
             replyShortChannelIdsEndGen |> Gen.map(fun i -> i :> ILightningMsg)
+            queryChannelRangeGen |> Gen.map(fun i -> i :> ILightningMsg)
+            replyChannelRangeGen |> Gen.map(fun i -> i :> ILightningMsg)
+            gossipTimestampFilterGen |> Gen.map(fun i -> i :> ILightningMsg)
         ]
         |> Arb.fromGen

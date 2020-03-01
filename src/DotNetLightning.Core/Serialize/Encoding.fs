@@ -56,7 +56,7 @@ module Decoder =
     let decodeShortChannelIds e d =
         tryDecodeShortChannelIds e d |> unwrap
         
-    let decodeShortChanneelIdsFromBytes (d: byte[]) =
+    let decodeShortChannelIdsFromBytes (d: byte[]) =
         let encodingType = LanguagePrimitives.EnumOfValue<byte,EncodingType>(d.[0])
         decodeShortChannelIds encodingType (d.[1..])
         
@@ -83,6 +83,40 @@ module Decoder =
         let encodingType = LanguagePrimitives.EnumOfValue<byte,EncodingType>(d.[0])
         decodeQueryFlags encodingType (d.[1..])
         
+    let private bytesToUint32Pair (data : byte[]) =
+        result {
+            if data.Length = 0 then return ([||]) else
+            let div, rem = Math.DivRem(data.Length, 8)
+            if (rem <> 0) then return! Error(sprintf "bogus timestamps! %A" data) else
+            use ms = new MemoryStream(data)
+            use ls = new LightningReaderStream(ms)
+            let res = Array.zeroCreate div
+            for i in 0..(div - 1) do
+                let a = ls.ReadUInt32(false)
+                let b = ls.ReadUInt32(false)
+                res.[i] <- (a, b)
+            return res
+        }
+        
+    let private bytesToTimestampPair x =
+        bytesToUint32Pair x
+        |> Result.map(Array.map(fun (a, b) -> { TwoTimestamps.NodeId1 = a; NodeId2 = b }))
+        
+    let tryBytesToChecksumPair x =
+        bytesToUint32Pair x
+        |> Result.map(Array.map(fun (a, b) -> { TwoChecksums.NodeId1 = a; NodeId2 = b }))
+       
+    let bytesToChecksumPair =
+        tryBytesToChecksumPair >> unwrap
+        
+    let tryDecodeTimestampPairs e d = 
+        result {
+            let! bytes = tryDecode e d
+            return! bytes |> bytesToTimestampPair
+        }
+    let decodeTimestampPairs encodingType (d: byte[]) =
+        tryDecodeTimestampPairs encodingType d |> unwrap
+        
 module Encoder =
     let private encode(ty: EncodingType) (value:byte[]): byte[] =
         if value.Length = 0 then [||] else
@@ -106,3 +140,7 @@ module Encoder =
     let encodeQueryFlags (ty) (flags: QueryFlags[]) =
         let b = flags |> Array.map(fun i -> i.ToBytes()) |> Array.concat
         encode (ty) (b)
+        
+    let encodeTimestampsPairs (ty) (timestampPairs: TwoTimestamps[]) =
+        let b = timestampPairs |> Array.map(fun i -> i.ToBytes()) |> Array.concat
+        encode ty b

@@ -75,6 +75,12 @@ module internal TypeFlag =
     let QueryShortChannelIds = 261us
     [<Literal>]
     let ReplyShortChannelIdsEnd = 262us
+    [<Literal>]
+    let QueryChannelRange = 263us
+    [<Literal>]
+    let ReplyChannelRange = 264us
+    [<Literal>]
+    let GossipTimestampFilter = 265us
 
 type ILightningMsg = interface end
 type ISetupMsg = inherit ILightningMsg
@@ -82,6 +88,7 @@ type IChannelMsg = inherit ILightningMsg
 type IHTLCMsg = inherit IChannelMsg
 type IUpdateMsg = inherit IChannelMsg
 type IRoutingMsg = inherit ILightningMsg
+type IQueryMsg = inherit IRoutingMsg
 
 // #endregion 
 
@@ -159,6 +166,12 @@ module ILightningSerializable =
             deserialize<QueryShortChannelIds>(ls) :> ILightningMsg
         | TypeFlag.ReplyShortChannelIdsEnd ->
             deserialize<ReplyShortChannelIdsEnd>(ls) :> ILightningMsg
+        | TypeFlag.QueryChannelRange ->
+            deserialize<QueryChannelRange>(ls) :> ILightningMsg
+        | TypeFlag.ReplyChannelRange ->
+            deserialize<ReplyChannelRange>(ls) :> ILightningMsg
+        | TypeFlag.GossipTimestampFilter ->
+            deserialize<GossipTimestampFilter>(ls) :> ILightningMsg
         | x ->
             raise <| FormatException(sprintf "Unknown message type %d" x)
     let serializeWithFlags (ls: LightningWriterStream) (data: ILightningMsg) =
@@ -238,6 +251,15 @@ module ILightningSerializable =
         | :? ReplyShortChannelIdsEnd as d ->
             ls.Write(TypeFlag.ReplyShortChannelIdsEnd, false)
             (d :> ILightningSerializable<ReplyShortChannelIdsEnd>).Serialize(ls)
+        | :? QueryChannelRange as d ->
+            ls.Write(TypeFlag.QueryChannelRange, false)
+            (d :> ILightningSerializable<QueryChannelRange>).Serialize(ls)
+        | :? ReplyChannelRange as d ->
+            ls.Write(TypeFlag.ReplyChannelRange, false)
+            (d :> ILightningSerializable<ReplyChannelRange>).Serialize(ls)
+        | :? GossipTimestampFilter as d ->
+            ls.Write(TypeFlag.GossipTimestampFilter, false)
+            (d :> ILightningSerializable<GossipTimestampFilter>).Serialize(ls)
         | x -> failwithf "%A is not known lightning message. This should never happen" x
 
 module LightningMsg =
@@ -1310,7 +1332,7 @@ type QueryShortChannelIds = {
     mutable TLVs: QueryShortChannelIdsTLV []
 }
     with
-    interface IRoutingMsg
+    interface IQueryMsg
     interface ILightningSerializable<QueryShortChannelIds> with
         member this.Deserialize(ls: LightningReaderStream) =
             this.ChainHash <- ls.ReadUInt256(false)
@@ -1348,7 +1370,7 @@ type ReplyShortChannelIdsEnd = {
     mutable Complete: bool
 }
     with
-    interface IRoutingMsg
+    interface IQueryMsg
     interface ILightningSerializable<ReplyShortChannelIdsEnd> with
         member this.Deserialize(ls) =
             this.ChainHash <- ls.ReadUInt256(false)
@@ -1360,3 +1382,84 @@ type ReplyShortChannelIdsEnd = {
         member this.Serialize(ls) =
             ls.Write(this.ChainHash, false)
             ls.Write(if (this.Complete) then 1uy else 0uy)
+[<CLIMutable>]
+type QueryChannelRange = {
+    mutable ChainHash: uint256
+    mutable FirstBlockNum: BlockHeight
+    mutable NumberOfBlocks: uint32
+    mutable TLVs: QueryChannelRangeTLV []
+}
+    with
+    interface IQueryMsg
+    interface ILightningSerializable<QueryChannelRange> with
+        member this.Deserialize(ls) =
+            this.ChainHash <- ls.ReadUInt256(false)
+            this.FirstBlockNum <- ls.ReadUInt32(false) |> BlockHeight
+            this.NumberOfBlocks <- ls.ReadUInt32(false)
+            this.TLVs <-
+                let r = ls.ReadTLVStream()
+                r
+                |> Array.map(QueryChannelRangeTLV.FromGenericTLV)
+        member this.Serialize(ls) =
+            ls.Write(this.ChainHash, false)
+            ls.Write(this.FirstBlockNum.Value, false)
+            ls.Write(this.NumberOfBlocks, false)
+            this.TLVs |> Array.map(fun tlv -> tlv.ToGenericTLV()) |> ls.WriteTLVStream
+
+[<CLIMutable>]
+type ReplyChannelRange = {
+    mutable ChainHash: uint256
+    mutable FirstBlockNum: BlockHeight
+    mutable NumOfBlocks: uint32
+    mutable Complete: bool
+    mutable ShortIdsEncodingType: EncodingType
+    mutable ShortIds: ShortChannelId[]
+    mutable TLVs: ReplyChannelRangeTLV[]
+}
+    with
+    interface IQueryMsg
+    interface ILightningSerializable<ReplyChannelRange> with
+        member this.Deserialize(ls) =
+            this.ChainHash <- ls.ReadUInt256(false)
+            this.FirstBlockNum <- ls.ReadUInt32(false) |> BlockHeight
+            this.NumOfBlocks <- ls.ReadUInt32(false)
+            this.Complete <-
+                let b =ls.ReadByte()
+                if b = 0uy then false else
+                if b = 1uy then true else
+                raise <| FormatException(sprintf "reply_channel_range has unknown byte in `complete` field %A" b)
+            let shortIdsWithFlag = ls.ReadWithLen()
+            this.ShortIdsEncodingType <- LanguagePrimitives.EnumOfValue<byte, EncodingType>(shortIdsWithFlag.[0])
+            this.ShortIds <-
+                Decoder.decodeShortChannelIds this.ShortIdsEncodingType (shortIdsWithFlag.[1..])
+            this.TLVs <-
+                ls.ReadTLVStream() |> Array.map(ReplyChannelRangeTLV.FromGenericTLV)
+        member this.Serialize(ls) =
+            ls.Write(this.ChainHash, false)
+            ls.Write(this.FirstBlockNum.Value, false)
+            ls.Write(this.NumOfBlocks, false)
+            ls.Write(if this.Complete then 1uy else 0uy)
+            let encodedIds = this.ShortIds |> Encoder.encodeShortChannelIds (this.ShortIdsEncodingType)
+            [[|(byte)this.ShortIdsEncodingType|]; encodedIds]
+            |> Array.concat
+            |> ls.WriteWithLen
+            this.TLVs |> Array.map(fun x -> x.ToGenericTLV()) |> ls.WriteTLVStream
+            
+[<CLIMutable>]
+type GossipTimestampFilter = {
+    mutable ChainHash: uint256
+    mutable FirstTimestamp: uint32
+    mutable TimestampRange: uint32
+}
+    with
+    interface IQueryMsg
+    interface ILightningSerializable<GossipTimestampFilter> with
+        member this.Deserialize(ls) =
+            this.ChainHash <- ls.ReadUInt256(false)
+            this.FirstTimestamp <- ls.ReadUInt32(false)
+            this.TimestampRange <- ls.ReadUInt32(false)
+        member this.Serialize(ls) =
+            ls.Write(this.ChainHash, false)
+            ls.Write(this.FirstTimestamp, false)
+            ls.Write(this.TimestampRange, false)
+            
