@@ -1069,12 +1069,13 @@ type UnsignedChannelUpdate = {
     mutable ChainHash: uint256
     mutable ShortChannelId: ShortChannelId
     mutable Timestamp: uint32
-    mutable Flags: uint16
+    mutable MessageFlags: uint8
+    mutable ChannelFlags: uint8
     mutable CLTVExpiryDelta: BlockHeightOffset
     mutable HTLCMinimumMSat: LNMoney
     mutable FeeBaseMSat: LNMoney
     mutable FeeProportionalMillionths: uint32
-    mutable ExcessData: byte[]
+    mutable HTLCMaximumMSat: OptionalField<LNMoney>
 }
     with
         interface IRoutingMsg
@@ -1083,22 +1084,31 @@ type UnsignedChannelUpdate = {
                 this.ChainHash <- ls.ReadUInt256(false)
                 this.ShortChannelId <- ls.ReadUInt64(false) |> ShortChannelId.FromUInt64
                 this.Timestamp <- ls.ReadUInt32(false)
-                this.Flags <- ls.ReadUInt16(false)
+                this.MessageFlags <- ls.ReadByte()
+                this.ChannelFlags <- ls.ReadByte()
                 this.CLTVExpiryDelta <- ls.ReadUInt16(false) |> BlockHeightOffset
                 this.HTLCMinimumMSat <- ls.ReadUInt64(false) |> LNMoney.MilliSatoshis
                 this.FeeBaseMSat <- ls.ReadUInt32(false) |> uint64 |> LNMoney.MilliSatoshis
                 this.FeeProportionalMillionths <- ls.ReadUInt32(false)
-                this.ExcessData <- match ls.TryReadAll() with | Some v -> v | None -> [||]
+                this.HTLCMaximumMSat <-
+                    if ((this.MessageFlags &&& 0b00000001uy) = 1uy) then
+                        ls.ReadUInt64(false) |> LNMoney.MilliSatoshis |> Some
+                    else
+                        None
             member this.Serialize(ls: LightningWriterStream): unit = 
                 ls.Write(this.ChainHash, false)
                 ls.Write(this.ShortChannelId)
                 ls.Write(this.Timestamp, false)
-                ls.Write(this.Flags, false)
+                ls.Write(this.MessageFlags)
+                ls.Write(this.ChannelFlags)
                 ls.Write(this.CLTVExpiryDelta.Value, false)
                 ls.Write(this.HTLCMinimumMSat.MilliSatoshi, false)
                 ls.Write(uint32 this.FeeBaseMSat.MilliSatoshi, false)
                 ls.Write(uint32 this.FeeProportionalMillionths, false)
-                ls.Write(this.ExcessData)
+                match this.HTLCMaximumMSat with
+                | Some s -> ls.Write(s.MilliSatoshi, false)
+                | None -> ()
+
 
 
 [<CLIMutable>]

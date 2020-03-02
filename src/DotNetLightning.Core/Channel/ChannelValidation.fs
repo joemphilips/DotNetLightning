@@ -27,7 +27,7 @@ module internal ChannelHelpers =
         |> fun c -> ScriptCoin(c, redeem)
 
     let private makeFlags (isNode1: bool, enable: bool) =
-        (if isNode1 then 1us else 0us) ||| ((if enable then 1us else 0us) <<< 1)
+        (if isNode1 then 1uy else 0uy) ||| ((if enable then 1uy else 0uy) <<< 1)
 
     let internal makeChannelUpdate (chainHash, nodeSecret: Key, remoteNodeId: NodeId, shortChannelId, cltvExpiryDelta,
                                     htlcMinimum, feeBase, feeProportionalMillionths, enabled: bool, timestamp) =
@@ -37,12 +37,13 @@ module internal ChannelHelpers =
             ChainHash = chainHash
             ShortChannelId = shortChannelId
             Timestamp = timestamp
-            Flags = makeFlags (isNodeOne, enabled)
+            ChannelFlags = makeFlags (isNodeOne, enabled)
+            MessageFlags = 0uy
             CLTVExpiryDelta = cltvExpiryDelta
             HTLCMinimumMSat = htlcMinimum
             FeeBaseMSat = feeBase
             FeeProportionalMillionths = feeProportionalMillionths
-            ExcessData = [||]
+            HTLCMaximumMSat = None
         }
         let signature = unsignedChannelUpdate.ToBytes() |> Crypto.Hashes.SHA256 |> uint256 |> nodeSecret.Sign |> LNECDSASignature
         {

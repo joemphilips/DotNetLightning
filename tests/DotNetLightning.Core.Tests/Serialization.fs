@@ -409,15 +409,23 @@ module SerializationTest =
                 let channelUpdateTestCore (nonBitcoinChainHash: bool, direction: bool, disable: bool, htlcMaximumMSat: bool) =
                     let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
                     let unsignedChannelUpdate = {
-                        ChainHash = if (not nonBitcoinChainHash) then uint256(hex.DecodeData("6fe28c0ab6f1b372c1a6a246ae63f74f931e8365e15a089c68d6190000000000")) else uint256(hex.DecodeData("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"))
+                        UnsignedChannelUpdate.ChainHash = if (not nonBitcoinChainHash) then uint256(hex.DecodeData("6fe28c0ab6f1b372c1a6a246ae63f74f931e8365e15a089c68d6190000000000")) else uint256(hex.DecodeData("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"))
                         ShortChannelId = ShortChannelId.FromUInt64(2316138423780173UL)
                         Timestamp = 20190119u
-                        Flags = ((if direction && disable then (2us) else if disable then (2us) else if direction then 1us else 0us) ||| (if htlcMaximumMSat then (1us <<< 8) else 0us))
+                        MessageFlags = (if htlcMaximumMSat then 1uy else 0uy)
+                        ChannelFlags = ((if direction && disable then (2uy) else if disable then (2uy) else if direction then 1uy else 0uy))
                         CLTVExpiryDelta = !> 144us
                         HTLCMinimumMSat = LNMoney.MilliSatoshis(1000000L)
                         FeeBaseMSat = LNMoney.MilliSatoshis(10000L)
                         FeeProportionalMillionths = 20u
-                        ExcessData = if htlcMaximumMSat then [| 0uy; 0uy; 0uy; 0uy; 59uy; 154uy; 202uy; 0uy |] else [||]
+                        HTLCMaximumMSat =
+                            if htlcMaximumMSat then
+                                [| 0uy; 0uy; 0uy; 0uy; 59uy; 154uy; 202uy; 0uy |]
+                                |> fun b -> NBitcoin.Utils.ToUInt64(b, false)
+                                |> LNMoney.MilliSatoshis
+                                |> Some
+                            else
+                                None
                     }
                     let channelUpdate = {
                         ChannelUpdate.Signature = sig1

@@ -421,24 +421,29 @@ let private unsignedChannelUpdateGen = gen {
     let! ch = uint256Gen
     let! s = ShortChannelId.FromUInt64 <!> Arb.generate<uint64>
     let! ts = Arb.generate<uint32>
-    let! f = Arb.generate<uint16>
+    let! messageFlags = Arb.generate<uint8>
+    let! channelFlags = Arb.generate<uint8>
     let! cltvE = BlockHeightOffset <!> Arb.generate<uint16>
     let! htlcMin = lnMoneyGen
     let! feeBase = lnMoneyGen
     let! feePM = Arb.generate<uint32>
-    let! ed = bytesGen
-
+    let! maximum =
+        if ((messageFlags &&& 0b00000001uy) = 1uy) then
+            lnMoneyGen |> Gen.map Some
+        else
+            Gen.constant None
 
     return {
         ChainHash = ch
         ShortChannelId = s
         Timestamp = ts
-        Flags = f
+        MessageFlags = messageFlags
+        ChannelFlags = channelFlags
         CLTVExpiryDelta = cltvE
         HTLCMinimumMSat = htlcMin
         FeeBaseMSat = feeBase
         FeeProportionalMillionths = feePM
-        ExcessData = ed
+        HTLCMaximumMSat = maximum
     }
 }
 

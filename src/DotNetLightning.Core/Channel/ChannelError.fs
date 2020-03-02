@@ -343,7 +343,7 @@ module internal OpenChannelMsgValidation =
                 msg.DustLimitSatoshis (>) config.MaxDustLimitSatoshis
                 "dust_limit_satoshis is greater than the user specified limit. received: %A; limit: %A"
         Validation.ofResult(check1) *^> check2 *^> check3 *^> check4 *^> check5 *^> check6 *^> check7
-    let checkChannelAnnouncementPreferenceAcceptable (config: ChannelConfig) (msg) =
+    let checkChannelAnnouncementPreferenceAcceptable (config: ChannelConfig) (msg: OpenChannel) =
         let theirAnnounce = (msg.ChannelFlags &&& 1uy) = 1uy
         if (config.PeerChannelConfigLimits.ForceChannelAnnouncementPreference) && config.ChannelOptions.AnnounceChannel <> theirAnnounce then
             "Peer tried to open channel but their announcement preference is different from ours"
