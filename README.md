@@ -1,11 +1,11 @@
 ## Overview
 
-This repository contains one solution which contains four main project.
+This repository contains one solution which contains four main projects.
 
 1. `DotNetLightning.Core` to perform LN specific logic and low level primitives.
 2. `DotNetLightning.Infrastructure` to support data persistancy, altcoins, channel/peer management etc.
 3. `DotNetLightning.Server` to run as a server.
-4. `DotNetLightning.Client` to query against the server.
+4. `DotNetLightning.Client` to interact with the server.
 
 ## How to configure
 
