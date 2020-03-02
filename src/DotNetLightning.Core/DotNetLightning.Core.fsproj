@@ -42,7 +42,6 @@
     <Compile Include="Serialize\Features.fs" />
     <Compile Include="Serialize\TLVs.fs" />
     <Compile Include="Serialize/Msgs/Msgs.fs" />
-    <Compile Include="Serialize\Msgs\Tmp.fs" />
     <Compile Include="DomainUtils/Types.fs" />
     <Compile Include="Crypto/CryptoUtils.fs" />
     <Compile Include="Crypto/ShaChain.fs" />
