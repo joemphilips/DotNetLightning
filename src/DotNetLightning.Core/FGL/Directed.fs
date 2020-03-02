@@ -121,7 +121,7 @@ module Edges =
         (Optic.map composedPrism adjListMapping) g1
 
     ///Adds a list of labeled, directed edges to the graph.
-    let addMany (edges : list<LEdge<'Vertex,'Edge>>) (g: Graph<'Vertex,'Label,'Edge>) =
+    let addMany (edges : list<LEdge<'Vertex,'Edge>>) (g: Graph<'Vertex,'Label,'Edge>): Graph<_,_,_> =
         List.fold (fun g e -> add e g) g edges
 
     ///Removes an edge from the graph.

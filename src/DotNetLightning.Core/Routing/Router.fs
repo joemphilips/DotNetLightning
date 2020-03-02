@@ -11,7 +11,8 @@ type NetworkEvent =
     | NodeLost of nodeId: NodeId
     | ChannelDiscovered of msg: ChannelAnnouncement * capacity : Money
     | ChannelUpdateReceived of msg: ChannelUpdate
-
+    // when funding tx on the blockchain has been spent, we must consider that the channel is closed in a graph view
+    | FundingTxSpent of ShortChannelId
 
 type RouterConf = {
     RandomizeRouterSelection: bool

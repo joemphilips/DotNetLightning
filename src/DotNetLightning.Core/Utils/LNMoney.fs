@@ -57,6 +57,7 @@ type LNMoney = | LNMoney of int64 with
         LNMoney(Checked.int64 sats)
 
     static member Zero = LNMoney(0L)
+    static member One = LNMoney(1L)
     static member TryParse(bitcoin: string, result: outref<LNMoney>) =
         match Decimal.TryParse(bitcoin, LNMoney.BitcoinStyle, CultureInfo.InvariantCulture) with
         | false, _ -> false

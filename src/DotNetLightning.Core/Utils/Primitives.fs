@@ -53,6 +53,7 @@ module Primitives =
         static member op_Implicit (v: uint16) =
             BlockHeightOffset v
         static member One = BlockHeightOffset(1us)
+        static member Zero = BlockHeightOffset(0us)
         static member (+) (a: BlockHeightOffset, b: BlockHeightOffset) =
             a.Value + b.Value |> BlockHeightOffset
         static member (-) (a: BlockHeightOffset, b: BlockHeightOffset) =
@@ -62,7 +63,7 @@ module Primitives =
     /// 1. It is equatable
     /// 2. Some Convenience methods for serialization
     /// 3. Custom `ToString`
-    [<CustomEquality;NoComparison;StructuredFormatDisplay("{AsString}")>]
+    [<CustomEquality;CustomComparison;StructuredFormatDisplay("{AsString}")>]
     type LNECDSASignature = | LNECDSASignature of ECDSASignature with
         member x.Value = let (LNECDSASignature v) = x in v
         override this.GetHashCode() = hash this.Value
@@ -73,6 +74,7 @@ module Primitives =
         interface IEquatable<LNECDSASignature> with
             member this.Equals(o: LNECDSASignature) =
                 Utils.ArrayEqual(o.ToBytesCompact(), this.ToBytesCompact())
+                
         /// Originally this method is in NBitcoin.Utils.
         /// But we ported here since it was internal method.
         member private this.BigIntegerToBytes(b: BouncyCastle.Math.BigInteger, numBytes: int) =
@@ -104,6 +106,18 @@ module Primitives =
             if (isNull <| box r.[0]) then r.[0] <- 255uy
             r
             
+        /// Logic does not really matter here. This is just for making life easier by enabling automatic implementation
+        /// of `StructuralComparison` for wrapper types.
+        member this.CompareTo(e: LNECDSASignature) =
+            let a = this.ToBytesCompact() |> fun x -> Utils.ToUInt64(x, true)
+            let b = e.ToBytesCompact() |>  fun x -> Utils.ToUInt64(x, true)
+            a.CompareTo(b)
+        interface IComparable with
+            member this.CompareTo(o: obj) =
+                match o with
+                | :? LNECDSASignature as e -> this.CompareTo(e)
+                | _ -> -1
+                
         member this.ToDER() =
             this.Value.ToDER()
             
