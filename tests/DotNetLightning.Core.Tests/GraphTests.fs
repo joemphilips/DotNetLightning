@@ -8,8 +8,6 @@ open DotNetLightning.Serialize.Msgs
 open NBitcoin
 open Expecto
 open NBitcoin.DataEncoders
-open DotNetLightning.FGL
-open DotNetLightning.FGL.Directed
 
 let hex = Encoders.Hex
 
@@ -76,7 +74,7 @@ let makeUpdate (shortChannelId: uint64,
     
 let makeUpdateSimple (shortChannelId, a, b) =
     makeUpdate(shortChannelId, a, b, LNMoney.Zero, 0u, None, None, None)
-let makeTestGraph() =
+let makeTestGraph(): DirectedLNGraph =
     let updates =
         [
             makeUpdateSimple(1UL, a, b)
@@ -85,11 +83,14 @@ let makeTestGraph() =
             makeUpdateSimple(4UL, d, c)
             makeUpdateSimple(5UL, c, e)
             makeUpdateSimple(6UL, b, e)
-        ] |> List.map (fun ((desc, update)) -> { Update = update; Desc = desc })
-    DirectedLNGraph.Create(updates)
+        ]
+    DirectedLNGraph.Create().AddEdges(updates)
+    
+let descFromNodes(id, a: NodeId, b: NodeId) =
+    { ShortChannelId = ShortChannelId.FromUInt64(uint64 id); A = a; B = b }
 [<Tests>]
 let graphTests =
-    ftestList "GraphTests from eclair" [
+    testList "GraphTests from eclair" [
         testCase "Instantiate a graph, with vertices and then add edges" <| fun _ ->
             let g =
                 DirectedLNGraph.Create()
@@ -144,7 +145,7 @@ let graphTests =
             Expect.equal (g.VertexSet().Length) 5 ""
             Expect.equal (g.OutgoingEdgesOf(c).Length) 1 ""
             Expect.equal (g.IncomingEdgesOf(c).Length) 2 ""
-            Expect.equal (g.EdgeCount()) 6 ""
+            Expect.equal (g.EdgeSet().Length) 6 ""
             
         testCase "containsEdge should return true if the graph contains that edge, false otherwise" <| fun _ ->
             let updates =
@@ -157,31 +158,30 @@ let graphTests =
                 
             let graph = DirectedLNGraph.Create().AddEdges(updates)
             
-            Expect.isTrue  (graph.ContainsEdge(a, b)) ""
-            Expect.isFalse (graph.ContainsEdge(b, a)) ""
-            Expect.isTrue  (graph.ContainsEdge(b, c)) ""
-            Expect.isTrue  (graph.ContainsEdge(c, d)) ""
-            Expect.isTrue  (graph.ContainsEdge(d, e)) ""
+            Expect.isTrue  (graph.ContainsEdge(descFromNodes(1, a, b))) ""
+            Expect.isTrue  (graph.ContainsEdge(descFromNodes(2, b, c))) ""
+            Expect.isTrue  (graph.ContainsEdge(descFromNodes(3, c, d))) ""
+            Expect.isTrue  (graph.ContainsEdge(descFromNodes(4, d, e))) ""
             // same with channel desc
             Expect.isTrue  (graph.ContainsEdge({ ChannelDesc.ShortChannelId = ShortChannelId.FromUInt64(4UL); A = d; B = e })) ""
             Expect.isFalse (graph.ContainsEdge({ ChannelDesc.ShortChannelId = ShortChannelId.FromUInt64(4UL); A = a; B = g })) ""
-            Expect.isFalse (graph.ContainsEdge(a, e)) ""
-            Expect.isFalse (graph.ContainsEdge(c, f)) ""
+            Expect.isFalse (graph.ContainsEdge(descFromNodes(50, a, e))) ""
+            Expect.isFalse (graph.ContainsEdge(descFromNodes(66, c, f))) ""
             
         testCase "Should remove a set of edges" <| fun _ ->
-            let graph = makeTestGraph()
+            let graph: DirectedLNGraph = makeTestGraph()
             let (descBE, _) = makeUpdateSimple(6UL, b, e)
             let (descCE, _) = makeUpdateSimple(5UL, c, e)
             let (descAD, _) = makeUpdateSimple(3UL, a, d)
             let (descDC, _) = makeUpdateSimple(4UL, d, c)
-            Expect.equal (graph.EdgeCount()) 6 ""
+            Expect.equal (graph.EdgeSet().Length) 6 ""
             Expect.isTrue (graph.ContainsEdge(descBE)) ""
             
             let withRemovedEdge = graph.RemoveEdge(descBE)
-            Expect.equal (withRemovedEdge.EdgeCount()) 5 ""
+            Expect.equal (withRemovedEdge.EdgeSet().Length) 5 ""
             
             let withRemovedList = graph.RemoveEdges(seq { descAD; descDC })
-            Expect.equal (withRemovedList.EdgeCount()) 4 ""
+            Expect.equal (withRemovedList.EdgeSet().Length) 4 ""
             
             let withoutAnyIncomingEdgeInE = graph.RemoveEdges(seq { descBE; descCE })
             Expect.isTrue (withoutAnyIncomingEdgeInE.ContainsVertex(e)) ""
@@ -206,34 +206,40 @@ let graphTests =
             Expect.contains (bOutgoing |> List.map(fun x -> x.Desc.B)) c ""
             ()
             
-        testCase "It can update the graph edge" <| fun _ ->
-            let graph = makeTestGraph()
+        testCase "there can be multiple edges between the same vertices" <| fun _ ->
+            let graph: DirectedLNGraph = makeTestGraph()
             // A --> B, A --> D
             Expect.equal (graph.OutgoingEdgesOf(a).Length) 2 ""
             
             // add a new edge a --> b but with different channel update and a different ShortChannelId
             let newEdgeForNewChannel =
                 makeUpdate(15UL, a, b, LNMoney.MilliSatoshis(20L), 0u, None, None, None)
-                |> fun (desc, update) -> { Update= update; Desc = desc }
+                |> GraphLabel.Create
             let mutatedGraph = graph.AddEdge(newEdgeForNewChannel)
             
-            Expect.equal (mutatedGraph.OutgoingEdgesOf(a).Length) 2 ""
+            Expect.equal (mutatedGraph.OutgoingEdgesOf(a).Length) 3 ""
             
             // if the ShortChannelId is the same we replace the edge and the update
             // this edge have an update with a different 'feeBaseMSat'
             let edgeForTheSameChannel =
                makeUpdate(15UL, a, b, LNMoney.MilliSatoshis(30L), 0u, None, None, None)
-                |> fun (desc, update) -> { Update= update; Desc = desc }
+               |> GraphLabel.Create
             let mutatedGraph2 = mutatedGraph.AddEdge(edgeForTheSameChannel)
-            Expect.equal (mutatedGraph2.OutgoingEdgesOf a).Length 2 ""
-            Expect.equal (mutatedGraph2.GetEdgesBetween(a, b).Length) 1 ""
+            Expect.equal (mutatedGraph2.OutgoingEdgesOf a).Length 3 ""
+            Expect.equal (mutatedGraph2.GetEdgesBetween(a, b).Length) 2 ""
             Expect.equal
-                (mutatedGraph2.TryGetEdge(edgeForTheSameChannel.Desc).Value |> fun (_a, _b, l) -> l.Update.Contents.FeeBaseMSat)
+                (mutatedGraph2.TryGetEdge(edgeForTheSameChannel.Desc).Value.Update.Contents.FeeBaseMSat)
                 (LNMoney.MilliSatoshis(30L)) ""
-            ()
             
         testCase "remove a vertex with incoming edges and check those edges are removed too" <| fun _ ->
             let graph = makeTestGraph()
-            Expect.equal (graph.VertexSet().Length) 5 ""
-            ()
+            Expect.equal  (graph.VertexSet().Length) 5 ""
+            Expect.isTrue (graph.ContainsVertex(e)) ""
+            Expect.isTrue (graph.ContainsEdge(descFromNodes(5, c, e))) ""
+            Expect.isTrue (graph.ContainsEdge(descFromNodes(6, b, e))) ""
+            
+            let withoutE = graph.RemoveVertex(e)
+            Expect.equal (withoutE.VertexSet().Length) 4 ""
+            Expect.isFalse (withoutE.ContainsEdge(descFromNodes(5, c, e))) ""
+            Expect.isFalse (withoutE.ContainsEdge(descFromNodes(6, b, e))) ""
     ]
