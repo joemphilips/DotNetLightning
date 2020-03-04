@@ -155,12 +155,14 @@ module Graph =
         member this.EdgeCount() = this.Value |> Edges.count
         
         member this.OutgoingEdgesOf(v: NodeId) =
-            Graph.tryGetContext v this.Value
-            |> Option.map(Vertices.successors)
+            match Graph.tryGetContext v this.Value with
+            | None -> List.empty
+            | Some (_p, _v, _l, s) -> s |> List.map snd
             
         member this.IncomingEdgesOf(v: NodeId) =
-            Graph.tryGetContext v this.Value
-            |> Option.map(Vertices.predecessors)
+            match Graph.tryGetContext v this.Value with
+            | None -> List.empty
+            | Some(p, _v, _l, _s) -> p |> List.map snd
             
         member this.RemoveEdge(desc: ChannelDesc): DirectedLNGraph =
             match this.Value |> Edges.tryFind desc.A desc.B with
@@ -210,14 +212,11 @@ module Graph =
         member this.AddEdge(l) =
             let vertIn = l.Desc.A
             let vertOut = l.Desc.B
-            if this.ContainsEdge(l.Desc) then
-                this.RemoveEdge(l.Desc).AddEdge(l)
-            else
-                this.Value
-                |> (if (this.ContainsVertex vertIn) then id else Vertices.add (vertIn, ()))
-                |> (if (this.ContainsVertex vertOut) then id else Vertices.add (vertOut, ()))
-                |> Edges.add (vertIn, vertOut, l)
-                |> DirectedLNGraph
+            this.Value
+            |> (if (this.ContainsVertex vertIn) then id else Vertices.add (vertIn, ()))
+            |> (if (this.ContainsVertex vertOut) then id else Vertices.add (vertOut, ()))
+            |> Edges.add (vertIn, vertOut, l)
+            |> DirectedLNGraph
                 
         member this.AddEdge({ Label = l }) =
             this.AddEdge(l)

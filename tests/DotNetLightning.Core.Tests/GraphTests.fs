@@ -44,7 +44,7 @@ let pks =
 let a, b, c, d, e, f, g = pks.[0], pks.[1], pks.[2], pks.[3], pks.[4], pks.[5], pks.[6]
 
 /// TODO: use maxHtlc properly
-let makeUpdate (shortChannelId: ShortChannelId,
+let makeUpdate (shortChannelId: uint64,
                 nodeid1: NodeId,
                 nodeid2: NodeId,
                 feeBase: LNMoney,
@@ -53,6 +53,7 @@ let makeUpdate (shortChannelId: ShortChannelId,
                 maxHtlc: LNMoney option,
                 cltvDelta: BlockHeightOffset option
                 ): (ChannelDesc * ChannelUpdate) =
+    let shortChannelId = shortChannelId |> ShortChannelId.FromUInt64
     let minHtlc = Option.defaultValue Constants.DEFAULT_AMOUNT_MSAT minHtlc
     let cltvDelta = Option.defaultValue (BlockHeightOffset(0us)) cltvDelta
     let desc = { ChannelDesc.ShortChannelId = shortChannelId
@@ -74,7 +75,7 @@ let makeUpdate (shortChannelId: ShortChannelId,
     desc, update
     
 let makeUpdateSimple (shortChannelId, a, b) =
-    makeUpdate(ShortChannelId.FromUInt64(shortChannelId), a, b, LNMoney.Zero, 0u, None, None, None)
+    makeUpdate(shortChannelId, a, b, LNMoney.Zero, 0u, None, None, None)
 let makeTestGraph() =
     let updates =
         [
@@ -88,7 +89,7 @@ let makeTestGraph() =
     DirectedLNGraph.Create(updates)
 [<Tests>]
 let graphTests =
-    testList "GraphTests from eclair" [
+    ftestList "GraphTests from eclair" [
         testCase "Instantiate a graph, with vertices and then add edges" <| fun _ ->
             let g =
                 DirectedLNGraph.Create()
@@ -101,11 +102,11 @@ let graphTests =
             Expect.equal (g.VertexSet().Length) 5 ""
             let otherGraph = g.AddVertex(a)
             Expect.equal (otherGraph.VertexSet().Length) 5 ""
-            let descAB, updateAB = makeUpdate(ShortChannelId.FromUInt64(1UL), a, b, LNMoney.Zero, 0u, None, None, None)
-            let descBC, updateBC = makeUpdate(ShortChannelId.FromUInt64(2UL), b, c, LNMoney.Zero, 0u, None, None, None)
-            let descAD, updateAD = makeUpdate(ShortChannelId.FromUInt64(3UL), a, d, LNMoney.Zero, 0u, None, None, None)
-            let descDC, updateDC = makeUpdate(ShortChannelId.FromUInt64(4UL), d, c, LNMoney.Zero, 0u, None, None, None)
-            let descCE, updateCE = makeUpdate(ShortChannelId.FromUInt64(5UL), c, e, LNMoney.Zero, 0u, None, None, None)
+            let descAB, updateAB = makeUpdate(1UL, a, b, LNMoney.Zero, 0u, None, None, None)
+            let descBC, updateBC = makeUpdate(2UL, b, c, LNMoney.Zero, 0u, None, None, None)
+            let descAD, updateAD = makeUpdate(3UL, a, d, LNMoney.Zero, 0u, None, None, None)
+            let descDC, updateDC = makeUpdate(4UL, d, c, LNMoney.Zero, 0u, None, None, None)
+            let descCE, updateCE = makeUpdate(5UL, c, e, LNMoney.Zero, 0u, None, None, None)
             let graphWithEdges =
                 g
                     .AddEdge({ Update = updateAB; Desc = descAB })
@@ -113,15 +114,15 @@ let graphTests =
                     .AddEdge({ Update = updateAD; Desc = descAD })
                     .AddEdge({ Update = updateDC; Desc = descDC })
                     .AddEdge({ Update = updateCE; Desc = descCE })
-            Expect.equal (graphWithEdges.OutgoingEdgesOf(a).Value.Length) 2 ""
-            Expect.equal (graphWithEdges.OutgoingEdgesOf(b).Value.Length) 1 ""
-            Expect.equal (graphWithEdges.OutgoingEdgesOf(c).Value.Length) 1 ""
-            Expect.equal (graphWithEdges.OutgoingEdgesOf(d).Value.Length) 1 ""
-            Expect.equal (graphWithEdges.OutgoingEdgesOf(e).Value.Length) 0 ""
-            Expect.isNone (graphWithEdges.OutgoingEdgesOf(f)) ""
+            Expect.equal (graphWithEdges.OutgoingEdgesOf(a).Length) 2 ""
+            Expect.equal (graphWithEdges.OutgoingEdgesOf(b).Length) 1 ""
+            Expect.equal (graphWithEdges.OutgoingEdgesOf(c).Length) 1 ""
+            Expect.equal (graphWithEdges.OutgoingEdgesOf(d).Length) 1 ""
+            Expect.equal (graphWithEdges.OutgoingEdgesOf(e).Length) 0 ""
+            Expect.isEmpty (graphWithEdges.OutgoingEdgesOf(f)) ""
             
             let withRemovedEdges = graphWithEdges.RemoveEdge(descAD)
-            Expect.equal (withRemovedEdges.OutgoingEdgesOf(d).Value.Length) 1 ""
+            Expect.equal (withRemovedEdges.OutgoingEdgesOf(d).Length) 1 ""
             
         testCase "instantiate a graph adding edges only" <| fun _ ->
             let labelAB =
@@ -141,8 +142,8 @@ let graphTests =
                     .AddEdge(labelCE)
                     .AddEdge(labelBE)
             Expect.equal (g.VertexSet().Length) 5 ""
-            Expect.equal (g.OutgoingEdgesOf(c).Value.Length) 1 ""
-            Expect.equal (g.IncomingEdgesOf(c).Value.Length) 2 ""
+            Expect.equal (g.OutgoingEdgesOf(c).Length) 1 ""
+            Expect.equal (g.IncomingEdgesOf(c).Length) 2 ""
             Expect.equal (g.EdgeCount()) 6 ""
             
         testCase "containsEdge should return true if the graph contains that edge, false otherwise" <| fun _ ->
@@ -184,7 +185,7 @@ let graphTests =
             
             let withoutAnyIncomingEdgeInE = graph.RemoveEdges(seq { descBE; descCE })
             Expect.isTrue (withoutAnyIncomingEdgeInE.ContainsVertex(e)) ""
-            Expect.isEmpty (withoutAnyIncomingEdgeInE.OutgoingEdgesOf(e).Value) ""
+            Expect.isEmpty (withoutAnyIncomingEdgeInE.OutgoingEdgesOf(e)) ""
             
         testCase "should get an edge given two vertices" <| fun _ ->
             let updates = seq { makeUpdateSimple(1UL, a, b); makeUpdateSimple(2UL, b, c) }
@@ -194,18 +195,45 @@ let graphTests =
             Expect.equal (edgesAB.Head.Desc.A) a ""
             Expect.equal (edgesAB.Head.Desc.B) b ""
             
-            let bIncoming = graph.GetIncomingEdgesOf(b)
+            let bIncoming = graph.IncomingEdgesOf(b)
             Expect.equal bIncoming.Length 1 ""
             Expect.contains (bIncoming |> List.map (fun x -> x.Desc.A)) a ""
             Expect.contains (bIncoming |> List.map (fun x -> x.Desc.B)) b ""
             
-            let bOutgoing = graph.GetOutGoingEdgesOf b
+            let bOutgoing = graph.OutgoingEdgesOf b
             Expect.equal bOutgoing.Length 1 ""
             Expect.contains (bOutgoing |> List.map(fun x -> x.Desc.A)) b ""
             Expect.contains (bOutgoing |> List.map(fun x -> x.Desc.B)) c ""
             ()
             
-        testCase "There can be multiple edges between the same vertices" <| fun _ ->
+        testCase "It can update the graph edge" <| fun _ ->
             let graph = makeTestGraph()
+            // A --> B, A --> D
+            Expect.equal (graph.OutgoingEdgesOf(a).Length) 2 ""
+            
+            // add a new edge a --> b but with different channel update and a different ShortChannelId
+            let newEdgeForNewChannel =
+                makeUpdate(15UL, a, b, LNMoney.MilliSatoshis(20L), 0u, None, None, None)
+                |> fun (desc, update) -> { Update= update; Desc = desc }
+            let mutatedGraph = graph.AddEdge(newEdgeForNewChannel)
+            
+            Expect.equal (mutatedGraph.OutgoingEdgesOf(a).Length) 2 ""
+            
+            // if the ShortChannelId is the same we replace the edge and the update
+            // this edge have an update with a different 'feeBaseMSat'
+            let edgeForTheSameChannel =
+               makeUpdate(15UL, a, b, LNMoney.MilliSatoshis(30L), 0u, None, None, None)
+                |> fun (desc, update) -> { Update= update; Desc = desc }
+            let mutatedGraph2 = mutatedGraph.AddEdge(edgeForTheSameChannel)
+            Expect.equal (mutatedGraph2.OutgoingEdgesOf a).Length 2 ""
+            Expect.equal (mutatedGraph2.GetEdgesBetween(a, b).Length) 1 ""
+            Expect.equal
+                (mutatedGraph2.TryGetEdge(edgeForTheSameChannel.Desc).Value |> fun (_a, _b, l) -> l.Update.Contents.FeeBaseMSat)
+                (LNMoney.MilliSatoshis(30L)) ""
+            ()
+            
+        testCase "remove a vertex with incoming edges and check those edges are removed too" <| fun _ ->
+            let graph = makeTestGraph()
+            Expect.equal (graph.VertexSet().Length) 5 ""
             ()
     ]
