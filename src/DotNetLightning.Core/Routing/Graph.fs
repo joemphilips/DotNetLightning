@@ -90,12 +90,17 @@ module Graph =
                 Update2Opt = u2
             }
     type GraphLabel = { Desc: ChannelDesc; Update: ChannelUpdate }
-    type GraphVertex = LVertex<NodeId, unit>
-    
-    type GraphEdge = { Prev: NodeId; Succ: NodeId; Label: GraphLabel } 
+        with
+        member this.ToGraphEdge() =
+            { Prev = this.Desc.A; Succ = this.Desc.B; Label = this }
+        member this.AsTuple =
+            this.ToGraphEdge().AsTuple
+    and GraphEdge = { Prev: NodeId; Succ: NodeId; Label: GraphLabel } 
         with
         member this.AsTuple = (this.Prev, this.Succ, this.Label)
         
+    type GraphVertex = LVertex<NodeId, unit>
+    
     module GraphEdge =
         let hasZeroFee (l: GraphLabel) =
             let u = l.Update
@@ -125,22 +130,29 @@ module Graph =
     /// which uses (more simpler) adjacent list for storing graph object
     type DirectedLNGraph = private DirectedLNGraph of Graph<NodeId, unit, GraphLabel>
         with
-        static member Create(vertices: NodeId list, edges: GraphEdge list) =
+        static member Create(vertices: NodeId list, edges: GraphLabel list) =
             Graph.create
                 (vertices |> List.map(fun v -> v, ()))
                 (edges |> List.map(fun e -> e.AsTuple))
             |> DirectedLNGraph
             
+        static member Create(edges: GraphLabel list) =
+            let vertices = edges |> List.collect(fun ({ Desc = d }) -> [d.A; d.B])
+            DirectedLNGraph.Create(vertices, edges)
+            
         static member Create() =
             Graph.empty |> DirectedLNGraph
             
         member this.Value = let (DirectedLNGraph v) = this in  v
-        member this.ContainsEdge(desc: ChannelDesc) =
-            match this.Value |> Edges.tryFind desc.A desc.B with
+        member this.ContainsEdge(a: NodeId, b: NodeId) =
+            match this.Value |> Edges.tryFind a b with
             | None -> false
             | Some (_,_,_) -> true
+        member this.ContainsEdge(desc: ChannelDesc) =
+            this.ContainsEdge(desc.A, desc.B)
             
         member this.VertexSet() = this.Value |> Vertices.tovertexList
+        member this.EdgeCount() = this.Value |> Edges.count
         
         member this.OutgoingEdgesOf(v: NodeId) =
             Graph.tryGetContext v this.Value
@@ -166,22 +178,28 @@ module Graph =
             
         member this.GetEdgesBetween(keyA: NodeId, keyB: NodeId) =
             match this.Value |> Graph.tryGetContext keyB with
-            | None -> Seq.empty
+            | None -> List.empty
             | Some ctx ->
-                let (_predecessor, _v, _l, successor) = ctx
-                successor |> Seq.choose(fun (_v, e) -> if e.Desc.A = keyA then Some (e) else None)
+                let (predecessor, _v, _l, _successor) = ctx
+                predecessor |> List.choose(fun (_v, e) -> if e.Desc.A = keyA then Some (e) else None)
                 
         member this.ContainsVertex v =
             this.Value |> Vertices.contains v
         member this.GetIncomingEdgesOf(keyB: NodeId) =
             match this.Value |> Graph.tryGetContext keyB with
-            | None -> Seq.empty
+            | None -> List.empty
             | Some (p, _v, _l, _s) ->
-                p |> Seq.ofList
+                p |> List.map snd
+                
+        member this.GetOutGoingEdgesOf (keyA: NodeId) =
+            match this.Value |> Graph.tryGetContext keyA with
+            | None -> List.empty
+            | Some (_p, _v, _l, s) -> s |> List.map snd
+            
               
         member this.RemoveVertex(key: NodeId) =
             this.GetIncomingEdgesOf key
-            |> Seq.map(fun (_v, e) -> e.Desc)
+            |> Seq.map(fun (e) -> e.Desc)
             |> this.RemoveEdges
             |> fun (DirectedLNGraph g) -> g |> Vertices.remove(key)
             |> DirectedLNGraph
@@ -205,6 +223,13 @@ module Graph =
             this.AddEdge(l)
         member this.AddEdge(p, s, l) =
             this.AddEdge({Prev = p; Succ = s; Label = l})
+            
+        member this.AddEdges(edges: seq<ChannelDesc * ChannelUpdate>) =
+            edges
+            |> Seq.fold
+                    (fun (acc: DirectedLNGraph) (desc, update) ->
+                        acc.AddEdge({ Desc = desc; Update = update }))
+                    this
                 
     module private RoutingHeuristics =
         let BLOCK_TIME_TWO_MONTHS = 8640us |> BlockHeightOffset
@@ -340,8 +365,7 @@ module Graph =
                 // build the neighbors with optional extra edges
                 let currentNeighbors =
                     if extraEdges.IsEmpty then
-                        g.GetIncomingEdgesOf(current.Id)
-                        |> Seq.map snd
+                        g.GetIncomingEdgesOf(current.Id) |> List.toSeq
                      else
                          let extraNeighbors =
                              extraEdges
@@ -349,8 +373,7 @@ module Graph =
                          // the resulting set must have only one element per shortChannelId
                          let incoming =
                              g.GetIncomingEdgesOf(current.Id)
-                             |> Seq.filter(fun (_id, e) -> not <| extraEdges.Any(fun x -> x.Desc.ShortChannelId = e.Desc.ShortChannelId))
-                             |> Seq.map snd
+                             |> Seq.filter(fun (e) -> not <| extraEdges.Any(fun x -> x.Desc.ShortChannelId = e.Desc.ShortChannelId))
                          seq {yield! incoming; yield! extraNeighbors}
                 let currentWeight =
                     match weight.TryGetValue current.Id with
