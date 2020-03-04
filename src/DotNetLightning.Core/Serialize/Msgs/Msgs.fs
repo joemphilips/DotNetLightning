@@ -7,6 +7,7 @@ open System.Runtime.CompilerServices
 open NBitcoin
 
 open DotNetLightning.Utils
+open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils.OnionError
 
 open DotNetLightning.Serialize

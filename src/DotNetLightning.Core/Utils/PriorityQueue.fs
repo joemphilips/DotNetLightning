@@ -18,6 +18,12 @@ type IPriorityQueue<'T when 'T : comparison> =
     abstract member TryPop : unit -> ('T * IPriorityQueue<'T>) option
     abstract member Pop : unit -> 'T * IPriorityQueue<'T>
 
+/// Heap is an ordered linear structure where the ordering is ascending or descending.
+/// "head" inspects the first element in the ordering, "tail" takes the remaining structure
+/// after head, and "insert" places elements within the ordering. PriorityQueue is available
+/// as an alternate interface.
+/// According to Okasaki the time complexity of the heap functions in this Heap implementation
+/// (based on the "pairing" heap) have resisted time complexity analysis.
 type Heap<'T when 'T : comparison>(isDescending: bool, length: int, data: HeapData<'T>) =
     let mutable hashCode = None
     member internal this.HeapData = data

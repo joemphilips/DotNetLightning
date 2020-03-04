@@ -1,2 +1,2 @@
-namespace DotNetLightning.Core.Routing
+namespace DotNetLightning.Routing
 

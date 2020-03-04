@@ -68,7 +68,7 @@ module Graph =
                 | _ -> -1
     
     type ChannelDesc = {
-        ShotChannelId: ShortChannelId
+        ShortChannelId: ShortChannelId
         A: NodeId
         B: NodeId
     }
@@ -89,24 +89,22 @@ module Graph =
                 Update1Opt = u1
                 Update2Opt = u2
             }
-    module GraphStructure =
-        type GraphLabel = { Desc: ChannelDesc; Update: ChannelUpdate }
-        type GraphVertex = LVertex<NodeId, unit>
+    type GraphLabel = { Desc: ChannelDesc; Update: ChannelUpdate }
+    type GraphVertex = LVertex<NodeId, unit>
+    
+    type GraphEdge = { Prev: NodeId; Succ: NodeId; Label: GraphLabel } 
+        with
+        member this.AsTuple = (this.Prev, this.Succ, this.Label)
         
-        type GraphEdge = { Prev: NodeId; Succ: NodeId; Label: GraphLabel } 
-            with
-            member this.AsTuple = (this.Prev, this.Succ, this.Label)
-            
-        module GraphEdge =
-            let hasZeroFee ({ Label = l }) =
-                let u = l.Update
-                u.Contents.FeeBaseMSat = LNMoney.Zero && u.Contents.FeeProportionalMillionths = 0u
+    module GraphEdge =
+        let hasZeroFee (l: GraphLabel) =
+            let u = l.Update
+            u.Contents.FeeBaseMSat = LNMoney.Zero && u.Contents.FeeProportionalMillionths = 0u
                 
-    open GraphStructure
     
     [<CustomComparison;StructuralEquality>]
     type WeightedPath = {
-        Path: GraphEdge list
+        Path: GraphLabel seq
         Weight: RichWeight
     }
         with
@@ -120,19 +118,37 @@ module Graph =
                 | _ -> -1
             
     
+    /// The actual graph in Inductive Graph format
+    /// refs: https://pdfs.semanticscholar.org/609d/73290697d27f40ff50fc045fd2e8d0034c9d.pdf
+    /// This is unnecessary abstraction, ideally we should just use Graph type in FGL directly.
+    /// It is here because we wanted to imitate the behavior of `DirectedGraph` type in eclair
+    /// which uses (more simpler) adjacent list for storing graph object
     type DirectedLNGraph = private DirectedLNGraph of Graph<NodeId, unit, GraphLabel>
         with
-        static member Create(vertices: (NodeId * _) list) (edges: GraphEdge list) =
-            Graph.empty
-            |> Directed.Vertices.addMany vertices
-            |> Directed.Edges.addMany (edges |> List.map(fun e -> e.AsTuple))
+        static member Create(vertices: NodeId list, edges: GraphEdge list) =
+            Graph.create
+                (vertices |> List.map(fun v -> v, ()))
+                (edges |> List.map(fun e -> e.AsTuple))
             |> DirectedLNGraph
+            
+        static member Create() =
+            Graph.empty |> DirectedLNGraph
             
         member this.Value = let (DirectedLNGraph v) = this in  v
         member this.ContainsEdge(desc: ChannelDesc) =
             match this.Value |> Edges.tryFind desc.A desc.B with
             | None -> false
             | Some (_,_,_) -> true
+            
+        member this.VertexSet() = this.Value |> Vertices.tovertexList
+        
+        member this.OutgoingEdgesOf(v: NodeId) =
+            Graph.tryGetContext v this.Value
+            |> Option.map(Vertices.successors)
+            
+        member this.IncomingEdgesOf(v: NodeId) =
+            Graph.tryGetContext v this.Value
+            |> Option.map(Vertices.predecessors)
             
         member this.RemoveEdge(desc: ChannelDesc): DirectedLNGraph =
             match this.Value |> Edges.tryFind desc.A desc.B with
@@ -173,15 +189,22 @@ module Graph =
         member this.AddVertex(key: NodeId) =
             this.Value |> Vertices.add (key, ()) |> DirectedLNGraph
             
-        member this.AddEdge({ Label = edge } as e) =
-            let vertIn = edge.Desc.A
-            let vertOut = edge.Desc.B
-            if this.ContainsEdge(edge.Desc) then
-                this.RemoveEdge(edge.Desc).AddEdge(e)
+        member this.AddEdge(l) =
+            let vertIn = l.Desc.A
+            let vertOut = l.Desc.B
+            if this.ContainsEdge(l.Desc) then
+                this.RemoveEdge(l.Desc).AddEdge(l)
             else
                 this.Value
-                |> Edges.add (vertIn, vertOut, edge)
+                |> (if (this.ContainsVertex vertIn) then id else Vertices.add (vertIn, ()))
+                |> (if (this.ContainsVertex vertOut) then id else Vertices.add (vertOut, ()))
+                |> Edges.add (vertIn, vertOut, l)
                 |> DirectedLNGraph
+                
+        member this.AddEdge({ Label = l }) =
+            this.AddEdge(l)
+        member this.AddEdge(p, s, l) =
+            this.AddEdge({Prev = p; Succ = s; Label = l})
                 
     module private RoutingHeuristics =
         let BLOCK_TIME_TWO_MONTHS = 8640us |> BlockHeightOffset
@@ -204,14 +227,14 @@ module Graph =
     /// This forces channel_update(s) with fees = 0 to have a minimum of 1msat for the baseFee. Note that
     /// the update is not being modified and the result of the route computation will still have the update
     /// with fees=0 which is what will be used to build the onion.
-    let private edgeFeeCost (edge: GraphEdge, amountWithFees: LNMoney) =
+    let private edgeFeeCost (edge: GraphLabel, amountWithFees: LNMoney) =
         if (GraphEdge.hasZeroFee(edge)) then amountWithFees + nodeFee(LNMoney.One, 0L, amountWithFees) else
-        let (_,_, {Update = update}) = edge.AsTuple
+        let ({Update = update}) = edge
         amountWithFees + nodeFee(update.Contents.FeeBaseMSat, (int64 update.Contents.FeeProportionalMillionths), amountWithFees)
         
     /// Computes the compound weight for the given @param edge, the weight is cumulative
     let private edgeWeight
-        (edge: GraphEdge)
+        (edge: GraphLabel)
         (prev: RichWeight)
         (isNeighborTarget: bool)
         (currentBlockHeight: BlockHeight)
@@ -221,8 +244,8 @@ module Graph =
             let edgeCost = if (isNeighborTarget) then prev.Cost else edgeFeeCost(edge, prev.Cost)
             { RichWeight.Cost = edgeCost; Length = prev.Length + 1; CLTV = prev.CLTV; Weight = edgeCost.MilliSatoshi |> double }
         | Some wr ->
-            let (_,_, { Update = update; Desc = desc }) =  edge.AsTuple
-            let channelBlockHeight = desc.ShotChannelId.BlockHeight.Value
+            let ({ Update = update; Desc = desc }) = edge
+            let channelBlockHeight = desc.ShortChannelId.BlockHeight.Value
             // every edge is weighted by funding block height where older blocks add less weight,
             let ageFactor =
                 RoutingHeuristics.normalize(channelBlockHeight |> double,
@@ -252,7 +275,7 @@ module Graph =
     /// Calculates the total cost of a path (amount + fees),
     /// direct channels with the source will have a cost of 0 (pay no fees)
     let pathWeight
-        (path: GraphEdge seq)
+        (path: GraphLabel seq)
         (amount: LNMoney)
         (isPartial: bool)
         (currentBlockHeight: BlockHeight)
@@ -260,7 +283,7 @@ module Graph =
         path
         |> Seq.skip(if isPartial then 0 else 1)
         |> Seq.fold
-            (fun (acc: RichWeight) (edge: GraphEdge) ->
+            (fun (acc: RichWeight) (edge: GraphLabel) ->
                 edgeWeight(edge) (acc) (false) (currentBlockHeight) (wr)
             )
             { RichWeight.Cost = amount
@@ -290,7 +313,7 @@ module Graph =
         (initialWeight: RichWeight)
         (boundaries: RichWeight -> bool)
         (currentBlockHeight: BlockHeight)
-        (wr: WeightRatios option) : GraphEdge seq =
+        (wr: WeightRatios option) : GraphLabel seq =
         // The graph does not contain source/destination nodes
         if (not <| g.ContainsVertex sourceNode) then Seq.empty else
         if (not <| g.ContainsVertex targetNode && (not <| extraEdges.IsEmpty) && not <| extraEdges.Any(fun x -> x.Desc.B = targetNode)) then Seq.empty else
@@ -298,31 +321,195 @@ module Graph =
         let maxMapSize = 100 // conservative estimation to avoid over allocating memory
         let weight = Dictionary<NodeId, RichWeight>(maxMapSize)
         let prev = Dictionary<NodeId, GraphLabel>(maxMapSize)
-        let vertexQueue = Fibonac
-        failwith ""
+        // TODO: mutable and while loop is ugly. Refactor.
+        let mutable vertexQueue =
+            // Ideally, we should use Fibonacci heap for the sake of performance,
+            // but to make things easy, we just use regular heap.
+            // isDescending is false, which means root of the heap is the smallest value is the smallest value.
+            Heap.empty<WeightedNode>(false)
+            |> PriorityQueue.insert({ WeightedNode.Id = targetNode; Weight = initialWeight })
         
-    let yenKShortestPaths (DirectedLNGraph g)
+        weight.Add(targetNode, initialWeight)
+        let mutable targetFound = false
+        while (not <| vertexQueue.IsEmpty && not <| targetFound) do
+            let current, vq = vertexQueue.Pop()
+            vertexQueue <- vq
+            if (current.Id = sourceNode) then
+                targetFound <- true
+            else
+                // build the neighbors with optional extra edges
+                let currentNeighbors =
+                    if extraEdges.IsEmpty then
+                        g.GetIncomingEdgesOf(current.Id)
+                        |> Seq.map snd
+                     else
+                         let extraNeighbors =
+                             extraEdges
+                             |> Seq.filter(fun x -> x.Desc.B = current.Id)
+                         // the resulting set must have only one element per shortChannelId
+                         let incoming =
+                             g.GetIncomingEdgesOf(current.Id)
+                             |> Seq.filter(fun (_id, e) -> not <| extraEdges.Any(fun x -> x.Desc.ShortChannelId = e.Desc.ShortChannelId))
+                             |> Seq.map snd
+                         seq {yield! incoming; yield! extraNeighbors}
+                let currentWeight =
+                    match weight.TryGetValue current.Id with
+                    | true, t -> t
+                    | _ -> failwithf "Unreachable! Failed to get value %A" current.Id
+                    
+                currentNeighbors
+                |> Seq.iter ( fun edge ->
+                    let neighbor = edge.Desc.A
+                    let newMinimumKnownWeight =
+                        edgeWeight (edge)
+                                   (currentWeight)
+                                   (initialWeight.Length = 0 && neighbor = sourceNode)
+                                   (currentBlockHeight)
+                                   (wr)
+                    if (edge.Update.Contents.HTLCMaximumMSat |> Option.forall(fun x -> newMinimumKnownWeight.Cost <= x)) &&
+                       newMinimumKnownWeight.Cost >= edge.Update.Contents.HTLCMinimumMSat &&
+                       boundaries (newMinimumKnownWeight) &&
+                       not <| ignoredEdges.Contains(edge.Desc) && not <| ignoredVertices.Contains(neighbor) then
+                       let neighborCost =
+                           match weight.TryGetValue(neighbor) with
+                           | true, s -> s
+                           | false, _ ->
+                               { RichWeight.Cost = LNMoney.MaxValue
+                                 Weight = Double.MaxValue
+                                 Length = Int32.MaxValue
+                                 CLTV = BlockHeightOffset.MaxValue }
+                       if (newMinimumKnownWeight.Weight < neighborCost.Weight) then
+                           prev.Add(neighbor, edge)
+                           vertexQueue <- vertexQueue |> PriorityQueue.insert({ WeightedNode.Id = neighbor; Weight = newMinimumKnownWeight })
+                    ()
+                )
+        match targetFound with
+        | false -> Seq.empty
+        | true ->
+            let edgePath = ResizeArray()
+            let mutable found, current = prev.TryGetValue(sourceNode)
+            while found do
+                edgePath.Add(current)
+                let f, c = prev.TryGetValue(current.Desc.B)
+                found <- f
+                current <- c
+            edgePath :> seq<_>
+        
+        
+        
+    let yenKShortestPaths (g: DirectedLNGraph)
                           (sourceNode: NodeId)
                           (targetNode: NodeId)
                           (amount: LNMoney)
                           (ignoredEdges: Set<ChannelDesc>)
+                          (ignoredVertices: Set<NodeId>)
                           (extraEdges: Set<GraphLabel>)
                           (pathsToFind: int)
                           (wr: WeightRatios option)
                           (currentBlockHeight: BlockHeight)
-                          (boundaries: RichWeight -> bool): WeightedPath list =
-        let mutable allSpurPathFound = false
+                          (boundaries: RichWeight -> bool): WeightedPath seq =
+        let mutable allSpurPathsFound = false
         // Stores tha shortest paths
         let shortestPaths = ResizeArray<WeightedPath>()
-        // Stores the candidates for k (K+1) shortest paths
-        // should be sorted by path cost
-        let candidates = Heap.empty
+        // Stores the candidates for k(K+1) shortest paths
+        // we instantiate by isDescending=false, so `Pop` should return the lowest cost
+        let candidates = Heap.empty true
         
         // find the shortest path, k = 0
         let initialWeight = { RichWeight.Cost = amount;
                               Weight = 0.
                               Length = 0
                               CLTV = BlockHeightOffset.Zero }
-        let shortestPath = dijkstraShortestPath
-        failwith ""
-        
+        let shortestPath =
+            dijkstraShortestPath g
+                                 sourceNode
+                                 targetNode
+                                 ignoredEdges
+                                 ignoredVertices
+                                 extraEdges
+                                 initialWeight
+                                 boundaries
+                                 currentBlockHeight
+                                 wr
+        shortestPaths.Add(
+            { WeightedPath.Path = shortestPath
+              Weight = pathWeight(shortestPath) (amount) false currentBlockHeight wr }
+            )
+        if (shortestPaths.Count = 0) then Seq.empty else
+        for k in 1..pathsToFind do
+            if (not <| allSpurPathsFound) then
+                for i in 0..(shortestPaths.[k - 1].Path.Count() - 1) do
+                    let prevShortestPath = shortestPaths.[k - 1].Path
+                    // select the spur node as the i-th element of the k-the previous shortest path (k - 1)
+                    let spurEdge = prevShortestPath |> Seq.item i
+                    // select the sub-path from the source to the spur node of the k-th previous shortest path
+                    let rootPathEdges =
+                        if (i = 0) then prevShortestPath |> Seq.head |> List.singleton else
+                        prevShortestPath |> Seq.take i |> Seq.toList
+                    let rootPathWeight =
+                        pathWeight
+                            (rootPathEdges)
+                            (amount)
+                            true
+                            currentBlockHeight
+                            wr
+                            
+                    // links to be removed that are part of the previous shortest path and which share the
+                    // same root path
+                    let edgesToIgnore =
+                        seq {
+                            for weightedPath in shortestPaths do
+                                if (i = 0 &&
+                                        (weightedPath.Path |> Seq.head |> List.singleton = rootPathEdges ||
+                                         weightedPath.Path |> Seq.take i |> Seq.toList = rootPathEdges)) then
+                                    yield (weightedPath.Path |> Seq.item i).Desc
+                        }
+                        
+                    // remove any link that can lead back to the previous vertex to avoid going back from where
+                    // we arrived(previous iteration)
+                    let returningEdges =
+                        rootPathEdges
+                        |> List.tryLast
+                        |> Option.map(fun last -> g.GetEdgesBetween(last.Desc.B, last.Desc.A))
+                        |> Option.toList
+                        |> Seq.collect id
+                        |> Seq.map(fun x -> x.Desc)
+                        
+                    // find the "spur" path, a sub-path going from the spur edge to the target avoiding previously
+                    // found sub-paths
+                    let spurPath =
+                        let ignoredE = ignoredEdges |> Set.union (Set(edgesToIgnore)) |> Set.union(Set(returningEdges))
+                        dijkstraShortestPath
+                            (g)
+                            spurEdge.Desc.A
+                            targetNode
+                            ignoredE
+                            ignoredVertices
+                            extraEdges
+                            rootPathWeight
+                            boundaries
+                            currentBlockHeight
+                            wr
+                            
+                    // if there wasn't a path the spur will be empty
+                    if (spurPath.Count() <> 0) then
+                        // candidate k-shortest path is made of the rootPath and the new spurPath
+                        let totalPath =
+                            if (rootPathEdges |> List.head).Desc.A = (spurPath |> Seq.head).Desc.A then
+                                // if the heads are the same node, drop it from the rootPath
+                                seq { for i in (rootPathEdges |> List.tail) do yield i; yield! spurPath }
+                            else
+                                seq { for i in rootPathEdges do yield i; yield! spurPath }
+                        let candidatePath = { WeightedPath.Path = totalPath; Weight = pathWeight(totalPath) (amount) false currentBlockHeight wr }
+                        if (boundaries(candidatePath.Weight) &&
+                            not <| shortestPaths.Contains(candidatePath) &&
+                            not <| (candidates |> Seq.exists((=)candidatePath))) then
+                            candidates.Insert(candidatePath) |> ignore
+                if (candidates.IsEmpty) then
+                    // handles the case of having exhausted all possible spur paths and it's impossible to
+                    // reach the target from the source
+                    allSpurPathsFound <- true
+                else
+                    let (best, _) = candidates |> PriorityQueue.pop
+                    shortestPaths.Add(best)
+        shortestPaths :> seq<_>

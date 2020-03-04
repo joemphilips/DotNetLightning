@@ -138,8 +138,6 @@ type RouterConfig() =
     member val NetworkStatsRefreshInterval = Unchecked.defaultof<TimeSpan>
     member val RequestNodeAnnouncement = false
     
-    member val EncodingType = EncodingType.Uncompressed
-    
     member val ChannelRangeChunkSize = 0
     member val SearchMaxRouteLength: int = 6 with get, set
     // max acceptable cltv expiry fo the payment (1008 ~ 1 week)

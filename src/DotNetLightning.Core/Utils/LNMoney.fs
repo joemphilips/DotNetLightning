@@ -79,6 +79,10 @@ type LNMoney = | LNMoney of int64 with
     static member (/) (LNMoney a, LNMoney b) = LNMoney(a / b)
     static member Max(LNMoney a, LNMoney b) = if a >= b then a else b
     static member Min(LNMoney a, LNMoney b) = if a <= b then a else b
+    
+    static member MaxValue =
+        let maxSatoshis = 21000000UL * (uint64 Money.COIN)
+        LNMoney.Satoshis maxSatoshis
 
     static member op_Implicit (money: Money) = LNMoney.Satoshis(money.Satoshi)
 

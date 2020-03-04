@@ -54,6 +54,7 @@ module Primitives =
             BlockHeightOffset v
         static member One = BlockHeightOffset(1us)
         static member Zero = BlockHeightOffset(0us)
+        static member MaxValue = UInt16.MaxValue |> BlockHeightOffset
         static member (+) (a: BlockHeightOffset, b: BlockHeightOffset) =
             a.Value + b.Value |> BlockHeightOffset
         static member (-) (a: BlockHeightOffset, b: BlockHeightOffset) =
@@ -323,4 +324,7 @@ module Primitives =
         Green: uint8
         Blue: uint8
     }
+    type EncodingType =
+        | SortedPlain = 0uy
+        | ZLib = 1uy
     

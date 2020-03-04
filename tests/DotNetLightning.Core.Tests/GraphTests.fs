@@ -9,14 +9,15 @@ open NBitcoin
 open Expecto
 open NBitcoin.DataEncoders
 open DotNetLightning.FGL
+open DotNetLightning.FGL.Directed
 
 let hex = Encoders.Hex
 
 module Constants =
+    let ascii = System.Text.ASCIIEncoding.ASCII
     let signMessageWith (privKey: Key) (msgHash: string) =
-        let msgBytes = msgHash |> hex.DecodeData
+        let msgBytes = msgHash |> ascii.GetBytes
         privKey.SignCompact(msgBytes |> uint256, false) |> fun d -> LNECDSASignature.FromBytesCompact(d, true)
-        
     let DEFAULT_AMOUNT_MSAT = LNMoney.MilliSatoshis(10000000L)
     let DEFAULT_ROUTE_PARAMS = { RouteParams.Randomize = false
                                  MaxFeeBase = LNMoney.MilliSatoshis(21000L)
@@ -54,13 +55,13 @@ let makeUpdate (shortChannelId: ShortChannelId,
                 ): (ChannelDesc * ChannelUpdate) =
     let minHtlc = Option.defaultValue Constants.DEFAULT_AMOUNT_MSAT minHtlc
     let cltvDelta = Option.defaultValue (BlockHeightOffset(0us)) cltvDelta
-    let desc = { ChannelDesc.A = nodeid1
-                 ShortChannelId = shortChannelId
+    let desc = { ChannelDesc.ShortChannelId = shortChannelId
+                 A = nodeid1
                  B = nodeid2 }
     let update = { ChannelUpdate.Signature = Constants.DUMMY_SIG
-                   Contents = { UnsignedChannelUpdate.Flags =
-                                    let messageFlag = (match maxHtlc with Some _ -> 1us | _ -> 0us)
-                                    (messageFlag <<< 1) ||| 0us
+                   Contents = { UnsignedChannelUpdate.MessageFlags =
+                                    match maxHtlc with Some _ -> 1uy | _ -> 0uy
+                                ChannelFlags = 0uy
                                 ChainHash = Network.RegTest.GenesisHash
                                 ShortChannelId = shortChannelId
                                 Timestamp = 0u
@@ -68,43 +69,82 @@ let makeUpdate (shortChannelId: ShortChannelId,
                                 HTLCMinimumMSat = minHtlc
                                 FeeBaseMSat = feeBase
                                 FeeProportionalMillionths = feeProportionalMillions
-                                ExcessData = [||] }
+                                HTLCMaximumMSat = None }
                  }
     desc, update
+    
+let makeUpdateSimple (shortChannelId, a, b) =
+    makeUpdate(ShortChannelId.FromUInt64(shortChannelId), a, b, LNMoney.Zero, 0u, None, None, None)
 let makeTestGraph() =
-    let updates = [
-        makeUpdate(ShortChannelId.FromUInt64(1UL), a, b, LNMoney.Zero, 0u, None, None, None)
-        makeUpdate(ShortChannelId.FromUInt64(2UL), b, c, LNMoney.Zero, 0u, None, None, None)
-        makeUpdate(ShortChannelId.FromUInt64(3UL), c, d, LNMoney.Zero, 0u, None, None, None)
-        makeUpdate(ShortChannelId.FromUInt64(4UL), d, e, LNMoney.Zero, 0u, None, None, None)
-        makeUpdate(ShortChannelId.FromUInt64(5UL), e, f, LNMoney.Zero, 0u, None, None, None)
-        makeUpdate(ShortChannelId.FromUInt64(6UL), f, g, LNMoney.Zero, 0u, None, None, None)
-    ]
-    failwith ""
-
-let genUNodes n =
-    Seq.zip [1..n] (Seq.initInfinite (fun _ -> ()))
-let genLNodes<'T, 'a when 'T :> seq<'a>>(q: 'a) (i: int) =
-    let rec loop xs =
-        seq { yield! xs; yield! loop xs }
-    Seq.zip (loop [1]) (loop [q]) |>  Seq.take i
-    
-// denote unlabeled edges
-let labUEdges: Edge<int> seq -> LEdge<int, unit> seq =
-    Seq.map (fun (i, j) -> (i, j, ()))
-
-let noEdges: LEdge<int, unit> seq = Seq.empty
-
-let a: Graph<int, char, _> =
-    Graph.compose ([], 1, 'a', []) (Graph.empty)
-    
-let b =
-    Graph.empty
-    |> Undirected.Vertices.add()
-
+    let updates =
+        [
+            a, b, (makeUpdate(ShortChannelId.FromUInt64(1UL), a, b, LNMoney.Zero, 0u, None, None, None))
+            b, c, (makeUpdate(ShortChannelId.FromUInt64(2UL), b, c, LNMoney.Zero, 0u, None, None, None))
+            c, d, (makeUpdate(ShortChannelId.FromUInt64(3UL), c, d, LNMoney.Zero, 0u, None, None, None))
+            d, e, (makeUpdate(ShortChannelId.FromUInt64(4UL), d, e, LNMoney.Zero, 0u, None, None, None))
+            e, f, (makeUpdate(ShortChannelId.FromUInt64(5UL), e, f, LNMoney.Zero, 0u, None, None, None))
+            f, g, (makeUpdate(ShortChannelId.FromUInt64(6UL), f, g, LNMoney.Zero, 0u, None, None, None))
+        ]
+    Graph.empty |> Edges.addMany updates
 [<Tests>]
 let graphTests =
-    testList "GraphTests" [
-        testCase "examples" <| fun _ ->
-            failwith ""
+    ftestList "GraphTests from eclair" [
+        testCase "Instantiate a graph, with vertices and then add edges" <| fun _ ->
+            let g =
+                DirectedLNGraph.Create()
+                    .AddVertex(a)
+                    .AddVertex(b)
+                    .AddVertex(c)
+                    .AddVertex(d)
+                    .AddVertex(e)
+            Expect.isTrue(g.ContainsVertex(a) && g.ContainsVertex(e)) ""
+            Expect.equal (g.VertexSet().Length) 5 ""
+            let otherGraph = g.AddVertex(a)
+            Expect.equal (otherGraph.VertexSet().Length) 5 ""
+            let descAB, updateAB = makeUpdate(ShortChannelId.FromUInt64(1UL), a, b, LNMoney.Zero, 0u, None, None, None)
+            let descBC, updateBC = makeUpdate(ShortChannelId.FromUInt64(2UL), b, c, LNMoney.Zero, 0u, None, None, None)
+            let descAD, updateAD = makeUpdate(ShortChannelId.FromUInt64(3UL), a, d, LNMoney.Zero, 0u, None, None, None)
+            let descDC, updateDC = makeUpdate(ShortChannelId.FromUInt64(4UL), d, c, LNMoney.Zero, 0u, None, None, None)
+            let descCE, updateCE = makeUpdate(ShortChannelId.FromUInt64(5UL), c, e, LNMoney.Zero, 0u, None, None, None)
+            let graphWithEdges =
+                g
+                    .AddEdge({ Update = updateAB; Desc = descAB })
+                    .AddEdge({ Update = updateBC; Desc = descBC })
+                    .AddEdge({ Update = updateAD; Desc = descAD })
+                    .AddEdge({ Update = updateDC; Desc = descDC })
+                    .AddEdge({ Update = updateCE; Desc = descCE })
+            Expect.equal (graphWithEdges.OutgoingEdgesOf(a).Value.Length) 2 ""
+            Expect.equal (graphWithEdges.OutgoingEdgesOf(b).Value.Length) 1 ""
+            Expect.equal (graphWithEdges.OutgoingEdgesOf(c).Value.Length) 1 ""
+            Expect.equal (graphWithEdges.OutgoingEdgesOf(d).Value.Length) 1 ""
+            Expect.equal (graphWithEdges.OutgoingEdgesOf(e).Value.Length) 0 ""
+            Expect.isNone (graphWithEdges.OutgoingEdgesOf(f)) ""
+            
+            let withRemovedEdges = graphWithEdges.RemoveEdge(descAD)
+            Expect.equal (withRemovedEdges.OutgoingEdgesOf(d).Value.Length) 1 ""
+            
+        testCase "instantiate a graph adding edges only" <| fun _ ->
+            let labelAB =
+                makeUpdateSimple(1UL, a, b)
+                |> fun (a, b) -> { Desc = a; Update = b }
+            let labelBC = makeUpdateSimple(2UL, b, c) |> fun (a, b) -> { Desc = a; Update = b }
+            let labelAD = makeUpdateSimple(3UL, a, d) |> fun (a, b) -> { Desc = a; Update = b }
+            let labelDC = makeUpdateSimple(4UL, d, c) |> fun (a, b) -> { Desc = a; Update = b }
+            let labelCE = makeUpdateSimple(5UL, c, e) |> fun (a, b) -> { Desc = a; Update = b }
+            let labelBE = makeUpdateSimple(6UL, b, e) |> fun (a, b) -> { Desc = a; Update = b }
+            let g =
+                DirectedLNGraph.Create()
+                    .AddEdge(labelAB)
+                    .AddEdge(labelBC)
+                    .AddEdge(labelAD)
+                    .AddEdge(labelDC)
+                    .AddEdge(labelCE)
+                    .AddEdge(labelBE)
+            Expect.equal (g.VertexSet().Length) 5 ""
+            Expect.equal (g.OutgoingEdgesOf(c).Value.Length) 1 ""
+            Expect.equal (g.IncomingEdgesOf(c).Value.Length) 2 ""
+            
+        testCase "containsEdge should return true if the graph contains that edge, false otherwise" <| fun _ ->
+            let updates = seq { makeUpdateSimple(1UL, a, b) }
+            ()
     ]

@@ -1,5 +1,6 @@
 namespace DotNetLightning.Routing
 
+open DotNetLightning.Routing.Graph
 open System
 open DotNetLightning.Utils
 open DotNetLightning.Serialize.Msgs
