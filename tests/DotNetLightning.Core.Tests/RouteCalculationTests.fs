@@ -4,11 +4,14 @@ open NBitcoin
 open NBitcoin.DataEncoders
 open Expecto
 
+open DotNetLightning.Routing
 open DotNetLightning.Routing.Graph
 open DotNetLightning.Utils
 open DotNetLightning.Utils
 open DotNetLightning.Utils.Primitives
 open GraphTests
+open GraphTests.Constants
+open ResultUtils
 
 let hex = Encoders.Hex
 
@@ -25,6 +28,8 @@ let pks =
     |> List.map (hex.DecodeData >> PubKey >> NodeId)
 let a, b, c, d, e, f, g = pks.[0], pks.[1], pks.[2], pks.[3], pks.[4], pks.[5], pks.[6]
 
+let hops2Ids (route: seq<ChannelHop>) =
+    route |> Seq.map(fun hop -> hop.LastUpdateValue.ShortChannelId.ToBytes() |> fun x -> NBitcoin.Utils.ToUInt64(x, false))
 
 [<Tests>]
 let tests = testList "Route Calculation" [
@@ -37,6 +42,9 @@ let tests = testList "Route Calculation" [
             ]
         
         let g = DirectedLNGraph.Create().AddEdges(updates)
-        ()
+        let route =
+            Routing.findRoute (g) (a) (e) DEFAULT_AMOUNT_MSAT 1 (Set.empty) (Set.empty) (Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight 400000u)
+            |> Result.deref
+        Expect.sequenceEqual (route |> hops2Ids) ([1UL; 2UL; 3UL; 4UL]) ""
 ]
 

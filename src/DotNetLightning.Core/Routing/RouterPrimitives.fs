@@ -22,7 +22,8 @@ module RouterPrimitives =
         RandomizeRouterSelection: bool
         ChannelExcludeDuration: TimeSpan
         RouterBroadcastInterval: TimeSpan
-        SearchMaxFeeBase: Money
+        SearchMaxFeeBase: LNMoney
+        SearchMaxFeePct: double
         SearchMaxRouteLength: int
         SearchMaxCLTV: BlockHeightOffset
         SearchHeuristicsEnabled: bool
@@ -103,6 +104,7 @@ module RouterPrimitives =
         LastUpdate: UnsignedChannelUpdate
     }
         with
+        member this.LastUpdateValue = this.LastUpdate
         static member Create (a, b, u: UnsignedChannelUpdate) =
             {
                 NodeId = a

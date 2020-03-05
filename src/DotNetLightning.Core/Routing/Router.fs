@@ -15,6 +15,8 @@ open NBitcoin
 
 module Routing =
     // ----- helpers -----
+    /// BOLT11: "For each entry, the pubkey is the node ID of the start of the channel", and the last node is the destination
+    /// The invoice doesn't
     let private toAssistedChannels (targetNode: NodeId) (amount: LNMoney)(extraRoute: ExtraHop seq) : seq<ShortChannelId * AssistedChannel> =
         let lastChannelCap = LNMoney.Max(amount, RoutingHeuristics.CAPACITY_CHANNEL_LOW)
         let nextNodeIds =
@@ -35,9 +37,6 @@ module Routing =
         |> snd
         |> Map.toSeq
 
-    let private defaultRouteParams: RouteParams =
-        failwith ""
-        
     /// Defined in BOLT7
     let ROUTE_MAX_LENGTH = 20
     /// Max allowed cltv for a route
@@ -152,7 +151,7 @@ module Routing =
                     )
                 |> Set
             let ignoredEdges = routeRequest.IgnoredChannels |> Set.union d.ExcludedChannels
-            let routeParams = routeRequest.MaybeRouteParams |> Option.defaultValue (defaultRouteParams)
+            let routeParams = routeRequest.RouteParams
             let routesToFind = if routeParams.Randomize then DEFAULT_ROUTES_COUNT else 1
             findRoute(d.Graph) (start) t a routesToFind extraEdges ignoredEdges ignoredV routeParams d.CurrentBlockHeight
         | _ -> failwith "Not implemented"

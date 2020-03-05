@@ -1,5 +1,6 @@
 namespace DotNetLightning.Routing
 
+open ResultUtils
 open System.Collections.Generic
 open DotNetLightning.Payment
 open DotNetLightning.Serialize.Msgs
@@ -15,6 +16,22 @@ type RouteParams = {
     RouteMaxCLTV: BlockHeightOffset
     Ratios: WeightRatios option
 }
+    with
+    static member GetDefault(conf: RouterConf) =
+        {
+            Randomize = conf.RandomizeRouterSelection
+            MaxFeeBase = conf.SearchMaxFeeBase
+            MaxFeePCT = conf.SearchMaxFeePct
+            RouteMaxLength = conf.SearchMaxRouteLength
+            RouteMaxCLTV = conf.SearchMaxCLTV
+            Ratios =
+                match conf.SearchHeuristicsEnabled with
+                | false -> None
+                | true ->
+                    match WeightRatios.TryCreate(conf.SearchRatioCLTV, conf.SearchRatioChannelAge, conf.SearchRatioChannelCapacity) with
+                    | Ok s -> Some s
+                    | Error _ -> None
+        }
 
 type RouteRequest = private {
     Source: NodeId
@@ -23,10 +40,10 @@ type RouteRequest = private {
     AssistedRoutes: ExtraHop seq seq
     IgnoredNodes: Set<NodeId>
     IgnoredChannels: Set<ChannelDesc>
-    MaybeRouteParams: RouteParams option
+    RouteParams: RouteParams
 }
     with
-    static member Create(source, target, amount, ?assistedRoutes, ?ignoredNodes, ?ignoredChannels, ?routeParams) =
+    static member Create(source, target, amount, routeParams, ?assistedRoutes, ?ignoredNodes, ?ignoredChannels) =
         let a = Option.defaultValue [] assistedRoutes
         let iN = Option.defaultValue Set.empty ignoredNodes
         let iC = Option.defaultValue Set.empty ignoredChannels
@@ -37,7 +54,7 @@ type RouteRequest = private {
             AssistedRoutes = a
             IgnoredNodes = iN
             IgnoredChannels = iC
-            MaybeRouteParams = routeParams
+            RouteParams = routeParams
         }
         
 type FinalizeRoute = private {

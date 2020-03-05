@@ -316,8 +316,8 @@ module Graph =
         weight.Add(targetNode, initialWeight)
         let mutable targetFound = false
         while (not <| vertexQueue.IsEmpty && not <| targetFound) do
-            let current, vq = vertexQueue.Pop()
-            vertexQueue <- vq
+            let current, _vq = vertexQueue.Pop()
+            vertexQueue <- _vq
             if (current.Id = sourceNode) then
                 targetFound <- true
             else
@@ -333,11 +333,11 @@ module Graph =
                          let incoming =
                              g.IncomingEdgesOf(current.Id)
                              |> Seq.filter(fun (e) -> not <| extraEdges.Any(fun x -> x.Desc.ShortChannelId = e.Desc.ShortChannelId))
-                         seq {yield! incoming; yield! extraNeighbors}
+                         seq { yield! incoming; yield! extraNeighbors }
                 let currentWeight =
                     match weight.TryGetValue current.Id with
                     | true, t -> t
-                    | _ -> failwithf "Unreachable! Failed to get value %A" current.Id
+                    | _ -> failwithf "Unreachable! Failed to get value %A \n from %A" current.Id (weight |> Seq.map(|KeyValue|))
                     
                 currentNeighbors
                 |> Seq.iter ( fun edge ->
@@ -363,6 +363,7 @@ module Graph =
                        if (newMinimumKnownWeight.Weight < neighborCost.Weight) then
                            prev.Add(neighbor, edge)
                            vertexQueue <- vertexQueue |> PriorityQueue.insert({ WeightedNode.Id = neighbor; Weight = newMinimumKnownWeight })
+                           weight.Add(neighbor, newMinimumKnownWeight)
                     ()
                 )
         match targetFound with
