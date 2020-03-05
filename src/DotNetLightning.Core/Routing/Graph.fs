@@ -86,13 +86,13 @@ module Graph =
                 Update1Opt = u1
                 Update2Opt = u2
             }
-    type GraphLabel = { Desc: ChannelDesc; Update: ChannelUpdate }
+    type GraphLabel = { Desc: ChannelDesc; Update: UnsignedChannelUpdate }
         with
         static member Create (d, u) = { Desc = d; Update = u }
     module GraphEdge =
         let hasZeroFee (l: GraphLabel) =
             let u = l.Update
-            u.Contents.FeeBaseMSat = LNMoney.Zero && u.Contents.FeeProportionalMillionths = 0u
+            u.FeeBaseMSat = LNMoney.Zero && u.FeeProportionalMillionths = 0u
                 
     
     [<CustomComparison;StructuralEquality>]
@@ -136,12 +136,14 @@ module Graph =
         member this.AddEdge(desc, update) =
             this.AddEdge({ Desc = desc; Update = update })
             
-        member this.AddEdges(edges: seq<ChannelDesc * ChannelUpdate>) =
+        member this.AddEdges(edges: seq<ChannelDesc * UnsignedChannelUpdate>) =
             edges
             |> Seq.fold
                     (fun (acc: DirectedLNGraph) (desc, update) ->
                         acc.AddEdge({ Desc = desc; Update = update }))
                     this
+        member this.AddEdges(edges: seq<GraphLabel>) =
+            edges |> Seq.map(fun e -> e.Desc, e.Update) |> this.AddEdges
         member this.ContainsEdge({ A = a; B = b; ShortChannelId = id }) =
             match this.Value |> Map.tryFind b with
             | None -> false
@@ -188,7 +190,7 @@ module Graph =
             this.RemoveEdges(ds).Value |> Map.remove key |> DirectedLNGraph
             
                 
-    module private RoutingHeuristics =
+    module internal RoutingHeuristics =
         let BLOCK_TIME_TWO_MONTHS = 8640us |> BlockHeightOffset
         let CAPACITY_CHANNEL_LOW = LNMoney.Satoshis(1000L)
         let CAPACITY_CHANNEL_HIGH = DotNetLightning.Channel.ChannelConstants.MAX_FUNDING_SATOSHIS.Satoshi |> LNMoney.Satoshis
@@ -203,7 +205,7 @@ module Graph =
             if (v > max) then 0.99999 else
             (v - min) / (max - min)
         
-    let private nodeFee(baseFee: LNMoney, proportionalFee: int64, paymentAmount: LNMoney) =
+    let internal nodeFee(baseFee: LNMoney, proportionalFee: int64, paymentAmount: LNMoney) =
         baseFee.MilliSatoshi + ((paymentAmount.MilliSatoshi * proportionalFee) / 1000000L) |> LNMoney
         
     /// This forces channel_update(s) with fees = 0 to have a minimum of 1msat for the baseFee. Note that
@@ -212,7 +214,7 @@ module Graph =
     let private edgeFeeCost (edge: GraphLabel, amountWithFees: LNMoney) =
         if (GraphEdge.hasZeroFee(edge)) then amountWithFees + nodeFee(LNMoney.One, 0L, amountWithFees) else
         let ({Update = update}) = edge
-        amountWithFees + nodeFee(update.Contents.FeeBaseMSat, (int64 update.Contents.FeeProportionalMillionths), amountWithFees)
+        amountWithFees + nodeFee(update.FeeBaseMSat, (int64 update.FeeProportionalMillionths), amountWithFees)
         
     /// Computes the compound weight for the given @param edge, the weight is cumulative
     let private edgeWeight
@@ -235,13 +237,13 @@ module Graph =
                                             currentBlockHeight.Value |> double)
             // Every edge is weighted by channel capacity, larger channels and less weight
             let edgeMaxCapacity =
-                update.Contents.HTLCMaximumMSat |> Option.defaultValue (RoutingHeuristics.CAPACITY_CHANNEL_LOW)
+                update.HTLCMaximumMSat |> Option.defaultValue (RoutingHeuristics.CAPACITY_CHANNEL_LOW)
             let capFactor =
                 1. - RoutingHeuristics.normalize(edgeMaxCapacity.MilliSatoshi |> double,
                                                  RoutingHeuristics.CAPACITY_CHANNEL_LOW.MilliSatoshi |> double,
                                                  RoutingHeuristics.CAPACITY_CHANNEL_HIGH.MilliSatoshi |> double)
             // Every edge is weighted by cltv-delta value, normalized.
-            let channelCLTVDelta = update.Contents.CLTVExpiryDelta
+            let channelCLTVDelta = update.CLTVExpiryDelta
             let cltvFactor =
                 RoutingHeuristics.normalize(channelCLTVDelta.Value |> double,
                                             RoutingHeuristics.CLTV_LOW |> double,
@@ -346,8 +348,8 @@ module Graph =
                                    (initialWeight.Length = 0 && neighbor = sourceNode)
                                    (currentBlockHeight)
                                    (wr)
-                    if (edge.Update.Contents.HTLCMaximumMSat |> Option.forall(fun x -> newMinimumKnownWeight.Cost <= x)) &&
-                       newMinimumKnownWeight.Cost >= edge.Update.Contents.HTLCMinimumMSat &&
+                    if (edge.Update.HTLCMaximumMSat |> Option.forall(fun x -> newMinimumKnownWeight.Cost <= x)) &&
+                       newMinimumKnownWeight.Cost >= edge.Update.HTLCMinimumMSat &&
                        boundaries (newMinimumKnownWeight) &&
                        not <| ignoredEdges.Contains(edge.Desc) && not <| ignoredVertices.Contains(neighbor) then
                        let neighborCost =

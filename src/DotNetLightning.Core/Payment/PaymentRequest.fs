@@ -202,7 +202,7 @@ type ExtraHop = {
     NodeId: NodeId
     ShortChannelId: ShortChannelId
     FeeBase: LNMoney
-    FeeProportionalMillionths: int64
+    FeeProportionalMillionths: uint32
     CLTVExpiryDelta: BlockHeightOffset
 }
     with
@@ -450,7 +450,7 @@ type private Bolt11Data = {
                                         let nodeId = r.ReadBytes(264 / 8) |> PubKey |> NodeId
                                         let schId = r.ReadULongBE(64) |> ShortChannelId.FromUInt64
                                         let feeBase = r.ReadULongBE(32) |> LNMoney.MilliSatoshis
-                                        let feeProportional = r.ReadULongBE(32) |> int64
+                                        let feeProportional = r.ReadULongBE(32) |> uint32
                                         let cltvExpiryDelta =  r.ReadULongBE(16) |> uint16 |> BlockHeightOffset
                                         let hopInfo = { NodeId = nodeId
                                                         ShortChannelId = schId

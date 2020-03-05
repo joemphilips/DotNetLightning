@@ -386,8 +386,8 @@ let private unsignedChannelAnnouncementGen = gen {
     let! s = ShortChannelId.FromUInt64 <!> Arb.generate<uint64>
     let! n1 = NodeId <!> pubKeyGen
     let! n2 = NodeId <!> pubKeyGen
-    let! b1 = pubKeyGen
-    let! b2 = pubKeyGen
+    let! b1 = pubKeyGen |> Gen.map ComparablePubKey
+    let! b2 = pubKeyGen |> Gen.map ComparablePubKey
     let! e = bytesGen
 
     return {

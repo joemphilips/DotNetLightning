@@ -1008,15 +1008,15 @@ with
             (this.Contents :> ILightningSerializable<UnsignedNodeAnnouncement>).Serialize(ls)
 
 
-[<CLIMutable>]
+[<StructuralComparison;StructuralEquality;CLIMutable>]
 type UnsignedChannelAnnouncement = {
     mutable Features: FeatureBit
     mutable ChainHash: uint256
     mutable ShortChannelId: ShortChannelId
     mutable NodeId1: NodeId
     mutable NodeId2: NodeId
-    mutable BitcoinKey1: PubKey
-    mutable BitcoinKey2: PubKey
+    mutable BitcoinKey1: ComparablePubKey
+    mutable BitcoinKey2: ComparablePubKey
     mutable ExcessData: byte[]
 }
 with
@@ -1028,8 +1028,8 @@ with
             this.ShortChannelId <- ls.ReadUInt64(false) |> ShortChannelId.FromUInt64
             this.NodeId1 <- ls.ReadPubKey() |> NodeId
             this.NodeId2 <- ls.ReadPubKey() |> NodeId
-            this.BitcoinKey1 <- ls.ReadPubKey()
-            this.BitcoinKey2 <- ls.ReadPubKey()
+            this.BitcoinKey1 <- ls.ReadPubKey() |> ComparablePubKey
+            this.BitcoinKey2 <- ls.ReadPubKey() |> ComparablePubKey
             this.ExcessData <- match ls.TryReadAll() with Some b -> b | None -> [||]
         member this.Serialize(ls) =
             ls.WriteWithLen(this.Features.ToByteArray())
@@ -1037,8 +1037,8 @@ with
             ls.Write(this.ShortChannelId)
             ls.Write(this.NodeId1.Value)
             ls.Write(this.NodeId2.Value)
-            ls.Write(this.BitcoinKey1)
-            ls.Write(this.BitcoinKey2)
+            ls.Write(this.BitcoinKey1.Value)
+            ls.Write(this.BitcoinKey2.Value)
             ls.Write(this.ExcessData)
 
 [<CLIMutable>]
@@ -1079,37 +1079,36 @@ type UnsignedChannelUpdate = {
     mutable HTLCMaximumMSat: OptionalField<LNMoney>
 }
     with
-        interface IRoutingMsg
-        interface  ILightningSerializable<UnsignedChannelUpdate> with
-            member this.Deserialize(ls: LightningReaderStream): unit = 
-                this.ChainHash <- ls.ReadUInt256(false)
-                this.ShortChannelId <- ls.ReadUInt64(false) |> ShortChannelId.FromUInt64
-                this.Timestamp <- ls.ReadUInt32(false)
-                this.MessageFlags <- ls.ReadByte()
-                this.ChannelFlags <- ls.ReadByte()
-                this.CLTVExpiryDelta <- ls.ReadUInt16(false) |> BlockHeightOffset
-                this.HTLCMinimumMSat <- ls.ReadUInt64(false) |> LNMoney.MilliSatoshis
-                this.FeeBaseMSat <- ls.ReadUInt32(false) |> uint64 |> LNMoney.MilliSatoshis
-                this.FeeProportionalMillionths <- ls.ReadUInt32(false)
-                this.HTLCMaximumMSat <-
-                    if ((this.MessageFlags &&& 0b00000001uy) = 1uy) then
-                        ls.ReadUInt64(false) |> LNMoney.MilliSatoshis |> Some
-                    else
-                        None
-            member this.Serialize(ls: LightningWriterStream): unit = 
-                ls.Write(this.ChainHash, false)
-                ls.Write(this.ShortChannelId)
-                ls.Write(this.Timestamp, false)
-                ls.Write(this.MessageFlags)
-                ls.Write(this.ChannelFlags)
-                ls.Write(this.CLTVExpiryDelta.Value, false)
-                ls.Write(this.HTLCMinimumMSat.MilliSatoshi, false)
-                ls.Write(uint32 this.FeeBaseMSat.MilliSatoshi, false)
-                ls.Write(uint32 this.FeeProportionalMillionths, false)
-                match this.HTLCMaximumMSat with
-                | Some s -> ls.Write(s.MilliSatoshi, false)
-                | None -> ()
-
+    interface IRoutingMsg
+    interface  ILightningSerializable<UnsignedChannelUpdate> with
+        member this.Deserialize(ls: LightningReaderStream): unit = 
+            this.ChainHash <- ls.ReadUInt256(false)
+            this.ShortChannelId <- ls.ReadUInt64(false) |> ShortChannelId.FromUInt64
+            this.Timestamp <- ls.ReadUInt32(false)
+            this.MessageFlags <- ls.ReadByte()
+            this.ChannelFlags <- ls.ReadByte()
+            this.CLTVExpiryDelta <- ls.ReadUInt16(false) |> BlockHeightOffset
+            this.HTLCMinimumMSat <- ls.ReadUInt64(false) |> LNMoney.MilliSatoshis
+            this.FeeBaseMSat <- ls.ReadUInt32(false) |> uint64 |> LNMoney.MilliSatoshis
+            this.FeeProportionalMillionths <- ls.ReadUInt32(false)
+            this.HTLCMaximumMSat <-
+                if ((this.MessageFlags &&& 0b00000001uy) = 1uy) then
+                    ls.ReadUInt64(false) |> LNMoney.MilliSatoshis |> Some
+                else
+                    None
+        member this.Serialize(ls: LightningWriterStream): unit = 
+            ls.Write(this.ChainHash, false)
+            ls.Write(this.ShortChannelId)
+            ls.Write(this.Timestamp, false)
+            ls.Write(this.MessageFlags)
+            ls.Write(this.ChannelFlags)
+            ls.Write(this.CLTVExpiryDelta.Value, false)
+            ls.Write(this.HTLCMinimumMSat.MilliSatoshi, false)
+            ls.Write(uint32 this.FeeBaseMSat.MilliSatoshi, false)
+            ls.Write(uint32 this.FeeProportionalMillionths, false)
+            match this.HTLCMaximumMSat with
+            | Some s -> ls.Write(s.MilliSatoshi, false)
+            | None -> ()
 
 
 [<CLIMutable>]
@@ -1118,6 +1117,8 @@ type ChannelUpdate = {
     mutable Contents: UnsignedChannelUpdate
 }
 with
+    member this.IsNode1 =
+        (this.Contents.ChannelFlags &&& 1uy) = 0uy
     interface IRoutingMsg
     interface ILightningSerializable<ChannelUpdate> with
         member this.Deserialize(ls) =

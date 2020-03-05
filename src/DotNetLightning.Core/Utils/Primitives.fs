@@ -4,6 +4,7 @@ open NBitcoin
 open NBitcoin.Crypto
 
 open System
+open System
 open System.Net
 open System.Linq
 
@@ -65,8 +66,8 @@ module Primitives =
     /// 2. Some Convenience methods for serialization
     /// 3. Custom `ToString`
     [<CustomEquality;CustomComparison;StructuredFormatDisplay("{AsString}")>]
-    type LNECDSASignature = | LNECDSASignature of ECDSASignature with
-        member x.Value = let (LNECDSASignature v) = x in v
+    type LNECDSASignature = LNECDSASignature of ECDSASignature | Empty with
+        member x.Value = match x with LNECDSASignature s -> s | Empty -> failwith "Unreachable!"
         override this.GetHashCode() = hash this.Value
         override this.Equals(obj: obj) =
             match obj with
@@ -188,13 +189,53 @@ module Primitives =
         static member Zero = uint256.Zero |> ChannelId
 
     type ConnectionId = ConnectionId of Guid
+    [<CustomEquality;CustomComparison>]
     type PeerId = PeerId of EndPoint
+        with
+        member this.Value = let (PeerId ep) = this in ep
+        
+        override this.GetHashCode() = this.Value.GetHashCode()
+        member this.Equals(o: PeerId) =
+            this.Value.ToEndpointString().Equals(o.Value.ToEndpointString())
+        override this.Equals(o: obj) =
+            match o with
+            | :? PeerId as p -> this.Equals(p)
+            | _ -> false
+        interface IEquatable<PeerId> with
+            member this.Equals o = this.Equals(o)
+        member this.CompareTo(o: PeerId) =
+            this.Value.ToEndpointString().CompareTo(o.Value.ToEndpointString())
+            
+        interface IComparable with
+            member this.CompareTo(o: obj) =
+                match o with
+                | :? PeerId as p -> this.CompareTo(p)
+                | _ -> -1
 
+    [<CustomEquality;CustomComparison>]
+    type ComparablePubKey = ComparablePubKey of PubKey with
+        member x.Value = let (ComparablePubKey v) = x in v
+        interface IComparable with
+            override this.CompareTo(other) =
+                match other with
+                | :? ComparablePubKey as n -> this.Value.CompareTo(n.Value)
+                | _ -> -1
+        override this.GetHashCode() = this.Value.GetHashCode()
+        override this.Equals(other) =
+            match other with
+            | :? ComparablePubKey as n -> this.Value.Equals(n.Value)
+            | _              -> false
+        static member op_Implicit (pk: PubKey) =
+            pk |> ComparablePubKey
+            
     [<CustomEquality;CustomComparison>]
     type NodeId = | NodeId of PubKey with
         member x.Value = let (NodeId v) = x in v
         interface IComparable with
-            override this.CompareTo(other) = if isNull other then -1 else this.Value.CompareTo((other :?> NodeId).Value)
+            override this.CompareTo(other) =
+                match other with
+                | :? NodeId as n -> this.Value.CompareTo(n.Value)
+                | _ -> -1
         override this.Equals(other) =
             match other with
             | :? NodeId as n -> this.Value.Equals(n.Value)

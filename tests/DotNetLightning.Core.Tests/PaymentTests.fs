@@ -118,12 +118,12 @@ let tests =
                 [ { ExtraHop.NodeId = "029e03a901b85534ff1e92c43c74431f7ce72046060fcf7a95c37e148f78c77255" |> hex.DecodeData |> PubKey |> NodeId
                     ShortChannelId = ShortChannelId.FromUInt64(72623859790382856UL)
                     FeeBase = 1L |> LNMoney.MilliSatoshis
-                    FeeProportionalMillionths = 20L
+                    FeeProportionalMillionths = 20u
                     CLTVExpiryDelta = 3us |> BlockHeightOffset }
                   { ExtraHop.NodeId = "039e03a901b85534ff1e92c43c74431f7ce72046060fcf7a95c37e148f78c77255" |> hex.DecodeData |> PubKey |> NodeId
                     ShortChannelId =  217304205466536202UL |> ShortChannelId.FromUInt64
                     FeeBase = 2L |> LNMoney.MilliSatoshis
-                    FeeProportionalMillionths = 30L
+                    FeeProportionalMillionths = 30u
                     CLTVExpiryDelta = 4us |> BlockHeightOffset }
                 ]
             Expect.equal pr.RoutingInfo ([routingInfo]) ""

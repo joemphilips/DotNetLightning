@@ -245,6 +245,7 @@ type FeatureBit private (bitArray) =
     
     member this.ToByteArray() = this.ByteArray
         
+    // --- equality and comparison members ----
     member this.Equals(o: FeatureBit) =
         if this.BitArray.Length <> o.BitArray.Length then false else
         let mutable result = true
@@ -264,3 +265,20 @@ type FeatureBit private (bitArray) =
         for i in this.BitArray do
             num <- -1640531527 + i.GetHashCode() + ((num <<< 6) + (num >>> 2))
         num
+        
+    member this.CompareTo(o: FeatureBit) =
+        if (this.BitArray.Length > o.BitArray.Length) then -1 else
+        if (this.BitArray.Length < o.BitArray.Length) then 1 else
+        let mutable result = 0
+        for i in 0..this.BitArray.Length - 1 do
+            if      (this.BitArray.[i] > o.BitArray.[i]) then
+                result <- -1
+            else if (this.BitArray.[i] < o.BitArray.[i]) then
+                result <- 1
+        result
+    interface IComparable with
+        member this.CompareTo(o) =
+            match o with
+            | :? FeatureBit as fb -> this.CompareTo(fb)
+            | _ -> -1
+    // --------

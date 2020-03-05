@@ -74,9 +74,12 @@
     <Compile Include="Payment\PaymentEvents.fs" />
     <Compile Include="Payment\Amount.fs" />
     <Compile Include="Payment\PaymentRequest.fs" />
-    <Compile Include="Routing\Announcements.fs" />
     <Compile Include="Routing\Graph.fs" />
-    <Compile Include="Routing/Router.fs" />
+    <Compile Include="Routing\RouterPrimitives.fs" />
+    <Compile Include="Routing\NetworkStats.fs" />
+    <Compile Include="Routing\RouterState.fs" />
+    <Compile Include="Routing\RouterTypes.fs" />
+    <Compile Include="Routing\Router.fs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="4.7.0" />

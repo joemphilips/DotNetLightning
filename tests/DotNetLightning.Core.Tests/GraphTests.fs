@@ -20,7 +20,7 @@ module Constants =
     let DEFAULT_ROUTE_PARAMS = { RouteParams.Randomize = false
                                  MaxFeeBase = LNMoney.MilliSatoshis(21000L)
                                  MaxFeePCT = 0.03
-                                 RouteMaxCLTV = 2016
+                                 RouteMaxCLTV = 2016us |> BlockHeightOffset
                                  RouteMaxLength = 6
                                  Ratios = None }
     let privKey1 = Key(hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101"))
@@ -50,26 +50,25 @@ let makeUpdate (shortChannelId: uint64,
                 minHtlc: LNMoney option,
                 maxHtlc: LNMoney option,
                 cltvDelta: BlockHeightOffset option
-                ): (ChannelDesc * ChannelUpdate) =
+                ): (ChannelDesc * UnsignedChannelUpdate) =
     let shortChannelId = shortChannelId |> ShortChannelId.FromUInt64
     let minHtlc = Option.defaultValue Constants.DEFAULT_AMOUNT_MSAT minHtlc
     let cltvDelta = Option.defaultValue (BlockHeightOffset(0us)) cltvDelta
     let desc = { ChannelDesc.ShortChannelId = shortChannelId
                  A = nodeid1
                  B = nodeid2 }
-    let update = { ChannelUpdate.Signature = Constants.DUMMY_SIG
-                   Contents = { UnsignedChannelUpdate.MessageFlags =
-                                    match maxHtlc with Some _ -> 1uy | _ -> 0uy
-                                ChannelFlags = 0uy
-                                ChainHash = Network.RegTest.GenesisHash
-                                ShortChannelId = shortChannelId
-                                Timestamp = 0u
-                                CLTVExpiryDelta = cltvDelta
-                                HTLCMinimumMSat = minHtlc
-                                FeeBaseMSat = feeBase
-                                FeeProportionalMillionths = feeProportionalMillions
-                                HTLCMaximumMSat = None }
-                 }
+    let update =
+        { UnsignedChannelUpdate.MessageFlags =
+              match maxHtlc with Some _ -> 1uy | _ -> 0uy
+          ChannelFlags = 0uy
+          ChainHash = Network.RegTest.GenesisHash
+          ShortChannelId = shortChannelId
+          Timestamp = 0u
+          CLTVExpiryDelta = cltvDelta
+          HTLCMinimumMSat = minHtlc
+          FeeBaseMSat = feeBase
+          FeeProportionalMillionths = feeProportionalMillions
+          HTLCMaximumMSat = None }
     desc, update
     
 let makeUpdateSimple (shortChannelId, a, b) =
@@ -228,7 +227,7 @@ let graphTests =
             Expect.equal (mutatedGraph2.OutgoingEdgesOf a).Length 3 ""
             Expect.equal (mutatedGraph2.GetEdgesBetween(a, b).Length) 2 ""
             Expect.equal
-                (mutatedGraph2.TryGetEdge(edgeForTheSameChannel.Desc).Value.Update.Contents.FeeBaseMSat)
+                (mutatedGraph2.TryGetEdge(edgeForTheSameChannel.Desc).Value.Update.FeeBaseMSat)
                 (LNMoney.MilliSatoshis(30L)) ""
             
         testCase "remove a vertex with incoming edges and check those edges are removed too" <| fun _ ->
