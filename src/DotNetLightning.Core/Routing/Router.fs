@@ -17,7 +17,7 @@ module Routing =
     // ----- helpers -----
     /// BOLT11: "For each entry, the pubkey is the node ID of the start of the channel", and the last node is the destination
     /// The invoice doesn't
-    let private toAssistedChannels (targetNode: NodeId) (amount: LNMoney)(extraRoute: ExtraHop seq) : seq<ShortChannelId * AssistedChannel> =
+    let internal toAssistedChannels (targetNode: NodeId) (amount: LNMoney)(extraRoute: ExtraHop seq) : seq<ShortChannelId * AssistedChannel> =
         let lastChannelCap = LNMoney.Max(amount, RoutingHeuristics.CAPACITY_CHANNEL_LOW)
         let nextNodeIds =
             seq {

@@ -419,9 +419,11 @@ module Graph =
               Weight = pathWeight(shortestPath) (amount) false currentBlockHeight wr }
             )
         if (shortestPaths.Count = 0) then Seq.empty else
-        for k in 1..pathsToFind do
+        for k in 1..(pathsToFind - 1) do
             if (not <| allSpurPathsFound) then
-                for i in 0..(shortestPaths.[k - 1].Path.Count() - 1) do
+                let edgeNum = shortestPaths.[k - 1].Path.Count()
+                /// for each edge in the path
+                for i in 0..(edgeNum - 1) do
                     let prevShortestPath = shortestPaths.[k - 1].Path
                     // select the spur node as the i-th element of the k-the previous shortest path (k - 1)
                     let spurEdge = prevShortestPath |> Seq.item i
@@ -478,7 +480,7 @@ module Graph =
                     if (spurPath.Count() <> 0) then
                         // candidate k-shortest path is made of the rootPath and the new spurPath
                         let totalPath =
-                            if (rootPathEdges |> List.head).Desc.A = (spurPath |> Seq.head).Desc.A then
+                            if rootPathEdges.Head.Desc.A = (spurPath |> Seq.head).Desc.A then
                                 // if the heads are the same node, drop it from the rootPath
                                 seq { for i in (rootPathEdges |> List.tail) do yield i; yield! spurPath }
                             else

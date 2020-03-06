@@ -87,7 +87,6 @@ module RouterPrimitives =
         NextNodeId: NodeId
         HTLCMaximum: LNMoney
     }
-
     type IHop =
         abstract member NodeId: NodeId
         abstract member NextNodeId: NodeId
@@ -105,6 +104,8 @@ module RouterPrimitives =
     }
         with
         member this.LastUpdateValue = this.LastUpdate
+        member this.NodeIdValue = this.NodeId
+        member this.NextNodeIdValue = this.NextNodeId
         static member Create (a, b, u: UnsignedChannelUpdate) =
             {
                 NodeId = a
