@@ -47,7 +47,7 @@ let hops2Edges (route: ChannelHop seq) =
               B = h.NodeIdValue }
           Update = h.LastUpdateValue })
 [<Tests>]
-let tests = ftestList "Route Calculation" [
+let tests = testList "Route Calculation" [
     let calculateRouteSimple routeParams =
         let updates = [
                 makeUpdate(1UL, a, b, LNMoney.MilliSatoshis(1L), 10u, None, None, BlockHeightOffset.One |> Some)
@@ -74,7 +74,7 @@ let tests = ftestList "Route Calculation" [
         // of the amount being paid
         calculateRouteSimple { DEFAULT_ROUTE_PARAMS with MaxFeeBase = LNMoney.One }
         
-    testCase "Calculate the shortest path (with correct fees)" <| fun _ ->
+    testCase "Calculate the shortest path (correct fees)" <| fun _ ->
         let amount = LNMoney.MilliSatoshis(10000L)
         let expectedCost = 10007L |> LNMoney.MilliSatoshis
         let updates = [
@@ -82,8 +82,8 @@ let tests = ftestList "Route Calculation" [
             makeUpdate(4UL, a, e, LNMoney.One, 200u, Some(LNMoney.Zero), None, None)
             makeUpdate(2UL, b, c, LNMoney.One, 300u, Some(LNMoney.Zero), None, None)
             makeUpdate(3UL, c, d, LNMoney.One, 400u, Some(LNMoney.Zero), None, None)
-            makeUpdate(3UL, e, f, LNMoney.One, 400u, Some(LNMoney.Zero), None, None)
-            makeUpdate(3UL, f, d, LNMoney.One, 100u, Some(LNMoney.Zero), None, None)
+            makeUpdate(5UL, e, f, LNMoney.One, 400u, Some(LNMoney.Zero), None, None)
+            makeUpdate(6UL, f, d, LNMoney.One, 100u, Some(LNMoney.Zero), None, None)
         ]
         let graph = DirectedLNGraph.Create().AddEdges(updates)
         let route =
@@ -91,6 +91,7 @@ let tests = ftestList "Route Calculation" [
             |> Result.deref
         let totalCost = Graph.pathWeight(hops2Edges(route)) (amount) false BlockHeight.Zero None |> fun x -> x.Cost
         Expect.sequenceEqual (hops2Ids(route)) [4UL; 5UL; 6UL] ""
+        Expect.equal totalCost expectedCost ""
         
         /// Now channel 5 could route the amount (10000) but not the amount + fees (10007)
         let (desc, update) = makeUpdate(5UL, e, f, LNMoney.One, 400u, Some(LNMoney.Zero), Some(LNMoney.MilliSatoshis(10005L)), None)
@@ -453,7 +454,7 @@ let tests = ftestList "Route Calculation" [
         let updates = [
             makeUpdate(1UL, a, b, LNMoney.MilliSatoshis(10L), 10u, None, None, None)
             makeUpdate(2UL, b, c, LNMoney.MilliSatoshis(10L), 10u, None, None, None)
-            makeUpdate(2UL, c, d, LNMoney.MilliSatoshis(10L), 10u, None, None, None)
+            makeUpdate(3UL, c, d, LNMoney.MilliSatoshis(10L), 10u, None, None, None)
         ]
         let g = DirectedLNGraph.Create().AddEdges(updates)
         let route =
