@@ -47,11 +47,17 @@ type LNMoney = | LNMoney of int64 with
     static member Satoshis(sats: int64) =
         LNMoney.MilliSatoshis(Checked.op_Multiply 1000L sats)
 
+    static member inline Satoshis(sats) =
+        LNMoney.Satoshis(int64 sats)
+
     static member Satoshis(sats: uint64) =
         LNMoney.MilliSatoshis(Checked.op_Multiply 1000UL sats)
 
     static member MilliSatoshis(sats: int64) =
         LNMoney(sats)
+
+    static member inline MilliSatoshis(sats) =
+        LNMoney(int64 sats)
 
     static member MilliSatoshis(sats: uint64) =
         LNMoney(Checked.int64 sats)

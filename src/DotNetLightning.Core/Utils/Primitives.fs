@@ -4,9 +4,10 @@ open NBitcoin
 open NBitcoin.Crypto
 
 open System
-open System
 open System.Net
 open System.Linq
+
+open ResultUtils
 
 [<AutoOpen>]
 module Primitives =
@@ -32,6 +33,7 @@ module Primitives =
     [<Struct>]
     type BlockHeight = | BlockHeight of uint32 with
         static member Zero = 0u |> BlockHeight
+        static member One = 1u |> BlockHeight
         member x.Value = let (BlockHeight v) = x in v
         member x.AsOffset() =
             x.Value |> Checked.uint16 |> BlockHeightOffset
@@ -246,6 +248,7 @@ module Primitives =
     [<StructuralComparison;StructuralEquality>]
     type TxId = | TxId of uint256 with
         member x.Value = let (TxId v) = x in v
+        static member Zero = uint256.Zero |> TxId
         
     /// Small wrapper for NBitcoin's OutPoint type
     /// So that it supports comparison and equality constraints
@@ -355,6 +358,22 @@ module Primitives =
                     |]
         override this.ToString() =
             sprintf "%dx%dx%d" this.BlockHeight.Value this.BlockIndex.Value this.TxOutIndex.Value
+            
+        static member TryParse(s: string) =
+            let items = s.Split('x')
+            let err = Error (sprintf "Failed to parse %s" s)
+            if (items.Length <> 3)  then err else
+            match (items.[0] |> UInt32.TryParse), (items.[1] |> UInt32.TryParse), (items.[2] |> UInt16.TryParse) with
+            | (true, h), (true, blockI), (true, outputI) ->
+                {
+                    BlockHeight = h |> BlockHeight
+                    BlockIndex = blockI |> TxIndexInBlock
+                    TxOutIndex = outputI |> TxOutIndex
+                } |> Ok
+            | _ -> err
+        static member ParseUnsafe(s: string) =
+            ShortChannelId.TryParse s
+            |> Result.defaultWith (fun _ -> raise <| FormatException(sprintf "Failed to parse %s" s))
 
     type UserId = UserId of uint64
     type Delimiter =

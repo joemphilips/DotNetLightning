@@ -2,6 +2,7 @@ namespace DotNetLightning.Routing
 
 open System
 open System.Collections.Generic
+open System.Collections.Generic
 open DotNetLightning.Utils
 open DotNetLightning.Serialize.Msgs
 open NBitcoin
@@ -71,14 +72,15 @@ module Graph =
     }
     
     type PublicChannel = private {
-        Announcement:  ChannelAnnouncement
+        Announcement:  UnsignedChannelAnnouncement
         FundingTxId: TxId
         Capacity: Money
-        Update1Opt: ChannelUpdate option
-        Update2Opt: ChannelUpdate option
+        Update1Opt: UnsignedChannelUpdate option
+        Update2Opt: UnsignedChannelUpdate option
     }
         with
-        static member TryCreate (a) fundingTxId cap u1 u2 =
+        member this.Ann = this.Announcement
+        static member Create (a, fundingTxId, cap, u1, u2) =
             {
                 Announcement = a
                 FundingTxId = fundingTxId
@@ -110,6 +112,10 @@ module Graph =
                 | :? WeightedPath as x -> this.CompareTo(x)
                 | _ -> -1
             
+    let internal getDesc (u: UnsignedChannelUpdate, ann: UnsignedChannelAnnouncement): ChannelDesc =
+        let isNode1 = (u.ChannelFlags &&& 1uy) = 0uy
+        let a, b = if (isNode1) then ann.NodeId1, ann.NodeId2 else ann.NodeId2, ann.NodeId1
+        { ShortChannelId = u.ShortChannelId; A = a; B = b }
     
     type DirectedLNGraph = private DirectedLNGraph of Map<NodeId, GraphLabel list>
         with
@@ -189,6 +195,35 @@ module Graph =
             let ds = this.IncomingEdgesOf(key) |> List.map(fun x -> x.Desc)
             this.RemoveEdges(ds).Value |> Map.remove key |> DirectedLNGraph
             
+        /// This is the recommended way of creating the network graph.
+        /// We don't include private channels: they would bloat the graph without providing any value(if they are
+        /// private they probably don't want to be involved in routing other people's payments).
+        /// The only private channels we know are ours: we should check them to see if our destination can be reached
+        /// in a single hop via private channel before using the public network graph
+        static member MakeGraph(channels: Map<ShortChannelId, PublicChannel>): DirectedLNGraph=
+            let result = Dictionary<NodeId, GraphLabel list>()
+            
+            let addDescToDict(desc: ChannelDesc, u: UnsignedChannelUpdate) =
+                let previousV = result.TryGetValue(desc.B) |> function true, v -> v | false, _ -> List.empty
+                result.AddOrReplace(desc.B, GraphLabel.Create(desc, u) :: previousV)
+                match result.TryGetValue desc.A with
+                | false, _ -> result.Add(desc.A, List.empty) |> ignore
+                | true, _ -> ()
+            channels
+            |> Map.iter(fun _k channel ->
+                channel.Update1Opt
+                |> Option.iter(fun u1 ->
+                    let desc1 = getDesc(u1, channel.Announcement)
+                    addDescToDict(desc1, u1)
+                    )
+                channel.Update2Opt
+                |> Option.iter(fun u2 ->
+                    let desc2 = getDesc(u2, channel.Announcement)
+                    addDescToDict(desc2, u2)
+                    )
+                )
+            
+            DirectedLNGraph(result |> Seq.map(|KeyValue|) |> Map.ofSeq)
                 
     module internal RoutingHeuristics =
         let BLOCK_TIME_TWO_MONTHS = 8640us |> BlockHeightOffset

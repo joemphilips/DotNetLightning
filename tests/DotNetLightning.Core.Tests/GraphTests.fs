@@ -41,17 +41,16 @@ let pks =
     |> List.map (hex.DecodeData >> PubKey >> NodeId)
 let a, b, c, d, e, f, g = pks.[0], pks.[1], pks.[2], pks.[3], pks.[4], pks.[5], pks.[6]
 
-/// TODO: use maxHtlc properly
-let makeUpdate (shortChannelId: uint64,
-                nodeid1: NodeId,
-                nodeid2: NodeId,
-                feeBase: LNMoney,
-                feeProportionalMillions: uint32,
-                minHtlc: LNMoney option,
-                maxHtlc: LNMoney option,
-                cltvDelta: BlockHeightOffset option
-                ): (ChannelDesc * UnsignedChannelUpdate) =
-    let shortChannelId = shortChannelId |> ShortChannelId.FromUInt64
+
+let makeUpdateCore(shortChannelId: ShortChannelId,
+                    nodeid1: NodeId,
+                    nodeid2: NodeId,
+                    feeBase: LNMoney,
+                    feeProportionalMillions: uint32,
+                    minHtlc: LNMoney option,
+                    maxHtlc: LNMoney option,
+                    cltvDelta: BlockHeightOffset option
+                    ): (ChannelDesc * UnsignedChannelUpdate) =
     let minHtlc = Option.defaultValue Constants.DEFAULT_AMOUNT_MSAT minHtlc
     let cltvDelta = Option.defaultValue (BlockHeightOffset(0us)) cltvDelta
     let desc = { ChannelDesc.ShortChannelId = shortChannelId
@@ -70,6 +69,18 @@ let makeUpdate (shortChannelId: uint64,
           FeeProportionalMillionths = feeProportionalMillions
           HTLCMaximumMSat = maxHtlc }
     desc, update
+    
+let makeUpdate (shortChannelId: uint64,
+                nodeid1: NodeId,
+                nodeid2: NodeId,
+                feeBase: LNMoney,
+                feeProportionalMillions: uint32,
+                minHtlc: LNMoney option,
+                maxHtlc: LNMoney option,
+                cltvDelta: BlockHeightOffset option ): (ChannelDesc * UnsignedChannelUpdate) =
+     makeUpdateCore(shortChannelId |> ShortChannelId.FromUInt64, nodeid1, nodeid2, feeBase, feeProportionalMillions, minHtlc, maxHtlc, cltvDelta)
+let makeUpdate2 (s, a, b, feeBase, feeProp, minHTLC, maxHTLC, cltvDelta) =
+    makeUpdateCore(ShortChannelId.ParseUnsafe(s), a, b, feeBase, feeProp, minHTLC, maxHTLC, cltvDelta)
     
 let makeUpdateSimple (shortChannelId, a, b) =
     makeUpdate(shortChannelId, a, b, LNMoney.Zero, 0u, None, None, None)

@@ -192,7 +192,9 @@ type FeatureBit private (bitArray) =
             else
                 return (FeatureBit(ba))
         }
-        
+    static member Zero =
+        let b: bool array = [||]
+        b |> BitArray |> FeatureBit
     static member TryCreate(bytes: byte[]) =
         result {
             let! fb = FeatureBit.TryCreate(BitArray.FromBytes(bytes))

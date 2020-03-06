@@ -11,17 +11,32 @@ open DotNetLightning.Routing
 open DotNetLightning.Routing.Graph
 
 open DotNetLightning.Payment
-open DotNetLightning.Routing.RouterPrimitives
-open DotNetLightning.Utils
+open DotNetLightning.Serialize
 open DotNetLightning.Utils.Primitives
-open DotNetLightning.Utils.Primitives
-open DotNetLightning.Utils.Primitives
-open DotNetLightning.Utils.Primitives
+open Generators
 open GraphTests
 open GraphTests.Constants
 
 let hex = Encoders.Hex
 
+let fsCheckConfig =
+    { FsCheckConfig.defaultConfig with
+            arbitrary = [ typeof<PrimitiveGenerators> ]
+            maxTest = 2
+        }
+let makeChannelAnnCore(shortChannelId: ShortChannelId, nodeIdA, nodeIdB) =
+    let (nodeId1, nodeId2) = if isNode1(nodeIdA, nodeIdB) then nodeIdA, nodeIdB else (nodeIdB, nodeIdA)
+    { UnsignedChannelAnnouncement.ShortChannelId = shortChannelId
+      NodeId1 = nodeId1
+      NodeId2 = nodeId2
+      BitcoinKey1 = (Key().PubKey |> ComparablePubKey)
+      BitcoinKey2 = (Key().PubKey |> ComparablePubKey)
+      ChainHash = Network.RegTest.GenesisHash
+      Features = FeatureBit.Zero
+      ExcessData = [||]}
+let makeChannelAnn(shortChannelId: uint64, nodeIdA: NodeId, nodeIdB: NodeId) =
+    makeChannelAnnCore(ShortChannelId.FromUInt64(shortChannelId), nodeIdA, nodeIdB)
+    
 let pks =
     [
         "02999fa724ec3c244e4da52b4a91ad421dc96c9a810587849cd4b2469313519c73"; //a
@@ -38,6 +53,8 @@ let a, b, c, d, e, f, g = pks.[0], pks.[1], pks.[2], pks.[3], pks.[4], pks.[5], 
 let hops2Ids (route: seq<ChannelHop>) =
     route |> Seq.map(fun hop -> hop.LastUpdateValue.ShortChannelId.ToBytes() |> fun x -> NBitcoin.Utils.ToUInt64(x, false))
 
+let hops2Nodes (route: seq<ChannelHop>) =
+    route |> Seq.map(fun hop -> (hop.NodeIdValue, hop.NextNodeIdValue))
 let hops2Edges (route: ChannelHop seq) =
     route
     |> Seq.map(fun h ->
@@ -47,7 +64,7 @@ let hops2Edges (route: ChannelHop seq) =
               B = h.NodeIdValue }
           Update = h.LastUpdateValue })
 [<Tests>]
-let tests = testList "Route Calculation" [
+let tests = ftestList "Route Calculation" [
     let calculateRouteSimple routeParams =
         let updates = [
                 makeUpdate(1UL, a, b, LNMoney.MilliSatoshis(1L), 10u, None, None, BlockHeightOffset.One |> Some)
@@ -470,6 +487,476 @@ let tests = testList "Route Calculation" [
         Expect.sequenceEqual(hops2Ids(route1)) [1UL; 2UL; 3UL; 4UL] ""
         
     testCase "Verify that extra hops takes precedence over known channels" <| fun _ ->
-        let updates = []
+        let updates = [
+            makeUpdate(1UL, a, b, LNMoney.MilliSatoshis(10), 10u, None, None, None)
+            makeUpdate(2UL, b, c, LNMoney.MilliSatoshis(10), 10u, None, None, None)
+            makeUpdate(3UL, c, d, LNMoney.MilliSatoshis(10), 10u, None, None, None)
+            makeUpdate(4UL, d, e, LNMoney.MilliSatoshis(10), 10u, None, None, None)
+        ]
+        
+        let g = DirectedLNGraph.Create().AddEdges(updates)
+        let route1 =
+            Routing.findRoute g a e DEFAULT_AMOUNT_MSAT 1 (Set.empty) (Set.empty) (Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u))
+            |> Result.deref
+        Expect.sequenceEqual (hops2Ids(route1)) [1UL;2UL; 3UL; 4UL] ""
+        Expect.equal ((route1 |> Seq.last).LastUpdateValue.FeeBaseMSat) (LNMoney.MilliSatoshis(10)) ""
+        
+        let (extraDesc, extraUpdate) = makeUpdate(2UL, b, c, LNMoney.MilliSatoshis(5), 5u, None, None, None)
+        let extraGraphEdges = Set.singleton({ GraphLabel.Desc = extraDesc; Update = extraUpdate })
+        let route2 =
+            Routing.findRoute g a e DEFAULT_AMOUNT_MSAT 1 extraGraphEdges (Set.empty) (Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u))
+            |> Result.deref
+        Expect.sequenceEqual (hops2Ids(route2)) [1UL; 2UL; 3UL; 4UL] ""
+        Expect.equal ((route2 |> Seq.last).LastUpdateValue.FeeBaseMSat) (LNMoney.MilliSatoshis(5)) ""
+        
+    testPropertyWithConfig fsCheckConfig "compute ignored channels" <| fun (f: NodeId, g:NodeId, h: NodeId, i: NodeId, j: NodeId) ->
+        let channels =
+            Map.empty
+            |> Map.add(ShortChannelId.FromUInt64(1UL)) (makeChannelAnn(1UL, a, b))
+            |> Map.add(ShortChannelId.FromUInt64(2UL)) (makeChannelAnn(2UL, b, c))
+            |> Map.add(ShortChannelId.FromUInt64(3UL)) (makeChannelAnn(3UL, c, d))
+            |> Map.add(ShortChannelId.FromUInt64(4UL)) (makeChannelAnn(4UL, d, e))
+            |> Map.add(ShortChannelId.FromUInt64(5UL)) (makeChannelAnn(5UL, f, g))
+            |> Map.add(ShortChannelId.FromUInt64(6UL)) (makeChannelAnn(6UL, f, h))
+            |> Map.add(ShortChannelId.FromUInt64(7UL)) (makeChannelAnn(7UL, h, i))
+            |> Map.add(ShortChannelId.FromUInt64(8UL)) (makeChannelAnn(8UL, i, j))
+            
+        let updates = [
+            makeUpdate(1UL, a, b, LNMoney.MilliSatoshis(10), 10u, None, None, None)
+            makeUpdate(2UL, b, c, LNMoney.MilliSatoshis(10), 10u, None, None, None)
+            makeUpdate(2UL, c, b, LNMoney.MilliSatoshis(10), 10u, None, None, None)
+            makeUpdate(3UL, c, d, LNMoney.MilliSatoshis(10), 10u, None, None, None)
+            makeUpdate(4UL, d, e, LNMoney.MilliSatoshis(10), 10u, None, None, None)
+            makeUpdate(5UL, f, g, LNMoney.MilliSatoshis(10), 10u, None, None, None)
+            makeUpdate(6UL, f, h, LNMoney.MilliSatoshis(10), 10u, None, None, None)
+            makeUpdate(7UL, h, i, LNMoney.MilliSatoshis(10), 10u, None, None, None)
+            makeUpdate(8UL, i, j, LNMoney.MilliSatoshis(10), 10u, None, None, None)
+        ]
+        let publicChannels =
+            channels
+            |> Map.map(fun scid ann ->
+                let (_, update) = updates |> Seq.find(fun (upd, _) -> upd.ShortChannelId = scid)
+                let (maybeUpdate1, maybeUpdate2) = if (update.ChannelFlags &&& 1uy = 1uy) then (Some(update), None) else (None, Some(update))
+                let pc = PublicChannel.Create(ann, TxId.Zero, Money.Satoshis(1000L), maybeUpdate1, maybeUpdate2)
+                (pc)
+            )
+            
+        let ignored =
+            Routing.getIgnoredChannelDesc(publicChannels) (Set[c; j; (NodeId(Key().PubKey))])
+            |> Set
+        Expect.isTrue(ignored.Contains({ ChannelDesc.ShortChannelId = ShortChannelId.FromUInt64(2UL); A = b; B = c })) ""
+        Expect.isTrue(ignored.Contains({ ChannelDesc.ShortChannelId = ShortChannelId.FromUInt64(2UL); A = c; B = b })) ""
+        Expect.isTrue(ignored.Contains({ ChannelDesc.ShortChannelId = ShortChannelId.FromUInt64(3UL); A = c; B = d })) ""
+        Expect.isTrue(ignored.Contains({ ChannelDesc.ShortChannelId = ShortChannelId.FromUInt64(8UL); A = i; B = j })) ""
+        
+    testCase "limit routes to 20 hops" <| fun () ->
+        let nodes = [ for _ in 0..22 -> Key().PubKey |> NodeId ]
+        let updates =
+            Seq.zip (nodes |> List.rev |> List.skip 1 |> List.rev) (nodes |> Seq.skip 1) // (0, 1) :: (1, 2) :: ...
+            |> Seq.mapi (fun i (na, nb) -> makeUpdate((uint64 i), na, nb, LNMoney.MilliSatoshis(5), 0u, None, None, None) )
+            
+        let g = DirectedLNGraph.Create().AddEdges(updates)
+        let r18 =
+            (Routing.findRoute g (nodes.[0]) nodes.[18] DEFAULT_AMOUNT_MSAT 1 (Set.empty) (Set.empty) (Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u)))
+            |> Result.deref
+        Expect.sequenceEqual (hops2Ids(r18)) [ for i in 0..18 -> (uint64 i) ] ""
+        let r19 =
+            (Routing.findRoute g (nodes.[0]) nodes.[19] DEFAULT_AMOUNT_MSAT 1 (Set.empty) (Set.empty) (Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u)))
+            |> Result.deref
+        Expect.sequenceEqual (hops2Ids(r19)) [ for i in 0..19 -> (uint64 i) ] ""
+        let r20 =
+            (Routing.findRoute g (nodes.[0]) nodes.[20] DEFAULT_AMOUNT_MSAT 1 (Set.empty) (Set.empty) (Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u)))
+            |> Result.deref
+        Expect.sequenceEqual (hops2Ids(r20)) [ for i in 0..20 -> (uint64 i) ] ""
+        let r21 =
+            (Routing.findRoute g (nodes.[0]) nodes.[21] DEFAULT_AMOUNT_MSAT 1 (Set.empty) (Set.empty) (Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u)))
+        Expect.isError(r21) ""
+        
+    testCase "ignore cheaper route when it has more than 20 hops" <| fun _ ->
+        let nodes = [ for _ in 0..50 -> Key().PubKey |> NodeId ]
+        let updates =
+            List.zip (nodes |> List.rev |> List.skip 1 |> List.rev) (nodes |> List.skip 1) // (0, 1) :: (1, 2) :: ...
+            |> List.mapi (fun i (na, nb) -> makeUpdate((uint64 i), na, nb, LNMoney.One, 0u, None, None, None) )
+            
+        // add expensive but shorter route
+        let updates2 = (makeUpdate(99UL, nodes.[2], nodes.[48], LNMoney.MilliSatoshis(1000L), 0u, None, None, None)) :: updates
+        let g = DirectedLNGraph.Create().AddEdges(updates2)
+        let route =
+            Routing.findRoute g nodes.[0] nodes.[49] DEFAULT_AMOUNT_MSAT 1 (Set.empty)(Set.empty)(Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u))
+            |> Result.deref
+        Expect.sequenceEqual (hops2Ids(route)) [0UL; 1UL; 99UL; 48UL] ""
+        
+    testCase "ignore cheaper route when it has more than the requested CLTV" <| fun _ ->
+        let updates = [
+            makeUpdate(1UL, a, b, LNMoney.One, 0u, Some(LNMoney.One), None, Some(BlockHeightOffset(50us)))
+            makeUpdate(2UL, b, c, LNMoney.One, 0u, Some(LNMoney.One), None, Some(BlockHeightOffset(50us)))
+            makeUpdate(3UL, c, d, LNMoney.One, 0u, Some(LNMoney.One), None, Some(BlockHeightOffset(50us)))
+            makeUpdate(4UL, a, e, LNMoney.One, 0u, Some(LNMoney.One), None, Some(BlockHeightOffset(9us)))
+            
+            makeUpdate(5UL, e, f, LNMoney.MilliSatoshis(5), 0u, Some(LNMoney.One), None, Some(BlockHeightOffset(9us)))
+            makeUpdate(6UL, f, d, LNMoney.MilliSatoshis(5), 0u, Some(LNMoney.One), None, Some(BlockHeightOffset(9us)))
+        ]
+        let g = DirectedLNGraph.Create().AddEdges(updates)
+        let route =
+            Routing.findRoute (g) a d DEFAULT_AMOUNT_MSAT 1 (Set.empty) (Set.empty) (Set.empty) {DEFAULT_ROUTE_PARAMS with RouteMaxCLTV = (BlockHeightOffset(28us))} (BlockHeight(400000u))
+            |> Result.deref
+            
+        Expect.sequenceEqual (hops2Ids(route)) [4UL;5UL;6UL;] ""
+        
+    testCase "ignore cheaper route when it grows longer than the requested size" <| fun _ ->
+        let updates = [
+            makeUpdate(1UL, a, b, LNMoney.One, 0u, Some(LNMoney.Zero), None, (Some (BlockHeightOffset(9us))))
+            makeUpdate(2UL, b, c, LNMoney.One, 0u, Some(LNMoney.Zero), None, (Some (BlockHeightOffset(9us))))
+            makeUpdate(3UL, c, d, LNMoney.One, 0u, Some(LNMoney.Zero), None, (Some (BlockHeightOffset(9us))))
+            makeUpdate(4UL, d, e, LNMoney.One, 0u, Some(LNMoney.Zero), None, (Some (BlockHeightOffset(9us))))
+            makeUpdate(5UL, e, f, LNMoney.One, 0u, Some(LNMoney.MilliSatoshis(5)), None, (Some (BlockHeightOffset(9us))))
+            makeUpdate(6UL, b, f, LNMoney.One, 0u, Some(LNMoney.MilliSatoshis(5)), None, (Some (BlockHeightOffset(9us))))
+        ]
+        let g = DirectedLNGraph.Create().AddEdges(updates)
+        let route =
+            Routing.findRoute g a f DEFAULT_AMOUNT_MSAT 1 (Set.empty)(Set.empty)(Set.empty) { DEFAULT_ROUTE_PARAMS with RouteMaxLength = 3} (BlockHeight(400000u))
+            |> Result.deref
+        Expect.sequenceEqual (hops2Ids(route)) [1UL; 6UL] ""
+        
+    testCase "ignore loops" <| fun _ ->
+        let updates = [
+            makeUpdate(1UL, a, b, LNMoney.MilliSatoshis(10), 10u, None, None, None)
+            makeUpdate(2UL, b, c, LNMoney.MilliSatoshis(10), 10u, None, None, None)
+            makeUpdate(3UL, c, a, LNMoney.MilliSatoshis(10), 10u, None, None, None)
+            makeUpdate(4UL, c, d, LNMoney.MilliSatoshis(10), 10u, None, None, None)
+            makeUpdate(5UL, d, e, LNMoney.MilliSatoshis(10), 10u, None, None, None)
+        ]
+        
+        let g = DirectedLNGraph.Create().AddEdges(updates)
+        let route1 =
+            Routing.findRoute g a e DEFAULT_AMOUNT_MSAT 1 (Set.empty)(Set.empty)(Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u))
+            |> Result.deref
+        Expect.sequenceEqual (hops2Ids(route1)) [1UL;2UL; 4UL; 5UL;] ""
+        
+    testCase "ensure the route calculation terminates correctly when selecting 0-fees edges" <| fun _ ->
+        let updates = [
+            makeUpdate(1UL, a, b, LNMoney.MilliSatoshis(10), 10u,None,None,None)
+            makeUpdate(2UL, b, c, LNMoney.MilliSatoshis(10), 10u,None,None,None)
+            makeUpdate(4UL, c, d, LNMoney.MilliSatoshis(10), 10u,None,None,None)
+            makeUpdateSimple(3UL, b, e)
+            makeUpdateSimple(6UL, e, f)
+            makeUpdateSimple(6UL, f, e)
+            makeUpdateSimple(5UL, e, d)
+        ]
+        let g = DirectedLNGraph.Create().AddEdges(updates)
+        let route1 =
+            Routing.findRoute g a d DEFAULT_AMOUNT_MSAT 1 (Set.empty)(Set.empty)(Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u))
+            |> Result.deref
+        Expect.sequenceEqual (hops2Ids(route1)) [1UL; 3UL; 5UL;] ""
+        
+       // +---+            +---+            +---+
+       // | A +-----+      | B +----------> | C |
+       // +-+-+     |      +-+-+            +-+-+
+       //   ^       |        ^                |
+       //   |       |        |                |
+       //   |       v----> + |                |
+       // +-+-+            <-+-+            +-+-+
+       // | D +----------> | E +----------> | F |
+       // +---+            +---+            +---+
+       //
+    testCase "find the k-shortest paths in a graph, k = 4" <| fun _ ->
+        let updates = [
+            makeUpdate(1UL, d, a, LNMoney.One, 0u, None, None, None)
+            makeUpdate(2UL, d, e, LNMoney.One, 0u, None, None, None)
+            makeUpdate(3UL, a, e, LNMoney.One, 0u, None, None, None)
+            makeUpdate(4UL, e, b, LNMoney.One, 0u, None, None, None)
+            makeUpdate(5UL, e, f, LNMoney.One, 0u, None, None, None)
+            makeUpdate(6UL, b, c, LNMoney.One, 0u, None, None, None)
+            makeUpdate(7UL, c, f, LNMoney.One, 0u, None, None, None)
+        ]
+        let g = DirectedLNGraph.Create().AddEdges(updates)
+        let fourShortestPaths =
+            Graph.yenKShortestPaths g d f DEFAULT_AMOUNT_MSAT (Set.empty)(Set.empty)(Set.empty) 4 None (BlockHeight.One) (fun _ -> true)
+            |> Seq.toList
+        Expect.equal (fourShortestPaths.Length) 4 ""
+        let actuals = [ for i in 0..3 do fourShortestPaths.[i].Path |> Seq.map ChannelHop.FromGraphEdge |> hops2Ids ]
+        Expect.sequenceEqual actuals.[0] [2UL; 5UL] ""
+        Expect.sequenceEqual actuals.[1] [1UL; 3UL; 5UL] ""
+        Expect.sequenceEqual actuals.[2] [2UL; 4UL; 6UL; 7UL] ""
+        Expect.sequenceEqual actuals.[3] [1UL; 3UL; 4UL; 6UL; 7UL] ""
+        
+    testCase "find the k shortest path (wikipedia example)" <| fun _ ->
+        let updates = [
+            makeUpdate(10UL, c, e, LNMoney.MilliSatoshis(2), 0u, None,None,None)
+            makeUpdate(20UL, c, d, LNMoney.MilliSatoshis(3), 0u, None,None,None)
+            makeUpdate(30UL, d, f, LNMoney.MilliSatoshis(4), 5u, None,None,None) // D -> F has a higher cost to distinguish from the 2nd cheapest route
+            makeUpdate(40UL, e, d, LNMoney.MilliSatoshis(1), 0u, None,None,None) // D -> F has a higher cost to distinguish from the 2nd cheapest route
+            makeUpdate(50UL, e, f, LNMoney.MilliSatoshis(2), 0u, None,None,None) // D -> F has a higher cost to distinguish from the 2nd cheapest route
+            makeUpdate(60UL, e, g, LNMoney.MilliSatoshis(3), 0u, None,None,None) // D -> F has a higher cost to distinguish from the 2nd cheapest route
+            makeUpdate(70UL, f, g, LNMoney.MilliSatoshis(2), 0u, None,None,None) // D -> F has a higher cost to distinguish from the 2nd cheapest route
+            
+            makeUpdate(80UL, f, h, LNMoney.MilliSatoshis(1), 0u, None,None,None) // D -> F has a higher cost to distinguish from the 2nd cheapest route
+            makeUpdate(90UL, g, h, LNMoney.MilliSatoshis(2), 0u, None,None,None) // D -> F has a higher cost to distinguish from the 2nd cheapest route
+        ]
+        
+        let graph = DirectedLNGraph.Create().AddEdges(updates)
+        let twoShortestPaths =
+            Graph.yenKShortestPaths graph c h DEFAULT_AMOUNT_MSAT Set.empty Set.empty Set.empty 2 None (BlockHeight(0u)) (fun _ -> true)
+            |> Seq.toList
+            
+        Expect.equal (twoShortestPaths.Length) 2 ""
+        let shortest = twoShortestPaths.[0]
+        Expect.sequenceEqual (shortest.Path |> Seq.map(ChannelHop.FromGraphEdge) |> hops2Ids) [10UL; 50UL; 90UL] ""
+        let secondShortest = twoShortestPaths.[1]
+        Expect.sequenceEqual (secondShortest.Path |> Seq.map(ChannelHop.FromGraphEdge) |> hops2Ids) [10UL; 60UL; 90UL] ""
+        
+    testCase "terminate looking for k-shortest path if there are no more alternative paths than k, must not consider routes going back on their steps" <| fun _ ->
+        // simple graph with only 2 possible paths from A to F
+        let updates = [
+            makeUpdate(1UL, a, b, LNMoney.MilliSatoshis(1), 0u, None, None, None)
+            makeUpdate(1UL, b, a, LNMoney.MilliSatoshis(1), 0u, None, None, None)
+            makeUpdate(2UL, b, c, LNMoney.MilliSatoshis(1), 0u, None, None, None)
+            makeUpdate(2UL, c, b, LNMoney.MilliSatoshis(1), 0u, None, None, None)
+            makeUpdate(3UL, c, f, LNMoney.MilliSatoshis(1), 0u, None, None, None)
+            makeUpdate(3UL, f, c, LNMoney.MilliSatoshis(1), 0u, None, None, None)
+            makeUpdate(4UL, c, d, LNMoney.MilliSatoshis(1), 0u, None, None, None)
+            makeUpdate(4UL, d, c, LNMoney.MilliSatoshis(1), 0u, None, None, None)
+            makeUpdate(41UL, d, c, LNMoney.MilliSatoshis(1), 0u, None, None, None) // there is more than one D -> C channel
+            makeUpdate(5UL, d, e, LNMoney.MilliSatoshis(1), 0u, None, None, None)
+            makeUpdate(5UL, e, d, LNMoney.MilliSatoshis(1), 0u, None, None, None)
+            makeUpdate(6UL, e, f, LNMoney.MilliSatoshis(1), 0u, None, None, None)
+            makeUpdate(6UL, f, e, LNMoney.MilliSatoshis(1), 0u, None, None, None)
+        ]
+        let graph = DirectedLNGraph.Create().AddEdges(updates)
+        let foundPaths =
+            Graph.yenKShortestPaths graph a f DEFAULT_AMOUNT_MSAT (Set.empty)(Set.empty)(Set.empty) 3 None (BlockHeight 0u) (fun _ -> true)
+            |> Seq.toList
+        Expect.equal (foundPaths.Length) 2 ""
+        Expect.sequenceEqual (foundPaths.[0].Path |> Seq.map(ChannelHop.FromGraphEdge) |> hops2Ids) [1UL; 2UL; 3UL] ""
+        Expect.sequenceEqual (foundPaths.[1].Path |> Seq.map(ChannelHop.FromGraphEdge) |> hops2Ids) [1UL; 2UL; 4UL; 5UL; 6UL] ""
+        
+    testCase "select a random route below the requested fee" <| fun _ ->
+        let updates = [
+            makeUpdate(1UL, a, b, LNMoney.MilliSatoshis(1), 0u, None, None, None)
+            makeUpdate(4UL, a, e, LNMoney.MilliSatoshis(1), 0u, None, None, None)
+            makeUpdate(2UL, b, c, LNMoney.MilliSatoshis(2), 0u, None, None, None)
+            makeUpdate(3UL, c, d, LNMoney.MilliSatoshis(3), 0u, None, None, None)
+            makeUpdate(5UL, e, f, LNMoney.MilliSatoshis(3), 0u, None, None, None)
+            makeUpdate(6UL, f, d, LNMoney.MilliSatoshis(3), 0u, None, None, None)
+            makeUpdate(7UL, e, c, LNMoney.MilliSatoshis(9), 0u, None, None, None)
+        ]
+        let graph = DirectedLNGraph.Create().AddEdges(updates)
+        let strictFeeParams = { DEFAULT_ROUTE_PARAMS with MaxFeeBase = LNMoney.MilliSatoshis(7); MaxFeePCT = 0. }
+        for _ in 0..10 do
+            let r = Routing.findRoute graph a d DEFAULT_AMOUNT_MSAT 3 (Set.empty) (Set.empty) (Set.empty) strictFeeParams (BlockHeight(400000u))
+            Expect.isOk r ""
+            let someRoute = r |> Result.deref
+            let routeCost =
+                (Graph.pathWeight (hops2Edges(someRoute)) DEFAULT_AMOUNT_MSAT false (BlockHeight 0u) None).Cost - DEFAULT_AMOUNT_MSAT
+            let costMSat = routeCost.MilliSatoshi
+            Expect.isTrue(costMSat = 5L || costMSat = 6L) ""
+    testCase "Use weight ratios to when computing the edge weight" <| fun _ ->
+        let largeCap = LNMoney.MilliSatoshis(8000000000L)
+        let updates = [
+            makeUpdate(1UL, a, b, LNMoney.MilliSatoshis(0), 0u, Some(LNMoney.Zero), None, Some (BlockHeightOffset(13us)))
+            makeUpdate(4UL, a, e, LNMoney.MilliSatoshis(0), 0u, Some(LNMoney.Zero), None, Some (BlockHeightOffset(12us)))
+            makeUpdate(2UL, b, c, LNMoney.MilliSatoshis(1), 0u, Some(LNMoney.Zero), None, Some (BlockHeightOffset(500us)))
+            makeUpdate(3UL, c, d, LNMoney.MilliSatoshis(1), 0u, Some(LNMoney.Zero), None, Some (BlockHeightOffset(500us)))
+            makeUpdate(5UL, e, f, LNMoney.MilliSatoshis(2), 0u, Some(LNMoney.Zero), None, Some (BlockHeightOffset(9us)))
+            makeUpdate(6UL, f, d, LNMoney.MilliSatoshis(2), 0u, Some(LNMoney.Zero), None, Some (BlockHeightOffset(9us)))
+            makeUpdate(7UL, e, c, LNMoney.MilliSatoshis(2), 0u, Some(LNMoney.Zero), Some(largeCap), Some (BlockHeightOffset(12us)))
+        ]
+        let graph = DirectedLNGraph.Create().AddEdges(updates)
+        let r =
+            Routing.findRoute graph a d DEFAULT_AMOUNT_MSAT 0 (Set.empty) (Set.empty) (Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u))
+            |> Result.deref
+        Expect.sequenceEqual (r |> hops2Nodes) [(a, b); (b, c); (c, d)] ""
+        let routeClTVOptimized =
+            let p =
+                let r = WeightRatios.TryCreate(1., 0., 0.) |> Result.deref
+                {DEFAULT_ROUTE_PARAMS with Ratios = Some(r)}
+            Routing.findRoute graph a d DEFAULT_AMOUNT_MSAT 0 (Set.empty) (Set.empty) (Set.empty)  p (BlockHeight(400000u))
+            |> Result.deref
+        Expect.sequenceEqual (routeClTVOptimized |> hops2Nodes) [(a,e); (e, f); (f, d)] ""
+            
+        let routeCapOptimized =
+            let p =
+                let r = WeightRatios.TryCreate(0., 0., 1.) |> Result.deref
+                {DEFAULT_ROUTE_PARAMS with Ratios = Some(r)}
+            Routing.findRoute graph a d DEFAULT_AMOUNT_MSAT 0 (Set.empty) (Set.empty) (Set.empty)  p (BlockHeight(400000u))
+            |> Result.deref
+        Expect.sequenceEqual (routeCapOptimized |> hops2Nodes) [(a,e); (e, c); (c, d)] ""
+        
+    testCase "Prefer going through an older channel if fees and CLTV are the same" <| fun _ ->
+        let currentBlockHeight = 554000u
+        let mu(schid, one, two) = 
+            makeUpdate2(schid, one, two, LNMoney.MilliSatoshis(1), 0u, (Some LNMoney.Zero), None, (Some (BlockHeightOffset(144us))))
+        let updates = [
+            mu((sprintf "%dx0x1" currentBlockHeight), a, b)
+            mu((sprintf "%dx0x4" currentBlockHeight), a, e)
+            mu((sprintf "%dx0x2" (currentBlockHeight - 3000u)), b, c) // younger channel
+            mu((sprintf "%dx0x3" (currentBlockHeight - 3000u)), c, d)
+            mu((sprintf "%dx0x5" currentBlockHeight), e, f)
+            mu((sprintf "%dx0x6" currentBlockHeight), f, d)
+        ]
+        let graph = DirectedLNGraph.Create().AddEdges(updates)
+        let routeScoreOptimized =
+            let wr = WeightRatios.TryCreate(0.33, 0.33, 0.33) |> Result.deref
+            let rp = { DEFAULT_ROUTE_PARAMS with Ratios = Some (wr) }
+            Routing.findRoute graph a d (DEFAULT_AMOUNT_MSAT / 2) 1 (Set.empty)(Set.empty)(Set.empty) rp (BlockHeight(currentBlockHeight))
+            |> Result.deref
+            |> hops2Nodes
+        Expect.sequenceEqual routeScoreOptimized [(a,b); (b,c); (c,d)] ""
+        
+    testCase "prefer a route with a smaller total CLTV if fees and scores are the same" <| fun _ ->
+        let mu (schid, one, two, cltv) =
+            makeUpdate(schid, one, two, LNMoney.One, 0u, (Some LNMoney.Zero), None, (Some (BlockHeightOffset cltv)))
+        let updates = [
+            mu(1UL, a, b, 12us)
+            mu(4UL, a, e, 12us)
+            mu(2UL, b, c, 10us) // smaller cltv
+            mu(3UL, c, d, 12us)
+            mu(5UL, e, f, 12us)
+            mu(6UL, f, d, 12us)
+        ]
+        let graph = DirectedLNGraph.Create().AddEdges(updates)
+        let routeScoreOptimized =
+            let wr = WeightRatios.TryCreate(0.33, 0.33, 0.33) |> Result.deref
+            let rp = { DEFAULT_ROUTE_PARAMS with Ratios = Some (wr) }
+            Routing.findRoute graph a d (DEFAULT_AMOUNT_MSAT / 2) 1 (Set.empty)(Set.empty)(Set.empty) rp (BlockHeight(400000u))
+            |> Result.deref
+            |> hops2Nodes
+        Expect.sequenceEqual routeScoreOptimized [(a,b); (b,c); (c,d)] ""
+        
         ()
+        
+    testCase "avoid a route that breaks off the max CLTV" <| fun _ ->
+        let mu (schid, one, two, cltv) =
+            makeUpdate(schid, one, two, LNMoney.One, 0u, (Some LNMoney.Zero), None, (Some (BlockHeightOffset cltv)))
+        // A --> B --> C --> D is cheaper but has a total CLTV > 2016!
+        // A --> E --> F --> D is more expensive but has a total CLTV < 2016
+        let updates = [
+            mu(1UL, a, b, 144us)
+            mu(4UL, a, e, 144us)
+            mu(2UL, b, c, 1000us)
+            mu(3UL, c, d, 900us)
+            mu(5UL, e, f, 144us)
+            mu(6UL, f, d, 144us)
+        ]
+        let graph = DirectedLNGraph.Create().AddEdges(updates)
+        let routeScoreOptimized =
+            let wr = WeightRatios.TryCreate(0.33, 0.33, 0.33) |> Result.deref
+            let rp = { DEFAULT_ROUTE_PARAMS with Ratios = Some (wr) }
+            Routing.findRoute graph a d (DEFAULT_AMOUNT_MSAT / 2) 1 (Set.empty)(Set.empty)(Set.empty) rp (BlockHeight(400000u))
+            |> Result.deref
+            |> hops2Nodes
+        Expect.sequenceEqual routeScoreOptimized [(a,e); (e,f); (f,d)] ""
+            
+    testCase "cost function is monotonic" <| fun _ ->
+        // This test have a channel (542280x2156x0) that according to heuristics is very convenient but actually useless to reach the target,
+        // then if the cost function is not monotonic the path-finding breaks because the result path contains a loop.
+        let updates =
+            let m = Map.empty
+            let m =
+                let shortChannelId1 = ShortChannelId.ParseUnsafe("565643x1216x0")
+                let pk1 = PubKey("03864ef025fde8fb587d989186ce6a4a186895ee44a926bfc370e2c366597a3f8f") |> NodeId
+                let pk2 = PubKey("024655b768ef40951b20053a5c4b951606d4d86085d51238f2c67c7dec29c792ca") |> NodeId
+                let channelAnn = makeChannelAnnCore(shortChannelId1, pk1, pk2)
+                let unsignedChannelUpdate1 =
+                    { UnsignedChannelUpdate.ChainHash = uint256.Zero
+                      ShortChannelId = shortChannelId1
+                      Timestamp = 0u
+                      MessageFlags = 1uy
+                      ChannelFlags = 0uy
+                      CLTVExpiryDelta = BlockHeightOffset(14us)
+                      HTLCMinimumMSat = LNMoney.One
+                      FeeBaseMSat = LNMoney.Satoshis(1L)
+                      FeeProportionalMillionths = 10u
+                      HTLCMaximumMSat = Some(LNMoney.MilliSatoshis(4294967295L)) }
+                let unsignedChannelUpdate2 =
+                    { UnsignedChannelUpdate.ChainHash = uint256.Zero
+                      ShortChannelId = shortChannelId1
+                      Timestamp = 0u
+                      MessageFlags = 1uy
+                      ChannelFlags = 1uy
+                      CLTVExpiryDelta = BlockHeightOffset(144us)
+                      HTLCMinimumMSat = LNMoney.Zero
+                      FeeBaseMSat = LNMoney.Satoshis(1L)
+                      FeeProportionalMillionths = 100u
+                      HTLCMaximumMSat = Some(LNMoney.MilliSatoshis(15000000000L)) }
+                let pc1 = PublicChannel.Create(channelAnn,TxId.Zero, Money.Zero, Some(unsignedChannelUpdate1), Some(unsignedChannelUpdate2))
+                m |> Map.add (shortChannelId1) pc1
+            let m =
+                let shortChannelId2 = ShortChannelId.ParseUnsafe("542280x2156x0")
+                let pk1 = PubKey("03864ef025fde8fb587d989186ce6a4a186895ee44a926bfc370e2c366597a3f8f") |> NodeId
+                let pk2 = PubKey("03cb7983dc247f9f81a0fa2dfa3ce1c255365f7279c8dd143e086ca333df10e278") |> NodeId
+                let channelAnn = makeChannelAnnCore(shortChannelId2, pk1, pk2)
+                let unsignedChannelUpdate1 =
+                    { UnsignedChannelUpdate.ChainHash = uint256.Zero
+                      ShortChannelId = shortChannelId2
+                      Timestamp = 0u
+                      MessageFlags = 1uy
+                      ChannelFlags = 0uy
+                      CLTVExpiryDelta = BlockHeightOffset(144us)
+                      HTLCMinimumMSat = LNMoney.Satoshis(1)
+                      FeeBaseMSat = LNMoney.Satoshis(1L)
+                      FeeProportionalMillionths = 100u
+                      HTLCMaximumMSat = Some(LNMoney.MilliSatoshis(16777000000L)) }
+                let unsignedChannelUpdate2 =
+                    { UnsignedChannelUpdate.ChainHash = uint256.Zero
+                      ShortChannelId = shortChannelId2
+                      Timestamp = 0u
+                      MessageFlags = 1uy
+                      ChannelFlags = 1uy
+                      CLTVExpiryDelta = BlockHeightOffset(144us)
+                      HTLCMinimumMSat = LNMoney.One
+                      FeeBaseMSat = LNMoney.Satoshis(667)
+                      FeeProportionalMillionths = 1u
+                      HTLCMaximumMSat = Some(LNMoney.MilliSatoshis(16777000000L)) }
+                let pc2 = PublicChannel.Create(channelAnn,TxId.Zero, Money.Zero, Some(unsignedChannelUpdate1), Some(unsignedChannelUpdate2))
+                m |> Map.add (shortChannelId2) pc2
+            let m =
+                let shortChannelId3 = ShortChannelId.ParseUnsafe("565779x2711x0")
+                let pk1 = PubKey("036d65409c41ab7380a43448f257809e7496b52bf92057c09c4f300cbd61c50d96") |> NodeId
+                let pk2 = PubKey("03864ef025fde8fb587d989186ce6a4a186895ee44a926bfc370e2c366597a3f8f") |> NodeId
+                let channelAnn = makeChannelAnnCore(shortChannelId3, pk1, pk2)
+                let unsignedChannelUpdate1 =
+                    { UnsignedChannelUpdate.ChainHash = uint256.Zero
+                      ShortChannelId = shortChannelId3
+                      Timestamp = 0u
+                      MessageFlags = 1uy
+                      ChannelFlags = 0uy
+                      CLTVExpiryDelta = BlockHeightOffset(144us)
+                      HTLCMinimumMSat = LNMoney.One
+                      FeeBaseMSat = LNMoney.Satoshis(1L)
+                      FeeProportionalMillionths = 100u
+                      HTLCMaximumMSat = Some(LNMoney.MilliSatoshis(230000000L)) }
+                let unsignedChannelUpdate2 =
+                    { UnsignedChannelUpdate.ChainHash = uint256.Zero
+                      ShortChannelId = shortChannelId3
+                      Timestamp = 0u
+                      MessageFlags = 1uy
+                      ChannelFlags = 3uy
+                      CLTVExpiryDelta = BlockHeightOffset(144us)
+                      HTLCMinimumMSat = LNMoney.One
+                      FeeBaseMSat = LNMoney.Satoshis(1)
+                      FeeProportionalMillionths = 100u
+                      HTLCMaximumMSat = Some(LNMoney.MilliSatoshis(230000000L)) }
+                let pc3 = PublicChannel.Create(channelAnn,TxId.Zero, Money.Zero, Some(unsignedChannelUpdate1), Some(unsignedChannelUpdate2))
+                m |> Map.add (shortChannelId3) pc3
+            m
+            
+        let graph = DirectedLNGraph.MakeGraph(updates)
+        let routeParams =
+            { RouteParams.Randomize = false
+              MaxFeeBase = failwith "todo"
+              MaxFeePCT = failwith "todo"
+              RouteMaxLength = failwith "todo"
+              RouteMaxCLTV = failwith "todo"
+              Ratios = failwith "todo" }
+        let thisNode = PubKey("036d65409c41ab7380a43448f257809e7496b52bf92057c09c4f300cbd61c50d96") |> NodeId
+        let targetNode = PubKey("024655b768ef40951b20053a5c4b951606d4d86085d51238f2c67c7dec29c792ca") |> NodeId
+        let amount = 351000 |> LNMoney.MilliSatoshis
+        let route =
+            Routing.findRoute graph thisNode targetNode amount 1 (Set.empty)(Set.empty)(Set.empty) routeParams (BlockHeight(567634u))
+            |> Result.deref
+            |> Seq.toList
+            
+        Expect.equal (route.Length) 2 ""
+        Expect.equal (route |> List.last).NextNodeIdValue targetNode ""
 ]

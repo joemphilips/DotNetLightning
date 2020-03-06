@@ -14,6 +14,19 @@ open Graph
 open NBitcoin
 
 module Routing =
+    
+    /// This method is used after a payment failed, and we want to exclude some nodes that we know are failing
+    let getIgnoredChannelDesc(channels: Map<ShortChannelId, PublicChannel>) (ignoredNodes: Set<NodeId>) =
+        let desc =
+            if (ignoredNodes.IsEmpty) then Seq.empty else
+            channels
+            |> Seq.map(fun kvp -> kvp.Value)
+            |> Seq.filter(fun (channelData: PublicChannel) -> ignoredNodes.Contains(channelData.Ann.NodeId1) || ignoredNodes.Contains(channelData.Ann.NodeId2))
+            |> Seq.collect(fun pc -> seq {
+                yield { ChannelDesc.ShortChannelId = pc.Ann.ShortChannelId; A = pc.Ann.NodeId1; B = pc.Ann.NodeId2 }
+                yield { ChannelDesc.ShortChannelId = pc.Ann.ShortChannelId; A = pc.Ann.NodeId2; B = pc.Ann.NodeId1 }
+            })
+        desc
     // ----- helpers -----
     /// BOLT11: "For each entry, the pubkey is the node ID of the start of the channel", and the last node is the destination
     /// The invoice doesn't explicitly specify the channel's htlcMaximumMsat, but we can safely assume that the channel
