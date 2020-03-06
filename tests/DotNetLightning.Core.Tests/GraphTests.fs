@@ -68,7 +68,7 @@ let makeUpdate (shortChannelId: uint64,
           HTLCMinimumMSat = minHtlc
           FeeBaseMSat = feeBase
           FeeProportionalMillionths = feeProportionalMillions
-          HTLCMaximumMSat = None }
+          HTLCMaximumMSat = maxHtlc }
     desc, update
     
 let makeUpdateSimple (shortChannelId, a, b) =

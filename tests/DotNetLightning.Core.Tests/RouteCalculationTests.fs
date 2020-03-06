@@ -123,7 +123,7 @@ let tests = ftestList "Route Calculation" [
         ]
         let g = DirectedLNGraph.Create().AddEdges(updates)
         let route1 =
-            Routing.findRoute g a e DEFAULT_AMOUNT_MSAT 1 (Set.empty)(Set.empty)(Set.empty)DEFAULT_ROUTE_PARAMS (BlockHeight(400000u))
+            Routing.findRoute g a e DEFAULT_AMOUNT_MSAT 1 (Set.empty)(Set.empty) (Set.empty)DEFAULT_ROUTE_PARAMS (BlockHeight(400000u))
             |> Result.deref
             
         Expect.sequenceEqual (hops2Ids(route1)) [1UL; 2UL; 3UL; 4UL;] ""

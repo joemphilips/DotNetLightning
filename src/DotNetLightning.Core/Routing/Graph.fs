@@ -264,16 +264,19 @@ module Graph =
         (isPartial: bool)
         (currentBlockHeight: BlockHeight)
         (wr: WeightRatios option) =
+        let zero = 
+            { RichWeight.Cost = amount
+              Weight = 0.
+              Length = 0
+              CLTV = BlockHeightOffset.Zero }
+        if path |> Seq.length = 0 then zero else
         path
         |> Seq.skip(if isPartial then 0 else 1)
         |> Seq.fold
             (fun (acc: RichWeight) (edge: GraphLabel) ->
                 edgeWeight(edge) (acc) (false) (currentBlockHeight) (wr)
             )
-            { RichWeight.Cost = amount
-              Weight = 0.
-              Length = 0
-              CLTV = BlockHeightOffset.Zero }
+            zero
             
     open System.Linq
     /// Finds the shortest path in the graph, uses a modified version of Dijkstra's algorithm that computes
@@ -351,7 +354,7 @@ module Graph =
                     if (edge.Update.HTLCMaximumMSat |> Option.forall(fun x -> newMinimumKnownWeight.Cost <= x)) &&
                        newMinimumKnownWeight.Cost >= edge.Update.HTLCMinimumMSat &&
                        boundaries (newMinimumKnownWeight) &&
-                       not <| ignoredEdges.Contains(edge.Desc) && not <| ignoredVertices.Contains(neighbor) then
+                       (not <| ignoredEdges.Contains(edge.Desc)) && (not <| ignoredVertices.Contains(neighbor)) then
                        let neighborCost =
                            match weight.TryGetValue(neighbor) with
                            | true, s -> s
@@ -360,10 +363,14 @@ module Graph =
                                  Weight = Double.MaxValue
                                  Length = Int32.MaxValue
                                  CLTV = BlockHeightOffset.MaxValue }
+                       // if this neighbor has a shorter distance than previously known
                        if (newMinimumKnownWeight.Weight < neighborCost.Weight) then
-                           prev.Add(neighbor, edge)
+                           // update the visiting tree
+                           prev.AddOrReplace(neighbor, edge)
+                           // update the queue
                            vertexQueue <- vertexQueue |> PriorityQueue.insert({ WeightedNode.Id = neighbor; Weight = newMinimumKnownWeight })
-                           weight.Add(neighbor, newMinimumKnownWeight)
+                           // update the minimum known distance array
+                           weight.AddOrReplace(neighbor, newMinimumKnownWeight)
                     ()
                 )
         match targetFound with
@@ -418,7 +425,7 @@ module Graph =
             { WeightedPath.Path = shortestPath
               Weight = pathWeight(shortestPath) (amount) false currentBlockHeight wr }
             )
-        if (shortestPaths.Count = 0) then Seq.empty else
+        if ((shortestPath |> Seq.length) = 0) then Seq.empty else
         for k in 1..(pathsToFind - 1) do
             if (not <| allSpurPathsFound) then
                 let edgeNum = shortestPaths.[k - 1].Path.Count()

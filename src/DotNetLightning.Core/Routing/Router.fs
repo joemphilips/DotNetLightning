@@ -61,37 +61,24 @@ module Routing =
         
         if (local = target) then routeFindingError("Cannot route to yourself") else
         let feeBaseOk(fee: LNMoney) =
-            if fee <= routeParams.MaxFeeBase then Ok() else
-            sprintf "FeeBase too big! %A" fee
-            |> routeFindingError
+            fee <= routeParams.MaxFeeBase
         let feePctOk (fee: LNMoney, amount: LNMoney) =
             let f, a = (fee.MilliSatoshi |> double), (amount.MilliSatoshi |> double)
             let maxFee = (a) * routeParams.MaxFeePCT
-            if f <= maxFee then Ok() else
-            sprintf "Fee Percentage too big! it must be smaller than %A. but it was %f" maxFee f
-            |> routeFindingError
+            f <= maxFee
             
-        let feeOk(f, a) =
-            result {
-                do! feeBaseOk(f)
-                return! feePctOk(f, a)
-            }
+        let feeOk(f, a) = feeBaseOk(f) || feePctOk(f, a)
             
         let lengthOk (l: int) =
             let limit = Math.Min(routeParams.RouteMaxLength, ROUTE_MAX_LENGTH)
-            if l <= limit then Ok() else
-             sprintf "Route must be smaller than %A! it was %A" limit l
-             |> routeFindingError
+            l <= limit 
              
         let cltvOk (cltv: BlockHeightOffset) =
-            if cltv <= routeParams.RouteMaxCLTV then Ok() else routeFindingError("")
+            cltv <= routeParams.RouteMaxCLTV
         let boundaries =
             fun (weight: RichWeight) ->
-                result {
-                    do! feeOk(weight.Cost - amount, amount)
-                    do! lengthOk(weight.Length)
-                    do! cltvOk(weight.CLTV)
-                } |> Result.isOk
+                feeOk(weight.Cost - amount, amount) && lengthOk(weight.Length) && cltvOk(weight.CLTV)
+                
         Graph.yenKShortestPaths (g) (local) (target) amount ignoredE ignoredV extraE numRoutes routeParams.Ratios currentBlockHeight boundaries
         |> Seq.toList
         |> function
