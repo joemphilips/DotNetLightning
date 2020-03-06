@@ -16,12 +16,17 @@ open NBitcoin
 module Routing =
     // ----- helpers -----
     /// BOLT11: "For each entry, the pubkey is the node ID of the start of the channel", and the last node is the destination
-    /// The invoice doesn't
+    /// The invoice doesn't explicitly specify the channel's htlcMaximumMsat, but we can safely assume that the channel
+    /// should be able to route the payment, so we'll compute an htlcMaximumMSat accordingly.
+    /// We could also get the channel capacity from the blockchain (since we have the shortChannelId) but that's more expensive
+    /// We also need to make sure the channel isn't excluded by our heuristics.
     let internal toAssistedChannels (targetNode: NodeId) (amount: LNMoney)(extraRoute: ExtraHop seq) : seq<ShortChannelId * AssistedChannel> =
         let lastChannelCap = LNMoney.Max(amount, RoutingHeuristics.CAPACITY_CHANNEL_LOW)
         let nextNodeIds =
             seq {
-                yield! extraRoute |> Seq.map(fun x -> x.NodeId) |> Seq.skip 1
+                yield!
+                    if (extraRoute |> Seq.isEmpty) then Seq.empty else
+                    (extraRoute |> Seq.map(fun x -> x.NodeId) |> Seq.skip 1)
                 yield targetNode
             }
         extraRoute

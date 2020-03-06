@@ -206,7 +206,7 @@ module Graph =
             (v - min) / (max - min)
         
     let internal nodeFee(baseFee: LNMoney, proportionalFee: int64, paymentAmount: LNMoney) =
-        baseFee.MilliSatoshi + ((paymentAmount.MilliSatoshi * proportionalFee) / 1000000L) |> LNMoney
+        baseFee + ((paymentAmount * proportionalFee) / 1000000L)
         
     /// This forces channel_update(s) with fees = 0 to have a minimum of 1msat for the baseFee. Note that
     /// the update is not being modified and the result of the route computation will still have the update

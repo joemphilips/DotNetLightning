@@ -400,31 +400,31 @@ let tests = ftestList "Route Calculation" [
     testCase "convert extra hops to assisted channels" <| fun _ ->
         let extraHop1 = { ExtraHop.NodeId = a
                           ShortChannelId = ShortChannelId.FromUInt64(1UL)
-                          FeeBase = LNMoney.MilliSatoshis(12L)
+                          FeeBase = LNMoney.Satoshis(12L)
                           FeeProportionalMillionths = 10000u
                           CLTVExpiryDelta = BlockHeightOffset(12us) }
         let extraHop2 = { ExtraHop.NodeId = b
                           ShortChannelId = ShortChannelId.FromUInt64(2UL)
-                          FeeBase = LNMoney.MilliSatoshis(200L)
+                          FeeBase = LNMoney.Satoshis(200L)
                           FeeProportionalMillionths = 0u
                           CLTVExpiryDelta = BlockHeightOffset(22us) }
         let extraHop3 = { ExtraHop.NodeId = c
                           ShortChannelId = ShortChannelId.FromUInt64(3UL)
-                          FeeBase = LNMoney.MilliSatoshis(150L)
+                          FeeBase = LNMoney.Satoshis(150L)
                           FeeProportionalMillionths = 0u
                           CLTVExpiryDelta = BlockHeightOffset(32us) }
         let extraHop4 = { ExtraHop.NodeId = d
                           ShortChannelId = ShortChannelId.FromUInt64(4UL)
-                          FeeBase = LNMoney.MilliSatoshis(50L)
+                          FeeBase = LNMoney.Satoshis(50L)
                           FeeProportionalMillionths = 0u
                           CLTVExpiryDelta = BlockHeightOffset(42us) }
         let extraHops = [ extraHop1; extraHop2; extraHop3; extraHop4 ]
         let amount = LNMoney.Satoshis(900L) // below RoutingHeuristics.CAPACITY_CHANNEL_LOW
         let acs = Routing.toAssistedChannels e amount extraHops |> Map.ofSeq
-        Expect.equal  (acs.[extraHop4.ShortChannelId]) ({ AssistedChannel.ExtraHop = extraHop4; NextNodeId = e; HTLCMaximum = (LNMoney.MilliSatoshis(1050L)) }) ""
-        Expect.equal  (acs.[extraHop3.ShortChannelId]) ({ AssistedChannel.ExtraHop = extraHop3; NextNodeId = d; HTLCMaximum = (LNMoney.MilliSatoshis(1200L)) }) ""
-        Expect.equal  (acs.[extraHop2.ShortChannelId]) ({ AssistedChannel.ExtraHop = extraHop2; NextNodeId = c; HTLCMaximum = (LNMoney.MilliSatoshis(1400L)) }) ""
-        Expect.equal  (acs.[extraHop1.ShortChannelId]) ({ AssistedChannel.ExtraHop = extraHop1; NextNodeId = b; HTLCMaximum = (LNMoney.MilliSatoshis(1426L)) }) ""
+        Expect.equal  (acs.[extraHop4.ShortChannelId]) ({ AssistedChannel.ExtraHop = extraHop4; NextNodeId = e; HTLCMaximum = (LNMoney.Satoshis(1050L)) }) ""
+        Expect.equal  (acs.[extraHop3.ShortChannelId]) ({ AssistedChannel.ExtraHop = extraHop3; NextNodeId = d; HTLCMaximum = (LNMoney.Satoshis(1200L)) }) ""
+        Expect.equal  (acs.[extraHop2.ShortChannelId]) ({ AssistedChannel.ExtraHop = extraHop2; NextNodeId = c; HTLCMaximum = (LNMoney.Satoshis(1400L)) }) ""
+        Expect.equal  (acs.[extraHop1.ShortChannelId]) ({ AssistedChannel.ExtraHop = extraHop1; NextNodeId = b; HTLCMaximum = (LNMoney.Satoshis(1426L)) }) ""
         
     testCase "blacklist routes" <| fun _ ->
         let updates = [
