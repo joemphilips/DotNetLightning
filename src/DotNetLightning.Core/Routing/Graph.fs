@@ -2,6 +2,7 @@ namespace DotNetLightning.Routing
 
 open System
 open System.Collections.Generic
+open System.Collections.Generic
 open DotNetLightning.Utils
 open DotNetLightning.Serialize.Msgs
 open NBitcoin
@@ -150,6 +151,7 @@ module Graph =
         let a, b = if (isNode1) then ann.NodeId1, ann.NodeId2 else ann.NodeId2, ann.NodeId1
         { ShortChannelId = u.ShortChannelId; A = a; B = b }
     
+    [<StructuredFormatDisplay("{PrettyPrint}")>]
     type DirectedLNGraph = private DirectedLNGraph of Map<NodeId, GraphLabel list>
         with
         static member Create() =
@@ -257,6 +259,13 @@ module Graph =
                 )
             
             DirectedLNGraph(result |> Seq.map(|KeyValue|) |> Map.ofSeq)
+            
+        member this.PrettyPrint =
+            this.Value
+            |> Seq.fold(fun acc (kvp) ->
+                let (v, adj) = kvp.Key, kvp.Value
+                sprintf "%s[%A]: %A\n" acc (v.Value.ToHex().[0..6]) (adj |> List.map(fun x -> ("--> " + x.Desc.B.Value.ToHex().[0..6])))
+                ) ""
                 
     module internal RoutingHeuristics =
         let BLOCK_TIME_TWO_MONTHS = 8640us |> BlockHeightOffset
@@ -294,7 +303,7 @@ module Graph =
         match weightRatios with
         | None ->
             let edgeCost = if (isNeighborTarget) then prev.Cost else edgeFeeCost(edge, prev.Cost)
-            { RichWeight.Cost = edgeCost; Length = prev.Length + 1; CLTV = prev.CLTV; Weight = edgeCost.MilliSatoshi |> double }
+            { RichWeight.Cost = edgeCost; Length = prev.Length + 1; CLTV = prev.CLTV + edge.Update.CLTVExpiryDelta; Weight = edgeCost.MilliSatoshi |> double }
         | Some wr ->
             let ({ Update = update; Desc = desc }) = edge
             let channelBlockHeight = desc.ShortChannelId.BlockHeight.Value

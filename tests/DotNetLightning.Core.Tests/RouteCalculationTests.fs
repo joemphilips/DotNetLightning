@@ -496,7 +496,7 @@ let tests = testList "Route Calculation" [
             Routing.findRoute g a e DEFAULT_AMOUNT_MSAT 1 (Set.empty) (Set.empty) (Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u))
             |> Result.deref
         Expect.sequenceEqual (hops2Ids(route1)) [1UL;2UL; 3UL; 4UL] ""
-        Expect.equal ((route1 |> Seq.last).LastUpdateValue.FeeBaseMSat) (LNMoney.MilliSatoshis(10)) ""
+        Expect.equal ((route1 |> Seq.item 1).LastUpdateValue.FeeBaseMSat) (LNMoney.MilliSatoshis(10)) ""
         
         let (extraDesc, extraUpdate) = makeUpdate(2UL, b, c, LNMoney.MilliSatoshis(5), 5u, None, None, None)
         let extraGraphEdges = Set.singleton({ GraphLabel.Desc = extraDesc; Update = extraUpdate })
@@ -504,7 +504,7 @@ let tests = testList "Route Calculation" [
             Routing.findRoute g a e DEFAULT_AMOUNT_MSAT 1 extraGraphEdges (Set.empty) (Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u))
             |> Result.deref
         Expect.sequenceEqual (hops2Ids(route2)) [1UL; 2UL; 3UL; 4UL] ""
-        Expect.equal ((route2 |> Seq.last).LastUpdateValue.FeeBaseMSat) (LNMoney.MilliSatoshis(5)) ""
+        Expect.equal ((route2 |> Seq.item 1).LastUpdateValue.FeeBaseMSat) (LNMoney.MilliSatoshis(5)) ""
         
     testPropertyWithConfig fsCheckConfig "compute ignored channels" <| fun (f: NodeId, g:NodeId, h: NodeId, i: NodeId, j: NodeId) ->
         let channels =
@@ -583,7 +583,7 @@ let tests = testList "Route Calculation" [
             |> Result.deref
         Expect.sequenceEqual (hops2Ids(route)) [0UL; 1UL; 99UL; 48UL] ""
         
-    ftestCase "ignore cheaper route when it has more than the requested CLTV" <| fun _ ->
+    testCase "ignore cheaper route when it has more than the requested CLTV limit" <| fun _ ->
         let updates = [
             makeUpdate(1UL, a, b, LNMoney.One, 0u, Some(LNMoney.Zero), None, Some(BlockHeightOffset(50us)))
             makeUpdate(2UL, b, c, LNMoney.One, 0u, Some(LNMoney.Zero), None, Some(BlockHeightOffset(50us)))
@@ -671,7 +671,6 @@ let tests = testList "Route Calculation" [
             |> Seq.toList
         Expect.equal (fourShortestPaths.Length) 4 (sprintf "found shortest paths were %A" fourShortestPaths)
         let actuals = [ for i in 0..3 do fourShortestPaths.[i].Path |> Seq.map ChannelHop.FromGraphEdge |> hops2Ids ]
-        printfn "four shortest paths were %A" actuals
         Expect.sequenceEqual actuals.[0] [2UL; 5UL] ""
         Expect.sequenceEqual actuals.[1] [1UL; 3UL; 5UL] ""
         Expect.sequenceEqual actuals.[2] [2UL; 4UL; 6UL; 7UL] ""
@@ -941,11 +940,11 @@ let tests = testList "Route Calculation" [
         let graph = DirectedLNGraph.MakeGraph(updates)
         let routeParams =
             { RouteParams.Randomize = false
-              MaxFeeBase = failwith "todo"
-              MaxFeePCT = failwith "todo"
-              RouteMaxLength = failwith "todo"
-              RouteMaxCLTV = failwith "todo"
-              Ratios = failwith "todo" }
+              MaxFeeBase = LNMoney.MilliSatoshis 21000
+              MaxFeePCT = 0.03
+              RouteMaxLength = 6
+              RouteMaxCLTV = 1008us |> BlockHeightOffset
+              Ratios = Some(WeightRatios.TryCreate(0.15, 0.35, 0.5) |> Result.deref) }
         let thisNode = PubKey("036d65409c41ab7380a43448f257809e7496b52bf92057c09c4f300cbd61c50d96") |> NodeId
         let targetNode = PubKey("024655b768ef40951b20053a5c4b951606d4d86085d51238f2c67c7dec29c792ca") |> NodeId
         let amount = 351000 |> LNMoney.MilliSatoshis
