@@ -381,7 +381,7 @@ module Graph =
             // Ideally, we should use Fibonacci heap for the sake of performance,
             // but to make things easy, we just use regular heap.
             // isDescending is false, which means root of the heap is the smallest value is the smallest value.
-            Heap.empty<WeightedNode>(false)
+            Heap.empty<WeightedNode>(true)
             |> PriorityQueue.insert({ WeightedNode.Id = targetNode; Weight = initialWeight })
         
         weight.Add(targetNode, initialWeight)
@@ -471,7 +471,7 @@ module Graph =
         let shortestPaths = ResizeArray<WeightedPath>()
         // Stores the candidates for k(K+1) shortest paths
         // we instantiate by isDescending=false, so `Pop` should return the lowest cost element
-        let mutable candidates = Heap.empty false
+        let mutable candidates = Heap.empty true
         
         // find the shortest path, k = 0
         let initialWeight = { RichWeight.Cost = amount;
