@@ -493,24 +493,19 @@ module Graph =
             { WeightedPath.Path = shortestPath |> Seq.toList
               Weight = pathWeight(shortestPath) (amount) false currentBlockHeight wr }
             )
-        printfn "first found shortest path was %A" shortestPaths
         if ((shortestPath.Count()) = 0) then ResizeArray() else
         for k in 1..(pathsToFind - 1) do
             if (not <| allSpurPathsFound) then
                 let edgeNum = shortestPaths.[k - 1].Path.Count()
-                printfn "edge num was %d" edgeNum
                 /// for each edge in the path
                 for i in 0..(edgeNum - 1) do
-                    printfn "examining %dth edge in the path" i
                     let prevShortestPath = shortestPaths.[k - 1].Path
-                    printfn "prevShortestPath is %A" (prevShortestPath |> Seq.map(fun x -> x.Desc.ShortChannelId))
                     // select the spur node as the i-th element of the k-the previous shortest path (k - 1)
                     let spurEdge = prevShortestPath |> Seq.item i
                     // select the sub-path from the source to the spur node of the k-th previous shortest path
                     let rootPathEdges =
                         if (i = 0) then prevShortestPath |> Seq.head |> List.singleton else
                         prevShortestPath |> Seq.truncate i |> Seq.toList
-                    printfn "rootPathEdges were %A" (rootPathEdges |> List.map(fun x -> x.Desc.ShortChannelId))
                     let rootPathWeight =
                         pathWeight
                             (rootPathEdges)
@@ -545,10 +540,7 @@ module Graph =
                     // find the "spur" path, a sub-path going from the spur edge to the target avoiding previously
                     // found sub-paths
                     let spurPath =
-                        printfn "returningEdges are %A" returningEdges
-                        printfn "edgesToIgnore are %A" edgesToIgnore
                         let ignoredE = ignoredEdges |> Set.union (Set(edgesToIgnore)) |> Set.union(Set(returningEdges))
-                        printfn "ignoredE is %A" (ignoredE |> Seq.map(fun x -> x.ShortChannelId))
                         dijkstraShortestPath
                             (g)
                             spurEdge.Desc.A
@@ -562,7 +554,6 @@ module Graph =
                             wr
                         |> List.ofSeq
                             
-                    printfn "spurPath was %A" (spurPath |> List.map(fun x -> x.Desc.ShortChannelId))
                     // if there wasn't a path the spur will be empty
                     if (spurPath.Count() <> 0) then
                         // candidate k-shortest path is made of the rootPath and the new spurPath
@@ -573,23 +564,17 @@ module Graph =
                                 t
                             else
                                 List.concat [rootPathEdges; spurPath]
-                        printfn "totalPath was %A" (totalPath |> List.map(fun x -> x.Desc.ShortChannelId))
                         let candidatePath = { WeightedPath.Path = totalPath; Weight = pathWeight(totalPath) (amount) false currentBlockHeight wr }
                         if (boundaries(candidatePath.Weight) &&
                             (not <| shortestPaths.Contains(candidatePath)) &&
                             (not <| (candidates |> Seq.exists((=)candidatePath)))) then
-                            printfn "so going to updating canditate"
                             candidates <- candidates.Insert(candidatePath)
-                        else
-                            printfn "so not going to updating canditate"
             if (candidates.IsEmpty) then
-                printfn "candidates were empty"
                 // handles the case of having exhausted all possible spur paths and it's impossible to
                 // reach the target from the source
                 allSpurPathsFound <- true
             else
                 let (best, c) = candidates.Uncons()
                 candidates <- c
-                printfn "best candidate is %A" best
                 shortestPaths.Add(best)
         shortestPaths
