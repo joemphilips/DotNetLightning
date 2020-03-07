@@ -1,15 +1,13 @@
 namespace DotNetLightning.Chain
-open System.Collections.Concurrent
+
 open System.Collections.Concurrent
 open System.Text
 open System.Threading
 open NBitcoin
 open NBitcoin.Crypto
-open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils
 open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Crypto
-open NBitcoin.Crypto
 
 /// OutPoint
 type StaticOutput = {
@@ -170,5 +168,5 @@ type DefaultKeyRepository(seed: uint256) =
                     "failed to get signature for %A . \n input pubkey was: (%A).\n and basepoint was(%A)"
                     psbt pubkey basePoint
 
-        member this.GenerateKeyFromRemoteSecretAndSign(psbt, pubkey, remoteSecret) =
+        member this.GenerateKeyFromRemoteSecretAndSign(_psbt, _pubkey, _remoteSecret) =
             failwith ""

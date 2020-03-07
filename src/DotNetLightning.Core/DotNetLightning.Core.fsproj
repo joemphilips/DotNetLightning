@@ -47,7 +47,6 @@
     <Compile Include="Crypto/CryptoUtils.fs" />
     <Compile Include="Crypto/ShaChain.fs" />
     <Compile Include="Crypto/Sphinx.fs" />
-    <Compile Include="Crypto/StreamCipherStream.fs" />
     <Compile Include="Crypto/Generators.fs" />
     <Compile Include="Chain/ChainInterface.fs" />
     <Compile Include="Chain/KeysInterface.fs" />
