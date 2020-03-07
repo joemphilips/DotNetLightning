@@ -2,7 +2,6 @@ namespace DotNetLightning.Routing
 
 open System
 open System.Collections.Generic
-open System.Collections.Generic
 open DotNetLightning.Utils
 open DotNetLightning.Serialize.Msgs
 open NBitcoin
@@ -125,6 +124,7 @@ module Graph =
         with
         override this.GetHashCode() =
             let mutable num = 0
+            num <- -1640531527 + this.Weight.GetHashCode() + ((num <<< 6) + (num >>> 2))
             for i in this.Path do
                 num <- -1640531527 + i.GetHashCode() + ((num <<< 6) + (num >>> 2))
             num
