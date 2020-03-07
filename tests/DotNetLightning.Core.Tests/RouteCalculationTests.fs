@@ -63,7 +63,7 @@ let hops2Edges (route: ChannelHop seq) =
               B = h.NodeIdValue }
           Update = h.LastUpdateValue })
 [<Tests>]
-let tests = ftestList "Route Calculation" [
+let tests = testList "Route Calculation" [
     let calculateRouteSimple routeParams =
         let updates = [
                 makeUpdate(1UL, a, b, LNMoney.MilliSatoshis(1L), 10u, None, None, BlockHeightOffset.One |> Some)
@@ -556,15 +556,15 @@ let tests = ftestList "Route Calculation" [
         let r18 =
             (Routing.findRoute g (nodes.[0]) nodes.[18] DEFAULT_AMOUNT_MSAT 1 (Set.empty) (Set.empty) (Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u)))
             |> Result.deref
-        Expect.sequenceEqual (hops2Ids(r18)) [ for i in 0..18 -> (uint64 i) ] ""
+        Expect.sequenceEqual (hops2Ids(r18)) [ for i in 0..17 -> (uint64 i) ] ""
         let r19 =
             (Routing.findRoute g (nodes.[0]) nodes.[19] DEFAULT_AMOUNT_MSAT 1 (Set.empty) (Set.empty) (Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u)))
             |> Result.deref
-        Expect.sequenceEqual (hops2Ids(r19)) [ for i in 0..19 -> (uint64 i) ] ""
+        Expect.sequenceEqual (hops2Ids(r19)) [ for i in 0..18 -> (uint64 i) ] ""
         let r20 =
             (Routing.findRoute g (nodes.[0]) nodes.[20] DEFAULT_AMOUNT_MSAT 1 (Set.empty) (Set.empty) (Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u)))
             |> Result.deref
-        Expect.sequenceEqual (hops2Ids(r20)) [ for i in 0..20 -> (uint64 i) ] ""
+        Expect.sequenceEqual (hops2Ids(r20)) [ for i in 0..19 -> (uint64 i) ] ""
         let r21 =
             (Routing.findRoute g (nodes.[0]) nodes.[21] DEFAULT_AMOUNT_MSAT 1 (Set.empty) (Set.empty) (Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u)))
         Expect.isError(r21) ""
@@ -583,15 +583,14 @@ let tests = ftestList "Route Calculation" [
             |> Result.deref
         Expect.sequenceEqual (hops2Ids(route)) [0UL; 1UL; 99UL; 48UL] ""
         
-    testCase "ignore cheaper route when it has more than the requested CLTV" <| fun _ ->
+    ftestCase "ignore cheaper route when it has more than the requested CLTV" <| fun _ ->
         let updates = [
-            makeUpdate(1UL, a, b, LNMoney.One, 0u, Some(LNMoney.One), None, Some(BlockHeightOffset(50us)))
-            makeUpdate(2UL, b, c, LNMoney.One, 0u, Some(LNMoney.One), None, Some(BlockHeightOffset(50us)))
-            makeUpdate(3UL, c, d, LNMoney.One, 0u, Some(LNMoney.One), None, Some(BlockHeightOffset(50us)))
-            makeUpdate(4UL, a, e, LNMoney.One, 0u, Some(LNMoney.One), None, Some(BlockHeightOffset(9us)))
-            
-            makeUpdate(5UL, e, f, LNMoney.MilliSatoshis(5), 0u, Some(LNMoney.One), None, Some(BlockHeightOffset(9us)))
-            makeUpdate(6UL, f, d, LNMoney.MilliSatoshis(5), 0u, Some(LNMoney.One), None, Some(BlockHeightOffset(9us)))
+            makeUpdate(1UL, a, b, LNMoney.One, 0u, Some(LNMoney.Zero), None, Some(BlockHeightOffset(50us)))
+            makeUpdate(2UL, b, c, LNMoney.One, 0u, Some(LNMoney.Zero), None, Some(BlockHeightOffset(50us)))
+            makeUpdate(3UL, c, d, LNMoney.One, 0u, Some(LNMoney.Zero), None, Some(BlockHeightOffset(50us)))
+            makeUpdate(4UL, a, e, LNMoney.One, 0u, Some(LNMoney.Zero), None, Some(BlockHeightOffset(9us)))
+            makeUpdate(5UL, e, f, LNMoney.MilliSatoshis(5), 0u, Some(LNMoney.Zero), None, Some(BlockHeightOffset(9us)))
+            makeUpdate(6UL, f, d, LNMoney.MilliSatoshis(5), 0u, Some(LNMoney.Zero), None, Some(BlockHeightOffset(9us)))
         ]
         let g = DirectedLNGraph.Create().AddEdges(updates)
         let route =
@@ -683,13 +682,13 @@ let tests = ftestList "Route Calculation" [
             makeUpdate(10UL, c, e, LNMoney.MilliSatoshis(2), 0u, None,None,None)
             makeUpdate(20UL, c, d, LNMoney.MilliSatoshis(3), 0u, None,None,None)
             makeUpdate(30UL, d, f, LNMoney.MilliSatoshis(4), 5u, None,None,None) // D -> F has a higher cost to distinguish from the 2nd cheapest route
-            makeUpdate(40UL, e, d, LNMoney.MilliSatoshis(1), 0u, None,None,None) // D -> F has a higher cost to distinguish from the 2nd cheapest route
-            makeUpdate(50UL, e, f, LNMoney.MilliSatoshis(2), 0u, None,None,None) // D -> F has a higher cost to distinguish from the 2nd cheapest route
-            makeUpdate(60UL, e, g, LNMoney.MilliSatoshis(3), 0u, None,None,None) // D -> F has a higher cost to distinguish from the 2nd cheapest route
-            makeUpdate(70UL, f, g, LNMoney.MilliSatoshis(2), 0u, None,None,None) // D -> F has a higher cost to distinguish from the 2nd cheapest route
+            makeUpdate(40UL, e, d, LNMoney.MilliSatoshis(1), 0u, None,None,None)
+            makeUpdate(50UL, e, f, LNMoney.MilliSatoshis(2), 0u, None,None,None)
+            makeUpdate(60UL, e, g, LNMoney.MilliSatoshis(3), 0u, None,None,None)
+            makeUpdate(70UL, f, g, LNMoney.MilliSatoshis(2), 0u, None,None,None)
             
-            makeUpdate(80UL, f, h, LNMoney.MilliSatoshis(1), 0u, None,None,None) // D -> F has a higher cost to distinguish from the 2nd cheapest route
-            makeUpdate(90UL, g, h, LNMoney.MilliSatoshis(2), 0u, None,None,None) // D -> F has a higher cost to distinguish from the 2nd cheapest route
+            makeUpdate(80UL, f, h, LNMoney.MilliSatoshis(1), 0u, None,None,None)
+            makeUpdate(90UL, g, h, LNMoney.MilliSatoshis(2), 0u, None,None,None)
         ]
         
         let graph = DirectedLNGraph.Create().AddEdges(updates)
@@ -699,7 +698,7 @@ let tests = ftestList "Route Calculation" [
             
         Expect.equal (twoShortestPaths.Length) 2 ""
         let shortest = twoShortestPaths.[0]
-        Expect.sequenceEqual (shortest.Path |> Seq.map(ChannelHop.FromGraphEdge) |> hops2Ids) [10UL; 50UL; 90UL] ""
+        Expect.sequenceEqual (shortest.Path |> Seq.map(ChannelHop.FromGraphEdge) |> hops2Ids) [10UL; 50UL; 80UL] ""
         let secondShortest = twoShortestPaths.[1]
         Expect.sequenceEqual (secondShortest.Path |> Seq.map(ChannelHop.FromGraphEdge) |> hops2Ids) [10UL; 60UL; 90UL] ""
         
