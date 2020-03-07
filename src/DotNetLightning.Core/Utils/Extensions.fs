@@ -120,3 +120,9 @@ type DictionaryExtensions() =
     [<Extension>]
     static member TryGetValueOption(this: IDictionary<_, _>, key) =
         Dict.tryGetValue key this
+        
+module Seq =
+    let skipSafe num = 
+        Seq.zip (Seq.initInfinite id)
+        >> Seq.skipWhile (fun (i, _) -> i < num)
+        >> Seq.map snd

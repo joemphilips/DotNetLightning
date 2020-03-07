@@ -63,7 +63,7 @@ let hops2Edges (route: ChannelHop seq) =
               B = h.NodeIdValue }
           Update = h.LastUpdateValue })
 [<Tests>]
-let tests = testList "Route Calculation" [
+let tests = ftestList "Route Calculation" [
     let calculateRouteSimple routeParams =
         let updates = [
                 makeUpdate(1UL, a, b, LNMoney.MilliSatoshis(1L), 10u, None, None, BlockHeightOffset.One |> Some)
@@ -656,7 +656,7 @@ let tests = testList "Route Calculation" [
        // | D +----------> | E +----------> | F |
        // +---+            +---+            +---+
        //
-    ftestCase "find the k-shortest paths in a graph, k = 4" <| fun _ ->
+    testCase "find the k-shortest paths in a graph, k = 4" <| fun _ ->
         let updates = [
             makeUpdate(1UL, d, a, LNMoney.One, 0u, None, None, None)
             makeUpdate(2UL, d, e, LNMoney.One, 0u, None, None, None)

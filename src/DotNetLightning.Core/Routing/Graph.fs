@@ -2,7 +2,6 @@ namespace DotNetLightning.Routing
 
 open System
 open System.Collections.Generic
-open System.Collections.Generic
 open DotNetLightning.Utils
 open DotNetLightning.Serialize.Msgs
 open NBitcoin
@@ -11,7 +10,7 @@ open NBitcoin
 
 module Graph =
     /// The cumulative weight of a set of edges (path in the graph).
-    [<CustomComparison;StructuralEquality>]
+    [<CustomComparison;CustomEquality>]
     type RichWeight = {
         Weight: double
         Cost: LNMoney
@@ -19,6 +18,14 @@ module Graph =
         CLTV: BlockHeightOffset
     }
     with
+        override this.GetHashCode() =
+            this.Weight.GetHashCode()
+        member this.Equals(o: RichWeight) =
+            this.Weight.Equals(o.Weight)
+        override this.Equals(o: obj) =
+            match o with
+            | :? RichWeight as other -> this.Equals(other)
+            | _ -> false
         member this.CompareTo(other: RichWeight) =
             this.Weight.CompareTo(other.Weight)
             
@@ -49,12 +56,24 @@ module Graph =
                     CapacityFactor = capacityFactor
                 } |> Ok
                 
-    [<CustomComparison;StructuralEquality>]           
+    [<CustomComparison;CustomEquality>]           
     type WeightedNode = {
         Id: NodeId
         Weight: RichWeight
     }
         with
+        member this.Equals(o: WeightedNode) =
+            this.Id.Equals(o.Id)
+        override this.Equals(o: obj) =
+            match o with
+            | :? WeightedNode as other -> this.Equals(other)
+            | _ -> false
+        override this.GetHashCode() =
+            let mutable num = 0
+            num <- -1640531527 + this.Id.GetHashCode() + ((num <<< 6) + (num >>> 2))
+            num
+        interface IEquatable<WeightedNode> with
+            member this.Equals o = this.Equals o
         member x.CompareTo(y: WeightedNode) =
             let weightCmp = x.Weight.CompareTo(y.Weight)
             if (weightCmp <> 0) then weightCmp else
@@ -97,12 +116,26 @@ module Graph =
             u.FeeBaseMSat = LNMoney.Zero && u.FeeProportionalMillionths = 0u
                 
     
-    [<CustomComparison;StructuralEquality>]
+    [<CustomComparison;CustomEquality>]
     type WeightedPath = {
         Path: GraphLabel seq
         Weight: RichWeight
     }
         with
+        override this.GetHashCode() =
+            let mutable num = 0
+            for i in this.Path do
+                num <- -1640531527 + i.GetHashCode() + ((num <<< 6) + (num >>> 2))
+            num
+        member this.Equals (o: WeightedPath) =
+            this.Path.Equals(o.Path) && this.Weight.Equals(o.Weight)
+        override this.Equals o =
+            match o with
+            | :? WeightedPath as other -> this.Equals other
+            | _ -> false
+            
+        interface IEquatable<WeightedPath> with
+            member this.Equals o = this.Equals o
         member x.CompareTo(y: WeightedPath)=
             x.Weight.CompareTo(y.Weight)
             
@@ -432,13 +465,13 @@ module Graph =
                           (pathsToFind: int)
                           (wr: WeightRatios option)
                           (currentBlockHeight: BlockHeight)
-                          (boundaries: RichWeight -> bool): WeightedPath seq =
+                          (boundaries: RichWeight -> bool): ResizeArray<WeightedPath> =
         let mutable allSpurPathsFound = false
         // Stores tha shortest paths
         let shortestPaths = ResizeArray<WeightedPath>()
         // Stores the candidates for k(K+1) shortest paths
-        // we instantiate by isDescending=false, so `Pop` should return the lowest cost
-        let candidates = Heap.empty true
+        // we instantiate by isDescending=false, so `Pop` should return the lowest cost element
+        let mutable candidates = Heap.empty false
         
         // find the shortest path, k = 0
         let initialWeight = { RichWeight.Cost = amount;
@@ -457,22 +490,27 @@ module Graph =
                                  currentBlockHeight
                                  wr
         shortestPaths.Add(
-            { WeightedPath.Path = shortestPath
+            { WeightedPath.Path = shortestPath |> Seq.toList
               Weight = pathWeight(shortestPath) (amount) false currentBlockHeight wr }
             )
-        if ((shortestPath |> Seq.length) = 0) then Seq.empty else
+        printfn "first found shortest path was %A" shortestPaths
+        if ((shortestPath.Count()) = 0) then ResizeArray() else
         for k in 1..(pathsToFind - 1) do
             if (not <| allSpurPathsFound) then
                 let edgeNum = shortestPaths.[k - 1].Path.Count()
+                printfn "edge num was %d" edgeNum
                 /// for each edge in the path
                 for i in 0..(edgeNum - 1) do
+                    printfn "examining %dth edge in the path" i
                     let prevShortestPath = shortestPaths.[k - 1].Path
+                    printfn "prevShortestPath is %A" (prevShortestPath |> Seq.map(fun x -> x.Desc.ShortChannelId))
                     // select the spur node as the i-th element of the k-the previous shortest path (k - 1)
                     let spurEdge = prevShortestPath |> Seq.item i
                     // select the sub-path from the source to the spur node of the k-th previous shortest path
                     let rootPathEdges =
                         if (i = 0) then prevShortestPath |> Seq.head |> List.singleton else
-                        prevShortestPath |> Seq.take i |> Seq.toList
+                        prevShortestPath |> Seq.truncate i |> Seq.toList
+                    printfn "rootPathEdges were %A" (rootPathEdges |> List.map(fun x -> x.Desc.ShortChannelId))
                     let rootPathWeight =
                         pathWeight
                             (rootPathEdges)
@@ -486,10 +524,12 @@ module Graph =
                     let edgesToIgnore =
                         seq {
                             for weightedPath in shortestPaths do
-                                if (i = 0 &&
-                                        (weightedPath.Path |> Seq.head |> List.singleton = rootPathEdges ||
-                                         weightedPath.Path |> Seq.take i |> Seq.toList = rootPathEdges)) then
+                                if (weightedPath.Path |> Seq.isEmpty) then () else
+                                if (i = 0 && (weightedPath.Path |> Seq.head |> List.singleton = rootPathEdges)) ||
+                                   (weightedPath.Path |> Seq.truncate i |> Seq.toList = rootPathEdges) then
                                     yield (weightedPath.Path |> Seq.item i).Desc
+                                else
+                                    yield! []
                         }
                         
                     // remove any link that can lead back to the previous vertex to avoid going back from where
@@ -505,7 +545,10 @@ module Graph =
                     // find the "spur" path, a sub-path going from the spur edge to the target avoiding previously
                     // found sub-paths
                     let spurPath =
+                        printfn "returningEdges are %A" returningEdges
+                        printfn "edgesToIgnore are %A" edgesToIgnore
                         let ignoredE = ignoredEdges |> Set.union (Set(edgesToIgnore)) |> Set.union(Set(returningEdges))
+                        printfn "ignoredE is %A" (ignoredE |> Seq.map(fun x -> x.ShortChannelId))
                         dijkstraShortestPath
                             (g)
                             spurEdge.Desc.A
@@ -517,26 +560,36 @@ module Graph =
                             boundaries
                             currentBlockHeight
                             wr
+                        |> List.ofSeq
                             
+                    printfn "spurPath was %A" (spurPath |> List.map(fun x -> x.Desc.ShortChannelId))
                     // if there wasn't a path the spur will be empty
                     if (spurPath.Count() <> 0) then
                         // candidate k-shortest path is made of the rootPath and the new spurPath
                         let totalPath =
                             if rootPathEdges.Head.Desc.A = (spurPath |> Seq.head).Desc.A then
                                 // if the heads are the same node, drop it from the rootPath
-                                seq { for i in (rootPathEdges |> List.tail) do yield i; yield! spurPath }
+                                let t = List.concat[ (rootPathEdges |> List.tail); spurPath ]
+                                t
                             else
-                                seq { for i in rootPathEdges do yield i; yield! spurPath }
+                                List.concat [rootPathEdges; spurPath]
+                        printfn "totalPath was %A" (totalPath |> List.map(fun x -> x.Desc.ShortChannelId))
                         let candidatePath = { WeightedPath.Path = totalPath; Weight = pathWeight(totalPath) (amount) false currentBlockHeight wr }
                         if (boundaries(candidatePath.Weight) &&
-                            not <| shortestPaths.Contains(candidatePath) &&
-                            not <| (candidates |> Seq.exists((=)candidatePath))) then
-                            candidates.Insert(candidatePath) |> ignore
-                if (candidates.IsEmpty) then
-                    // handles the case of having exhausted all possible spur paths and it's impossible to
-                    // reach the target from the source
-                    allSpurPathsFound <- true
-                else
-                    let (best, _) = candidates |> PriorityQueue.pop
-                    shortestPaths.Add(best)
-        shortestPaths :> seq<_>
+                            (not <| shortestPaths.Contains(candidatePath)) &&
+                            (not <| (candidates |> Seq.exists((=)candidatePath)))) then
+                            printfn "so going to updating canditate"
+                            candidates <- candidates.Insert(candidatePath)
+                        else
+                            printfn "so not going to updating canditate"
+            if (candidates.IsEmpty) then
+                printfn "candidates were empty"
+                // handles the case of having exhausted all possible spur paths and it's impossible to
+                // reach the target from the source
+                allSpurPathsFound <- true
+            else
+                let (best, c) = candidates.Uncons()
+                candidates <- c
+                printfn "best candidate is %A" best
+                shortestPaths.Add(best)
+        shortestPaths
