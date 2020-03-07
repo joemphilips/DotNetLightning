@@ -328,7 +328,7 @@ module Primitives =
         member x.Value = let (TxIndexInBlock v) = x in v
 
 
-    [<Struct>]
+    [<Struct;StructuredFormatDisplay("{AsString}")>]
     type ShortChannelId = {
         BlockHeight: BlockHeight
         BlockIndex: TxIndexInBlock
@@ -358,6 +358,8 @@ module Primitives =
                     |]
         override this.ToString() =
             sprintf "%dx%dx%d" this.BlockHeight.Value this.BlockIndex.Value this.TxOutIndex.Value
+            
+        member this.AsString = this.ToString()
             
         static member TryParse(s: string) =
             let items = s.Split('x')
