@@ -12,7 +12,6 @@ open DotNetLightning.Routing.Graph
 
 open DotNetLightning.Payment
 open DotNetLightning.Serialize
-open DotNetLightning.Utils.Primitives
 open Generators
 open GraphTests
 open GraphTests.Constants
@@ -64,7 +63,7 @@ let hops2Edges (route: ChannelHop seq) =
               B = h.NodeIdValue }
           Update = h.LastUpdateValue })
 [<Tests>]
-let tests = ftestList "Route Calculation" [
+let tests = testList "Route Calculation" [
     let calculateRouteSimple routeParams =
         let updates = [
                 makeUpdate(1UL, a, b, LNMoney.MilliSatoshis(1L), 10u, None, None, BlockHeightOffset.One |> Some)
@@ -165,11 +164,9 @@ let tests = ftestList "Route Calculation" [
             |> Result.deref
         Expect.sequenceEqual (hops2Ids(route)) [4UL] ""
         
-    let (f, g, h, i) = (
-        "02999fa724ec3c244e4da52b4a91ad421dc96c9a810587849cd4b2469313519c73" |> (hex.DecodeData >> PubKey >> NodeId), // F source
-        "03f1cb1af20fe9ccda3ea128e27d7c39ee27375c8480f11a87c17197e97541ca6a" |> (hex.DecodeData >> PubKey >> NodeId), // G
-        "0358e32d245ff5f5a3eb14c78c6f69c67cea7846bdf9aeeb7199e8f6fbb0306484" |> (hex.DecodeData >> PubKey >> NodeId), // H
-        "029e059b6780f155f38e83601969919aae631ddf6faed58fe860c72225eb327d7c" |> (hex.DecodeData >> PubKey >> NodeId) // I target
+    let (h, i) = (
+        "03de6411928b3b0217b50b27b269aea8457f7b88797402fff3e86f2d28775af5d5" |> (hex.DecodeData >> PubKey >> NodeId), // H
+        "03ffda25c95266e33c06c8006bbcd3985932a79580dfb07d95855c332a0e13b9ef" |> (hex.DecodeData >> PubKey >> NodeId) // I target
         )
     testCase "find a route using channels with hltcMaximumMsat close to the payment amount" <| fun _ ->
         let updates = [
@@ -659,7 +656,7 @@ let tests = ftestList "Route Calculation" [
        // | D +----------> | E +----------> | F |
        // +---+            +---+            +---+
        //
-    testCase "find the k-shortest paths in a graph, k = 4" <| fun _ ->
+    ftestCase "find the k-shortest paths in a graph, k = 4" <| fun _ ->
         let updates = [
             makeUpdate(1UL, d, a, LNMoney.One, 0u, None, None, None)
             makeUpdate(2UL, d, e, LNMoney.One, 0u, None, None, None)
@@ -673,8 +670,9 @@ let tests = ftestList "Route Calculation" [
         let fourShortestPaths =
             Graph.yenKShortestPaths g d f DEFAULT_AMOUNT_MSAT (Set.empty)(Set.empty)(Set.empty) 4 None (BlockHeight.One) (fun _ -> true)
             |> Seq.toList
-        Expect.equal (fourShortestPaths.Length) 4 ""
+        Expect.equal (fourShortestPaths.Length) 4 (sprintf "found shortest paths were %A" fourShortestPaths)
         let actuals = [ for i in 0..3 do fourShortestPaths.[i].Path |> Seq.map ChannelHop.FromGraphEdge |> hops2Ids ]
+        printfn "four shortest paths were %A" actuals
         Expect.sequenceEqual actuals.[0] [2UL; 5UL] ""
         Expect.sequenceEqual actuals.[1] [1UL; 3UL; 5UL] ""
         Expect.sequenceEqual actuals.[2] [2UL; 4UL; 6UL; 7UL] ""
