@@ -1,10 +1,9 @@
 namespace DotNetLightning.Serialize
 
 
-open DotNetLightning.Utils.Primitives
+open DotNetLightning.Utils
 open System
 open NBitcoin
-open ResultUtils
 
 type InitTLV =
     /// genesis chain hash that the node is interested in
@@ -97,3 +96,42 @@ type ReplyChannelRangeTLV =
             let b = checksums |> Array.map(fun i -> i.ToBytes()) |> Array.concat
             { Type = 3UL; Value = b }
         | Unknown x -> x
+        
+type HopPayloadTLV =
+    | AmountToForward of LNMoney
+    | OutgoingCLTV of uint32
+    | ShortChannelId of ShortChannelId
+    | PaymentData of paymentSecret: PaymentPreimage * totalMsat: LNMoney
+    | Unknown of GenericTLV
+    with
+    static member FromGenericTLV(tlv: GenericTLV) =
+        match tlv.Type with
+        | 2UL ->
+            NBitcoin.Utils.ToUInt64(tlv.Value, false)
+            |> LNMoney.MilliSatoshis
+            |> AmountToForward
+        | 4UL ->
+            NBitcoin.Utils.ToUInt32(tlv.Value, false)
+            |> OutgoingCLTV
+        | 6UL ->
+            ShortChannelId.From8Bytes(tlv.Value)
+            |> ShortChannelId
+        | 8UL ->
+            let secret = tlv.Value.[0..PaymentPreimage.LENGTH - 1] |> PaymentPreimage.Create
+            let totalMSat = NBitcoin.Utils.ToUInt64(tlv.Value.[PaymentPreimage.LENGTH..], false) |> LNMoney.MilliSatoshis
+            (secret, totalMSat) |> PaymentData
+        | _ -> Unknown tlv
+        
+    member this.ToGenericTLV() =
+        match this with
+        | AmountToForward x ->
+            { Type = 2UL; Value = Utils.ToBytes(uint64 x.MilliSatoshi, false) }
+        | OutgoingCLTV x ->
+            { Type = 4UL; Value = Utils.ToBytes(x, false) }
+        | ShortChannelId x ->
+            { Type = 6UL; Value = x.ToBytes() }
+        | PaymentData(secret, amount) ->
+            let value = Array.concat[ secret.ToByteArray(); Utils.ToBytes(uint64 amount.MilliSatoshi, false) ]
+            { Type = 8UL; Value = value }
+        | Unknown x -> x
+            

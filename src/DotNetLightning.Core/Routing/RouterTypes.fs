@@ -27,7 +27,6 @@ type NetworkCommand =
     | ExcludeChannel of desc: ChannelDesc
     | CalculateRoute of RouteRequest
     
-    
 type RouterError =
     | RouteFindingError of string
 [<AutoOpen>]

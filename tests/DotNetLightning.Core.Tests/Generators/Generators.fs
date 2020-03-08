@@ -1,5 +1,6 @@
 module Generators
 
+open DotNetLightning.Serialize
 open NBitcoin
 open NBitcoin.Crypto
 open DotNetLightning.Utils
@@ -19,7 +20,7 @@ type PrimitiveGenerators =
     static member PubKey() = Arb.fromGen(pubKeyGen)
     
     static member NodeId() = Arb.fromGen(NodeId <!> pubKeyGen)
-
+    
 type P2PMsgGenerators =
     static member Init() : Arbitrary<Init> =
         Arb.fromGen(initGen)
@@ -106,6 +107,8 @@ type P2PMsgGenerators =
     
     static member ReplyChannelRange = Arb.fromGen replyChannelRangeGen
     static member GossipTimestampFilter = Arb.fromGen gossipTimestampFilterGen
+    static member OnionPayload() = Arb.fromGen(onionPayloadGen)
+
     static member P2PMsg(): Arbitrary<ILightningMsg> =
         Gen.oneof [
             initGen |> Gen.map(fun i -> i :> ILightningMsg)

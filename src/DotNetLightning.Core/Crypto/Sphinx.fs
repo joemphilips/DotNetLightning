@@ -250,11 +250,11 @@ module Sphinx =
                     ms.ToArray()
                 forwardErrorPacket(Array.append (mac(um, payload).ToBytes()) payload, ss)
 
-            static member Parse(packet: byte[], ss: (Key * PubKey) list) =
+            static member TryParse(packet: byte[], ss: (Key * PubKey) list) =
                 let ssB = ss |> List.map(fun (k, pk) -> (k.ToBytes(), pk))
-                ErrorPacket.Parse(packet, ssB)
+                ErrorPacket.TryParse(packet, ssB)
 
-            static member Parse(packet: byte[], ss: (byte[] * PubKey) list): Result<ErrorPacket, CryptoError> =
+            static member TryParse(packet: byte[], ss: (byte[] * PubKey) list): Result<ErrorPacket, CryptoError> =
                 if (packet.Length <> ERROR_PACKET_LENGTH) then
                     InvalidErrorPacketLength (ERROR_PACKET_LENGTH, packet.Length) |> Error
                 else
