@@ -7,10 +7,8 @@ open DotNetLightning.Utils
 open DotNetLightning.Serialize.Msgs
 
 open System
-open System.Collections.Generic
 open DotNetLightning.Payment
 open DotNetLightning.Routing.Graph
-open Graph
 open NBitcoin
 
 module Routing =
