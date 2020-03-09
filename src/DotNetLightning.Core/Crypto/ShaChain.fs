@@ -13,13 +13,13 @@ type ShaChain = {
     with    
         static member Zero = { KnownHashes = Map.empty; LastIndex = None }
 module ShaChain =
-    let flip (input: byte[]) (index: uint64): byte[] =
+    let flip (_input: byte[]) (_index: uint64): byte[] =
         failwith ""
 
-    let addHash (receiver: ShaChain) (hash: byte[]) (index: uint64) =
+    let addHash (_receiver: ShaChain) (_hash: byte[]) (_index: uint64) =
         failwith ""
 
-    let getHash (receiver: ShaChain)(index: uint64) =
+    let getHash (_receiver: ShaChain)(_index: uint64) =
         failwith  ""
 
 type ShaChain with

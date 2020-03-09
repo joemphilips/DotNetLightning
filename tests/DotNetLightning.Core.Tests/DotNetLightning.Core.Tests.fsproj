@@ -9,7 +9,6 @@
     <Compile Include="AssemblyInfo.fs" />
     <Content Include="Data\bolt3-tx.json" />
     <Content Include="Data\bolt1-bigsize.json" />
-    <Content Include="Data\bolt11.json" />
     <Compile Include="Utils/Utils.fs" />
     <Compile Include="Utils/FromRustLightning.fs" />
     <Compile Include="Generators/Primitives.fs" />
@@ -21,6 +20,8 @@
     <Compile Include="FunctionalTests.fs" />
     <Compile Include="SphinxTests.fs" />
     <Compile Include="GeneratorsTests.fs" />
+    <Compile Include="GraphTests.fs" />
+    <Compile Include="RouteCalculationTests.fs" />
     <Compile Include="TransactionBolt3TestVectorTests.fs" />
     <Compile Include="ClaimReceivedHTLCTests.fs" />
     <Compile Include="TransactionTests.fs" />

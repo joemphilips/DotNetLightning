@@ -9,10 +9,7 @@ open System
 open System.IO
 open System.IO.Compression
 
-type EncodingType =
-    | SortedPlain = 0uy
-    | ZLib = 1uy
-    
+
 module Decoder =
     let private tryDecode (encodingType: EncodingType) (bytes : byte[]) =
         if bytes.Length = 0 then bytes |> Ok else

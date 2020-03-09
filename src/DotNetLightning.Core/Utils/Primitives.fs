@@ -7,6 +7,8 @@ open System
 open System.Net
 open System.Linq
 
+open ResultUtils
+
 [<AutoOpen>]
 module Primitives =
 
@@ -31,6 +33,7 @@ module Primitives =
     [<Struct>]
     type BlockHeight = | BlockHeight of uint32 with
         static member Zero = 0u |> BlockHeight
+        static member One = 1u |> BlockHeight
         member x.Value = let (BlockHeight v) = x in v
         member x.AsOffset() =
             x.Value |> Checked.uint16 |> BlockHeightOffset
@@ -53,6 +56,8 @@ module Primitives =
         static member op_Implicit (v: uint16) =
             BlockHeightOffset v
         static member One = BlockHeightOffset(1us)
+        static member Zero = BlockHeightOffset(0us)
+        static member MaxValue = UInt16.MaxValue |> BlockHeightOffset
         static member (+) (a: BlockHeightOffset, b: BlockHeightOffset) =
             a.Value + b.Value |> BlockHeightOffset
         static member (-) (a: BlockHeightOffset, b: BlockHeightOffset) =
@@ -62,9 +67,9 @@ module Primitives =
     /// 1. It is equatable
     /// 2. Some Convenience methods for serialization
     /// 3. Custom `ToString`
-    [<CustomEquality;NoComparison;StructuredFormatDisplay("{AsString}")>]
-    type LNECDSASignature = | LNECDSASignature of ECDSASignature with
-        member x.Value = let (LNECDSASignature v) = x in v
+    [<CustomEquality;CustomComparison;StructuredFormatDisplay("{AsString}")>]
+    type LNECDSASignature = LNECDSASignature of ECDSASignature | Empty with
+        member x.Value = match x with LNECDSASignature s -> s | Empty -> failwith "Unreachable!"
         override this.GetHashCode() = hash this.Value
         override this.Equals(obj: obj) =
             match obj with
@@ -73,6 +78,7 @@ module Primitives =
         interface IEquatable<LNECDSASignature> with
             member this.Equals(o: LNECDSASignature) =
                 Utils.ArrayEqual(o.ToBytesCompact(), this.ToBytesCompact())
+                
         /// Originally this method is in NBitcoin.Utils.
         /// But we ported here since it was internal method.
         member private this.BigIntegerToBytes(b: BouncyCastle.Math.BigInteger, numBytes: int) =
@@ -104,6 +110,18 @@ module Primitives =
             if (isNull <| box r.[0]) then r.[0] <- 255uy
             r
             
+        /// Logic does not really matter here. This is just for making life easier by enabling automatic implementation
+        /// of `StructuralComparison` for wrapper types.
+        member this.CompareTo(e: LNECDSASignature) =
+            let a = this.ToBytesCompact() |> fun x -> Utils.ToUInt64(x, true)
+            let b = e.ToBytesCompact() |>  fun x -> Utils.ToUInt64(x, true)
+            a.CompareTo(b)
+        interface IComparable with
+            member this.CompareTo(o: obj) =
+                match o with
+                | :? LNECDSASignature as e -> this.CompareTo(e)
+                | _ -> -1
+                
         member this.ToDER() =
             this.Value.ToDER()
             
@@ -173,13 +191,53 @@ module Primitives =
         static member Zero = uint256.Zero |> ChannelId
 
     type ConnectionId = ConnectionId of Guid
+    [<CustomEquality;CustomComparison>]
     type PeerId = PeerId of EndPoint
+        with
+        member this.Value = let (PeerId ep) = this in ep
+        
+        override this.GetHashCode() = this.Value.GetHashCode()
+        member this.Equals(o: PeerId) =
+            this.Value.ToEndpointString().Equals(o.Value.ToEndpointString())
+        override this.Equals(o: obj) =
+            match o with
+            | :? PeerId as p -> this.Equals(p)
+            | _ -> false
+        interface IEquatable<PeerId> with
+            member this.Equals o = this.Equals(o)
+        member this.CompareTo(o: PeerId) =
+            this.Value.ToEndpointString().CompareTo(o.Value.ToEndpointString())
+            
+        interface IComparable with
+            member this.CompareTo(o: obj) =
+                match o with
+                | :? PeerId as p -> this.CompareTo(p)
+                | _ -> -1
 
+    [<CustomEquality;CustomComparison>]
+    type ComparablePubKey = ComparablePubKey of PubKey with
+        member x.Value = let (ComparablePubKey v) = x in v
+        interface IComparable with
+            override this.CompareTo(other) =
+                match other with
+                | :? ComparablePubKey as n -> this.Value.CompareTo(n.Value)
+                | _ -> -1
+        override this.GetHashCode() = this.Value.GetHashCode()
+        override this.Equals(other) =
+            match other with
+            | :? ComparablePubKey as n -> this.Value.Equals(n.Value)
+            | _              -> false
+        static member op_Implicit (pk: PubKey) =
+            pk |> ComparablePubKey
+            
     [<CustomEquality;CustomComparison>]
     type NodeId = | NodeId of PubKey with
         member x.Value = let (NodeId v) = x in v
         interface IComparable with
-            override this.CompareTo(other) = if isNull other then -1 else this.Value.CompareTo((other :?> NodeId).Value)
+            override this.CompareTo(other) =
+                match other with
+                | :? NodeId as n -> this.Value.CompareTo(n.Value)
+                | _ -> -1
         override this.Equals(other) =
             match other with
             | :? NodeId as n -> this.Value.Equals(n.Value)
@@ -190,6 +248,7 @@ module Primitives =
     [<StructuralComparison;StructuralEquality>]
     type TxId = | TxId of uint256 with
         member x.Value = let (TxId v) = x in v
+        static member Zero = uint256.Zero |> TxId
         
     /// Small wrapper for NBitcoin's OutPoint type
     /// So that it supports comparison and equality constraints
@@ -269,7 +328,7 @@ module Primitives =
         member x.Value = let (TxIndexInBlock v) = x in v
 
 
-    [<Struct>]
+    [<Struct;StructuredFormatDisplay("{AsString}")>]
     type ShortChannelId = {
         BlockHeight: BlockHeight
         BlockIndex: TxIndexInBlock
@@ -299,6 +358,24 @@ module Primitives =
                     |]
         override this.ToString() =
             sprintf "%dx%dx%d" this.BlockHeight.Value this.BlockIndex.Value this.TxOutIndex.Value
+            
+        member this.AsString = this.ToString()
+            
+        static member TryParse(s: string) =
+            let items = s.Split('x')
+            let err = Error (sprintf "Failed to parse %s" s)
+            if (items.Length <> 3)  then err else
+            match (items.[0] |> UInt32.TryParse), (items.[1] |> UInt32.TryParse), (items.[2] |> UInt16.TryParse) with
+            | (true, h), (true, blockI), (true, outputI) ->
+                {
+                    BlockHeight = h |> BlockHeight
+                    BlockIndex = blockI |> TxIndexInBlock
+                    TxOutIndex = outputI |> TxOutIndex
+                } |> Ok
+            | _ -> err
+        static member ParseUnsafe(s: string) =
+            ShortChannelId.TryParse s
+            |> Result.defaultWith (fun _ -> raise <| FormatException(sprintf "Failed to parse %s" s))
 
     type UserId = UserId of uint64
     type Delimiter =
@@ -309,4 +386,7 @@ module Primitives =
         Green: uint8
         Blue: uint8
     }
+    type EncodingType =
+        | SortedPlain = 0uy
+        | ZLib = 1uy
     

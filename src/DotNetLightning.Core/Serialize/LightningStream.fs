@@ -1,6 +1,5 @@
 namespace DotNetLightning.Serialize
 
-open DotNetLightning.Core.Utils
 open System
 open System.IO
 open DotNetLightning.Utils
@@ -33,7 +32,7 @@ type LightningStream(inner: Stream) =
         and set (v) = this.Inner.Position <- v 
     override this.Seek(offset: int64, origin: SeekOrigin) =
         this.Inner.Seek(offset, origin)
-    override this.SetLength(value: int64) =
+    override this.SetLength(_value: int64) =
         raise (NotSupportedException("SetLength is not supported for LigningStream"))
     override this.Close() =
         this.Inner.Close()

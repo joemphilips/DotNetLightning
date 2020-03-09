@@ -15,6 +15,10 @@ type PrimitiveGenerators =
 
     static member UInt256(): Arbitrary<uint256> =
         Arb.fromGen(uint256Gen)
+        
+    static member PubKey() = Arb.fromGen(pubKeyGen)
+    
+    static member NodeId() = Arb.fromGen(NodeId <!> pubKeyGen)
 
 type P2PMsgGenerators =
     static member Init() : Arbitrary<Init> =

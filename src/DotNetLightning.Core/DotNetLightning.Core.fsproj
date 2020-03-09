@@ -34,6 +34,7 @@
     <Compile Include="Utils/Config.fs" />
     <Compile Include="Utils/Errors.fs" />
     <Compile Include="Utils/RouteType.fs" />
+    <Compile Include="Utils/PriorityQueue.fs" />
     <Compile Include="Serialize\GenericTLV.fs" />
     <Compile Include="Serialize/LightningStream.fs" />
     <Compile Include="Serialize\BitWriter.fs" />
@@ -46,7 +47,6 @@
     <Compile Include="Crypto/CryptoUtils.fs" />
     <Compile Include="Crypto/ShaChain.fs" />
     <Compile Include="Crypto/Sphinx.fs" />
-    <Compile Include="Crypto/StreamCipherStream.fs" />
     <Compile Include="Crypto/Generators.fs" />
     <Compile Include="Chain/ChainInterface.fs" />
     <Compile Include="Chain/KeysInterface.fs" />
@@ -73,6 +73,12 @@
     <Compile Include="Payment\PaymentEvents.fs" />
     <Compile Include="Payment\Amount.fs" />
     <Compile Include="Payment\PaymentRequest.fs" />
+    <Compile Include="Routing\Graph.fs" />
+    <Compile Include="Routing\RouterPrimitives.fs" />
+    <Compile Include="Routing\NetworkStats.fs" />
+    <Compile Include="Routing\RouterState.fs" />
+    <Compile Include="Routing\RouterTypes.fs" />
+    <Compile Include="Routing\Router.fs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="4.7.0" />

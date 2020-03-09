@@ -47,16 +47,23 @@ type LNMoney = | LNMoney of int64 with
     static member Satoshis(sats: int64) =
         LNMoney.MilliSatoshis(Checked.op_Multiply 1000L sats)
 
+    static member inline Satoshis(sats) =
+        LNMoney.Satoshis(int64 sats)
+
     static member Satoshis(sats: uint64) =
         LNMoney.MilliSatoshis(Checked.op_Multiply 1000UL sats)
 
     static member MilliSatoshis(sats: int64) =
         LNMoney(sats)
 
+    static member inline MilliSatoshis(sats) =
+        LNMoney(int64 sats)
+
     static member MilliSatoshis(sats: uint64) =
         LNMoney(Checked.int64 sats)
 
     static member Zero = LNMoney(0L)
+    static member One = LNMoney(1L)
     static member TryParse(bitcoin: string, result: outref<LNMoney>) =
         match Decimal.TryParse(bitcoin, LNMoney.BitcoinStyle, CultureInfo.InvariantCulture) with
         | false, _ -> false
@@ -76,8 +83,16 @@ type LNMoney = | LNMoney of int64 with
     static member (-) (LNMoney a, LNMoney b) = LNMoney(a - b)
     static member (*) (LNMoney a, LNMoney b) = LNMoney(a * b)
     static member (/) (LNMoney a, LNMoney b) = LNMoney(a / b)
-    static member Max(LNMoney a, LNMoney b) = if a >= b then a else b
-    static member Min(LNMoney a, LNMoney b) = if a <= b then a else b
+    static member inline (/) (LNMoney a, b) = LNMoney(a / (int64 b))
+    static member inline (+) (LNMoney a, b) = LNMoney(a + (int64 b))
+    static member inline (-) (LNMoney a, b) = LNMoney(a - (int64 b))
+    static member inline (*) (LNMoney a, b) = LNMoney(a * (int64 b))
+    static member Max(LNMoney a, LNMoney b) = if a >= b then LNMoney a else LNMoney b
+    static member Min(LNMoney a, LNMoney b) = if a <= b then LNMoney a else LNMoney b
+    
+    static member MaxValue =
+        let maxSatoshis = 21000000UL * (uint64 Money.COIN)
+        LNMoney.Satoshis maxSatoshis
 
     static member op_Implicit (money: Money) = LNMoney.Satoshis(money.Satoshi)
 

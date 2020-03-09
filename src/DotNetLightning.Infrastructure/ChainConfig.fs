@@ -30,33 +30,12 @@ module SupportedTypes =
         | InMemory
         | FlatFile of path: string
 
-type RouterConfig() =
-    member val ChannelExcludeDuration: DateTimeOffset = Unchecked.defaultof<DateTimeOffset> with get, set
-    member val RouterBroadcastInterval: DateTimeOffset = Unchecked.defaultof<DateTimeOffset> with get, set
-    member val RandomizeRouteSelection: bool = true with get, set
-    member val SearchMaxRouteLength: int = 6 with get, set
-    // max acceptable cltv expiry fo the payment (1008 ~ 1 week)
-    member val SearchMaxCLTV: int = 1008 with get, set
-    // if fee is below this value we skip the MaxFeePct check
-    member val SearchMaxFeeBaseSat: int = 21 with get, set
-    // route will be discarded if fee is above this value
-    member val SearchMaxFeePct: float = 0.03 with get, set
-    // channel 'weight' is computed with the following formula
-    // channelFee * (cltvDelta * ratio-cltv + channelAge + channelCapacity * ratio-channel-capacity)
-    // following parameters can be used to ask the router to use heuristics to find i.e: 'cltv-optimized' routes,
-    // **the sum of the three ratios must be > 0 and <= 1 **
-    member val SearchHeuristicsEnabled: bool = true with get, set
-    member val SearchRatioCLTV: float = 0.15 with get, set
-    member val SearchRatioChannelAge: float = 0.35 with get, set
-    member val SearchRatioChannelCapacity: float = 0.5 with get, set
-
 /// configuration specific to particular chain
 type ChainConfig() =
     member val Alias: string = "" with get, set
     // default color is the same with github's `F#`
     // refs: https://github.com/ozh/github-colors
     member val Color: RGB = { RGB.Red = 184uy; Green = 69uy; Blue = 252uy } with get, set
-    member val RouterConfig = RouterConfig() with get
     member val DataDirPath: string = null with get, set
     
     member val Network = DotNetLightningNetwork() with get, set
@@ -133,7 +112,6 @@ type ChainConfig() =
     member val ForceChannelAnnouncementPreference = false with get, set
     member val PaymentRequestExpiry: DateTimeOffset= Unchecked.defaultof<DateTimeOffset> with get, set
     member val MinFundingSatoshis: Money = Money.Satoshis(100000L)
-    member val RouterConf: RouterConfig = RouterConfig()
     member val SocksProxy: Socks5Params option = None
     member val MaxPaymentAttempts: int = 5
     
@@ -142,6 +120,7 @@ type ChainConfig() =
     /// If None is given, we will call `IKeysRepository.GetShutDownPubKey()` and
     /// send it to its P2WPKH
     member val ShutdownScriptPubKey: Script option = None
+    member val RouterConfig = RouterConfig() with get
     with
     member this.GetChannelConfig() =
         {

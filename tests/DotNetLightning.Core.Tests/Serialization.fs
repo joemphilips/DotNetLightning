@@ -120,8 +120,8 @@ module SerializationTest =
                         ShortChannelId = ShortChannelId.FromUInt64(2316138423780173UL)
                         NodeId1 = NodeId(privKey1.PubKey)
                         NodeId2 = NodeId(privKey2.PubKey)
-                        BitcoinKey1 = privKey3.PubKey
-                        BitcoinKey2 = privKey4.PubKey
+                        BitcoinKey1 = !> privKey3.PubKey
+                        BitcoinKey2 = !> privKey4.PubKey
                         ExcessData = if excessData then ([| 10; 0; 0; 20; 0; 0; 30; 0; 0; 40 |] |> Array.map(byte)) else [||]
                     }
                     let channelAnnouncement = {
