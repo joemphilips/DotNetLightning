@@ -1,11 +1,10 @@
 module SerializationPropertyTests
 
+open ResultUtils
 open System.IO
 
-open NBitcoin.Crypto
 open Expecto
 open DotNetLightning.Utils
-open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Serialize
 open DotNetLightning.Serialize.Msgs
 open Generators
@@ -131,4 +130,9 @@ let testList2 =
             | Error ex ->
                 failwithf "failed to decode %A" ex
                 
+        testPropertyWithConfig config "onion payloads" <| fun (payload: OnionPayload) ->
+            let b = payload.ToBytes()
+            let f = OnionPayload.FromBytes(b) |> Result.deref
+            Expect.equal f payload ""
+            
     ]

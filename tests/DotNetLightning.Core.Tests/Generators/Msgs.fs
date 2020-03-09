@@ -1,15 +1,12 @@
 module MsgGenerators
 
-open System.Collections
 open DotNetLightning.Serialize.Msgs
-open DotNetLightning.Core.Utils.Extensions
 open DotNetLightning.Serialize
 open DotNetLightning.Utils.OnionError
 open PrimitiveGenerators
 open FsCheck
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils
-open DotNetLightning.Utils.Primitives
 
 let (<*>) = Gen.apply
 
@@ -567,3 +564,33 @@ let gossipTimestampFilterGen: Gen<GossipTimestampFilter> = gen {
     return { ChainHash = ch; FirstTimestamp = tsFirst; TimestampRange = tsRange }
 }
 
+let private hopPayloadTlvGen =
+    let paymentDataGen: Gen<_ * _> =
+        ((PaymentPreimage.Create <!> bytesOfNGen(32)), (lnMoneyGen))
+        ||> Gen.map2(fun a b -> (a, b))
+    Gen.frequency
+        [(1, AmountToForward <!> lnMoneyGen)
+         (1, OutgoingCLTV <!> Arb.generate<uint32>)
+         (1, HopPayloadTLV.ShortChannelId <!> shortChannelIdsGen)
+         (1, PaymentData <!> paymentDataGen)]
+let private onionPayloadTlvGen =
+    Gen.frequency
+        [(1, genericTLVGen([2UL; 4UL; 6UL; 8UL]) |> Gen.map(HopPayloadTLV.Unknown))
+         (4, hopPayloadTlvGen)]
+let tlvOnionPayloadGen =
+    gen {
+        let! tlv = Gen.nonEmptyListOf onionPayloadTlvGen |> Gen.map(List.toArray)
+        let! hmac = uint256Gen
+        return (tlv, hmac) |> OnionPayload.TLVPayload
+    }
+let private legacyOnionPayloadGen =
+    gen {
+        let! scid = shortChannelIdsGen
+        let! amt = lnMoneyGen
+        let! cltv = Arb.generate<uint32>
+        return { ShortChannelId = scid; AmtToForward = amt; OutgoingCLTVValue = cltv } |> OnionPayload.Legacy
+    }
+let onionPayloadGen =
+    Gen.frequency
+        [(3, tlvOnionPayloadGen)
+         (1, legacyOnionPayloadGen)]

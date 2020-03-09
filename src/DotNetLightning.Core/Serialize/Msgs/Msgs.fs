@@ -1330,12 +1330,6 @@ and NodeFailure = {
 }
 
 
-type OnionRealm0HopData = {
-    ShortChannelId: ShortChannelId
-    AmtToForward: LNMoney
-    OutgoingCLTVValue: uint32
-}
-
 [<CLIMutable>]
 type QueryShortChannelIds = {
     mutable ChainHash: uint256

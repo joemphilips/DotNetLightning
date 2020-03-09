@@ -1,5 +1,6 @@
 module DotNetLightning.Core.Utils.Extensions
 
+open NBitcoin
 open System.Linq
 open System
 open System.Collections
@@ -16,6 +17,36 @@ type System.UInt64 with
     member this.GetBytesBigEndian() =
         let d = BitConverter.GetBytes(this)
         if BitConverter.IsLittleEndian then (d |> Array.rev) else d
+    member x.ToVarInt() =
+        if x < 0xfdUL then
+            [|uint8 x|]
+        else if x < 0x10000UL then
+            let buf = Array.zeroCreate(3)
+            buf.[0] <- (0xfduy)
+            buf.[1] <- (byte (x >>> 8))
+            buf.[2] <- byte x
+            buf
+        else if x < 0x100000000UL then
+            let buf = Array.zeroCreate(5)
+            buf.[0] <- (0xfeuy)
+            buf.[1] <- (byte (x >>> 24))
+            buf.[2] <- (byte (x >>> 16))
+            buf.[3] <- (byte (x >>> 8))
+            buf.[4] <- (byte x)
+            buf
+        else
+            let buf = Array.zeroCreate(9)
+            buf.[0] <- (0xffuy)
+            buf.[1] <- (byte (x >>> 56))
+            buf.[2] <- (byte (x >>> 48))
+            buf.[3] <- (byte (x >>> 40))
+            buf.[4] <- (byte (x >>> 32))
+            buf.[5] <- (byte (x >>> 24))
+            buf.[6] <- (byte (x >>> 16))
+            buf.[7] <- (byte (x >>> 8))
+            buf.[8] <- (byte x)
+            buf
+        
 type System.UInt32 with
     member this.GetBytesBigEndian() =
         let d = BitConverter.GetBytes(this)
@@ -24,6 +55,11 @@ type System.UInt16 with
     member this.GetBytesBigEndian() =
         let d = BitConverter.GetBytes(this)
         if BitConverter.IsLittleEndian then (d |> Array.rev) else d
+    static member FromBytesBigEndian(value: byte[]) =
+        ((uint16 value.[0]) <<< 8 ||| (uint16 value.[1]))
+        
+type System.Int64 with
+    member this.ToVarInt() = (uint64 this).ToVarInt()
 type System.Byte
     with
     member a.FlipBit() =
@@ -40,6 +76,28 @@ type BitArrayExtensions() =
         db.Append("0x") |> ignore
         this |> Seq.iter(fun b -> sprintf "%X" b |> db.Append |> ignore)
         db.ToString()
+        
+    [<Extension>]
+    static member TryPopVarInt(this: byte array) =
+        let e b = sprintf "Decoded VarInt is not canonical %A" b |> Error
+        let x = this.[0]
+        if x < 0xfduy then
+            ((uint64 x), this.[1..]) |> Ok
+        else if x = 0xfduy then
+            if (this.Length < 2) then e this else
+            let v = this.[1..2] |> UInt16.FromBytesBigEndian |> uint64
+            if (v < 0xfdUL || 0x10000UL <= v) then e this else
+            (v, this.[3..]) |> Ok
+        else if x = 0xfeuy then
+            if (this.Length < 4) then e this else
+            let v = this.[1..4] |> fun x -> NBitcoin.Utils.ToUInt32(x, false) |> uint64
+            if (v < 0x10000UL || 0x100000000UL <= v) then e this else
+            (v, this.[5..]) |> Ok
+        else
+            if (this.Length < 8) then e this else
+            let v = this.[1..8] |> fun x -> NBitcoin.Utils.ToUInt64(x, false)
+            if (v < 0x100000000UL) then e this else
+            (v, this.[9..]) |> Ok
         
 type System.Collections.BitArray with
     member this.ToByteArray() =
