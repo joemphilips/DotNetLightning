@@ -6,13 +6,12 @@
   <Choose>
     <When Condition="'$(BouncyCastle)'=='true'">
       <PropertyGroup>
-        <OtherFlags>$(OtherFlags) --warnon:1182 -d:BouncyCastle</OtherFlags>
+        <OtherFlags>$(OtherFlags) -d:BouncyCastle</OtherFlags>
         <PackageId>DotNetLightning</PackageId>
       </PropertyGroup>
     </When>
     <Otherwise>
       <PropertyGroup>
-        <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
         <PackageId>DotNetLightning.Core</PackageId>
       </PropertyGroup>
     </Otherwise>

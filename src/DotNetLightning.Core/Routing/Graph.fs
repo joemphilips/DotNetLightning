@@ -389,7 +389,8 @@ module Graph =
         let mutable vertexQueue =
             // Ideally, we should use Fibonacci heap for the sake of performance,
             // but to make things easy, we just use regular heap.
-            // isDescending is false, which means root of the heap is the smallest value is the smallest value.
+            // isDescending is false, which means root of the heap is the smallest value,
+            // so that we can pop the min-cost node with constant time.
             Heap.empty<WeightedNode>(false)
             |> PriorityQueue.insert({ WeightedNode.Id = targetNode; Weight = initialWeight })
         
