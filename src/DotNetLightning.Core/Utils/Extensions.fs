@@ -57,7 +57,6 @@ type System.UInt16 with
         if BitConverter.IsLittleEndian then (d |> Array.rev) else d
     static member FromBytesBigEndian(value: byte[]) =
         ((uint16 value.[0]) <<< 8 ||| (uint16 value.[1]))
-        
 type System.Int64 with
     member this.ToVarInt() = (uint64 this).ToVarInt()
 type System.Byte
