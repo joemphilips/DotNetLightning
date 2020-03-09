@@ -372,7 +372,7 @@ type LightningReaderStream(inner: Stream) =
         while rest > 0 do
             result.Add(this.ReadBigSize())
             rest <- int32 this.Length - int32 this.Position
-        result |> Seq.toArray
+        result.ToArray()
                 
     member this.ReadTLV() =
         let ty = this.ReadBigSize()

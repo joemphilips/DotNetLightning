@@ -3,6 +3,7 @@ namespace DotNetLightning.Serialize
     Encoder-Decoder for TLV serialization
 *)
 
+open DotNetLightning.Core.Utils.Extensions
 open DotNetLightning.Utils.Primitives
 open ResultUtils
 open System
@@ -62,9 +63,10 @@ module Decoder =
         use ls = new LightningReaderStream(ms)
         let flags =
             ls.ReadAllAsBigSize()
-            |> Array.map (QueryFlags.TryCreate)
-            |> Seq.sequenceResultM
-            |> Result.map Seq.toArray
+            |> Array.toList
+            |> List.map (QueryFlags.TryCreate)
+            |> List.sequenceResultM
+            |> Result.map List.toArray
         flags
 
     let tryDecodeQueryFlags encodingType d =

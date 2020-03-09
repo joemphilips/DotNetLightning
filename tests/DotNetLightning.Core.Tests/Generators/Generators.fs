@@ -2,7 +2,6 @@ module Generators
 
 open DotNetLightning.Serialize
 open NBitcoin
-open NBitcoin.Crypto
 open DotNetLightning.Utils
 open DotNetLightning.Serialize.Msgs
 open FsCheck
