@@ -41,6 +41,7 @@ type DummyFundingTxProvider(n: Network) =
     interface IFundingTxProvider with
         member this.ProvideFundingTx(dest: IDestination, amount: Money, feerate: FeeRatePerKw) =
             let txb = n.CreateTransactionBuilder()
+            txb.ShuffleRandom <- null
             let dummyKey =
                 "5555555555555555555555555555555555555555555555555555555555555555"
                 |> hex.DecodeData |> Key
@@ -59,7 +60,7 @@ type DummyFundingTxProvider(n: Network) =
             let fees = txb.EstimateFees(feerate.AsNBitcoinFeeRate())
             txb.SendFees(fees) |> ignore
             this.DummyTx <- txb.BuildTransaction(true)
-            (this.DummyTx |> FinalizedTx, 0us |> TxOutIndex) |> Ok
+            (this.DummyTx |> FinalizedTx, 1us |> TxOutIndex) |> Ok
 
 type DummyBroadCaster() =
     interface IBroadCaster with
