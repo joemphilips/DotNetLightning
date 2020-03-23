@@ -14,7 +14,7 @@
     <FscToolPath>/Library/Frameworks/Mono.framework/Versions/Current/Commands</FscToolPath>
     <FscToolExe>fsharpc</FscToolExe>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(IsLinux)' == 'true' AND Exists('/usr/bin/fsharpc')">
+  <PropertyGroup Condition="'$(IsLinux)' == 'true' AND Exists('/usr/bin/fsharpc') AND !Exists('/usr/share/dotnet/dotnet')">
     <FscToolPath>/usr/bin</FscToolPath>
     <FscToolExe>fsharpc</FscToolExe>
   </PropertyGroup>
