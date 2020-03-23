@@ -45,6 +45,4 @@
     <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\..\src\NSec\Experimental\NSec.Experimental.csproj" />
     <ProjectReference Include="..\..\src\ResultUtils\ResultUtils.fsproj" />
   </ItemGroup>
-  <Import Project="..\..\fsc.props" />
-  <Import Project="..\..\netfx.props" />
 </Project>
