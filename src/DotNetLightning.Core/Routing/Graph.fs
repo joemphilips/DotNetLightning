@@ -268,7 +268,7 @@ module Graph =
                 ) ""
                 
     module internal RoutingHeuristics =
-        let BLOCK_TIME_TWO_MONTHS = 8640us |> BlockHeightOffset
+        let BLOCK_TIME_TWO_MONTHS = 8640u |> BlockHeightOffset
         let CAPACITY_CHANNEL_LOW = LNMoney.Satoshis(1000L)
         let CAPACITY_CHANNEL_HIGH = DotNetLightning.Channel.ChannelConstants.MAX_FUNDING_SATOSHIS.Satoshi |> LNMoney.Satoshis
         

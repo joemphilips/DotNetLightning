@@ -123,7 +123,7 @@ type RemoteParams = {
                 DelayedPaymentBasePoint = msg.DelayedPaymentBasepoint
                 HTLCBasePoint = msg.HTLCBasepoint
                 Features = remoteInit.Features
-                MinimumDepth = BlockHeightOffset <| uint16 msg.MinimumDepth.Value
+                MinimumDepth = msg.MinimumDepth
             }
 
         static member FromOpenChannel (nodeId) (remoteInit: Init) (msg: OpenChannel) (channelHandshakeConfig: ChannelHandshakeConfig) =

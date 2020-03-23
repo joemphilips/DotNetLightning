@@ -89,7 +89,7 @@ let openChannelGen =
         <*> (moneyGen)
         <*> (lnMoneyGen)
         <*> (FeeRatePerKw <!> Arb.generate<uint32>)
-        <*> (BlockHeightOffset <!> Arb.generate<uint16>)
+        <*> (BlockHeightOffset <!> Arb.generate<uint32>)
         <*> Arb.generate<uint16>
         <*> pubKeyGen
         <*> pubKeyGen
@@ -126,8 +126,8 @@ let acceptChannelGen =
         <*> lnMoneyGen
         <*> moneyGen
         <*> lnMoneyGen
-        <*> (Arb.generate<uint32> |> Gen.map(BlockHeight))
-        <*> (BlockHeightOffset <!> Arb.generate<uint16>)
+        <*> (BlockHeightOffset <!> Arb.generate<uint32>)
+        <*> (BlockHeightOffset <!> Arb.generate<uint32>)
         <*> Arb.generate<uint16>
         <*> pubKeyGen
         <*> pubKeyGen
@@ -420,7 +420,7 @@ let private unsignedChannelUpdateGen = gen {
     let! ts = Arb.generate<uint32>
     let! messageFlags = Arb.generate<uint8>
     let! channelFlags = Arb.generate<uint8>
-    let! cltvE = BlockHeightOffset <!> Arb.generate<uint16>
+    let! cltvE = BlockHeightOffset <!> Arb.generate<uint32>
     let! htlcMin = lnMoneyGen
     let! feeBase = lnMoneyGen
     let! feePM = Arb.generate<uint32>

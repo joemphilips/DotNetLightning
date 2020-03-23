@@ -20,7 +20,7 @@ module Constants =
     let DEFAULT_ROUTE_PARAMS = { RouteParams.Randomize = false
                                  MaxFeeBase = LNMoney.MilliSatoshis(21000L)
                                  MaxFeePCT = 0.03
-                                 RouteMaxCLTV = 2016us |> BlockHeightOffset
+                                 RouteMaxCLTV = 2016u |> BlockHeightOffset
                                  RouteMaxLength = 6
                                  Ratios = None }
     let privKey1 = Key(hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101"))
@@ -52,7 +52,7 @@ let makeUpdateCore(shortChannelId: ShortChannelId,
                     cltvDelta: BlockHeightOffset option
                     ): (ChannelDesc * UnsignedChannelUpdate) =
     let minHtlc = Option.defaultValue Constants.DEFAULT_AMOUNT_MSAT minHtlc
-    let cltvDelta = Option.defaultValue (BlockHeightOffset(0us)) cltvDelta
+    let cltvDelta = Option.defaultValue (BlockHeightOffset(0u)) cltvDelta
     let desc = { ChannelDesc.ShortChannelId = shortChannelId
                  A = nodeid1
                  B = nodeid2 }

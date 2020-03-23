@@ -27,11 +27,11 @@ module ChannelConstants =
 
     /// The amount of time we require our counterparty wait to claim their money (i.e. time between when
     /// we, or our watchtower, mush check for them having a broadcast a theft transaction).
-    let BREAKDOWN_TIMEOUT = BlockHeightOffset(6us * 24us * 7us) // one week
-    let MAX_LOCAL_BREAKDOWN_TIMEOUT = BlockHeightOffset(6us * 24us * 14us) // two weeks
+    let BREAKDOWN_TIMEOUT = BlockHeightOffset(6u * 24u * 7u) // one week
+    let MAX_LOCAL_BREAKDOWN_TIMEOUT = BlockHeightOffset(6u * 24u * 14u) // two weeks
 
     /// Specified in BOLT 11
-    let MIN_CLTV_EXPIRY = 9us |> BlockHeightOffset
+    let MIN_CLTV_EXPIRY = 9u |> BlockHeightOffset
 
     let MAX_CLTV_EXPIRY = BREAKDOWN_TIMEOUT
 

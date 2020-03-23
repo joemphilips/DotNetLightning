@@ -119,7 +119,7 @@ type ChannelManager(log: ILogger<ChannelManager>,
                             found <- true
                             let txIndex = txInBlock |> fst |> TxIndexInBlock
                             let (nodeId, _) = kv.Value
-                            let depth = 1us |> BlockHeightOffset
+                            let depth = 1u |> BlockHeightOffset
                             let newValue = (nodeId, Some(txIndex, height))
                             this.FundingTxs.TryUpdate(kv.Key, newValue, kv.Value) |> ignore
                             for kv in this.Actors do

@@ -16,7 +16,7 @@ type ChannelHandshakeConfig = {
 
     static member Zero =
         {
-            MinimumDepth = BlockHeightOffset 6us
+            MinimumDepth = BlockHeightOffset 6u
         }
 
 /// Optional Channel limits which are applied during channel creation.
@@ -70,7 +70,7 @@ type ChannelHandshakeLimits = {
             MinMaxAcceptedHTLCs = 0us
             MinDustLimitSatoshis = Money.Satoshis(546m)
             MaxDustLimitSatoshis = Money.Coins(21_000_000m)
-            MaxMinimumDepth = 144us |> BlockHeightOffset
+            MaxMinimumDepth = 144u |> BlockHeightOffset
             ForceChannelAnnouncementPreference = true
             MaxClosingNegotiationIterations = 20
         }

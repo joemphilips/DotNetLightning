@@ -77,13 +77,13 @@ type ChainConfig() =
     /// if `htlc_minimum_msat` sent by other nodes `open_channel` is larger than this.
     /// re will refuse to open channel.
     member val MaxHTLCMinimumMSat: LNMoney = LNMoney.MilliSatoshis(100L) with get, set
-    member val ToRemoteDelayBlocks: BlockHeightOffset = BlockHeightOffset(720us) with get, set
-    member val MaxToLocalDelayBlocks: BlockHeightOffset = BlockHeightOffset(2016us) with get, set
+    member val ToRemoteDelayBlocks: BlockHeightOffset = BlockHeightOffset(720u) with get, set
+    member val MaxToLocalDelayBlocks: BlockHeightOffset = BlockHeightOffset(2016u) with get, set
     
     /// The number of confirmation when we consider the funding tx is locked.
-    member val MinimumDepth = BlockHeightOffset(3us) with get, set
+    member val MinimumDepth = BlockHeightOffset(3u) with get, set
     /// We do not accept channel if other node wants to wait more than this (in block number) before funding tx is locked.
-    member val MaxMinimumDepth  = BlockHeightOffset(144us) with get, set
+    member val MaxMinimumDepth  = BlockHeightOffset(144u) with get, set
     
     // member val SmartFeeNBlocks: BlockHeight
     member val FeeBaseMSat: LNMoney = LNMoney.MilliSatoshis(1000L) with get, set

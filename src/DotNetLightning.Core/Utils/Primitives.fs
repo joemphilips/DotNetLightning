@@ -29,35 +29,31 @@ module Primitives =
                 output.[1] <- byte d
             output
 
-   /// Absolute block height
+    /// Absolute block height
     [<Struct>]
     type BlockHeight = | BlockHeight of uint32 with
         static member Zero = 0u |> BlockHeight
         static member One = 1u |> BlockHeight
         member x.Value = let (BlockHeight v) = x in v
-        member x.AsOffset() =
-            x.Value |> Checked.uint16 |> BlockHeightOffset
         static member (+) (a: BlockHeight, b: BlockHeightOffset) =
-                a.Value + (uint32 b.Value ) |> BlockHeight
+                a.Value + b.Value |> BlockHeight
 
         static member (-) (a: BlockHeight, b: BlockHeightOffset) =
-            a.Value - (uint32 b.Value) |> BlockHeight
+            a.Value - b.Value |> BlockHeight
             
         static member (-) (a: BlockHeight, b: BlockHeight) =
-            a.Value - (b.Value) |> uint16 |> BlockHeightOffset
+            a.Value - b.Value |> BlockHeightOffset
 
     /// **Description**
     ///
-    /// Relative block height used for `OP_CSV` locks,
-    /// Since OP_CSV allow only block number of 0 ~ 65535, it is safe
-    /// to restrict into the range smaller than BlockHeight
-    and  [<Struct>] BlockHeightOffset = | BlockHeightOffset of uint16 with
+    /// Relative block height used for `OP_CSV` locks.
+    and  [<Struct>] BlockHeightOffset = | BlockHeightOffset of uint32 with
         member x.Value = let (BlockHeightOffset v) = x in v
-        static member op_Implicit (v: uint16) =
+        static member op_Implicit (v: uint32) =
             BlockHeightOffset v
-        static member One = BlockHeightOffset(1us)
-        static member Zero = BlockHeightOffset(0us)
-        static member MaxValue = UInt16.MaxValue |> BlockHeightOffset
+        static member One = BlockHeightOffset(1u)
+        static member Zero = BlockHeightOffset(0u)
+        static member MaxValue = UInt32.MaxValue |> BlockHeightOffset
         static member (+) (a: BlockHeightOffset, b: BlockHeightOffset) =
             a.Value + b.Value |> BlockHeightOffset
         static member (-) (a: BlockHeightOffset, b: BlockHeightOffset) =

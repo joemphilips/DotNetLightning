@@ -280,7 +280,7 @@ type TaggedField =
                 Array.blit (hopInfo.ShortChannelId.ToBytes()) 0 hopInfoBase256 33 8
                 Array.blit ((hopInfo.FeeBase.MilliSatoshi |> uint32).GetBytesBigEndian()) 0 hopInfoBase256 41 4
                 Array.blit ((hopInfo.FeeProportionalMillionths |> uint32).GetBytesBigEndian()) 0 hopInfoBase256 45 4
-                Array.blit (hopInfo.CLTVExpiryDelta.Value.GetBytesBigEndian()) 0 hopInfoBase256 49 2
+                Array.blit ((hopInfo.CLTVExpiryDelta.Value |> uint16).GetBytesBigEndian()) 0 hopInfoBase256 49 2
                 routeInfoBase256.Add(hopInfoBase256)
             let routeInfoBase32 = routeInfoBase256 |> Array.concat |>  Helpers.convert8BitsTo5
             this.WriteField(writer, routeInfoBase32)
@@ -451,7 +451,7 @@ type private Bolt11Data = {
                                         let schId = r.ReadULongBE(64) |> ShortChannelId.FromUInt64
                                         let feeBase = r.ReadULongBE(32) |> LNMoney.MilliSatoshis
                                         let feeProportional = r.ReadULongBE(32) |> uint32
-                                        let cltvExpiryDelta =  r.ReadULongBE(16) |> uint16 |> BlockHeightOffset
+                                        let cltvExpiryDelta =  r.ReadULongBE(16) |> uint32 |> BlockHeightOffset
                                         let hopInfo = { NodeId = nodeId
                                                         ShortChannelId = schId
                                                         FeeBase = feeBase
