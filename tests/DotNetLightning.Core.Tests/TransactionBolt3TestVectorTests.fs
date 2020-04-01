@@ -236,7 +236,8 @@ let run (spec: CommitmentSpec): (Transaction * _) =
         |> function Ok e -> e | Error e -> failwithf "%A" e
     let baseFee = Transactions.commitTxFee(local.DustLimit)(spec)
     log (sprintf "base commitment transaction fee is %A" baseFee)
-    let actualFee = fundingAmount - match commitTx.Value.TryGetFee() with | true, f -> f | false, _ -> failwith ""
+    let actualFee = fundingAmount - match commitTx.Value.TryGetFee() with
+                                    | true, f -> f | false, _ -> failwith "fail: BOLT3 test, couldn't get fee"
     log (sprintf "actual commitment tx fee is %A " actualFee)
     commitTx.Value.GetGlobalTransaction().Outputs
         |> List.ofSeq
@@ -276,7 +277,7 @@ let run (spec: CommitmentSpec): (Transaction * _) =
                                  remote.PaymentPrivKey.PubKey
                                  spec
                                  n
-        |> Result.defaultWith(fun _ -> failwith "")
+        |> Result.defaultWith(fun _ -> failwith "fail(BOLT3 transactions): couldn't make HTLC transactions")
     let htlcTxs =
         Seq.append (unsignedHTLCSuccessTxs |> Seq.cast<IHTLCTx>) (unsignedHTLCTimeoutTxs |> Seq.cast<IHTLCTx>)
         // test vectors requires us to use RFC6974

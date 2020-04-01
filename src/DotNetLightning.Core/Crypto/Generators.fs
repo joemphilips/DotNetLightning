@@ -45,13 +45,13 @@ module Generators =
         let tweak = ReadOnlySpan(a.ToBytes())
         match secp256k1.PrivateKeyTweakMultiply(tweak, b.AsSpan()) with
         | true -> b
-        | false -> failwith ""
+        | false -> failwith "Not implemented: Generators::multiplyPrivateKey"
 
     let private multiplyPublicKey (secp256k1: ISecp256k1) (secret: byte[]) (pubkey: byte[]) =
         let tweak = ReadOnlySpan(secret)
         match secp256k1.PublicKeyTweakMultiply(tweak, pubkey.AsSpan()) with
         | true -> pubkey
-        | false -> failwith ""
+        | false -> failwith "Not implemented: Generators::multiplyPublicKey"
 
 
     /// Compute `baseSecret + Sha256(perCommitmentPoint || basePoint) * G`

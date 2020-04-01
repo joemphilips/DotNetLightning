@@ -43,7 +43,7 @@ module Client =
         
     let private getPayload<'T>(response: HttpResponseMessage) =
         let failureCase(resp)= async {
-            return failwith ""
+            return failwith "Not implemented: Client::getPayload::failureCase"
         }
         let successCase(resp: HttpResponseMessage) = async {
             let cl = response.Content.Headers.ContentLength |> Option.ofNullable
@@ -72,11 +72,11 @@ module Client =
             // let validated = payload.validate<'T>()
             // let parsed = parseResult(validated, payload, command)
             // return parsed
-            return failwith ""
+            return failwith "Not implemented: Client::eclairCall"
         }
         
     let allChannelsImpl() =
-        failwith ""
+        failwith "Not implemented: Client::allChannelsImpl"
     let rec interpret = function
         | Pure x -> x
         | Free(AllChannels((), next)) -> allChannelsImpl() |>  next |> interpret

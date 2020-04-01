@@ -10,6 +10,6 @@ type FlatFileDB(path: string, codec: SupportedCodec) =
     member this.Write() =
         use fs = new FileStream(_path, FileMode.Open)
         use stream = new LightningWriterStream(fs)
-        failwith ""
+        failwith "Not implemented: FlatFileDB::Write"
 
 

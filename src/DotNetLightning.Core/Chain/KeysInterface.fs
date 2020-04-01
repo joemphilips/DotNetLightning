@@ -169,4 +169,4 @@ type DefaultKeyRepository(seed: uint256) =
                     psbt pubkey basePoint
 
         member this.GenerateKeyFromRemoteSecretAndSign(_psbt, _pubkey, _remoteSecret) =
-            failwith ""
+            failwith "Not implemented: DefaultKeyRepository::GenerateKeyFromRemoteSecretAndSign"
