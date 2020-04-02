@@ -111,7 +111,7 @@ let peerChannelEncryptorTests =
                     Expect.equal (rk) (hex.DecodeData("969ab31b4d288cedf6218839b27a3e2140827047f2c0f01bf5c04435d43511a9") |> uint256) ""
                     Expect.equal (rn) (0UL) ""
                     Expect.equal (rck) (hex.DecodeData("919219dbb2920afa8db80f9a51787a840bcf111ed8d588caf9ab4be716e42b01") |> uint256) ""
-                | _ -> failwith ""
+                | _ -> failwith "Fail: nextState.NoiseState not finished"
 
             /// Transport-responder act1 short read test
             let testCase2 =
@@ -213,7 +213,7 @@ let peerChannelEncryptorTests =
                     Expect.equal rn 0UL ""
                     Expect.equal rck ("919219dbb2920afa8db80f9a51787a840bcf111ed8d588caf9ab4be716e42b01" |> hex.DecodeData |> uint256) ""
                     outboundPeer <- outboundPeer2
-                | _ -> failwith ""
+                | _ -> failwith "Fail: outboundPeer2.NoiseState not Finished"
 
             let ourNodeId = hex.DecodeData("2121212121212121212121212121212121212121212121212121212121212121") |> Key
             let mutable inboundPeer = PeerChannelEncryptor.newInBound ourNodeId
@@ -238,7 +238,7 @@ let peerChannelEncryptorTests =
                     Expect.equal rn 0UL ""
                     Expect.equal rck ("919219dbb2920afa8db80f9a51787a840bcf111ed8d588caf9ab4be716e42b01" |> hex.DecodeData |> uint256 ) ""
                     inboundPeer <- inboundPeer3
-                | _ -> failwith ""
+                | _ -> failwith "Fail: inboundPeer3.NoiseState not Finished"
 
             let log = fun s -> ()
                 // eventX >> logger.info 

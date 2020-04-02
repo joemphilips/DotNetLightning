@@ -95,11 +95,11 @@ type DuplexPipeStream(input: PipeReader, output: PipeWriter, ?throwOnCanceled: b
         this.FlushAsync(CancellationToken.None).GetAwaiter().GetResult()
 
     override this.BeginRead(buf, offset, count, asyncCB, state) =
-        failwith ""
+        failwith "Not implemented: DuplexPipeStream::BeginRead"
     override this.EndRead(asyncResult): int =
-        failwith ""
+        failwith "Not implemented: DuplexPipeStream::EndRead"
     override this.BeginWrite(buf, offset, count, asyncCB, state) =
-        failwith ""
+        failwith "Not implemented: DuplexPipeStream::BeginWrite"
         
     override this.EndWrite(asyncResult: IAsyncResult) =
-        failwith ""
+        failwith "Not implemented: DuplexPipeStream::EndWrite"

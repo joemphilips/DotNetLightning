@@ -135,9 +135,9 @@ module Routing =
     let executeCommand (state: RouterState) (cmd: RouterCommand) =
         match state, cmd with
         | RouterState.Normal _d, (ChannelEvent(_)) ->
-            failwith ""
+            failwith "Not implemented: Routing::executeCommand when state,cmd = Normal,ChannelEvent"
         | RouterState.Normal _d, (NetworkEvent (ChannelUpdateReceived (_update))) ->
-            failwith ""
+            failwith "Not implemented: Routing::executeCommand when state,cmd = Normal,NetworkEvent ChannelUpdateRecv"
         | RouterState.Normal d, (NetworkCommand (CalculateRoute (routeRequest))) ->
             let { Source = start; Target = t; Amount = a; AssistedRoutes = assistedRoutes; IgnoredNodes = ignoredV } =
                 routeRequest
@@ -157,4 +157,4 @@ module Routing =
             let routeParams = routeRequest.RouteParams
             let routesToFind = if routeParams.Randomize then DEFAULT_ROUTES_COUNT else 1
             findRoute(d.Graph) (start) t a routesToFind extraEdges ignoredEdges ignoredV routeParams d.CurrentBlockHeight
-        | _ -> failwith "Not implemented"
+        | _ -> failwith "Not implemented: Routing::executeCommand for some unknown state,cmd tuple"

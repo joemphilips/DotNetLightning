@@ -14,13 +14,13 @@ type ShaChain = {
         static member Zero = { KnownHashes = Map.empty; LastIndex = None }
 module ShaChain =
     let flip (_input: byte[]) (_index: uint64): byte[] =
-        failwith ""
+        failwith "Not implemented: ShaChain::flip"
 
     let addHash (_receiver: ShaChain) (_hash: byte[]) (_index: uint64) =
-        failwith ""
+        failwith "Not implemented: ShaChain::addHash"
 
     let getHash (_receiver: ShaChain)(_index: uint64) =
-        failwith  ""
+        failwith "Not implemented: ShaChain::getHash"
 
 type ShaChain with
     member this.AddHash(hash: byte[], index: uint64): ShaChain =

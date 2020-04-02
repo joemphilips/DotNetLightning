@@ -34,12 +34,13 @@ let testList = [
                 t.Outputs.Add(TxOut(Money.Satoshis(20000L), pubkeyScript)) |> ignore
                 t.LockTime <- LockTime.Zero
                 t
-            let claimP2WPKHOutputTx = Transactions.makeClaimP2WPKHOutputTx(commitTx)
-                                                                          (localDustLimit)
-                                                                          (localPaymentPriv.PubKey)
-                                                                          (finalSpk)
-                                                                          (feeRatePerKw)
-                                                                          n |> Result.defaultWith (fun _  -> failwith "")
+            let claimP2WPKHOutputTx =
+                Transactions.makeClaimP2WPKHOutputTx(commitTx)
+                                                    (localDustLimit)
+                                                    (localPaymentPriv.PubKey)
+                                                    (finalSpk)
+                                                    (feeRatePerKw)
+                                                    n |> Result.defaultWith (fun _  -> failwith "fail: precomputed tx weights")
             let weight =
                 let tx = claimP2WPKHOutputTx.Value.GetGlobalTransaction()
                 let witScript =

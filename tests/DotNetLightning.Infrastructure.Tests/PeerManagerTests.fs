@@ -52,7 +52,7 @@ let createPipe() =
 let ie = "1212121212121212121212121212121212121212121212121212121212121212" |> hex.DecodeData |> Key
 let updateIEForTestVector (peerMan: PeerManager, peerId: PeerId) =
     match peerMan.KnownPeers.TryGetValue peerId with
-    | false, _ -> failwith ""
+    | false, _ -> failwith "Fail: peerMan.KnownPeers.[peerId] not found"
     | true, actor ->
         actor.State <- { actor.State with ChannelEncryptor = (Optic.set PeerChannelEncryptor.OutBoundIE_ ie actor.State.ChannelEncryptor) }
         peerMan.KnownPeers.[peerId] <- actor

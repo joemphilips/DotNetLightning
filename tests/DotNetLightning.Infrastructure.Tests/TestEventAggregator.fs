@@ -12,4 +12,4 @@ type TestEventAggregator() =
             _sbj.OnNext(msg)
             
         member this.GetObservable<'T>(): IObservable<'T> =
-            failwith ""
+            failwith "Fail: not implemented: TestEventAggregator::GetObservable"

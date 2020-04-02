@@ -85,13 +85,17 @@ let bolt4Tests1 =
                     Expect.isOk(rr) ""
                     Result.defaultWith (fun _ -> failwith "Unreachable") rr
             let { Payload = payload1; NextPacket = nextPacket1; }: ParsedPacket =
-                Sphinx.parsePacket (privKeys.[1]) (associatedData) (nextPacket0.ToBytes()) |> Result.defaultWith(fun _ -> failwith "")
+                Sphinx.parsePacket (privKeys.[1]) (associatedData) (nextPacket0.ToBytes())
+                |> Result.defaultWith(fun _ -> failwith "Fail: bolt4 create packet ref test vector defaultClosure1")
             let { Payload = payload2; NextPacket = nextPacket2; }: ParsedPacket =
-                Sphinx.parsePacket (privKeys.[2]) (associatedData) (nextPacket1.ToBytes()) |> Result.defaultWith(fun _ -> failwith "")
+                Sphinx.parsePacket (privKeys.[2]) (associatedData) (nextPacket1.ToBytes())
+                |> Result.defaultWith(fun _ -> failwith "Fail: bolt4 create packet ref test vector defaultClosure2")
             let { Payload = payload3; NextPacket = nextPacket3; }: ParsedPacket =
-                Sphinx.parsePacket (privKeys.[3]) (associatedData) (nextPacket2.ToBytes()) |> Result.defaultWith(fun _ -> failwith "")
+                Sphinx.parsePacket (privKeys.[3]) (associatedData) (nextPacket2.ToBytes())
+                |> Result.defaultWith(fun _ -> failwith "Fail: bolt4 create packet ref test vector defaultClosure3")
             let { Payload = payload4; NextPacket = nextPacket4; }: ParsedPacket =
-                Sphinx.parsePacket (privKeys.[4]) (associatedData) (nextPacket3.ToBytes()) |> Result.defaultWith(fun _ -> failwith "")
+                Sphinx.parsePacket (privKeys.[4]) (associatedData) (nextPacket3.ToBytes())
+                |> Result.defaultWith(fun _ -> failwith "Fail: bolt4 create packet ref test vector defaultClosure1")
 
             Expect.equal [payload0; payload1; payload2; payload3; payload4] payloads ""
 
@@ -110,15 +114,19 @@ let bolt4Tests1 =
                 Sphinx.parsePacket (privKeys.[0]) (associatedData) (onion.ToBytes())
                 |> fun r -> 
                     Expect.isOk(r) ""
-                    Result.defaultWith(fun _ -> failwith "") r
+                    Result.defaultWith(fun _ -> failwith "Fail: bolt4 last node replies with err msg defaultClosure0") r
             let { NextPacket = packet2; SharedSecret = ss1 }: ParsedPacket =
-                Sphinx.parsePacket (privKeys.[1]) (associatedData) (packet1.ToBytes()) |> Result.defaultWith(fun _ -> failwith "")
+                Sphinx.parsePacket (privKeys.[1]) (associatedData) (packet1.ToBytes())
+                |> Result.defaultWith(fun _ -> failwith "Fail: bolt4 last node replies with err msg defaultClosure1")
             let { NextPacket = packet3; SharedSecret = ss2 }: ParsedPacket =
-                Sphinx.parsePacket (privKeys.[2]) (associatedData) (packet2.ToBytes()) |> Result.defaultWith(fun _ -> failwith "")
+                Sphinx.parsePacket (privKeys.[2]) (associatedData) (packet2.ToBytes())
+                |> Result.defaultWith(fun _ -> failwith "Fail: bolt4 last node replies with err msg defaultClosure2")
             let { NextPacket = packet4; SharedSecret = ss3 }: ParsedPacket =
-                Sphinx.parsePacket (privKeys.[3]) (associatedData) (packet3.ToBytes()) |> Result.defaultWith(fun _ -> failwith "")
+                Sphinx.parsePacket (privKeys.[3]) (associatedData) (packet3.ToBytes())
+                |> Result.defaultWith(fun _ -> failwith "Fail: bolt4 last node replies with err msg defaultClosure3")
             let { NextPacket = packet5; SharedSecret = ss4 }: ParsedPacket =
-                Sphinx.parsePacket (privKeys.[4]) (associatedData) (packet4.ToBytes()) |> Result.defaultWith(fun _ -> failwith "")
+                Sphinx.parsePacket (privKeys.[4]) (associatedData) (packet4.ToBytes())
+                |> Result.defaultWith(fun _ -> failwith "Fail: bolt4 last node replies with err msg defaultClosure4")
 
             Expect.isTrue (packet5.IsLastPacket) ""
             let error = ErrorPacket.Create(ss4, { FailureMsg.Code = FailureCode (OnionError.TEMPORARY_NODE_FAILURE); Data = TemporaryNodeFailure })
@@ -149,7 +157,9 @@ let bolt4Tests1 =
                 let expected = "9c5add3963fc7f6ed7f148623c84134b5647e1306419dbe2174e523fa9e2fbed3a06a19f899145610741c83ad40b7712aefaddec8c6baf7325d92ea4ca4d1df8bce517f7e54554608bf2bd8071a4f52a7a2f7ffbb1413edad81eeea5785aa9d990f2865dc23b4bc3c301a94eec4eabebca66be5cf638f693ec256aec514620cc28ee4a94bd9565bc4d4962b9d3641d4278fb319ed2b84de5b665f307a2db0f7fbb757366067d88c50f7e829138fde4f78d39b5b5802f1b92a8a820865af5cc79f9f30bc3f461c66af95d13e5e1f0381c184572a91dee1c849048a647a1158cf884064deddbf1b0b88dfe2f791428d0ba0f6fb2f04e14081f69165ae66d9297c118f0907705c9c4954a199bae0bb96fad763d690e7daa6cfda59ba7f2c8d11448b604d12d"
                                |> hex.DecodeData
                 Expect.equal expected error4 ""
-            let { OriginNode = pubkey; FailureMsg = failure } = ErrorPacket.TryParse(error4, ss) |> Result.defaultWith(fun _ -> failwith "")
+            let { OriginNode = pubkey; FailureMsg = failure } =
+                ErrorPacket.TryParse(error4, ss)
+                |> Result.defaultWith(fun _ -> failwith "Fail: bolt4 last node replies with err msg defaultClosure end")
             Expect.equal (pubKeys.[4]) (pubkey.Value) ""
             Expect.equal (TemporaryNodeFailure) (failure.Data) ""
             ()
@@ -158,17 +168,21 @@ let bolt4Tests1 =
             let { Packet = packet; SharedSecrets = ss } =
                 Sphinx.PacketAndSecrets.Create(sessionKey, pubKeys, payloads, associatedData)
             let { NextPacket = packet1; SharedSecret = ss0 } =
-                Sphinx.parsePacket(privKeys.[0]) (associatedData) (packet.ToBytes()) |> Result.defaultWith(fun _ -> failwith "")
+                Sphinx.parsePacket(privKeys.[0]) (associatedData) (packet.ToBytes())
+                |> Result.defaultWith(fun _ -> failwith "Fail: bolt4 intrm node replies with err msg defaultClosure0")
             let { NextPacket = packet2; SharedSecret = ss1 } =
-                Sphinx.parsePacket(privKeys.[1]) (associatedData) (packet1.ToBytes()) |> Result.defaultWith(fun _ -> failwith "")
+                Sphinx.parsePacket(privKeys.[1]) (associatedData) (packet1.ToBytes())
+                |> Result.defaultWith(fun _ -> failwith "Fail: bolt4 intrm node replies with err msg defaultClosure1")
             let { SharedSecret = ss2 } =
-                Sphinx.parsePacket(privKeys.[2]) (associatedData) (packet2.ToBytes()) |> Result.defaultWith(fun _ -> failwith "")
+                Sphinx.parsePacket(privKeys.[2]) (associatedData) (packet2.ToBytes())
+                |> Result.defaultWith(fun _ -> failwith "Fail: bolt4 intrm node replies with err msg defaultClosure2")
             
             let error = ErrorPacket.Create(ss2, { Code = OnionError.FailureCode INVALID_REALM; Data = InvalidRealm })
             let error1 = forwardErrorPacket(error, ss1)
             let error2 = forwardErrorPacket(error1, ss0)
             let { OriginNode = pubkey; FailureMsg = failure } =
-                ErrorPacket.TryParse(error2, ss) |> Result.defaultWith(fun _ -> failwith "")
+                ErrorPacket.TryParse(error2, ss)
+                |> Result.defaultWith(fun _ -> failwith "Fail: bolt4 intrm node replies with err msg defaultClosure end")
             Expect.equal (pubkey.Value) (pubKeys.[2]) ""
             Expect.equal (InvalidRealm) (failure.Data) ""
             ()

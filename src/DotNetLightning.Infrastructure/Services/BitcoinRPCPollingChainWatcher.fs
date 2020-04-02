@@ -49,20 +49,23 @@ type BitcoinRPCPollingChainWatcher(rpc: RPCClient,
 
     interface IChainWatcher with
         member this.InstallWatchTx(txId: TxId, scriptPubKey: Script): bool =
-            failwith ""
+            failwith "Not implemented: IChainWatcher::InstallWatchTx"
             
         member this.InstallWatchOutPoint (outPoint: OutPoint, scriptPubKey: Script): bool =
-            failwith ""
+            failwith "Not implemented: IChainWatcher::InstallWatchOutPoint"
+
         member this.WatchAllTxn() =
-            failwith ""
+            failwith "Not implemented: IChainWatcher::WatchAllTxn"
+
         member this.RegisterListener(listener: IChainListener) =
-            failwith ""
+            failwith "Not implemented: IChainWatcher::RegisterListener"
             
-        member this.CurrentTip = failwith ""
+        member this.CurrentTip =
+            failwith "Not implemented: IChainWatcher::CurrentTip"
         
         member this.StartAsync(ct) =
-            failwith ""
+            failwith "Not implemented: IChainWatcher::StartAsync"
         member this.StopAsync(ct) =
-            failwith ""
+            failwith "Not implemented: IChainWatcher::StopAsync"
             
         member val Network = network
