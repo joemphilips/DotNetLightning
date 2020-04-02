@@ -302,7 +302,8 @@ module internal Commitments =
                     let nextRemoteCommitInfo = { WaitingForRevocation.NextRemoteCommit =
                                                     { cm.RemoteCommit
                                                         with
-                                                            Index = 1UL;
+                                                            Index = cm.RemoteCommit.Index + 1UL;
+                                                            Spec = spec;
                                                             RemotePerCommitmentPoint = remoteNextPerCommitmentPoint
                                                             TxId = remoteCommitTx.GetTxId() }
                                                  Sent = msg
@@ -383,7 +384,7 @@ module internal Commitments =
                 
                 let nextCommitments =
                     let localCommit1 = { LocalCommit.Index = cm.LocalCommit.Index + 1UL
-                                         Spec = cm.LocalCommit.Spec
+                                         Spec = spec
                                          PublishableTxs = { PublishableTxs.CommitTx = finalizedCommitTx
                                                             HTLCTxs = finalizedTxs }
                                          PendingHTLCSuccessTxs = successTxs }
