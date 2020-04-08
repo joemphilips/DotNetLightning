@@ -32,7 +32,7 @@ let localPerCommitmentPoint = PubKey("025f7117a78150fe2ef97db7cfc83bd57b2e2c0d0d
 type LocalConfig = {
     Ctx: ISecp256k1
     CommitTxNumber: uint64
-    ToSelfDelay: BlockHeightOffset
+    ToSelfDelay: BlockHeightOffset16
     DustLimit: Money
     PaymentBasePointSecret: Key
     PaymentBasePoint: PubKey
@@ -54,7 +54,7 @@ let getLocal(): LocalConfig =
     {
       Ctx = ctx
       CommitTxNumber = 42UL
-      ToSelfDelay = 144us |> BlockHeightOffset
+      ToSelfDelay = 144us |> BlockHeightOffset16
       DustLimit = Money.Satoshis(546L)
       PaymentBasePointSecret = paymentBasePointSecret
       PaymentBasePoint = paymentBasePoint
@@ -72,7 +72,7 @@ let getLocal(): LocalConfig =
 type RemoteConfig = {
     Ctx: ISecp256k1
     CommitTxNumber: uint64
-    ToSelfDelay: BlockHeightOffset
+    ToSelfDelay: BlockHeightOffset16
     DustLimit: Money
     PaymentBasePointSecret: Key
     PaymentBasePoint: PubKey
@@ -91,7 +91,7 @@ let getRemote(): RemoteConfig =
     {
       Ctx = ctx
       CommitTxNumber = 42UL
-      ToSelfDelay = 144us |> BlockHeightOffset
+      ToSelfDelay = 144us |> BlockHeightOffset16
       DustLimit = Money.Satoshis(546L)
       PaymentBasePointSecret = paymentBasePointSecret
       PaymentBasePoint = paymentBasePoint

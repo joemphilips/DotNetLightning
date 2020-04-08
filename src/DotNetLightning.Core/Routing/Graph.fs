@@ -15,7 +15,7 @@ module Graph =
         Weight: double
         Cost: LNMoney
         Length: int
-        CLTV: BlockHeightOffset
+        CLTV: BlockHeightOffset16
     }
     with
         override this.GetHashCode() =
@@ -268,7 +268,7 @@ module Graph =
                 ) ""
                 
     module internal RoutingHeuristics =
-        let BLOCK_TIME_TWO_MONTHS = 8640us |> BlockHeightOffset
+        let BLOCK_TIME_TWO_MONTHS = 8640us |> BlockHeightOffset16
         let CAPACITY_CHANNEL_LOW = LNMoney.Satoshis(1000L)
         let CAPACITY_CHANNEL_HIGH = DotNetLightning.Channel.ChannelConstants.MAX_FUNDING_SATOSHIS.Satoshi |> LNMoney.Satoshis
         
@@ -345,7 +345,7 @@ module Graph =
             { RichWeight.Cost = amount
               Weight = 0.
               Length = 0
-              CLTV = BlockHeightOffset.Zero }
+              CLTV = BlockHeightOffset16.Zero }
         if path |> Seq.length = 0 then zero else
         path
         |> Seq.skip(if isPartial then 0 else 1)
@@ -440,7 +440,7 @@ module Graph =
                                { RichWeight.Cost = LNMoney.MaxValue
                                  Weight = Double.MaxValue
                                  Length = Int32.MaxValue
-                                 CLTV = BlockHeightOffset.MaxValue }
+                                 CLTV = BlockHeightOffset16.MaxValue }
                        // if this neighbor has a shorter distance than previously known
                        if (newMinimumKnownWeight.Weight < neighborCost.Weight) then
                            // update the visiting tree
@@ -487,7 +487,7 @@ module Graph =
         let initialWeight = { RichWeight.Cost = amount;
                               Weight = 0.
                               Length = 0
-                              CLTV = BlockHeightOffset.Zero }
+                              CLTV = BlockHeightOffset16.Zero }
         let shortestPath =
             dijkstraShortestPath g
                                  sourceNode

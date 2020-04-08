@@ -119,7 +119,7 @@ type ChannelManager(log: ILogger<ChannelManager>,
                             found <- true
                             let txIndex = txInBlock |> fst |> TxIndexInBlock
                             let (nodeId, _) = kv.Value
-                            let depth = 1us |> BlockHeightOffset
+                            let depth = 1u |> BlockHeightOffset32
                             let newValue = (nodeId, Some(txIndex, height))
                             this.FundingTxs.TryUpdate(kv.Key, newValue, kv.Value) |> ignore
                             for kv in this.Actors do
@@ -130,7 +130,7 @@ type ChannelManager(log: ILogger<ChannelManager>,
                         | (_nodeId, None) ->
                             ()
                         |(nodeId, Some(txIndex, heightConfirmed)) ->
-                            let depth = (height - heightConfirmed) + BlockHeightOffset.One
+                            let depth = (height - heightConfirmed) + BlockHeightOffset32.One
                             log.LogDebug(sprintf "funding tx (%A) confirmed (%d) times" kv.Key depth.Value)
                             for kv in this.Actors do
                                 let actor = kv.Value

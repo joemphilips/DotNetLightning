@@ -25,7 +25,7 @@ module RouterPrimitives =
         SearchMaxFeeBase: LNMoney
         SearchMaxFeePct: double
         SearchMaxRouteLength: int
-        SearchMaxCLTV: BlockHeightOffset
+        SearchMaxCLTV: BlockHeightOffset16
         SearchHeuristicsEnabled: bool
         SearchRatioCLTV: double
         SearchRatioChannelAge: double
@@ -90,7 +90,7 @@ module RouterPrimitives =
     type IHop =
         abstract member NodeId: NodeId
         abstract member NextNodeId: NodeId
-        abstract member CLTVExpiryDelta: BlockHeightOffset
+        abstract member CLTVExpiryDelta: BlockHeightOffset16
         abstract member Fee: amount: LNMoney -> LNMoney
         
     /// A directed hop between two connected nodes using a specific channel.
@@ -99,7 +99,7 @@ module RouterPrimitives =
         NodeId: NodeId
         /// The id of the end node
         NextNodeId: NodeId
-        CLTVExpiryDelta: BlockHeightOffset
+        CLTVExpiryDelta: BlockHeightOffset16
         LastUpdate: UnsignedChannelUpdate
     }
         with

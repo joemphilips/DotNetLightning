@@ -20,7 +20,7 @@ module Constants =
     let DEFAULT_ROUTE_PARAMS = { RouteParams.Randomize = false
                                  MaxFeeBase = LNMoney.MilliSatoshis(21000L)
                                  MaxFeePCT = 0.03
-                                 RouteMaxCLTV = 2016us |> BlockHeightOffset
+                                 RouteMaxCLTV = 2016us |> BlockHeightOffset16
                                  RouteMaxLength = 6
                                  Ratios = None }
     let privKey1 = Key(hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101"))
@@ -49,10 +49,10 @@ let makeUpdateCore(shortChannelId: ShortChannelId,
                     feeProportionalMillions: uint32,
                     minHtlc: LNMoney option,
                     maxHtlc: LNMoney option,
-                    cltvDelta: BlockHeightOffset option
+                    cltvDelta: BlockHeightOffset16 option
                     ): (ChannelDesc * UnsignedChannelUpdate) =
     let minHtlc = Option.defaultValue Constants.DEFAULT_AMOUNT_MSAT minHtlc
-    let cltvDelta = Option.defaultValue (BlockHeightOffset(0us)) cltvDelta
+    let cltvDelta = Option.defaultValue (BlockHeightOffset16(0us)) cltvDelta
     let desc = { ChannelDesc.ShortChannelId = shortChannelId
                  A = nodeid1
                  B = nodeid2 }
@@ -77,7 +77,7 @@ let makeUpdate (shortChannelId: uint64,
                 feeProportionalMillions: uint32,
                 minHtlc: LNMoney option,
                 maxHtlc: LNMoney option,
-                cltvDelta: BlockHeightOffset option ): (ChannelDesc * UnsignedChannelUpdate) =
+                cltvDelta: BlockHeightOffset16 option ): (ChannelDesc * UnsignedChannelUpdate) =
      makeUpdateCore(shortChannelId |> ShortChannelId.FromUInt64, nodeid1, nodeid2, feeBase, feeProportionalMillions, minHtlc, maxHtlc, cltvDelta)
 let makeUpdate2 (s, a, b, feeBase, feeProp, minHTLC, maxHTLC, cltvDelta) =
     makeUpdateCore(ShortChannelId.ParseUnsafe(s), a, b, feeBase, feeProp, minHTLC, maxHTLC, cltvDelta)

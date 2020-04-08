@@ -8,15 +8,13 @@ type ChannelHandshakeConfig = {
     /// Confirmations we will wait for before considering the channel locked in.
     /// Applied only for inbound channels (see `ChannelHandshakeLimits.MaxMinimumDepth` for the
     /// equivalent limit applied to outbound channel)
-    /// bolt permits us to specify value larger than 65535, but 65535 is big enough so we won't allow the user
-    /// to do so.
-    MinimumDepth: BlockHeightOffset
+    MinimumDepth: BlockHeightOffset32
  }
     with
 
     static member Zero =
         {
-            MinimumDepth = BlockHeightOffset 6us
+            MinimumDepth = BlockHeightOffset32 6u
         }
 
 /// Optional Channel limits which are applied during channel creation.
@@ -48,9 +46,7 @@ type ChannelHandshakeLimits = {
     /// going to double-spend themselves).
     /// This config allows you to set a limit on the maximum amount of time to wait. Defaults to 144
     /// blocks or roughly one day and only applies to outbound channels.
-    /// bolt permits us to specify value larger than 65535, but 65535 is big enough so we won't allow the user
-    /// to do so.
-    MaxMinimumDepth: BlockHeightOffset
+    MaxMinimumDepth: BlockHeightOffset32
     /// Set to force the incoming channel to match our announced channel preference in ChannelConfig.
     /// Defaults to true to make the default that no announced channels are possible (which is
     /// appropriate for any nodes which are not online very reliably)
@@ -70,7 +66,7 @@ type ChannelHandshakeLimits = {
             MinMaxAcceptedHTLCs = 0us
             MinDustLimitSatoshis = Money.Satoshis(546m)
             MaxDustLimitSatoshis = Money.Coins(21_000_000m)
-            MaxMinimumDepth = 144us |> BlockHeightOffset
+            MaxMinimumDepth = 144u |> BlockHeightOffset32
             ForceChannelAnnouncementPreference = true
             MaxClosingNegotiationIterations = 20
         }
