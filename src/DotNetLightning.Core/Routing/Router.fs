@@ -56,7 +56,7 @@ module Routing =
     /// Defined in BOLT7
     let ROUTE_MAX_LENGTH = 20
     /// Max allowed cltv for a route
-    let DEFAULT_ROUTE_MAX_CLTV = BlockHeightOffset(1008us)
+    let DEFAULT_ROUTE_MAX_CLTV = BlockHeightOffset16(1008us)
     /// The default number of routes we'll search for when findRoute is called with randomize = true
     [<Literal>]
     let private DEFAULT_ROUTES_COUNT = 3
@@ -89,7 +89,7 @@ module Routing =
             let limit = Math.Min(routeParams.RouteMaxLength, ROUTE_MAX_LENGTH)
             l <= limit 
              
-        let cltvOk (cltv: BlockHeightOffset) =
+        let cltvOk (cltv: BlockHeightOffset16) =
             cltv <= routeParams.RouteMaxCLTV
         let boundaries =
             fun (weight: RichWeight) ->

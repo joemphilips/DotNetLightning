@@ -84,7 +84,7 @@ type LocalParams = {
     MaxHTLCValueInFlightMSat: LNMoney
     ChannelReserveSatoshis: Money
     HTLCMinimumMSat: LNMoney
-    ToSelfDelay: BlockHeightOffset
+    ToSelfDelay: BlockHeightOffset16
     MaxAcceptedHTLCs: uint16
     IsFunder: bool
     DefaultFinalScriptPubKey: Script
@@ -97,7 +97,7 @@ type RemoteParams = {
     MaxHTLCValueInFlightMSat: LNMoney
     ChannelReserveSatoshis: Money
     HTLCMinimumMSat: LNMoney
-    ToSelfDelay: BlockHeightOffset
+    ToSelfDelay: BlockHeightOffset16
     MaxAcceptedHTLCs: uint16
     PaymentBasePoint: PubKey
     FundingPubKey: PubKey
@@ -105,7 +105,7 @@ type RemoteParams = {
     DelayedPaymentBasePoint: PubKey
     HTLCBasePoint: PubKey
     Features: FeatureBit
-    MinimumDepth: BlockHeightOffset
+    MinimumDepth: BlockHeightOffset16
 }
     with
         static member FromAcceptChannel nodeId (remoteInit: Init) (msg: AcceptChannel) =
@@ -123,7 +123,7 @@ type RemoteParams = {
                 DelayedPaymentBasePoint = msg.DelayedPaymentBasepoint
                 HTLCBasePoint = msg.HTLCBasepoint
                 Features = remoteInit.Features
-                MinimumDepth = BlockHeightOffset <| uint16 msg.MinimumDepth.Value
+                MinimumDepth = BlockHeightOffset16 <| uint16 msg.MinimumDepth.Value
             }
 
         static member FromOpenChannel (nodeId) (remoteInit: Init) (msg: OpenChannel) (channelHandshakeConfig: ChannelHandshakeConfig) =
@@ -196,7 +196,7 @@ type ChannelCommand =
     | ApplyAcceptChannel of AcceptChannel
     | ApplyFundingSigned of FundingSigned
     | ApplyFundingLocked of FundingLocked
-    | ApplyFundingConfirmedOnBC of height: BlockHeight * txIndex: TxIndexInBlock * depth: BlockHeightOffset
+    | ApplyFundingConfirmedOnBC of height: BlockHeight * txIndex: TxIndexInBlock * depth: BlockHeightOffset16
 
     // open: fundee
     | CreateInbound of InputInitFundee

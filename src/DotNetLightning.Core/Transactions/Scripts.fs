@@ -14,7 +14,7 @@ module Scripts =
     let multiSigOfM_2 (sort) (pks) =
         PayToMultiSigTemplate.Instance.GenerateScriptPubKey(2, sort, pks)
 
-    let toLocalDelayed  (revocationPubKey: PubKey) (BlockHeightOffset toSelfDelay) (localDelayedPaymentPubkey: PubKey): Script =
+    let toLocalDelayed  (revocationPubKey: PubKey) (BlockHeightOffset16 toSelfDelay) (localDelayedPaymentPubkey: PubKey): Script =
         let opList = ResizeArray<Op>()
         opList.Add(!> OpcodeType.OP_IF)
         opList.Add(Op.GetPushOp(revocationPubKey.ToBytes()))

@@ -10,13 +10,13 @@ type ChannelHandshakeConfig = {
     /// equivalent limit applied to outbound channel)
     /// bolt permits us to specify value larger than 65535, but 65535 is big enough so we won't allow the user
     /// to do so.
-    MinimumDepth: BlockHeightOffset
+    MinimumDepth: BlockHeightOffset16
  }
     with
 
     static member Zero =
         {
-            MinimumDepth = BlockHeightOffset 6us
+            MinimumDepth = BlockHeightOffset16 6us
         }
 
 /// Optional Channel limits which are applied during channel creation.
@@ -50,7 +50,7 @@ type ChannelHandshakeLimits = {
     /// blocks or roughly one day and only applies to outbound channels.
     /// bolt permits us to specify value larger than 65535, but 65535 is big enough so we won't allow the user
     /// to do so.
-    MaxMinimumDepth: BlockHeightOffset
+    MaxMinimumDepth: BlockHeightOffset16
     /// Set to force the incoming channel to match our announced channel preference in ChannelConfig.
     /// Defaults to true to make the default that no announced channels are possible (which is
     /// appropriate for any nodes which are not online very reliably)
@@ -70,7 +70,7 @@ type ChannelHandshakeLimits = {
             MinMaxAcceptedHTLCs = 0us
             MinDustLimitSatoshis = Money.Satoshis(546m)
             MaxDustLimitSatoshis = Money.Coins(21_000_000m)
-            MaxMinimumDepth = 144us |> BlockHeightOffset
+            MaxMinimumDepth = 144us |> BlockHeightOffset16
             ForceChannelAnnouncementPreference = true
             MaxClosingNegotiationIterations = 20
         }

@@ -66,10 +66,10 @@ let hops2Edges (route: ChannelHop seq) =
 let tests = testList "Route Calculation" [
     let calculateRouteSimple routeParams =
         let updates = [
-                makeUpdate(1UL, a, b, LNMoney.MilliSatoshis(1L), 10u, None, None, BlockHeightOffset.One |> Some)
-                makeUpdate(2UL, b, c, LNMoney.MilliSatoshis(1L), 10u, None, None, BlockHeightOffset.One |> Some)
-                makeUpdate(3UL, c, d, LNMoney.MilliSatoshis(1L), 10u, None, None, BlockHeightOffset.One |> Some)
-                makeUpdate(4UL, d, e, LNMoney.MilliSatoshis(1L), 10u, None, None, BlockHeightOffset.One |> Some)
+                makeUpdate(1UL, a, b, LNMoney.MilliSatoshis(1L), 10u, None, None, BlockHeightOffset16.One |> Some)
+                makeUpdate(2UL, b, c, LNMoney.MilliSatoshis(1L), 10u, None, None, BlockHeightOffset16.One |> Some)
+                makeUpdate(3UL, c, d, LNMoney.MilliSatoshis(1L), 10u, None, None, BlockHeightOffset16.One |> Some)
+                makeUpdate(4UL, d, e, LNMoney.MilliSatoshis(1L), 10u, None, None, BlockHeightOffset16.One |> Some)
             ]
         
         let g = DirectedLNGraph.Create().AddEdges(updates)
@@ -307,7 +307,7 @@ let tests = testList "Route Calculation" [
               Timestamp = 0u
               MessageFlags = 0uy
               ChannelFlags = 0uy
-              CLTVExpiryDelta = BlockHeightOffset(1us)
+              CLTVExpiryDelta = BlockHeightOffset16(1us)
               HTLCMinimumMSat = LNMoney.MilliSatoshis(42L)
               FeeBaseMSat = LNMoney.MilliSatoshis(2500L)
               FeeProportionalMillionths = 140u
@@ -318,7 +318,7 @@ let tests = testList "Route Calculation" [
               Timestamp = 1u
               MessageFlags = 0uy
               ChannelFlags = 1uy
-              CLTVExpiryDelta = BlockHeightOffset(1us)
+              CLTVExpiryDelta = BlockHeightOffset16(1us)
               HTLCMinimumMSat = LNMoney.MilliSatoshis(43L)
               FeeBaseMSat = LNMoney.MilliSatoshis(2501L)
               FeeProportionalMillionths = 141u
@@ -329,7 +329,7 @@ let tests = testList "Route Calculation" [
               Timestamp = 1u
               MessageFlags = 0uy
               ChannelFlags = 0uy
-              CLTVExpiryDelta = BlockHeightOffset(1us)
+              CLTVExpiryDelta = BlockHeightOffset16(1us)
               HTLCMinimumMSat = LNMoney.MilliSatoshis(44L)
               FeeBaseMSat = LNMoney.MilliSatoshis(2502L)
               FeeProportionalMillionths = 142u
@@ -340,7 +340,7 @@ let tests = testList "Route Calculation" [
               Timestamp = 1u
               MessageFlags = 0uy
               ChannelFlags = 1uy
-              CLTVExpiryDelta = BlockHeightOffset(1us)
+              CLTVExpiryDelta = BlockHeightOffset16(1us)
               HTLCMinimumMSat = LNMoney.MilliSatoshis(45L)
               FeeBaseMSat = LNMoney.MilliSatoshis(2503L)
               FeeProportionalMillionths = 143u
@@ -351,7 +351,7 @@ let tests = testList "Route Calculation" [
               Timestamp = 1u
               MessageFlags = 1uy
               ChannelFlags = 0uy
-              CLTVExpiryDelta = BlockHeightOffset(1us)
+              CLTVExpiryDelta = BlockHeightOffset16(1us)
               HTLCMinimumMSat = LNMoney.MilliSatoshis(46L)
               FeeBaseMSat = LNMoney.MilliSatoshis(2504L)
               FeeProportionalMillionths = 144u
@@ -362,7 +362,7 @@ let tests = testList "Route Calculation" [
               Timestamp = 1u
               MessageFlags = 0uy
               ChannelFlags = 1uy
-              CLTVExpiryDelta = BlockHeightOffset(1us)
+              CLTVExpiryDelta = BlockHeightOffset16(1us)
               HTLCMinimumMSat = LNMoney.MilliSatoshis(47L)
               FeeBaseMSat = LNMoney.MilliSatoshis(2505L)
               FeeProportionalMillionths = 145u
@@ -373,7 +373,7 @@ let tests = testList "Route Calculation" [
               Timestamp = 1u
               MessageFlags = 0uy
               ChannelFlags = 0uy
-              CLTVExpiryDelta = BlockHeightOffset(1us)
+              CLTVExpiryDelta = BlockHeightOffset16(1us)
               HTLCMinimumMSat = LNMoney.MilliSatoshis(48L)
               FeeBaseMSat = LNMoney.MilliSatoshis(2506L)
               FeeProportionalMillionths = 146u
@@ -384,7 +384,7 @@ let tests = testList "Route Calculation" [
               Timestamp = 1u
               MessageFlags = 0uy
               ChannelFlags = 1uy
-              CLTVExpiryDelta = BlockHeightOffset(1us)
+              CLTVExpiryDelta = BlockHeightOffset16(1us)
               HTLCMinimumMSat = LNMoney.MilliSatoshis(49L)
               FeeBaseMSat = LNMoney.MilliSatoshis(2507L)
               FeeProportionalMillionths = 147u
@@ -417,22 +417,22 @@ let tests = testList "Route Calculation" [
                           ShortChannelId = ShortChannelId.FromUInt64(1UL)
                           FeeBase = LNMoney.Satoshis(12L)
                           FeeProportionalMillionths = 10000u
-                          CLTVExpiryDelta = BlockHeightOffset(12us) }
+                          CLTVExpiryDelta = BlockHeightOffset16(12us) }
         let extraHop2 = { ExtraHop.NodeId = b
                           ShortChannelId = ShortChannelId.FromUInt64(2UL)
                           FeeBase = LNMoney.Satoshis(200L)
                           FeeProportionalMillionths = 0u
-                          CLTVExpiryDelta = BlockHeightOffset(22us) }
+                          CLTVExpiryDelta = BlockHeightOffset16(22us) }
         let extraHop3 = { ExtraHop.NodeId = c
                           ShortChannelId = ShortChannelId.FromUInt64(3UL)
                           FeeBase = LNMoney.Satoshis(150L)
                           FeeProportionalMillionths = 0u
-                          CLTVExpiryDelta = BlockHeightOffset(32us) }
+                          CLTVExpiryDelta = BlockHeightOffset16(32us) }
         let extraHop4 = { ExtraHop.NodeId = d
                           ShortChannelId = ShortChannelId.FromUInt64(4UL)
                           FeeBase = LNMoney.Satoshis(50L)
                           FeeProportionalMillionths = 0u
-                          CLTVExpiryDelta = BlockHeightOffset(42us) }
+                          CLTVExpiryDelta = BlockHeightOffset16(42us) }
         let extraHops = [ extraHop1; extraHop2; extraHop3; extraHop4 ]
         let amount = LNMoney.Satoshis(900L) // below RoutingHeuristics.CAPACITY_CHANNEL_LOW
         let acs = Routing.toAssistedChannels e amount extraHops |> Map.ofSeq
@@ -585,28 +585,28 @@ let tests = testList "Route Calculation" [
         
     testCase "ignore cheaper route when it has more than the requested CLTV limit" <| fun _ ->
         let updates = [
-            makeUpdate(1UL, a, b, LNMoney.One, 0u, Some(LNMoney.Zero), None, Some(BlockHeightOffset(50us)))
-            makeUpdate(2UL, b, c, LNMoney.One, 0u, Some(LNMoney.Zero), None, Some(BlockHeightOffset(50us)))
-            makeUpdate(3UL, c, d, LNMoney.One, 0u, Some(LNMoney.Zero), None, Some(BlockHeightOffset(50us)))
-            makeUpdate(4UL, a, e, LNMoney.One, 0u, Some(LNMoney.Zero), None, Some(BlockHeightOffset(9us)))
-            makeUpdate(5UL, e, f, LNMoney.MilliSatoshis(5), 0u, Some(LNMoney.Zero), None, Some(BlockHeightOffset(9us)))
-            makeUpdate(6UL, f, d, LNMoney.MilliSatoshis(5), 0u, Some(LNMoney.Zero), None, Some(BlockHeightOffset(9us)))
+            makeUpdate(1UL, a, b, LNMoney.One, 0u, Some(LNMoney.Zero), None, Some(BlockHeightOffset16(50us)))
+            makeUpdate(2UL, b, c, LNMoney.One, 0u, Some(LNMoney.Zero), None, Some(BlockHeightOffset16(50us)))
+            makeUpdate(3UL, c, d, LNMoney.One, 0u, Some(LNMoney.Zero), None, Some(BlockHeightOffset16(50us)))
+            makeUpdate(4UL, a, e, LNMoney.One, 0u, Some(LNMoney.Zero), None, Some(BlockHeightOffset16(9us)))
+            makeUpdate(5UL, e, f, LNMoney.MilliSatoshis(5), 0u, Some(LNMoney.Zero), None, Some(BlockHeightOffset16(9us)))
+            makeUpdate(6UL, f, d, LNMoney.MilliSatoshis(5), 0u, Some(LNMoney.Zero), None, Some(BlockHeightOffset16(9us)))
         ]
         let g = DirectedLNGraph.Create().AddEdges(updates)
         let route =
-            Routing.findRoute (g) a d DEFAULT_AMOUNT_MSAT 1 (Set.empty) (Set.empty) (Set.empty) {DEFAULT_ROUTE_PARAMS with RouteMaxCLTV = (BlockHeightOffset(28us))} (BlockHeight(400000u))
+            Routing.findRoute (g) a d DEFAULT_AMOUNT_MSAT 1 (Set.empty) (Set.empty) (Set.empty) {DEFAULT_ROUTE_PARAMS with RouteMaxCLTV = (BlockHeightOffset16(28us))} (BlockHeight(400000u))
             |> Result.deref
             
         Expect.sequenceEqual (hops2Ids(route)) [4UL;5UL;6UL;] ""
         
     testCase "ignore cheaper route when it grows longer than the requested size" <| fun _ ->
         let updates = [
-            makeUpdate(1UL, a, b, LNMoney.One, 0u, Some(LNMoney.Zero), None, (Some (BlockHeightOffset(9us))))
-            makeUpdate(2UL, b, c, LNMoney.One, 0u, Some(LNMoney.Zero), None, (Some (BlockHeightOffset(9us))))
-            makeUpdate(3UL, c, d, LNMoney.One, 0u, Some(LNMoney.Zero), None, (Some (BlockHeightOffset(9us))))
-            makeUpdate(4UL, d, e, LNMoney.One, 0u, Some(LNMoney.Zero), None, (Some (BlockHeightOffset(9us))))
-            makeUpdate(5UL, e, f, LNMoney.One, 0u, Some(LNMoney.MilliSatoshis(5)), None, (Some (BlockHeightOffset(9us))))
-            makeUpdate(6UL, b, f, LNMoney.One, 0u, Some(LNMoney.MilliSatoshis(5)), None, (Some (BlockHeightOffset(9us))))
+            makeUpdate(1UL, a, b, LNMoney.One, 0u, Some(LNMoney.Zero), None, (Some (BlockHeightOffset16(9us))))
+            makeUpdate(2UL, b, c, LNMoney.One, 0u, Some(LNMoney.Zero), None, (Some (BlockHeightOffset16(9us))))
+            makeUpdate(3UL, c, d, LNMoney.One, 0u, Some(LNMoney.Zero), None, (Some (BlockHeightOffset16(9us))))
+            makeUpdate(4UL, d, e, LNMoney.One, 0u, Some(LNMoney.Zero), None, (Some (BlockHeightOffset16(9us))))
+            makeUpdate(5UL, e, f, LNMoney.One, 0u, Some(LNMoney.MilliSatoshis(5)), None, (Some (BlockHeightOffset16(9us))))
+            makeUpdate(6UL, b, f, LNMoney.One, 0u, Some(LNMoney.MilliSatoshis(5)), None, (Some (BlockHeightOffset16(9us))))
         ]
         let g = DirectedLNGraph.Create().AddEdges(updates)
         let route =
@@ -749,13 +749,13 @@ let tests = testList "Route Calculation" [
     testCase "Use weight ratios to when computing the edge weight" <| fun _ ->
         let largeCap = LNMoney.MilliSatoshis(8000000000L)
         let updates = [
-            makeUpdate(1UL, a, b, LNMoney.MilliSatoshis(0), 0u, Some(LNMoney.Zero), None, Some (BlockHeightOffset(13us)))
-            makeUpdate(4UL, a, e, LNMoney.MilliSatoshis(0), 0u, Some(LNMoney.Zero), None, Some (BlockHeightOffset(12us)))
-            makeUpdate(2UL, b, c, LNMoney.MilliSatoshis(1), 0u, Some(LNMoney.Zero), None, Some (BlockHeightOffset(500us)))
-            makeUpdate(3UL, c, d, LNMoney.MilliSatoshis(1), 0u, Some(LNMoney.Zero), None, Some (BlockHeightOffset(500us)))
-            makeUpdate(5UL, e, f, LNMoney.MilliSatoshis(2), 0u, Some(LNMoney.Zero), None, Some (BlockHeightOffset(9us)))
-            makeUpdate(6UL, f, d, LNMoney.MilliSatoshis(2), 0u, Some(LNMoney.Zero), None, Some (BlockHeightOffset(9us)))
-            makeUpdate(7UL, e, c, LNMoney.MilliSatoshis(2), 0u, Some(LNMoney.Zero), Some(largeCap), Some (BlockHeightOffset(12us)))
+            makeUpdate(1UL, a, b, LNMoney.MilliSatoshis(0), 0u, Some(LNMoney.Zero), None, Some (BlockHeightOffset16(13us)))
+            makeUpdate(4UL, a, e, LNMoney.MilliSatoshis(0), 0u, Some(LNMoney.Zero), None, Some (BlockHeightOffset16(12us)))
+            makeUpdate(2UL, b, c, LNMoney.MilliSatoshis(1), 0u, Some(LNMoney.Zero), None, Some (BlockHeightOffset16(500us)))
+            makeUpdate(3UL, c, d, LNMoney.MilliSatoshis(1), 0u, Some(LNMoney.Zero), None, Some (BlockHeightOffset16(500us)))
+            makeUpdate(5UL, e, f, LNMoney.MilliSatoshis(2), 0u, Some(LNMoney.Zero), None, Some (BlockHeightOffset16(9us)))
+            makeUpdate(6UL, f, d, LNMoney.MilliSatoshis(2), 0u, Some(LNMoney.Zero), None, Some (BlockHeightOffset16(9us)))
+            makeUpdate(7UL, e, c, LNMoney.MilliSatoshis(2), 0u, Some(LNMoney.Zero), Some(largeCap), Some (BlockHeightOffset16(12us)))
         ]
         let graph = DirectedLNGraph.Create().AddEdges(updates)
         let r =
@@ -781,7 +781,7 @@ let tests = testList "Route Calculation" [
     testCase "Prefer going through an older channel if fees and CLTV are the same" <| fun _ ->
         let currentBlockHeight = 554000u
         let mu(schid, one, two) = 
-            makeUpdate2(schid, one, two, LNMoney.MilliSatoshis(1), 0u, (Some LNMoney.Zero), None, (Some (BlockHeightOffset(144us))))
+            makeUpdate2(schid, one, two, LNMoney.MilliSatoshis(1), 0u, (Some LNMoney.Zero), None, (Some (BlockHeightOffset16(144us))))
         let updates = [
             mu((sprintf "%dx0x1" currentBlockHeight), a, b)
             mu((sprintf "%dx0x4" currentBlockHeight), a, e)
@@ -801,7 +801,7 @@ let tests = testList "Route Calculation" [
         
     testCase "prefer a route with a smaller total CLTV if fees and scores are the same" <| fun _ ->
         let mu (schid, one, two, cltv) =
-            makeUpdate(schid, one, two, LNMoney.One, 0u, (Some LNMoney.Zero), None, (Some (BlockHeightOffset cltv)))
+            makeUpdate(schid, one, two, LNMoney.One, 0u, (Some LNMoney.Zero), None, (Some (BlockHeightOffset16 cltv)))
         let updates = [
             mu(1UL, a, b, 12us)
             mu(4UL, a, e, 12us)
@@ -823,7 +823,7 @@ let tests = testList "Route Calculation" [
         
     testCase "avoid a route that breaks off the max CLTV" <| fun _ ->
         let mu (schid, one, two, cltv) =
-            makeUpdate(schid, one, two, LNMoney.One, 0u, (Some LNMoney.Zero), None, (Some (BlockHeightOffset cltv)))
+            makeUpdate(schid, one, two, LNMoney.One, 0u, (Some LNMoney.Zero), None, (Some (BlockHeightOffset16 cltv)))
         // A --> B --> C --> D is cheaper but has a total CLTV > 2016!
         // A --> E --> F --> D is more expensive but has a total CLTV < 2016
         let updates = [
@@ -859,7 +859,7 @@ let tests = testList "Route Calculation" [
                       Timestamp = 0u
                       MessageFlags = 1uy
                       ChannelFlags = 0uy
-                      CLTVExpiryDelta = BlockHeightOffset(14us)
+                      CLTVExpiryDelta = BlockHeightOffset16(14us)
                       HTLCMinimumMSat = LNMoney.One
                       FeeBaseMSat = LNMoney.Satoshis(1L)
                       FeeProportionalMillionths = 10u
@@ -870,7 +870,7 @@ let tests = testList "Route Calculation" [
                       Timestamp = 0u
                       MessageFlags = 1uy
                       ChannelFlags = 1uy
-                      CLTVExpiryDelta = BlockHeightOffset(144us)
+                      CLTVExpiryDelta = BlockHeightOffset16(144us)
                       HTLCMinimumMSat = LNMoney.Zero
                       FeeBaseMSat = LNMoney.Satoshis(1L)
                       FeeProportionalMillionths = 100u
@@ -888,7 +888,7 @@ let tests = testList "Route Calculation" [
                       Timestamp = 0u
                       MessageFlags = 1uy
                       ChannelFlags = 0uy
-                      CLTVExpiryDelta = BlockHeightOffset(144us)
+                      CLTVExpiryDelta = BlockHeightOffset16(144us)
                       HTLCMinimumMSat = LNMoney.Satoshis(1)
                       FeeBaseMSat = LNMoney.Satoshis(1L)
                       FeeProportionalMillionths = 100u
@@ -899,7 +899,7 @@ let tests = testList "Route Calculation" [
                       Timestamp = 0u
                       MessageFlags = 1uy
                       ChannelFlags = 1uy
-                      CLTVExpiryDelta = BlockHeightOffset(144us)
+                      CLTVExpiryDelta = BlockHeightOffset16(144us)
                       HTLCMinimumMSat = LNMoney.One
                       FeeBaseMSat = LNMoney.Satoshis(667)
                       FeeProportionalMillionths = 1u
@@ -917,7 +917,7 @@ let tests = testList "Route Calculation" [
                       Timestamp = 0u
                       MessageFlags = 1uy
                       ChannelFlags = 0uy
-                      CLTVExpiryDelta = BlockHeightOffset(144us)
+                      CLTVExpiryDelta = BlockHeightOffset16(144us)
                       HTLCMinimumMSat = LNMoney.One
                       FeeBaseMSat = LNMoney.Satoshis(1L)
                       FeeProportionalMillionths = 100u
@@ -928,7 +928,7 @@ let tests = testList "Route Calculation" [
                       Timestamp = 0u
                       MessageFlags = 1uy
                       ChannelFlags = 3uy
-                      CLTVExpiryDelta = BlockHeightOffset(144us)
+                      CLTVExpiryDelta = BlockHeightOffset16(144us)
                       HTLCMinimumMSat = LNMoney.One
                       FeeBaseMSat = LNMoney.Satoshis(1)
                       FeeProportionalMillionths = 100u
@@ -943,7 +943,7 @@ let tests = testList "Route Calculation" [
               MaxFeeBase = LNMoney.MilliSatoshis 21000
               MaxFeePCT = 0.03
               RouteMaxLength = 6
-              RouteMaxCLTV = 1008us |> BlockHeightOffset
+              RouteMaxCLTV = 1008us |> BlockHeightOffset16
               Ratios = Some(WeightRatios.TryCreate(0.15, 0.35, 0.5) |> Result.deref) }
         let thisNode = PubKey("036d65409c41ab7380a43448f257809e7496b52bf92057c09c4f300cbd61c50d96") |> NodeId
         let targetNode = PubKey("024655b768ef40951b20053a5c4b951606d4d86085d51238f2c67c7dec29c792ca") |> NodeId

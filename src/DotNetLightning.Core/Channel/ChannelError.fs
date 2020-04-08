@@ -43,7 +43,7 @@ type ChannelError =
     
     /// Consumer of the api (usually, that is wallet) failed to give an funding tx
     | FundingTxNotGiven of msg: string
-    | OnceConfirmedFundingTxHasBecomeUnconfirmed of height: BlockHeight * depth: BlockHeightOffset
+    | OnceConfirmedFundingTxHasBecomeUnconfirmed of height: BlockHeight * depth: BlockHeightOffset16
     | CannotCloseChannel of msg: string
     | UndefinedStateAndCmdPair of state: ChannelState * cmd: ChannelCommand
     | RemoteProposedHigherFeeThanBefore of previous: Money * current: Money

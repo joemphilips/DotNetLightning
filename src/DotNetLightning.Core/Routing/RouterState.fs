@@ -13,7 +13,7 @@ type RouteParams = {
     MaxFeeBase: LNMoney
     MaxFeePCT: double
     RouteMaxLength: int
-    RouteMaxCLTV: BlockHeightOffset
+    RouteMaxCLTV: BlockHeightOffset16
     Ratios: WeightRatios option
 }
     with

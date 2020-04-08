@@ -36,32 +36,32 @@ module Primitives =
         static member One = 1u |> BlockHeight
         member x.Value = let (BlockHeight v) = x in v
         member x.AsOffset() =
-            x.Value |> Checked.uint16 |> BlockHeightOffset
-        static member (+) (a: BlockHeight, b: BlockHeightOffset) =
+            x.Value |> Checked.uint16 |> BlockHeightOffset16
+        static member (+) (a: BlockHeight, b: BlockHeightOffset16) =
                 a.Value + (uint32 b.Value ) |> BlockHeight
 
-        static member (-) (a: BlockHeight, b: BlockHeightOffset) =
+        static member (-) (a: BlockHeight, b: BlockHeightOffset16) =
             a.Value - (uint32 b.Value) |> BlockHeight
             
         static member (-) (a: BlockHeight, b: BlockHeight) =
-            a.Value - (b.Value) |> uint16 |> BlockHeightOffset
+            a.Value - (b.Value) |> uint16 |> BlockHeightOffset16
 
     /// **Description**
     ///
     /// Relative block height used for `OP_CSV` locks,
     /// Since OP_CSV allow only block number of 0 ~ 65535, it is safe
     /// to restrict into the range smaller than BlockHeight
-    and  [<Struct>] BlockHeightOffset = | BlockHeightOffset of uint16 with
-        member x.Value = let (BlockHeightOffset v) = x in v
+    and  [<Struct>] BlockHeightOffset16 = | BlockHeightOffset16 of uint16 with
+        member x.Value = let (BlockHeightOffset16 v) = x in v
         static member op_Implicit (v: uint16) =
-            BlockHeightOffset v
-        static member One = BlockHeightOffset(1us)
-        static member Zero = BlockHeightOffset(0us)
-        static member MaxValue = UInt16.MaxValue |> BlockHeightOffset
-        static member (+) (a: BlockHeightOffset, b: BlockHeightOffset) =
-            a.Value + b.Value |> BlockHeightOffset
-        static member (-) (a: BlockHeightOffset, b: BlockHeightOffset) =
-            a.Value - b.Value |> BlockHeightOffset
+            BlockHeightOffset16 v
+        static member One = BlockHeightOffset16(1us)
+        static member Zero = BlockHeightOffset16(0us)
+        static member MaxValue = UInt16.MaxValue |> BlockHeightOffset16
+        static member (+) (a: BlockHeightOffset16, b: BlockHeightOffset16) =
+            a.Value + b.Value |> BlockHeightOffset16
+        static member (-) (a: BlockHeightOffset16, b: BlockHeightOffset16) =
+            a.Value - b.Value |> BlockHeightOffset16
 
     /// Wrapper around NBitcoin's ECDSASignature type for convenience. It has following difference
     /// 1. It is equatable

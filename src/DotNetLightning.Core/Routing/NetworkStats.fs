@@ -17,7 +17,7 @@ type NetworkStats = {
     Channels: int
     Nodes: int
     Cap: Stats<Money>
-    CLTVExpiryDelta: Stats<BlockHeightOffset>
+    CLTVExpiryDelta: Stats<BlockHeightOffset16>
     FeeBase: Stats<LNMoney>
     FeeProportional: Stats<uint32>
 }
