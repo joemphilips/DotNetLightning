@@ -126,7 +126,7 @@ let acceptChannelGen =
         <*> lnMoneyGen
         <*> moneyGen
         <*> lnMoneyGen
-        <*> (Arb.generate<uint32> |> Gen.map(BlockHeight))
+        <*> (Arb.generate<uint32> |> Gen.map(BlockHeightOffset32))
         <*> (BlockHeightOffset16 <!> Arb.generate<uint16>)
         <*> Arb.generate<uint16>
         <*> pubKeyGen

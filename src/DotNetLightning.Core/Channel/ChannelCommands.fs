@@ -105,7 +105,7 @@ type RemoteParams = {
     DelayedPaymentBasePoint: PubKey
     HTLCBasePoint: PubKey
     Features: FeatureBit
-    MinimumDepth: BlockHeightOffset16
+    MinimumDepth: BlockHeightOffset32
 }
     with
         static member FromAcceptChannel nodeId (remoteInit: Init) (msg: AcceptChannel) =
@@ -123,7 +123,7 @@ type RemoteParams = {
                 DelayedPaymentBasePoint = msg.DelayedPaymentBasepoint
                 HTLCBasePoint = msg.HTLCBasepoint
                 Features = remoteInit.Features
-                MinimumDepth = BlockHeightOffset16 <| uint16 msg.MinimumDepth.Value
+                MinimumDepth = msg.MinimumDepth
             }
 
         static member FromOpenChannel (nodeId) (remoteInit: Init) (msg: OpenChannel) (channelHandshakeConfig: ChannelHandshakeConfig) =
@@ -196,7 +196,7 @@ type ChannelCommand =
     | ApplyAcceptChannel of AcceptChannel
     | ApplyFundingSigned of FundingSigned
     | ApplyFundingLocked of FundingLocked
-    | ApplyFundingConfirmedOnBC of height: BlockHeight * txIndex: TxIndexInBlock * depth: BlockHeightOffset16
+    | ApplyFundingConfirmedOnBC of height: BlockHeight * txIndex: TxIndexInBlock * depth: BlockHeightOffset32
 
     // open: fundee
     | CreateInbound of InputInitFundee

@@ -486,7 +486,7 @@ type AcceptChannel = {
     mutable MaxHTLCValueInFlightMsat: LNMoney
     mutable ChannelReserveSatoshis: Money
     mutable HTLCMinimumMSat: LNMoney
-    mutable MinimumDepth: BlockHeight
+    mutable MinimumDepth: BlockHeightOffset32
     mutable ToSelfDelay: BlockHeightOffset16
     mutable MaxAcceptedHTLCs: uint16
     mutable FundingPubKey: PubKey
@@ -506,7 +506,7 @@ with
             this.MaxHTLCValueInFlightMsat <- ls.ReadUInt64(false) |> LNMoney.MilliSatoshis
             this.ChannelReserveSatoshis <- ls.ReadUInt64(false) |> Money.Satoshis
             this.HTLCMinimumMSat <- ls.ReadUInt64(false) |> LNMoney.MilliSatoshis
-            this.MinimumDepth <- ls.ReadUInt32(false) |> BlockHeight
+            this.MinimumDepth <- ls.ReadUInt32(false) |> BlockHeightOffset32
             this.ToSelfDelay <- ls.ReadUInt16(false) |> BlockHeightOffset16
             this.MaxAcceptedHTLCs <- ls.ReadUInt16(false)
             this.FundingPubKey <- ls.ReadPubKey()
