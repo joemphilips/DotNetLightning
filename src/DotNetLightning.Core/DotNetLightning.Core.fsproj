@@ -22,28 +22,10 @@
     <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\NSec\Experimental\NSec.Experimental.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\ResultUtils\ResultUtils.fsproj" PrivateAssets="all" />
     <ProjectReference Include="..\InternalBech32Encoder\InternalBech32Encoder.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\DotNetLightning.Data\DotNetLightning.Data.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Utils/Primitives.fs" />
-    <Compile Include="Utils/LNMoney.fs" />
-    <Compile Include="Utils/NBitcoinExtensions.fs" />
-    <Compile Include="Utils\Extensions.fs" />
-    <Compile Include="Utils/Utils.fs" />
-    <Compile Include="Utils/Aether.fs" />
-    <Compile Include="Utils/Config.fs" />
-    <Compile Include="Utils/Errors.fs" />
-    <Compile Include="Utils/RouteType.fs" />
-    <Compile Include="Utils/PriorityQueue.fs" />
-    <Compile Include="Serialize\GenericTLV.fs" />
-    <Compile Include="Serialize/LightningStream.fs" />
-    <Compile Include="Serialize\BitWriter.fs" />
-    <Compile Include="Serialize\EncodedTypes.fs" />
-    <Compile Include="Serialize\Encoding.fs" />
-    <Compile Include="Serialize\Features.fs" />
-    <Compile Include="Serialize\TLVs.fs" />
-    <Compile Include="Serialize\OnionPayload.fs" />
-    <Compile Include="Serialize/Msgs/Msgs.fs" />
     <Compile Include="DomainUtils/Types.fs" />
     <Compile Include="Crypto/CryptoUtils.fs" />
     <Compile Include="Crypto/ShaChain.fs" />
@@ -83,9 +65,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="4.7.0" />
-    <PackageReference Include="NBitcoin" Version="5.0.3" />
     <PackageReference Condition="'$(BouncyCastle)'=='true'" Include="Portable.BouncyCastle" Version="1.8.5.2" />
-    <PackageReference Include="System.Memory" Version="4.5.3" />
   </ItemGroup>
 
   <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">

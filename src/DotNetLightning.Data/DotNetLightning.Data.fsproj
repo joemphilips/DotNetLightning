@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Utils/Primitives.fs" />
+    <Compile Include="Utils/LNMoney.fs" />
+    <Compile Include="Utils/NBitcoinExtensions.fs" />
+    <Compile Include="Utils\Extensions.fs" />
+    <Compile Include="Utils/Utils.fs" />
+    <Compile Include="Utils/Aether.fs" />
+    <Compile Include="Utils/Config.fs" />
+    <Compile Include="Utils/Errors.fs" />
+    <Compile Include="Utils/RouteType.fs" />
+    <Compile Include="Utils/PriorityQueue.fs" />
+    <Compile Include="Serialize\GenericTLV.fs" />
+    <Compile Include="Serialize/LightningStream.fs" />
+    <Compile Include="Serialize\BitWriter.fs" />
+    <Compile Include="Serialize\EncodedTypes.fs" />
+    <Compile Include="Serialize\Encoding.fs" />
+    <Compile Include="Serialize\Features.fs" />
+    <Compile Include="Serialize\TLVs.fs" />
+    <Compile Include="Serialize\OnionPayload.fs" />
+    <Compile Include="Serialize/Msgs/Msgs.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="4.7.0" />
+    <PackageReference Include="NBitcoin" Version="5.0.3" />
+    <PackageReference Include="System.Memory" Version="4.5.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ResultUtils\ResultUtils.fsproj" />
+  </ItemGroup>
+
+</Project>

@@ -99,7 +99,7 @@ type ILightningSerializable<'T when 'T: (new: unit -> 'T) and 'T :> ILightningSe
     abstract Serialize: LightningWriterStream -> unit
 
 module ILightningSerializable =
-    let internal fromBytes<'T when 'T :(new :unit -> 'T) and 'T :> ILightningSerializable<'T>>(data: byte[]) = 
+    let public fromBytes<'T when 'T :(new :unit -> 'T) and 'T :> ILightningSerializable<'T>>(data: byte[]) = 
         use ms = new MemoryStream(data)
         use ls = new LightningReaderStream(ms)
         let instance = new 'T()
