@@ -7,6 +7,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
   </PropertyGroup>
   <ItemGroup>
