@@ -237,12 +237,12 @@ type FeatureBit private (bitArray) =
         let sb = StringBuilder()
         let reversed = this.BitArray.Reverse()
         for f in Feature.allFeatures do
-            if (reversed.[f.MandatoryBitPosition]) then
+            if (reversed.Length > f.MandatoryBitPosition) && (reversed.[f.MandatoryBitPosition]) then
                 sb.Append(sprintf "%s is mandatory. " f.RfcName) |> ignore
-            else if (reversed.[f.OptionalBitPosition]) then
+            else if (reversed.Length > f.OptionalBitPosition) && (reversed.[f.OptionalBitPosition]) then
                 sb.Append(sprintf "%s is optional. " f.RfcName) |> ignore
             else
-                ()
+                sb.Append(sprintf "%s is non supported. " f.RfcName) |> ignore
         sb.ToString()
     
     member this.ToByteArray() = this.ByteArray
