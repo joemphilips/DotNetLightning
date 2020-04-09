@@ -74,13 +74,15 @@ let tests =
             let fundingTxId = [| for _ in 0..31 -> 1uy |] |> uint256 |> TxId
             let fundingAmount = Money.Satoshis 10000000L
             
-            let localSeed = [| for _ in 0..31 -> 0uy |] |> uint256
-            let localRepo = DefaultKeyRepository(localSeed) :> IKeysRepository
+            let localNodeSecret = ExtKey("00000000000000000000000000000000")
+            let localChannelIndex = 0
+            let localRepo = DefaultKeyRepository(localNodeSecret, localChannelIndex) :> IKeysRepository
             let localKeys = localRepo.GetChannelKeys(true)
             let localPubKeys = localKeys.ToChannelPubKeys()
             
-            let remoteSeed = [| for _ in 0..31 -> 8uy |] |> uint256
-            let remoteRepo = DefaultKeyRepository(remoteSeed) :> IKeysRepository
+            let remoteNodeSecret = ExtKey("88888888888888888888888888888888")
+            let remoteChannelIndex = 1
+            let remoteRepo = DefaultKeyRepository(remoteNodeSecret, remoteChannelIndex) :> IKeysRepository
             let remoteKeys = remoteRepo.GetChannelKeys(false)
             let remotePubKeys = remoteKeys.ToChannelPubKeys()
             

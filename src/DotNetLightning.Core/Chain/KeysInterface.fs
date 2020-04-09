@@ -88,8 +88,6 @@ type IKeysRepository =
     /// Get a new set of ChannelKeys for per-channel secrets. These MUST be unique even if you
     /// restarted with some stale data.
     abstract member GetChannelKeys: inbound:bool -> ChannelKeys
-    /// Get a secret for constructing onion packet
-    abstract member GetSessionKey: unit -> Key
 
     /// Must add signature to the PSBT *And* return the signature
     abstract member GetSignatureFor: psbt: PSBT * pubKey: PubKey -> TransactionSignature * PSBT
@@ -98,43 +96,69 @@ type IKeysRepository =
     /// Must add signature to the PSBT *And* return the signature
     abstract member GenerateKeyFromRemoteSecretAndSign: psbt: PSBT * pubKey: PubKey * remoteSecret : Key -> TransactionSignature * PSBT
 
-/// `KeyManager` in rust-lightning
-type DefaultKeyRepository(seed: uint256) =
-    let masterKey = ExtKey(seed.ToBytes())
-    let destinationKey = masterKey.Derive(1, true)
-    let _lockObj = obj()
-    let mutable _childIndex = 0
+/// `InMemoryChannelKeys` in rust-lightning.
+///
+/// `nodeSecret` is the node-wide master key which is also used for
+/// transport-level encryption. The channel's keys are derived from
+/// `nodeSecret` via BIP32 key derivation where `channelIndex` is the child
+/// index used to derive the channel's master key.
+type DefaultKeyRepository(nodeSecret: ExtKey, channelIndex: int) =
     let _utf8 = Encoding.UTF8
-    member this.NodeSecret = masterKey.Derive(0, true)
-    member this.DestinationScript = destinationKey.PrivateKey.PubKey.WitHash.ScriptPubKey
-    member this.ShutDownPubKey = masterKey.Derive(2, true).PrivateKey.PubKey
-    member this.ChannelMasterKey = masterKey.Derive(3, true)
-    member this.SessionMasterKey = masterKey.Derive(4, true)
-    member this.ChannelIdMasterKey = masterKey.Derive(5, true)
-    member val SessionChildIndex = 0u with get, set
-    member val BasepointToSecretMap = ConcurrentDictionary<PubKey, Key>() with get, set
+    let channelMasterKey = nodeSecret.Derive(channelIndex, true)
+
+    let destinationKey = channelMasterKey.Derive(1, true).PrivateKey
+    let shutdownKey = channelMasterKey.Derive(2, true).PrivateKey
+    let commitmentSeed = channelMasterKey.Derive(3, true).PrivateKey.ToBytes() |> uint256
+
+    let fundingKey = channelMasterKey.Derive(4, true).PrivateKey
+    let fundingPubKey = fundingKey.PubKey
+
+    let revocationBaseKey = channelMasterKey.Derive(5, true).PrivateKey
+    let revocationBasePubKey = revocationBaseKey.PubKey
+
+    let paymentBaseKey = channelMasterKey.Derive(6, true).PrivateKey
+    let paymentBasePubKey = paymentBaseKey.PubKey
+
+    let delayedPaymentBaseKey = channelMasterKey.Derive(7, true).PrivateKey
+    let delayedPaymentBasePubKey = delayedPaymentBaseKey.PubKey
+
+    let htlcBaseKey = channelMasterKey.Derive(8, true).PrivateKey
+    let htlcBasePubKey = htlcBaseKey.PubKey
+
+    let basepointToSecretMap = ConcurrentDictionary<PubKey, Key>()
+    do
+        basepointToSecretMap.TryAdd(fundingPubKey, fundingKey) |> ignore
+        basepointToSecretMap.TryAdd(revocationBasePubKey, revocationBaseKey) |> ignore
+        basepointToSecretMap.TryAdd(paymentBasePubKey, paymentBaseKey) |> ignore
+        basepointToSecretMap.TryAdd(delayedPaymentBasePubKey, delayedPaymentBaseKey) |> ignore
+        basepointToSecretMap.TryAdd(htlcBasePubKey, htlcBaseKey) |> ignore
+
+    member this.NodeSecret = nodeSecret
+    member this.DestinationScript = destinationKey.PubKey.WitHash.ScriptPubKey
+    member this.ShutDownKey = shutdownKey
+    member this.ShutDownPubKey = shutdownKey.PubKey
+    member this.CommitmentSeed = commitmentSeed
+    member this.FundingKey = fundingKey
+    member this.FundingPubKey = fundingPubKey
+    member this.RevocationBaseKey = revocationBaseKey
+    member this.RevocationBasePubKey = revocationBasePubKey
+    member this.PaymentBaseKey = paymentBaseKey
+    member this.PaymentBasePubKey = paymentBasePubKey
+    member this.DelayedPaymentBaseKey = delayedPaymentBaseKey
+    member this.DelayedPaymentBasePubKey = delayedPaymentBasePubKey
+    member this.HtlcBaseKey = htlcBaseKey
+    member this.HtlcBasePubKey = htlcBasePubKey
+
+    member val BasepointToSecretMap = basepointToSecretMap
+
     member this.GetChannelKeys() =
-        Interlocked.Increment(ref _childIndex) |> ignore
-        let childPrivKey = masterKey.Derive(_childIndex, true)
-        let seed = Hashes.SHA256(childPrivKey.ToBytes())
-        let commitmentSeed = Array.append seed ("commitment seed" |> _utf8.GetBytes) |> Hashes.SHA256
-        let fundingKey = Array.concat[| seed; commitmentSeed; ("funding pubkey" |> _utf8.GetBytes) |] |> Hashes.SHA256
-        let revocationBaseKey = Array.concat[| seed; fundingKey; ("revocation base key" |> _utf8.GetBytes) |] |> Hashes.SHA256
-        let paymentBaseKey = Array.concat[| seed; revocationBaseKey; ("payment base key" |> _utf8.GetBytes) |] |> Hashes.SHA256
-        let delayedPaymentBaseKey = Array.concat[| seed; paymentBaseKey; ("delayed payment base key" |> _utf8.GetBytes) |] |> Hashes.SHA256
-        let htlcBaseKey = Array.concat[| seed; delayedPaymentBaseKey; ("htlc base key" |> _utf8.GetBytes) |] |> Hashes.SHA256
-        let keys = [ fundingKey; revocationBaseKey; paymentBaseKey; delayedPaymentBaseKey; htlcBaseKey ] |> List.map Key
-        let basepointAndSecrets = keys |> List.map(fun k -> k.PubKey, k)
-        basepointAndSecrets
-        |> List.iter(fun (k ,v) ->
-            this.BasepointToSecretMap.TryAdd(k, v) |> ignore)
         {
-            FundingKey = keys.[0]
-            RevocationBaseKey = keys.[1]
-            PaymentBaseKey = keys.[2]
-            DelayedPaymentBaseKey = keys.[3]
-            HTLCBaseKey = keys.[4]
-            CommitmentSeed = seed |> uint256
+            FundingKey = this.FundingKey
+            RevocationBaseKey = this.RevocationBaseKey
+            PaymentBaseKey = this.PaymentBaseKey
+            DelayedPaymentBaseKey = this.DelayedPaymentBaseKey
+            HTLCBaseKey = this.HtlcBaseKey
+            CommitmentSeed = this.CommitmentSeed
         }
     interface IKeysRepository with
         // TODO: Update
@@ -142,9 +166,7 @@ type DefaultKeyRepository(seed: uint256) =
             this.GetChannelKeys()
         member this.GetDestinationScript() =
             this.DestinationScript
-        member this.GetSessionKey(): Key = 
-            this.SessionMasterKey.PrivateKey
-        member this.GetShutdownPubKey(): PubKey = 
+        member this.GetShutdownPubKey(): PubKey =
             this.ShutDownPubKey
         member this.GetNodeSecret() =
             this.NodeSecret.PrivateKey

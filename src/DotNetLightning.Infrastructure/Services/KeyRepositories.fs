@@ -16,8 +16,6 @@ type FlatFileKeyRepository() =
             failwith "Not Implemented"
         member this.GetNodeSecret(): Key = 
             failwith "Not Implemented"
-        member this.GetSessionKey(): Key = 
-            failwith "Not Implemented"
         member this.GetShutdownPubKey(): PubKey = 
             failwith "Not Implemented"
         member this.GetSignatureFor(psbt: PSBT, pubKey: PubKey): TransactionSignature * PSBT = 

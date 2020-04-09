@@ -21,21 +21,14 @@ let pushMsat = 200000000L |> LNMoney.MilliSatoshis
 let feeratePerKw = 10000u |> FeeRatePerKw 
 let hex = NBitcoin.DataEncoders.HexEncoder()
 let aliceNodeSecret = 
-    Key(hex.DecodeData("1111111111111111111111111111111111111111111111111111111111111111"))
+    ExtKey("1111111111111111111111111111111111111111111111111111111111111111")
+let aliceChannelIndex = 0
         
-let aliceChannelKeysSeed = 
-    hex.DecodeData("2222222222222222222222222222222222222222222222222222222222222222")
-    |> uint256
-      
 let bobNodeSecret =
-    Key(hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202"))
+    ExtKey("0202020202020202020202020202020202020202020202020202020202020202")
     // Key(hex.DecodeData("3333333333333333333333333333333333333333333333333333333333333333"))
+let bobChannelIndex = 1
     
-let bobChannelKeysSeed =
-    hex.DecodeData("4444444444444444444444444444444444444444444444444444444444444444")
-    |> uint256
-    
-
 type DummyFundingTxProvider(n: Network) =
     member val DummyTx = null with get, set
     interface IFundingTxProvider with
@@ -85,7 +78,7 @@ let getAliceParam() =
     p.ReserveToFundingRatio <- 0.01
     p.DBType <- SupportedDBType.Null
     let keyRepo =
-        DefaultKeyRepository(aliceChannelKeysSeed)
+        DefaultKeyRepository(aliceNodeSecret, aliceChannelIndex)
     {
         TestEntity.Seed = [| for _ in 0..31 -> 0uy |] |> uint256
         KeyRepo = keyRepo
@@ -94,7 +87,7 @@ let getAliceParam() =
     
 let getBobParam() =
     let p = ChainConfig()
-    let keyRepo = DefaultKeyRepository(bobChannelKeysSeed)
+    let keyRepo = DefaultKeyRepository(bobNodeSecret, bobChannelIndex)
     {
         TestEntity.Seed = [| for _ in 0..31 -> 1uy |] |> uint256
         KeyRepo = keyRepo
