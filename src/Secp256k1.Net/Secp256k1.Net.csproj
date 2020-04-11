@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <LangVersion>latest</LangVersion>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
@@ -11,7 +10,6 @@
     <PackageTags>Secp256k1 libsecp256k1 ECDSA ethereum bitcoin</PackageTags>
     <Description>.NET wrapper for native secp256k1 library</Description>
     <PackageProjectUrl>https://github.com/joemphilips/Secp256k1.Net</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/joemphilips/Secp256k1.Net/blob/master/LICENSE</PackageLicenseUrl>
     <NoWarn>1591,1573</NoWarn>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
