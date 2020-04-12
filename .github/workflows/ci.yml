@@ -6,7 +6,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-18.04, windows-latest, macos-latest]
-        dotnet: ['2.2.103', '3.1.200']
+        dotnet: ['3.1.200']
       fail-fast: true
     steps:
     - uses: actions/checkout@v2
@@ -17,12 +17,12 @@ jobs:
 
     - name: Run tests (BouncyCastle)
       # we want to run only once.
-      if: startsWith(matrix.os, "ubuntu-18")
+      if: startsWith(matrix.os, 'ubuntu-18')
       run: |
         dotnet test tests/DotNetLightning.Core.Tests -p:BouncyCastle=True
     - name: Run Infrastructure tests on BouncyCastle
       # we want to run only once.
-      if: startsWith(matrix.os, "ubuntu-18")
+      if: startsWith(matrix.os, 'ubuntu-18')
       run: |
         dotnet test tests/DotNetLightning.Infrastructure.Tests -p:BouncyCastle=True
 
