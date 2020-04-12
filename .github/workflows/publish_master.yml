@@ -14,8 +14,6 @@ jobs:
         include:
           - os: ubuntu-18.04
             RID: linux
-          - os: windows-latest
-            RID: win
           - os: macos-latest
             RID: osx
       fail-fast: true
