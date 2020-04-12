@@ -26,8 +26,6 @@ jobs:
       run: |
         dotnet test tests/DotNetLightning.Infrastructure.Tests -p:BouncyCastle=True
 
-    - name: Restore NSec and Secp256k1.Net
-      run: git checkout src/NSec src/Secp256k1.Net
     - name: Clean to prepare for NSec build
       run: |
         dotnet clean

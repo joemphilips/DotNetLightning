@@ -60,13 +60,25 @@ jobs:
 
       - name: pack and push to nuget (BouncyCastle)
         # we want to run only once.
-        if: startsWith(matrix.os, "ubuntu-18")
+        if: startsWith(matrix.os, 'ubuntu-18')
         run: |
           echo "releasing BouncyCastle version to nuget..."
           dotnet pack -p:Configuration=Release src/DotNetLightning.Core -p:BouncyCastle=True
           if [ ${{ secrets.NUGET_API_KEY }} ]; then
             dotnet nuget push ./src/DotNetLightning.Core/bin/Release/DotNetLightning.${{ steps.get_version.outputs.VERSION }}.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
           fi
+
+      - name: upload release asset (BouncyCastle version)
+        # we want to run only once.
+        if: startsWith(matrix.os, 'ubuntu-18')
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.upload-url.outputs.url }}
+          asset_path: ./src/DotNetLightning.Core/bin/Release/DotNetLightning.${{ steps.get_version.outputs.VERSION }}.nupkg
+          asset_name: DotNetLightning-multiplatform.${{ steps.get_version.outputs.VERSION }}.nupkg
+          asset_content_type: application/zip
 
       - name: pack non-BouncyCastle version
         run: |
