@@ -31,12 +31,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04, windows-latest, macos-latest]
+        os: [ubuntu-18.04, macos-latest]
         include:
           - os: ubuntu-18.04
             RID: linux
-          - os: windows-latest
-            RID: win
           - os: macos-latest
             RID: osx
     steps:
