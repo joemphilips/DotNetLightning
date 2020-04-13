@@ -1,0 +1,41 @@
+name: publish(master)
+on:
+  push:
+    branches:
+      - master
+      - cd # just for now.
+      - 'nightly*' # to workaround regular publishing process
+
+jobs:
+  pack_and_push:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-18.04, macos-latest]
+        include:
+          - os: ubuntu-18.04
+            RID: linux
+          - os: macos-latest
+            RID: osx
+      fail-fast: true
+    steps:
+
+    - uses: actions/checkout@v2
+
+    - name: Setup ${{ matrix.dotnet }} .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '3.1.200'
+
+    - name: Upload nuget packages (BouncyCastle)
+      if: startsWith(matrix.os, 'ubuntu')
+      run: |
+        cd $GITHUB_WORKSPACE/src/DotNetLightning.Core
+        dotnet pack . -p:Configuration=Release --version-suffix date`date +%Y%m%d-%H%M`-git-`echo $GITHUB_SHA | cut -c 1-7` -p:BouncyCastle=True
+        dotnet nuget push ./bin/Release/DotNetLightning.1*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
+
+    - name: Upload nuget packages (native)
+      run: |
+        cd $GITHUB_WORKSPACE/src/DotNetLightning.Core
+        dotnet pack . -p:Configuration=Release --version-suffix date`date +%Y%m%d-%H%M`-git-`echo $GITHUB_SHA | cut -c 1-7`-${{ matrix.RID }}
+        dotnet nuget push ./bin/Release/DotNetLightning.Core.1*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json

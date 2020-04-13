@@ -1,0 +1,106 @@
+name: publish(stable release)
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  create_release:
+    runs-on: ubuntu-18.04
+    steps:
+      # workaround for upload-release-asset does not support variable expansion.
+      # see: https://github.com/actions/upload-release-asset/issues/17
+      - name: get version
+        id: get_version
+        # the substitution we use here does not work in windows.
+        run: |
+          echo ${GITHUB_REF/refs\/tags\/v/}
+          echo ${GITHUB_REF/refs\/tags\/v/} > version.txt
+          echo "::set-output name=VERSION::${GITHUB_REF/refs\/tags\/v/}"
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.get_version.outputs.VERSION }}
+          release_name: Release v${{ steps.get_version.outputs.VERSION }}
+          draft: false
+      - run: |
+          echo '${{ steps.create_release.outputs.upload_url }}' > release_upload_url.txt
+      - uses: actions/upload-artifact@v1
+        with:
+          name: create-release
+          path: release_upload_url.txt
+      - uses: actions/upload-artifact@v1
+        with:
+          name: get_version
+          path: version.txt
+
+  pack_and_push:
+    needs: create_release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-18.04, macos-latest]
+        include:
+          - os: ubuntu-18.04
+            RID: linux
+          - os: macos-latest
+            RID: osx
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup 3.1.200 .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.200
+          
+      # get and set release url and version
+      - uses: actions/download-artifact@v1
+        with:
+          name: create-release
+      - uses: actions/download-artifact@v1
+        with:
+          name: get_version
+      - id: upload-url
+        run: |
+          echo "::set-output name=url::$(cat create-release/release_upload_url.txt)"
+      - id: get_version
+        run: |
+          echo "::set-output name=VERSION::$(cat get_version/version.txt)"
+
+      - name: pack and push to nuget (BouncyCastle)
+        # we want to run only once.
+        if: startsWith(matrix.os, 'ubuntu-18')
+        run: |
+          echo "releasing BouncyCastle version to nuget..."
+          dotnet pack -p:Configuration=Release src/DotNetLightning.Core -p:BouncyCastle=True
+          if [ ${{ secrets.NUGET_API_KEY }} ]; then
+            dotnet nuget push ./src/DotNetLightning.Core/bin/Release/DotNetLightning.${{ steps.get_version.outputs.VERSION }}.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
+          fi
+
+      - name: upload release asset (BouncyCastle version)
+        # we want to run only once.
+        if: startsWith(matrix.os, 'ubuntu-18')
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.upload-url.outputs.url }}
+          asset_path: ./src/DotNetLightning.Core/bin/Release/DotNetLightning.${{ steps.get_version.outputs.VERSION }}.nupkg
+          asset_name: DotNetLightning-multiplatform.${{ steps.get_version.outputs.VERSION }}.nupkg
+          asset_content_type: application/zip
+
+      - name: pack non-BouncyCastle version
+        run: |
+          dotnet pack -p:Configuration=Release src/DotNetLightning.Core
+
+      - name: upload release asset (non-BouncyCastle version)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.upload-url.outputs.url }}
+          asset_path: ./src/DotNetLightning.Core/bin/Release/DotNetLightning.Core.${{ steps.get_version.outputs.VERSION }}.nupkg
+          asset_name: DotNetLightning-${{ matrix.RID }}.${{ steps.get_version.outputs.VERSION }}.nupkg
+          asset_content_type: application/zip
