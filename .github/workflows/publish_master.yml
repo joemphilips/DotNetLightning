@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - master
+      - cd # just for now.
       - 'nightly*' # to workaround regular publishing process
 
 jobs:
