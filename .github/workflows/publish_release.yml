@@ -26,6 +26,17 @@ jobs:
           tag_name: v${{ steps.get_version.outputs.VERSION }}
           release_name: Release v${{ steps.get_version.outputs.VERSION }}
           draft: false
+      - run: |
+          echo '${{ steps.create_release.outputs.upload_url }}' > release_upload_url.txt
+      - uses: actions/upload-artifact@v1
+        with:
+          name: create-release
+          path: release_upload_url.txt
+      - uses: actions/upload-artifact@v1
+        with:
+          name: get_version
+          path: version.txt
+
   pack_and_push:
     needs: create_release
     runs-on: ${{ matrix.os }}
