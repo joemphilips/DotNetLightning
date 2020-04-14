@@ -272,7 +272,7 @@ module internal Commitments =
 
     let sendCommit (ctx: ISecp256k1) (keyRepo: IKeysRepository) (n: Network) (cm: Commitments) =
         match cm.RemoteNextCommitInfo with
-        | Choice2Of2 remoteNextPerCommitmentPoint ->
+        | RemoteNextCommitInfo.Revoked remoteNextPerCommitmentPoint ->
             result {
                 // remote commitment will include all local changes + remote acked changes
                 let! spec = cm.RemoteCommit.Spec.Reduce(cm.RemoteChanges.ACKed, cm.LocalChanges.Proposed) |> expectTransactionError
@@ -310,12 +310,12 @@ module internal Commitments =
                                                  SentAfterLocalCommitmentIndex = cm.LocalCommit.Index
                                                  ReSignASAP = false }
 
-                    { cm with RemoteNextCommitInfo = Choice1Of2(nextRemoteCommitInfo)
+                    { cm with RemoteNextCommitInfo = RemoteNextCommitInfo.Waiting(nextRemoteCommitInfo)
                               LocalChanges = { cm.LocalChanges with Proposed = []; Signed = cm.LocalChanges.Proposed }
                               RemoteChanges = { cm.RemoteChanges with ACKed = []; Signed = cm.RemoteChanges.ACKed } }
                 return [ WeAcceptedCMDSign (msg, nextCommitments) ]
             }
-        | Choice1Of2 _ ->
+        | RemoteNextCommitInfo.Waiting _ ->
             CanNotSignBeforeRevocation |> Error
 
     let private checkSignatureCountMismatch(sortedHTLCTXs: IHTLCTx list) (msg) =

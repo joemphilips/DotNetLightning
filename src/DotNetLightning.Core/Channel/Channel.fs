@@ -223,7 +223,7 @@ module Channel =
                                     RemoteNextHTLCId = HTLCId.Zero
                                     OriginChannels = Map.empty
                                     // we will receive their next per-commitment point in the next msg, so we temporarily put a random byte array
-                                    RemoteNextCommitInfo = DataEncoders.HexEncoder() .DecodeData("0101010101010101010101010101010101010101010101010101010101010101") |> Key |> fun k -> k.PubKey |> Choice2Of2
+                                    RemoteNextCommitInfo = DataEncoders.HexEncoder() .DecodeData("0101010101010101010101010101010101010101010101010101010101010101") |> Key |> fun k -> k.PubKey |> RemoteNextCommitInfo.Revoked
                                     RemotePerCommitmentSecrets = ShaChain.Zero
                                     ChannelId =
                                         msg.ChannelId }
@@ -316,7 +316,7 @@ module Channel =
                                     LocalNextHTLCId = HTLCId.Zero
                                     RemoteNextHTLCId = HTLCId.Zero
                                     OriginChannels = Map.empty
-                                    RemoteNextCommitInfo = DataEncoders.HexEncoder() .DecodeData("0101010101010101010101010101010101010101010101010101010101010101") |> Key |> fun k -> k.PubKey |> Choice2Of2
+                                    RemoteNextCommitInfo = DataEncoders.HexEncoder() .DecodeData("0101010101010101010101010101010101010101010101010101010101010101") |> Key |> fun k -> k.PubKey |> RemoteNextCommitInfo.Revoked
                                     RemotePerCommitmentSecrets = ShaChain.Zero
                                     ChannelId = channelId }
                 let nextState = { WaitForFundingConfirmedData.Commitments = commitments
@@ -376,7 +376,7 @@ module Channel =
                                                true,
                                                None)
                 let nextState = { NormalData.Buried = true
-                                  Commitments = { state.Commitments with RemoteNextCommitInfo = Choice2Of2(msg.NextPerCommitmentPoint) }
+                                  Commitments = { state.Commitments with RemoteNextCommitInfo = RemoteNextCommitInfo.Revoked(msg.NextPerCommitmentPoint) }
                                   ShortChannelId = state.ShortChannelId
                                   ChannelAnnouncement = None
                                   ChannelUpdate = initialChannelUpdate
@@ -409,8 +409,8 @@ module Channel =
                 // we need to base the next current commitment on the last sig we sent, even if we didn't yet receive their revocation
                 let remoteCommit1 =
                     match commitments1.RemoteNextCommitInfo with
-                    | Choice1Of2 info -> info.NextRemoteCommit
-                    | Choice2Of2 _info -> commitments1.RemoteCommit
+                    | RemoteNextCommitInfo.Waiting info -> info.NextRemoteCommit
+                    | RemoteNextCommitInfo.Revoked _info -> commitments1.RemoteCommit
                 let! reduced = remoteCommit1.Spec.Reduce(commitments1.RemoteChanges.ACKed, commitments1.LocalChanges.Proposed) |> expectTransactionError
                 do! Validation.checkOurUpdateAddHTLCIsAcceptableWithCurrentSpec reduced commitments1 add
                 return [ WeAcceptedCMDAddHTLC(add, commitments1) ]
@@ -459,9 +459,9 @@ module Channel =
                 | _ when (cm.LocalHasChanges() |> not) ->
                     // Ignore SignCommitment Command (nothing to sign)
                     return []
-                | Choice2Of2 _ ->
+                | RemoteNextCommitInfo.Revoked _ ->
                     return! cm |> Commitments.sendCommit (cs.Secp256k1Context) (cs.KeysRepository) (cs.Network)
-                | Choice1Of2 _ ->
+                | RemoteNextCommitInfo.Waiting _ ->
                     // Already in the process of signing
                     return []
             }
@@ -472,17 +472,17 @@ module Channel =
         | ChannelState.Normal state, ApplyRevokeAndACK msg ->
             let cm = state.Commitments
             match cm.RemoteNextCommitInfo with
-            | Choice1Of2 _ when (msg.PerCommitmentSecret.ToPubKey() <> cm.RemoteCommit.RemotePerCommitmentPoint) ->
+            | RemoteNextCommitInfo.Waiting _ when (msg.PerCommitmentSecret.ToPubKey() <> cm.RemoteCommit.RemotePerCommitmentPoint) ->
                 let errorMsg = sprintf "Invalid revoke_and_ack %A; must be %A" msg.PerCommitmentSecret cm.RemoteCommit.RemotePerCommitmentPoint
                 invalidRevokeAndACK msg errorMsg
-            | Choice2Of2 _ ->
+            | RemoteNextCommitInfo.Revoked _ ->
                 let errorMsg = sprintf "Unexpected revocation"
                 invalidRevokeAndACK msg errorMsg
-            | Choice1Of2({ NextRemoteCommit = theirNextCommit }) ->
+            | RemoteNextCommitInfo.Waiting({ NextRemoteCommit = theirNextCommit }) ->
                 let commitments1 = { cm with LocalChanges = { cm.LocalChanges with Signed = []; ACKed = cm.LocalChanges.ACKed @ cm.LocalChanges.Signed }
                                              RemoteChanges = { cm.RemoteChanges with Signed = [] }
                                              RemoteCommit = theirNextCommit
-                                             RemoteNextCommitInfo = Choice2Of2(msg.NextPerCommitmentPoint)
+                                             RemoteNextCommitInfo = RemoteNextCommitInfo.Revoked(msg.NextPerCommitmentPoint)
                                              RemotePerCommitmentSecrets = cm.RemotePerCommitmentSecrets.AddHash (msg.PerCommitmentSecret.ToByteArray(), 0xffffffffffffUL - cm.RemoteCommit.Index) }
                 let result = [ WeAcceptedRevokeAndACK(commitments1) ]
                 result |> Ok
@@ -528,12 +528,12 @@ module Channel =
                         // Are we in the middle of a signature?
                         match cm.RemoteNextCommitInfo with
                         // yes.
-                        | Choice1Of2 waitingForRevocation ->
+                        | RemoteNextCommitInfo.Waiting waitingForRevocation ->
                             let nextCommitments = { state.Commitments with
-                                                        RemoteNextCommitInfo = Choice1Of2({ waitingForRevocation with ReSignASAP = true }) }
+                                                        RemoteNextCommitInfo = RemoteNextCommitInfo.Waiting({ waitingForRevocation with ReSignASAP = true }) }
                             return [ AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs(msg, nextCommitments) ]
                         // No. let's sign right away.
-                        | Choice2Of2 _ ->
+                        | RemoteNextCommitInfo.Revoked _ ->
                             return [ ChannelStateRequestedSignCommitment; AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs(msg, cm) ]
                 else
                     let (localShutdown, sendList) = match state.LocalShutdown with
@@ -600,9 +600,9 @@ module Channel =
             | _ when (not <| cm.LocalHasChanges()) ->
                 // nothing to sign
                 [] |> Ok
-            | Choice2Of2 _ ->
+            | RemoteNextCommitInfo.Revoked _ ->
                 cm |> Commitments.sendCommit (cs.Secp256k1Context) (cs.KeysRepository) (cs.Network)
-            | Choice1Of2 _waitForRevocation ->
+            | RemoteNextCommitInfo.Waiting _waitForRevocation ->
                 // Already in the process of signing.
                 [] |> Ok
         | Shutdown state, ApplyCommitmentSigned msg ->
