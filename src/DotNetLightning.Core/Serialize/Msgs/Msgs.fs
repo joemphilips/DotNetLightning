@@ -1281,7 +1281,20 @@ type ErrorMessage =
                 ls.WriteWithLen(this.Data)
 
         member this.GetFailureMsgData() =
-            System.Text.ASCIIEncoding.ASCII.GetString(this.Data)
+            let minPrintableAsciiChar = 32uy
+            let isPrintableAsciiChar (asciiChar: byte) =
+                asciiChar >= minPrintableAsciiChar
+            let isPrintableAsciiString =
+                not <| Seq.exists
+                    (fun asciiChar -> not (isPrintableAsciiChar asciiChar))
+                    this.Data
+            if isPrintableAsciiString then
+                System.Text.ASCIIEncoding.ASCII.GetString this.Data
+            else
+                Seq.fold
+                    (fun msg (asciiChar: byte) -> sprintf "%s %02x" msg asciiChar)
+                    "<error contains non-printable binary data>:"
+                    this.Data
 
 and WhichChannel =
     | SpecificChannel of ChannelId
