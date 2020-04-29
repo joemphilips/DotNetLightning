@@ -371,7 +371,23 @@ type Init =
                 // For backwards compatibility reason, we must consider legacy `global features` section. (see bolt 1)
                 let globalFeatures = ls.ReadWithLen()
                 let localFeatures = ls.ReadWithLen()
-                this.Features <- Array.concat [globalFeatures; localFeatures] |> FeatureBit.CreateUnsafe
+                let oredFeatures =
+                    let len = Math.Max(globalFeatures.Length, localFeatures.Length)
+                    let oredFeatures = Array.zeroCreate len
+                    for index in 0 .. (len - 1) do
+                        let globalFeaturesByte =
+                            if index < globalFeatures.Length then
+                                globalFeatures.[globalFeatures.Length - 1 - index]
+                            else
+                                0uy
+                        let localFeaturesByte =
+                            if index < localFeatures.Length then
+                                localFeatures.[localFeatures.Length - 1 - index]
+                            else
+                                0uy
+                        oredFeatures.[len - 1 - index] <- globalFeaturesByte ||| localFeaturesByte
+                    oredFeatures
+                this.Features <- oredFeatures |> FeatureBit.CreateUnsafe
                 this.TLVStream <- ls.ReadTLVStream() |> Array.map(InitTLV.FromGenericTLV)
             member this.Serialize(ls) =
                 // For backwards compatibility reason, we must consider legacy `global features` section. (see bolt 1)
