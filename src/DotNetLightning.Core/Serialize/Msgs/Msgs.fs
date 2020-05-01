@@ -371,13 +371,44 @@ type Init =
                 // For backwards compatibility reason, we must consider legacy `global features` section. (see bolt 1)
                 let globalFeatures = ls.ReadWithLen()
                 let localFeatures = ls.ReadWithLen()
-                this.Features <- Array.concat [globalFeatures; localFeatures] |> FeatureBit.CreateUnsafe
+                let oredFeatures =
+                    let len = Math.Max(globalFeatures.Length, localFeatures.Length)
+                    let oredFeatures = Array.zeroCreate len
+                    for index in 0 .. (len - 1) do
+                        let globalFeaturesByte =
+                            if index < globalFeatures.Length then
+                                globalFeatures.[globalFeatures.Length - 1 - index]
+                            else
+                                0uy
+                        let localFeaturesByte =
+                            if index < localFeatures.Length then
+                                localFeatures.[localFeatures.Length - 1 - index]
+                            else
+                                0uy
+                        oredFeatures.[len - 1 - index] <- globalFeaturesByte ||| localFeaturesByte
+                    oredFeatures
+                this.Features <- oredFeatures |> FeatureBit.CreateUnsafe
                 this.TLVStream <- ls.ReadTLVStream() |> Array.map(InitTLV.FromGenericTLV)
             member this.Serialize(ls) =
-                // For backwards compatibility reason, we must consider legacy `global features` section. (see bolt 1)
-                let g: byte[] = [||]
-                ls.WriteWithLen(g)
-                ls.WriteWithLen(this.Features.ToByteArray())
+                // Trim any leading zero bytes from the from of the local features
+                let localFeatures =
+                    let features = this.Features.ToByteArray()
+                    let startIndex =
+                        match Array.tryFindIndex (fun (b: byte) -> b <> 0uy) features with
+                        | Some index -> index
+                        | None -> features.Length
+                    features.[startIndex..]
+                // For legacy compatibility, the last (lowest) 13 bits get
+                // duplicated in the globalFeatures array.
+                let globalFeatures =
+                    if localFeatures.Length < 2 then
+                        localFeatures
+                    else
+                        let features = localFeatures.[(localFeatures.Length - 2)..]
+                        features.[0] <- features.[0] &&& 0b00111111uy
+                        features
+                ls.WriteWithLen(globalFeatures)
+                ls.WriteWithLen(localFeatures)
                 ls.WriteTLVStream(this.TLVStream |> Array.map(fun tlv -> tlv.ToGenericTLV()))
 
 [<CLIMutable>]

@@ -126,12 +126,9 @@ type System.Collections.BitArray with
         
     member this.Reverse() =
         let length = this.Length
-        let mutable result = Array.zeroCreate this.Length
-        let mid = length / 2
-        for i in 0..mid - 1 do
-            let bit = this.[i]
+        let mutable result = Array.zeroCreate length
+        for i in 0 .. (length - 1) do
             result.[i] <- this.[length - i - 1]
-            result.[length - i - 1] <- bit
         result
     member this.PrintBits() =
         let sb = StringBuilder()
