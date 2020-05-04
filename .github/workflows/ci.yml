@@ -1,5 +1,5 @@
 name: Build DotNetLightning and deploy to NuGet
-on: [pull_request]
+on: [push]
 jobs:
   build_and_test:
     runs-on: ${{ matrix.os }}
