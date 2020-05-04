@@ -174,11 +174,11 @@ module internal Validation =
         |> Result.mapError(InvalidAcceptChannelError.Create msg >> InvalidAcceptChannel)
 
 
-    let checkCMDAddHTLC (state: NormalData) (cmd: CMDAddHTLC) =
-        Validation.ofResult(UpdateAddHTLCValidation.checkExpiryIsNotPast cmd.CurrentHeight cmd.Expiry)
-        *> UpdateAddHTLCValidation.checkExpiryIsInAcceptableRange cmd.CurrentHeight cmd.Expiry
-        *^> UpdateAddHTLCValidation.checkAmountIsLargerThanMinimum state.Commitments.RemoteParams.HTLCMinimumMSat cmd.AmountMSat
-        |> Result.mapError(InvalidCMDAddHTLCError.Create cmd >> InvalidCMDAddHTLC)
+    let checkOperationAddHTLC (state: NormalData) (op: OperationAddHTLC) =
+        Validation.ofResult(UpdateAddHTLCValidation.checkExpiryIsNotPast op.CurrentHeight op.Expiry)
+        *> UpdateAddHTLCValidation.checkExpiryIsInAcceptableRange op.CurrentHeight op.Expiry
+        *^> UpdateAddHTLCValidation.checkAmountIsLargerThanMinimum state.Commitments.RemoteParams.HTLCMinimumMSat op.AmountMSat
+        |> Result.mapError(InvalidOperationAddHTLCError.Create op >> InvalidOperationAddHTLC)
 
     let checkOurUpdateAddHTLCIsAcceptableWithCurrentSpec (currentSpec) (state: Commitments) (add: UpdateAddHTLC) =
         Validation.ofResult(UpdateAddHTLCValidationWithContext.checkLessThanHTLCValueInFlightLimit currentSpec state.RemoteParams.MaxHTLCValueInFlightMSat add)

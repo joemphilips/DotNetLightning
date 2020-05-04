@@ -9,19 +9,10 @@ open DotNetLightning.Chain
 open DotNetLightning.Transactions
 
 open DotNetLightning.Serialize
-open System.Collections
+
 open NBitcoin
 
-//       .d8888b.   .d88888b.  888b     d888 888b     d888        d8888 888b    888 8888888b.   .d8888b.
-//      d88P  Y88b d88P" "Y88b 8888b   d8888 8888b   d8888       d88888 8888b   888 888  "Y88b d88P  Y88b
-//      888    888 888     888 88888b.d88888 88888b.d88888      d88P888 88888b  888 888    888 Y88b.
-//      888        888     888 888Y88888P888 888Y88888P888     d88P 888 888Y88b 888 888    888  "Y888b.
-//      888        888     888 888 Y888P 888 888 Y888P 888    d88P  888 888 Y88b888 888    888     "Y88b.
-//      888    888 888     888 888  Y8P  888 888  Y8P  888   d88P   888 888  Y88888 888    888       "888
-//      Y88b  d88P Y88b. .d88P 888   "   888 888   "   888  d8888888888 888   Y8888 888  .d88P Y88b  d88P
-//       "Y8888P"   "Y88888P"  888       888 888       888 d88P     888 888    Y888 8888888P"   "Y8888P"
-
-type CMDAddHTLC = {
+type OperationAddHTLC = {
     AmountMSat: LNMoney
     PaymentHash: PaymentHash
     Expiry: BlockHeight
@@ -43,28 +34,28 @@ type CMDAddHTLC = {
             }
 
 
-type CMDFulfillHTLC = {
+type OperationFulfillHTLC = {
     Id: HTLCId
     PaymentPreimage: PaymentPreimage
     Commit: bool
 }
 
-type CMDFailHTLC = {
+type OperationFailHTLC = {
     Id: HTLCId
     Reason: Choice<byte[], FailureMsg>
 }
 
-type CMDFailMalformedHTLC = {
+type OperationFailMalformedHTLC = {
     Id: HTLCId
     Sha256OfOnion: uint256
     FailureCode: FailureCode
 }
 
-type CMDUpdateFee = {
+type OperationUpdateFee = {
     FeeRatePerKw: FeeRatePerKw
 }
 
-type CMDClose = private { ScriptPubKey: Script option }
+type OperationClose = private { ScriptPubKey: Script option }
     with
     static member Zero = { ScriptPubKey = None }
     static member Create scriptPubKey =
@@ -73,7 +64,7 @@ type CMDClose = private { ScriptPubKey: Script option }
             return  { ScriptPubKey = Some scriptPubKey }
         }
 
-module CMDClose =
+module OperationClose =
     let value cmdClose =
         cmdClose.ScriptPubKey
 
@@ -206,15 +197,15 @@ type ChannelCommand =
     | CreateChannelReestablish
 
     // normal
-    | AddHTLC of CMDAddHTLC
+    | AddHTLC of OperationAddHTLC
     | ApplyUpdateAddHTLC of msg: UpdateAddHTLC * currentHeight: BlockHeight
-    | FulfillHTLC of CMDFulfillHTLC
+    | FulfillHTLC of OperationFulfillHTLC
     | ApplyUpdateFulfillHTLC of UpdateFulfillHTLC
-    | FailHTLC of CMDFailHTLC
+    | FailHTLC of OperationFailHTLC
     | ApplyUpdateFailHTLC of UpdateFailHTLC
-    | FailMalformedHTLC of CMDFailMalformedHTLC
+    | FailMalformedHTLC of OperationFailMalformedHTLC
     | ApplyUpdateFailMalformedHTLC of UpdateFailMalformedHTLC
-    | UpdateFee of CMDUpdateFee
+    | UpdateFee of OperationUpdateFee
     | ApplyUpdateFee of UpdateFee
 
     | SignCommitment
@@ -222,7 +213,7 @@ type ChannelCommand =
     | ApplyRevokeAndACK of RevokeAndACK
 
     // close
-    | Close of CMDClose
+    | Close of OperationClose
     | ApplyClosingSigned of ClosingSigned
     | RemoteShutdown of Shutdown
 

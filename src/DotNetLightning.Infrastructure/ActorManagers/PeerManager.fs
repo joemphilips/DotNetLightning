@@ -197,21 +197,21 @@ type PeerManager(eventAggregator: IEventAggregator,
                 | WeAcceptedUpdateFee _ -> ()
                 | WeAcceptedCommitmentSigned  _ -> failwith "TODO: route"
                 | WeAcceptedRevokeAndACK _ -> failwith "TODO: route"
-                // The one which includes `CMD` in its names is the one started by us.
+                // The one which includes `Operation` in its names is the one started by us.
                 // So there are no need to think about routing, just send it to specified peer.
-                | ChannelEvent.WeAcceptedCMDAddHTLC (msg, _) ->
+                | ChannelEvent.WeAcceptedOperationAddHTLC (msg, _) ->
                     return! (this.KnownPeers.[peerId] :> IActor<_>).Put(EncodeMsg msg)
-                | ChannelEvent.WeAcceptedCMDFulfillHTLC (msg, _) ->
+                | ChannelEvent.WeAcceptedOperationFulfillHTLC (msg, _) ->
                     return! (this.KnownPeers.[peerId] :> IActor<_>).Put(EncodeMsg msg)
-                | ChannelEvent.WeAcceptedCMDFailHTLC(msg, _) ->
+                | ChannelEvent.WeAcceptedOperationFailHTLC(msg, _) ->
                     return! (this.KnownPeers.[peerId] :> IActor<_>).Put(EncodeMsg msg)
-                | ChannelEvent.WeAcceptedCMDFailMalformedHTLC(msg, _) ->
+                | ChannelEvent.WeAcceptedOperationFailMalformedHTLC(msg, _) ->
                     return! (this.KnownPeers.[peerId] :> IActor<_>).Put(EncodeMsg msg)
-                | ChannelEvent.WeAcceptedCMDUpdateFee(msg, _) ->
+                | ChannelEvent.WeAcceptedOperationUpdateFee(msg, _) ->
                     return! (this.KnownPeers.[peerId] :> IActor<_>).Put(EncodeMsg msg)
-                | ChannelEvent.WeAcceptedCMDSign (msg, _) ->
+                | ChannelEvent.WeAcceptedOperationSign (msg, _) ->
                     return! (this.KnownPeers.[peerId] :> IActor<_>).Put(EncodeMsg msg)
-                | AcceptedShutdownCMD (_) ->
+                | AcceptedOperationShutdown _ ->
                     failwith "TODO "
                 | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs _ ->
                     failwith "TODO "

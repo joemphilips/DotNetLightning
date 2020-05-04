@@ -48,7 +48,7 @@ type ChannelError =
     | UndefinedStateAndCmdPair of state: ChannelState * cmd: ChannelCommand
     | RemoteProposedHigherFeeThanBefore of previous: Money * current: Money
     // ---- invalid command ----
-    | InvalidCMDAddHTLC of InvalidCMDAddHTLCError
+    | InvalidOperationAddHTLC of InvalidOperationAddHTLCError
     // -------------------------
     
     member this.RecommendedAction =
@@ -76,7 +76,7 @@ type ChannelError =
         | OnceConfirmedFundingTxHasBecomeUnconfirmed _ -> Close
         | CannotCloseChannel _ -> Ignore
         | UndefinedStateAndCmdPair _ -> Ignore
-        | InvalidCMDAddHTLC _ -> Ignore
+        | InvalidOperationAddHTLC _ -> Ignore
         | RemoteProposedHigherFeeThanBefore(_, _) -> Close
     
     override this.ToString() =
@@ -172,13 +172,13 @@ and InvalidUpdateFeeError = {
         Msg = msg
         Errors = e
     }
-and InvalidCMDAddHTLCError = {
-    CMD: CMDAddHTLC
+and InvalidOperationAddHTLCError = {
+    Operation: OperationAddHTLC
     Errors: string list
 }
     with
-    static member Create cmd e = {
-        CMD = cmd
+    static member Create op e = {
+        Operation = op
         Errors = e
     }
 [<AutoOpen>]
@@ -465,8 +465,8 @@ module UpdateAddHTLCValidation =
 
 
     let internal checkExpiryIsInAcceptableRange (current: BlockHeight) (expiry) =
-        let checkIsToSoon = check (expiry) (<=) (current + MIN_CLTV_EXPIRY) "CMD_ADD_HTLC.Expiry was %A but it was too close to current height. Minimum is: %A"
-        let checkIsToFar = check (expiry) (>=) (current + MAX_CLTV_EXPIRY) "CMD_ADD_HTLC.Expiry was %A but it was too far from current height. Maximum is: %A"
+        let checkIsToSoon = check (expiry) (<=) (current + MIN_CLTV_EXPIRY) "Operation_ADD_HTLC.Expiry was %A but it was too close to current height. Minimum is: %A"
+        let checkIsToFar = check (expiry) (>=) (current + MAX_CLTV_EXPIRY) "Operation_ADD_HTLC.Expiry was %A but it was too far from current height. Maximum is: %A"
         Validation.ofResult(checkIsToSoon) *^> checkIsToFar
 
     let internal checkAmountIsLargerThanMinimum (htlcMinimum: LNMoney) (amount) =

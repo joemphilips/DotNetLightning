@@ -27,17 +27,17 @@ type ChannelActor(nodeParams: ChainConfig,
     override this.HandleError (b: ChannelError) = unitTask {
             match b.RecommendedAction with
             | ChannelConsumerAction.Close ->
-                let closeCMD =
+                let closeOp =
                     nodeParams.ShutdownScriptPubKey
                     |> Option.defaultValue (keysRepository.GetShutdownPubKey().WitHash.ScriptPubKey)
-                    |> CMDClose.Create
+                    |> OperationClose.Create
                     // should never return Error in here. That means nodeParams has never done validation
                     // or, keysRepository is bogus
                     |> Result.deref
                     |> ChannelCommand.Close
                 log.LogError(sprintf "Closing a channel for a node (%A) due to a following error. \n" (this.ChannelState.RemoteNodeId))
                 log.LogError((b.ToString()))
-                return! (this :> IActor<_>).Put(closeCMD)
+                return! (this :> IActor<_>).Put closeOp
             | Ignore ->
                 log.LogWarning("Observed a following error in a channel. But ignoring")
                 log.LogWarning(b.ToString())
