@@ -85,19 +85,19 @@ let tests =
             let remoteRepo = DefaultKeyRepository(remoteNodeSecret, remoteChannelIndex) :> IKeysRepository
             let remoteKeys = remoteRepo.GetChannelKeys(false)
             let remotePubKeys = remoteKeys.ToChannelPubKeys()
-            
-            let fundingSCoin = ChannelHelpers.getFundingSCoin(localPubKeys)
-                                                              (remotePubKeys.FundingPubKey)
-                                                              (fundingTxId)
-                                                              (TxOutIndex 0us)
-                                                              fundingAmount
+
+            let fundingScriptCoin = ChannelHelpers.getFundingScriptCoin localPubKeys
+                                                                        remotePubKeys.FundingPubKey
+                                                                        fundingTxId
+                                                                        (TxOutIndex 0us)
+                                                                        fundingAmount
             
             let localDustLimit = Money.Satoshis(546L)
             let toLocalDelay = 200us |> BlockHeightOffset16
             let specBase = { CommitmentSpec.HTLCs = htlcMap; FeeRatePerKw = 15000u |> FeeRatePerKw;
                              ToLocal = LNMoney.MilliSatoshis(6988000000L); ToRemote =  3000000000L |> LNMoney.MilliSatoshis}
             let commitTx =
-                Transactions.makeCommitTx fundingSCoin
+                Transactions.makeCommitTx fundingScriptCoin
                                           0UL
                                           (localPubKeys.PaymentBasePubKey)
                                           (remotePubKeys.PaymentBasePubKey)
@@ -119,7 +119,7 @@ let tests =
             let remoteDustLimit = Money.Satoshis(1000L)
             let remoteDelay = 160us |> BlockHeightOffset16
             let remoteCommitTx =
-                Transactions.makeCommitTx fundingSCoin
+                Transactions.makeCommitTx fundingScriptCoin
                                           0UL
                                           remotePubKeys.PaymentBasePubKey
                                           localPubKeys.PaymentBasePubKey

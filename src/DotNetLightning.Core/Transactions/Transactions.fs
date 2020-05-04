@@ -519,18 +519,18 @@ module Transactions =
             let psbt = 
                 let txb = n.CreateTransactionBuilder()
                 let indexedTxOut = commitTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex)
-                let scoin = ScriptCoin(indexedTxOut, redeem)
+                let scriptCoin = ScriptCoin(indexedTxOut, redeem)
                 let dest = Scripts.toLocalDelayed localRevocationPubKey toLocalDelay localDelayedPaymentPubKey
                 // we have already done dust limit check above
                 txb.DustPrevention <- false
-                let tx = txb.AddCoins(scoin)
+                let tx = txb.AddCoins(scriptCoin)
                             .Send(dest.WitHash, amount)
                             .SendFees(fee)
                             .SetLockTime(!> htlc.CLTVExpiry.Value)
                             .BuildTransaction(false)
                 tx.Version <- 2u
                 PSBT.FromTransaction(tx, n)
-                    .AddCoins(scoin)
+                    .AddCoins scriptCoin
             let whichInput = psbt.Inputs |> Seq.findIndex(fun i -> not (isNull i.WitnessScript))
             { HTLCTimeoutTx.Value = psbt; WhichInput = whichInput } |> Ok
 
@@ -554,20 +554,20 @@ module Transactions =
         else
             let psbt = 
                 let txb = n.CreateTransactionBuilder()
-                let scoin =
+                let scriptCoin =
                     let coin = commitTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex)
                     ScriptCoin(coin, redeem)
                 let dest = Scripts.toLocalDelayed localRevocationPubKey toLocalDelay localDelayedPaymentPubKey
                 // we have already done dust limit check above
                 txb.DustPrevention <- false
-                let tx = txb.AddCoins(scoin)
+                let tx = txb.AddCoins(scriptCoin)
                             .Send(dest.WitHash, amount)
                             .SendFees(fee)
                             .SetLockTime(!> 0u)
                             .BuildTransaction(false)
                 tx.Version <- 2u
                 PSBT.FromTransaction(tx, n)
-                    .AddCoins(scoin)
+                    .AddCoins scriptCoin
             let whichInput = psbt.Inputs |> Seq.findIndex(fun i -> not (isNull i.WitnessScript))
             { HTLCSuccessTx.Value = psbt; WhichInput = whichInput; PaymentHash = htlc.PaymentHash } |> Ok
 

@@ -116,7 +116,7 @@ let fundingRedeem =
                         remote.FundingPrivKey.PubKey |]
     Scripts.multiSigOfM_2(true) (fundingPks)
 
-let commitmentInputSCoin =
+let commitmentInputScriptCoin =
     Coin(fundingTx.GetHash(), 0u, fundingAmount, fundingRedeem.WitHash.ScriptPubKey)
     |> fun c -> ScriptCoin(c, fundingRedeem)
 
@@ -212,7 +212,7 @@ let run (spec: CommitmentSpec): (Transaction * _) =
     
     let commitTx =
         let commitTx = Transactions.makeCommitTx
-                         (commitmentInputSCoin)
+                         (commitmentInputScriptCoin)
                          (local.CommitTxNumber)
                          (local.PaymentBasePoint)
                          (remote.PaymentBasePoint)
