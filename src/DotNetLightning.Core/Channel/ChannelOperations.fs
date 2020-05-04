@@ -13,7 +13,7 @@ open DotNetLightning.Serialize
 open NBitcoin
 
 type OperationAddHTLC = {
-    AmountMSat: LNMoney
+    Amount: LNMoney
     PaymentHash: PaymentHash
     Expiry: BlockHeight
     Onion: OnionPacket
@@ -24,7 +24,7 @@ type OperationAddHTLC = {
     with
         static member Create amountMSat paymentHash expiry onion upstream origin currentHeight =
             {
-                AmountMSat = amountMSat
+                Amount = amountMSat
                 PaymentHash = paymentHash
                 Expiry = expiry
                 Onion = onion

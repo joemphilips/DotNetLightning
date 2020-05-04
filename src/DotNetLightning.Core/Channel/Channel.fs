@@ -396,7 +396,7 @@ module Channel =
                 do! Validation.checkOperationAddHTLC state op
                 let add: UpdateAddHTLC = { UpdateAddHTLC.ChannelId = state.Commitments.ChannelId
                                            HTLCId = state.Commitments.LocalNextHTLCId
-                                           AmountMSat = op.AmountMSat
+                                           Amount = op.Amount
                                            PaymentHash = op.PaymentHash
                                            CLTVExpiry = op.Expiry
                                            OnionRoutingPacket = op.Onion }

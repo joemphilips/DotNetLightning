@@ -475,12 +475,12 @@ module UpdateAddHTLCValidation =
     
 module internal UpdateAddHTLCValidationWithContext =
     let checkLessThanHTLCValueInFlightLimit (currentSpec: CommitmentSpec) (limit) (add: UpdateAddHTLC) =
-        let htlcValueInFlight = currentSpec.HTLCs |> Map.toSeq |> Seq.sumBy (fun (_, v) -> v.Add.AmountMSat)
+        let htlcValueInFlight = currentSpec.HTLCs |> Map.toSeq |> Seq.sumBy (fun (_, v) -> v.Add.Amount)
         if (htlcValueInFlight > limit) then
             sprintf "Too much HTLC value is in flight. Current: %A. Limit: %A \n Could not add new one with value: %A"
                     htlcValueInFlight
                     limit
-                    add.AmountMSat
+                    add.Amount
             |> Error
         else
             Ok()

@@ -325,7 +325,7 @@ let tests =
                 )
                 
             let baseAddHTLCOperation = { OperationAddHTLC.Expiry = BlockHeight 130u
-                                         AmountMSat = LNMoney.Zero
+                                         Amount = LNMoney.Zero
                                          PaymentHash = paymentPreImages.[0].Hash
                                          Onion = OnionPacket.LastPacket
                                          Upstream = None
@@ -333,7 +333,7 @@ let tests =
                                          CurrentHeight = BlockHeight 101u }
                 
             // send update_add_htlc from alice to bob
-            let addHtlcOperation = { baseAddHTLCOperation with AmountMSat = LNMoney.MilliSatoshis 1000L }
+            let addHtlcOperation = { baseAddHTLCOperation with Amount = LNMoney.MilliSatoshis 1000L }
             do! alice.CM.AcceptCommandAsync({ NodeId = bobNodeId; ChannelCommand = ChannelCommand.AddHTLC addHtlcOperation }).AsTask() |> Async.AwaitTask
             let bobAcceptedAddHTLCTask =
                 bob.EventAggregator.AwaitChannelEvent(function WeAcceptedUpdateAddHTLC _ -> Some () | _ -> None)
@@ -348,12 +348,12 @@ let tests =
             let bobAcceptedAddHTLCTask =
                 bob.EventAggregator.AwaitChannelEvent(function WeAcceptedUpdateAddHTLC _ -> Some () | _ -> None)
             let addHtlcOperation = { baseAddHTLCOperation with
-                                         AmountMSat = LNMoney.MilliSatoshis 100000L
+                                         Amount = LNMoney.MilliSatoshis 100000L
                                          PaymentHash = paymentPreImages.[1].Hash }
             do! bob.CM.AcceptCommandAsync({ NodeId = aliceNodeId; ChannelCommand = AddHTLC addHtlcOperation }).AsTask() |> Async.AwaitTask
             
             let addHtlcOperation = { baseAddHTLCOperation with
-                                         AmountMSat = LNMoney.MilliSatoshis 40000L
+                                         Amount = LNMoney.MilliSatoshis 40000L
                                          PaymentHash = paymentPreImages.[2].Hash }
             do! alice.CM.AcceptCommandAsync({ NodeId = bobNodeId; ChannelCommand = AddHTLC addHtlcOperation }).AsTask() |> Async.AwaitTask
             

@@ -198,7 +198,7 @@ let updateAddHTLCGen = gen {
     return {
         ChannelId = c
         HTLCId = htlc
-        AmountMSat = amount
+        Amount = amount
         PaymentHash = paymentHash
         CLTVExpiry = cltvE |> BlockHeight
         OnionRoutingPacket = onionRoutingPacket

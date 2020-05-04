@@ -156,35 +156,35 @@ let htlcs = [
     { DirectedHTLC.Direction = In;
       Add = { UpdateAddHTLC.ChannelId = ChannelId.Zero;
               HTLCId = HTLCId.Zero;
-              AmountMSat = LNMoney.MilliSatoshis(1000000L);
+              Amount = LNMoney.MilliSatoshis 1000000L
               PaymentHash = paymentPreImages.[0].Hash
               CLTVExpiry = 500u |> BlockHeight;
               OnionRoutingPacket = OnionPacket.LastPacket } }
     { DirectedHTLC.Direction = In;
       Add = { UpdateAddHTLC.ChannelId = ChannelId.Zero;
               HTLCId = HTLCId(1UL);
-              AmountMSat = LNMoney.MilliSatoshis(2000000L);
+              Amount = LNMoney.MilliSatoshis 2000000L
               PaymentHash = paymentPreImages.[1].Hash
               CLTVExpiry = 501u |> BlockHeight;
               OnionRoutingPacket = OnionPacket.LastPacket } }
     { DirectedHTLC.Direction = Out;
       Add = { UpdateAddHTLC.ChannelId = ChannelId.Zero;
               HTLCId = HTLCId(2UL);
-              AmountMSat = LNMoney.MilliSatoshis(2000000L);
+              Amount = LNMoney.MilliSatoshis 2000000L
               PaymentHash = paymentPreImages.[2].Hash
               CLTVExpiry = 502u |> BlockHeight;
               OnionRoutingPacket = OnionPacket.LastPacket } }
     { DirectedHTLC.Direction = Out;
       Add = { UpdateAddHTLC.ChannelId = ChannelId.Zero;
               HTLCId = HTLCId(3UL);
-              AmountMSat = LNMoney.MilliSatoshis(3000000L);
+              Amount = LNMoney.MilliSatoshis 3000000L
               PaymentHash = paymentPreImages.[3].Hash
               CLTVExpiry = 503u |> BlockHeight;
               OnionRoutingPacket = OnionPacket.LastPacket } }
     { DirectedHTLC.Direction = In;
       Add = { UpdateAddHTLC.ChannelId = ChannelId.Zero;
               HTLCId = HTLCId(4UL);
-              AmountMSat = LNMoney.MilliSatoshis(4000000L);
+              Amount = LNMoney.MilliSatoshis 4000000L
               PaymentHash = paymentPreImages.[4].Hash
               CLTVExpiry = 504u |> BlockHeight;
               OnionRoutingPacket = OnionPacket.LastPacket } }
