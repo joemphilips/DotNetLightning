@@ -3,7 +3,7 @@
 This repository contains one solution which contains four main projects.
 
 1. `DotNetLightning.Core` to perform LN specific logic and low level primitives.
-2. `DotNetLightning.Infrastructure` to support data persistancy, altcoins, channel/peer management etc.
+2. `DotNetLightning.Infrastructure` to support data persistency, altcoins, channel/peer management etc.
 3. `DotNetLightning.Server` to run as a server.
 4. `DotNetLightning.Client` to interact with the server.
 
@@ -31,6 +31,6 @@ attack vectors. (especially for DotNetLightning.Core)
 
 ![Alt text](images/Architecture01.png?raw=true "Infrastructure Architecture in one image")
 
-## footnote
+## Footnotes
 
 [Slide used for creating images](https://docs.google.com/presentation/d/1GKByCIPef3wwM_RMGQFcdsme2dVyQWHL_kp6t67eFRw/edit?usp=sharing)
