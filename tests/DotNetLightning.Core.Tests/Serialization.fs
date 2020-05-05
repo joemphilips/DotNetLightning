@@ -742,8 +742,19 @@ module SerializationTest =
                 ()
                 
             testProperty "BitArray serialization" <| fun (ba : NonNull<byte[]>) ->
-                Expect.sequenceEqual (BitArray.FromBytes(ba.Get).ToByteArray()) (ba.Get) ""
-                
+                let backAndForth = BitArray.FromBytes(ba.Get).ToByteArray()
+                let finalArray = Array.zeroCreate ba.Get.Length
+                Array.Copy(backAndForth, 0, finalArray, ba.Get.Length - backAndForth.Length, backAndForth.Length)
+                Expect.equal ba.Get finalArray "BitArray.ToByteArray does not invert and trim BitArray.FromBytes"
+
+            testCase "FeatureBit to/from byte array preserves byte order, bit order and trims zero bytes" <| fun _ ->
+                let features = FeatureBit.Zero
+                features.ByteArray <- [| 0b00000000uy; 0b00100000uy; 0b10000010uy |]
+                Expect.equal
+                    features.ByteArray
+                    [| 0b00100000uy; 0b10000010uy |]
+                    "unexpected ByteArray value"
+
             testCase "features dependencies" <| fun _ ->
                 let testCases =
                     Map.empty

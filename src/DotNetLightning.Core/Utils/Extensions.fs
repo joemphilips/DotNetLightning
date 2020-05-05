@@ -101,11 +101,34 @@ type BitArrayExtensions() =
 type System.Collections.BitArray with
     member this.ToByteArray() =
         if this.Length = 0 then [||] else
-        let ret: byte[] = Array.zeroCreate (((this.Length - 1) / 8) + 1)
-        let boolArray: bool[] = this.Reverse()
-        let t = BitArray(boolArray)
-        t.CopyTo(ret, 0)
-        ret |> Array.rev
+
+        let leadingZeros =
+            match (Seq.tryFindIndex (fun b -> b) (Seq.cast this)) with
+            | Some i -> i
+            | None -> this.Length
+        let trueLength = this.Length - leadingZeros
+        let desiredLength = ((trueLength + 7) / 8) * 8
+        let difference = desiredLength - this.Length
+        let bitArray =
+            if difference < 0 then
+                // Drop zeroes from the front of the array until we have a multiple of 8 bits
+                let shortenedBitArray = BitArray(desiredLength)
+                for i in 0 .. (desiredLength - 1) do
+                    shortenedBitArray.[i] <- this.[i - difference]
+                shortenedBitArray
+            else if difference > 0 then
+                // Push zeroes to the front of the array until we have a multiple of 8 bits
+                let lengthenedBitArray = BitArray(desiredLength)
+                for i in 0 .. (this.Length - 1) do
+                    lengthenedBitArray.[i + difference] <- this.[i]
+                lengthenedBitArray
+            else
+                this
+
+        // Copy the bit array to a byte array, then flip the bytes.
+        let byteArray: byte[] = Array.zeroCreate(desiredLength / 8)
+        bitArray.CopyTo(byteArray, 0)
+        byteArray |> Array.map (fun b -> b.FlipBit())
         
     static member From5BitEncoding(b: byte[]) =
         let bitArray = System.Collections.BitArray(b.Length * 5)

@@ -29,6 +29,11 @@ type Feature = private {
     with
     member this.MandatoryBitPosition = this.Mandatory
     member this.OptionalBitPosition = this.Mandatory + 1
+    member this.BitPosition(support: FeaturesSupport) =
+        match support with
+        | Mandatory -> this.MandatoryBitPosition
+        | Optional -> this.OptionalBitPosition
+
     override this.ToString() = this.RfcName
 
     static member OptionDataLossProtect = {
@@ -89,7 +94,7 @@ module internal Feature =
         |> Map.add (Feature.BasicMultiPartPayment) ([Feature.PaymentSecret])
         |> Map.add (Feature.PaymentSecret) ([Feature.VariableLengthOnion])
         
-    let private isFeatureOn(features: BitArray) (bit: int) =
+    let isFeatureOn(features: BitArray) (bit: int) =
         (features.Length > bit) && features.Reverse().[bit]
         
     let hasFeature(features: BitArray) (f: Feature) (support: FeaturesSupport option) =
@@ -170,17 +175,14 @@ module internal Feature =
         |> Set
         
         
-/// Uses regular class instead of F# type for caching byte[] representation
 [<StructuredFormatDisplay("{PrettyPrint}")>]
 type FeatureBit private (bitArray) =
-    let mutable bytes = null
     member val BitArray: BitArray = bitArray with get, set
     member this.ByteArray
         with get() =
-            if isNull bytes then
-                bytes <- this.BitArray.ToByteArray()
-            bytes
-        and set(v: byte[]) = bytes <- v
+            this.BitArray.ToByteArray()
+        and set(bytes: byte[]) =
+            this.BitArray <- BitArray.FromBytes(bytes)
     static member TryCreate(ba: BitArray) =
         result {
             do! Feature.validateFeatureGraph(ba)
@@ -196,12 +198,8 @@ type FeatureBit private (bitArray) =
         let b: bool array = [||]
         b |> BitArray |> FeatureBit
     static member TryCreate(bytes: byte[]) =
-        result {
-            let! fb = FeatureBit.TryCreate(BitArray.FromBytes(bytes))
-            fb.ByteArray <- bytes
-            return fb
-        }
-        
+        FeatureBit.TryCreate(BitArray.FromBytes(bytes))
+
     static member TryCreate(v: int64) =
         BitArray.FromInt64(v) |> FeatureBit.TryCreate
         
@@ -230,6 +228,27 @@ type FeatureBit private (bitArray) =
     override this.ToString() =
         this.BitArray.PrintBits()
         
+    member this.SetFeature(feature: Feature) (support: FeaturesSupport) (on: bool): unit =
+        let index = feature.BitPosition support
+        let length = this.BitArray.Length
+        if length <= index then
+            this.BitArray.Length <- index + 1
+
+            //this.BitArray.RightShift(index - length + 1)
+
+            // NOTE: Calling RightShift gives me:
+            // "The field, constructor or member 'RightShift' is not defined."
+            // So I just re-implement it here
+            for i in (length - 1) .. -1 .. 0 do
+                this.BitArray.[i + index - length + 1] <- this.BitArray.[i]
+
+            // NOTE: this probably wouldn't be necessary if we were using
+            // RightShift, but the dotnet docs don't actualy specify that
+            // RightShift sets the leading bits to zero.
+            for i in 0 .. (index - length) do
+                this.BitArray.[i] <- false
+        this.BitArray.[this.BitArray.Length - index - 1] <- on
+
     member this.HasFeature(f, ?featureType) =
         Feature.hasFeature this.BitArray (f) (featureType)
         
@@ -249,12 +268,8 @@ type FeatureBit private (bitArray) =
         
     // --- equality and comparison members ----
     member this.Equals(o: FeatureBit) =
-        if this.BitArray.Length <> o.BitArray.Length then false else
-        let mutable result = true
-        for i in 0..this.BitArray.Length - 1 do
-            if this.BitArray.[i] <> o.BitArray.[i] then
-                result <- false
-        result
+        this.ByteArray = o.ByteArray
+
     interface IEquatable<FeatureBit> with
         member this.Equals(o: FeatureBit) = this.Equals(o)
     override this.Equals(other: obj) =
