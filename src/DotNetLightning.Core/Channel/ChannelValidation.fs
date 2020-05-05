@@ -21,7 +21,7 @@ module internal ChannelHelpers =
                       [| theirFundingPubKey; ourFundingKey |]
         PayToMultiSigTemplate.Instance.GenerateScriptPubKey(2, pks)
 
-    let getFundingSCoin (ck: ChannelPubKeys) (theirFundingPubKey: PubKey) (TxId fundingTxId) (TxOutIndex fundingOutputIndex) (fundingSatoshis): ScriptCoin =
+    let getFundingScriptCoin (ck: ChannelPubKeys) (theirFundingPubKey: PubKey) (TxId fundingTxId) (TxOutIndex fundingOutputIndex) (fundingSatoshis): ScriptCoin =
         let redeem = getFundingRedeemScript ck theirFundingPubKey
         Coin(fundingTxId, uint32 fundingOutputIndex, fundingSatoshis, redeem.WitHash.ScriptPubKey)
         |> fun c -> ScriptCoin(c, redeem)
@@ -90,12 +90,16 @@ module internal ChannelHelpers =
             else
                 Ok()
         let makeFirstCommitTxCore() =
-            let sCoin = getFundingSCoin (localParams.ChannelPubKeys) (remoteParams.FundingPubKey) (fundingTxId) (fundingOutputIndex) (fundingSatoshis)
+            let scriptCoin = getFundingScriptCoin localParams.ChannelPubKeys
+                                                  remoteParams.FundingPubKey
+                                                  fundingTxId
+                                                  fundingOutputIndex
+                                                  fundingSatoshis
             let revPubKeyForLocal = Generators.revocationPubKey secpContext remoteParams.RevocationBasePoint localPerCommitmentPoint
             let delayedPubKeyForLocal = Generators.derivePubKey secpContext localParams.ChannelPubKeys.DelayedPaymentBasePubKey localPerCommitmentPoint
             let paymentPubKeyForLocal = Generators.derivePubKey secpContext remoteParams.PaymentBasePoint localPerCommitmentPoint
             let localCommitTx =
-                Transactions.makeCommitTx sCoin
+                Transactions.makeCommitTx scriptCoin
                                           0UL
                                           localParams.ChannelPubKeys.PaymentBasePubKey
                                           remoteParams.PaymentBasePoint
@@ -113,7 +117,7 @@ module internal ChannelHelpers =
             let delayedPubKeyForRemote = Generators.derivePubKey secpContext remoteParams.DelayedPaymentBasePoint remotePerCommitmentPoint
             let paymentPubKeyForRemote = Generators.derivePubKey secpContext localParams.ChannelPubKeys.PaymentBasePubKey remotePerCommitmentPoint
             let remoteCommitTx =
-                Transactions.makeCommitTx sCoin
+                Transactions.makeCommitTx scriptCoin
                                           0UL
                                           remoteParams.PaymentBasePoint
                                           localParams.ChannelPubKeys.PaymentBasePubKey
@@ -170,11 +174,11 @@ module internal Validation =
         |> Result.mapError(InvalidAcceptChannelError.Create msg >> InvalidAcceptChannel)
 
 
-    let checkCMDAddHTLC (state: NormalData) (cmd: CMDAddHTLC) =
-        Validation.ofResult(UpdateAddHTLCValidation.checkExpiryIsNotPast cmd.CurrentHeight cmd.Expiry)
-        *> UpdateAddHTLCValidation.checkExpiryIsInAcceptableRange cmd.CurrentHeight cmd.Expiry
-        *^> UpdateAddHTLCValidation.checkAmountIsLargerThanMinimum state.Commitments.RemoteParams.HTLCMinimumMSat cmd.AmountMSat
-        |> Result.mapError(InvalidCMDAddHTLCError.Create cmd >> InvalidCMDAddHTLC)
+    let checkOperationAddHTLC (state: NormalData) (op: OperationAddHTLC) =
+        Validation.ofResult(UpdateAddHTLCValidation.checkExpiryIsNotPast op.CurrentHeight op.Expiry)
+        *> UpdateAddHTLCValidation.checkExpiryIsInAcceptableRange op.CurrentHeight op.Expiry
+        *^> UpdateAddHTLCValidation.checkAmountIsLargerThanMinimum state.Commitments.RemoteParams.HTLCMinimumMSat op.Amount
+        |> Result.mapError(InvalidOperationAddHTLCError.Create op >> InvalidOperationAddHTLC)
 
     let checkOurUpdateAddHTLCIsAcceptableWithCurrentSpec (currentSpec) (state: Commitments) (add: UpdateAddHTLC) =
         Validation.ofResult(UpdateAddHTLCValidationWithContext.checkLessThanHTLCValueInFlightLimit currentSpec state.RemoteParams.MaxHTLCValueInFlightMSat add)
@@ -186,7 +190,7 @@ module internal Validation =
         Validation.ofResult(ValidationHelper.check add.HTLCId (<>) state.RemoteNextHTLCId "Received Unexpected HTLCId (%A). Must be (%A)")
             *^> UpdateAddHTLCValidation.checkExpiryIsNotPast currentHeight add.CLTVExpiry
             *> UpdateAddHTLCValidation.checkExpiryIsInAcceptableRange currentHeight add.CLTVExpiry
-            *^> UpdateAddHTLCValidation.checkAmountIsLargerThanMinimum state.LocalParams.HTLCMinimumMSat add.AmountMSat
+            *^> UpdateAddHTLCValidation.checkAmountIsLargerThanMinimum state.LocalParams.HTLCMinimumMSat add.Amount
             |> Result.mapError(InvalidUpdateAddHTLCError.Create add >> InvalidUpdateAddHTLC)
 
     let checkTheirUpdateAddHTLCIsAcceptableWithCurrentSpec (currentSpec) (state: Commitments) (add: UpdateAddHTLC) =

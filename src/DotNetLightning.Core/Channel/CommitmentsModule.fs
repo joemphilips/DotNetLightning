@@ -123,19 +123,20 @@ module internal Commitments =
             let maxMismatch = config.ChannelOptions.MaxFeeRateMismatchRatio
             UpdateFeeValidation.checkFeeDiffTooHigh (msg) (localFeeRate) (maxMismatch)
 
-    let sendFulfill (cmd: CMDFulfillHTLC) (cm: Commitments) =
-        match cm.GetHTLCCrossSigned(Direction.In, cmd.Id) with
+    let sendFulfill (op: OperationFulfillHTLC) (cm: Commitments) =
+        match cm.GetHTLCCrossSigned(Direction.In, op.Id) with
         | Some htlc when (cm.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
             htlc.HTLCId |> htlcAlreadySent
-        | Some htlc when (htlc.PaymentHash = cmd.PaymentPreimage.Hash) ->
-            let msgToSend: UpdateFulfillHTLC = { ChannelId = cm.ChannelId; HTLCId = cmd.Id; PaymentPreimage = cmd.PaymentPreimage }
+        | Some htlc when (htlc.PaymentHash = op.PaymentPreimage.Hash) ->
+            let msgToSend: UpdateFulfillHTLC =
+                { ChannelId = cm.ChannelId; HTLCId = op.Id; PaymentPreimage = op.PaymentPreimage }
             let newCommitments = cm.AddLocalProposal(msgToSend)
             (msgToSend, newCommitments) |> Ok
         | Some htlc ->
-            (htlc.PaymentHash, cmd.PaymentPreimage)
+            (htlc.PaymentHash, op.PaymentPreimage)
             |> invalidPaymentPreimage
         | None ->
-            cmd.Id
+            op.Id
             |> unknownHTLCId
 
     let receiveFulfill(msg: UpdateFulfillHTLC) (cm: Commitments) =
@@ -151,8 +152,8 @@ module internal Commitments =
             msg.HTLCId
             |> unknownHTLCId
 
-    let sendFail (localKey: Key) (cmd: CMDFailHTLC) (cm: Commitments) =
-        match cm.GetHTLCCrossSigned(Direction.In, cmd.Id) with
+    let sendFail (localKey: Key) (op: OperationFailHTLC) (cm: Commitments) =
+        match cm.GetHTLCCrossSigned(Direction.In, op.Id) with
         | Some htlc when  (cm.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
             htlc.HTLCId |> htlcAlreadySent
         | Some htlc ->
@@ -161,16 +162,16 @@ module internal Commitments =
             Sphinx.parsePacket localKey ad rawPacket |> Result.mapError(ChannelError.CryptoError)
             >>= fun ({ SharedSecret = ss}) ->
                 let reason =
-                    cmd.Reason
+                    op.Reason
                     |> function Choice1Of2 b -> Sphinx.forwardErrorPacket(b, ss) | Choice2Of2 f -> Sphinx.ErrorPacket.Create(ss, f)
                 let f = { UpdateFailHTLC.ChannelId = cm.ChannelId
-                          HTLCId = cmd.Id
+                          HTLCId = op.Id
                           Reason = { Data = reason } }
                 let nextComitments = cm.AddLocalProposal(f)
-                [ WeAcceptedCMDFailHTLC(f, nextComitments) ]
+                [ WeAcceptedOperationFailHTLC(f, nextComitments) ]
                 |> Ok
         | None ->
-            cmd.Id |> unknownHTLCId
+            op.Id |> unknownHTLCId
 
     let receiveFail (msg: UpdateFailHTLC) (cm: Commitments) =
         match cm.GetHTLCCrossSigned(Direction.Out, msg.HTLCId) with
@@ -188,24 +189,24 @@ module internal Commitments =
             msg.HTLCId |> unknownHTLCId
 
 
-    let sendFailMalformed (cmd: CMDFailMalformedHTLC) (cm: Commitments) =
+    let sendFailMalformed (op: OperationFailMalformedHTLC) (cm: Commitments) =
         // BADONION bit must be set in failure code
-        if ((cmd.FailureCode.Value &&& OnionError.BADONION) = 0us) then
-            cmd.FailureCode |> invalidFailureCode
+        if (op.FailureCode.Value &&& OnionError.BADONION) = 0us then
+            op.FailureCode |> invalidFailureCode
         else
-            match cm.GetHTLCCrossSigned(Direction.In, cmd.Id) with
+            match cm.GetHTLCCrossSigned(Direction.In, op.Id) with
             | Some htlc when (cm.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
                 htlc.HTLCId |> htlcAlreadySent
             | Some _htlc ->
                 let msg = { UpdateFailMalformedHTLC.ChannelId = cm.ChannelId
-                            HTLCId = cmd.Id
-                            Sha256OfOnion = cmd.Sha256OfOnion
-                            FailureCode = cmd.FailureCode }
+                            HTLCId = op.Id
+                            Sha256OfOnion = op.Sha256OfOnion
+                            FailureCode = op.FailureCode }
                 let nextCommitments = cm.AddLocalProposal(msg)
-                [ WeAcceptedCMDFailMalformedHTLC(msg, nextCommitments) ]
+                [ WeAcceptedOperationFailMalformedHTLC(msg, nextCommitments) ]
                 |> Ok
             | None ->
-                cmd.Id |> unknownHTLCId
+                op.Id |> unknownHTLCId
 
     let receiveFailMalformed (msg: UpdateFailMalformedHTLC) (cm: Commitments) =
         if msg.FailureCode.Value &&& OnionError.BADONION = 0us then
@@ -225,12 +226,12 @@ module internal Commitments =
             | None ->
                 msg.HTLCId |> unknownHTLCId
 
-    let sendFee(cmd: CMDUpdateFee) (cm: Commitments) =
+    let sendFee(op: OperationUpdateFee) (cm: Commitments) =
             if (not cm.LocalParams.IsFunder) then
                 "Local is Fundee so it cannot send update fee" |> apiMisuse
             else
                 let fee = { UpdateFee.ChannelId = cm.ChannelId
-                            FeeRatePerKw = cmd.FeeRatePerKw }
+                            FeeRatePerKw = op.FeeRatePerKw }
                 let c1 = cm.AddLocalProposal(fee)
                 result {
                     let! reduced =
@@ -246,7 +247,7 @@ module internal Commitments =
                             |> cannotAffordFee
                     else
                         return
-                            [ WeAcceptedCMDUpdateFee(fee, c1) ]
+                            [ WeAcceptedOperationUpdateFee(fee, c1) ]
                 }
 
     let receiveFee (config: ChannelConfig) (localFeerate) (msg: UpdateFee) (cm: Commitments) =
@@ -283,7 +284,7 @@ module internal Commitments =
                                           (cm.RemoteCommit.Index + 1UL)
                                           (cm.LocalParams)
                                           (cm.RemoteParams)
-                                          (cm.FundingSCoin)
+                                          (cm.FundingScriptCoin)
                                           (remoteNextPerCommitmentPoint)
                                           (spec) n |> expectTransactionErrors
                 let signature,_ = keyRepo.GetSignatureFor(remoteCommitTx.Value, cm.LocalParams.ChannelPubKeys.FundingPubKey)
@@ -313,7 +314,7 @@ module internal Commitments =
                     { cm with RemoteNextCommitInfo = RemoteNextCommitInfo.Waiting(nextRemoteCommitInfo)
                               LocalChanges = { cm.LocalChanges with Proposed = []; Signed = cm.LocalChanges.Proposed }
                               RemoteChanges = { cm.RemoteChanges with ACKed = []; Signed = cm.RemoteChanges.ACKed } }
-                return [ WeAcceptedCMDSign (msg, nextCommitments) ]
+                return [ WeAcceptedOperationSign (msg, nextCommitments) ]
             }
         | RemoteNextCommitInfo.Waiting _ ->
             CanNotSignBeforeRevocation |> Error
@@ -333,7 +334,7 @@ module internal Commitments =
                 let! spec = cm.LocalCommit.Spec.Reduce(cm.LocalChanges.ACKed, cm.RemoteChanges.Proposed) |> expectTransactionError
                 let localPerCommitmentPoint = ChannelUtils.buildCommitmentPoint (chanKeys.CommitmentSeed, nextI)
                 let! (localCommitTx, htlcTimeoutTxs, htlcSuccessTxs) =
-                    Helpers.makeLocalTXs (ctx) chanKeys (nextI) (cm.LocalParams) (cm.RemoteParams) (cm.FundingSCoin) (localPerCommitmentPoint) spec n
+                    Helpers.makeLocalTXs (ctx) chanKeys (nextI) (cm.LocalParams) (cm.RemoteParams) (cm.FundingScriptCoin) (localPerCommitmentPoint) spec n
                     |> expectTransactionErrors
                 let signature, signedCommitTx = keyRepo.GetSignatureFor (localCommitTx.Value, chanKeys.FundingPubKey)
 

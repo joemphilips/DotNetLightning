@@ -116,7 +116,7 @@ type Commitments = {
     LocalParams: LocalParams
     RemoteParams: RemoteParams
     ChannelFlags: uint8
-    FundingSCoin: ScriptCoin
+    FundingScriptCoin: ScriptCoin
     LocalCommit: LocalCommit
     RemoteCommit: RemoteCommit
     LocalChanges: LocalChanges

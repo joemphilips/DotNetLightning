@@ -243,7 +243,7 @@ module Data =
 //     8888888888     Y8P     8888888888 888    Y888     888     "Y8888P"
 
 
-/// The one include `CMD` in its name is the event which we are the initiator
+/// The one that includes `Operation` in its name is the event which we are the initiator
 type ChannelEvent =
     // --- ln events ---
     // --------- init fundee --------
@@ -264,27 +264,27 @@ type ChannelEvent =
     | BothFundingLocked of nextState: Data.NormalData
 
     // -------- normal operation ------
-    | WeAcceptedCMDAddHTLC of msg: UpdateAddHTLC * newCommitments: Commitments
+    | WeAcceptedOperationAddHTLC of msg: UpdateAddHTLC * newCommitments: Commitments
     | WeAcceptedUpdateAddHTLC of newCommitments: Commitments
 
-    | WeAcceptedCMDFulfillHTLC of msg: UpdateFulfillHTLC * newCommitments: Commitments
+    | WeAcceptedOperationFulfillHTLC of msg: UpdateFulfillHTLC * newCommitments: Commitments
     | WeAcceptedFulfillHTLC of msg: UpdateFulfillHTLC * origin: HTLCSource * htlc: UpdateAddHTLC * newCommitments: Commitments
 
-    | WeAcceptedCMDFailHTLC of msg: UpdateFailHTLC * newCommitments: Commitments
+    | WeAcceptedOperationFailHTLC of msg: UpdateFailHTLC * newCommitments: Commitments
     | WeAcceptedFailHTLC of origin: HTLCSource * msg: UpdateAddHTLC * nextCommitments: Commitments
 
-    | WeAcceptedCMDFailMalformedHTLC of msg: UpdateFailMalformedHTLC * newCommitments: Commitments
+    | WeAcceptedOperationFailMalformedHTLC of msg: UpdateFailMalformedHTLC * newCommitments: Commitments
     | WeAcceptedFailMalformedHTLC of origin: HTLCSource * msg: UpdateAddHTLC * newCommitments: Commitments
 
-    | WeAcceptedCMDUpdateFee of msg: UpdateFee  * nextCommitments: Commitments
+    | WeAcceptedOperationUpdateFee of msg: UpdateFee  * nextCommitments: Commitments
     | WeAcceptedUpdateFee of msg: UpdateFee 
 
-    | WeAcceptedCMDSign of msg: CommitmentSigned * nextCommitments: Commitments
+    | WeAcceptedOperationSign of msg: CommitmentSigned * nextCommitments: Commitments
     | WeAcceptedCommitmentSigned of msg: RevokeAndACK * nextCommitments: Commitments
 
     | WeAcceptedRevokeAndACK of nextCommitments: Commitments
 
-    | AcceptedShutdownCMD of msg: Shutdown
+    | AcceptedOperationShutdown of msg: Shutdown
     | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs of remoteShutdown: Shutdown * nextCommitments: Commitments
     /// We have to send closing_signed to initiate the negotiation only when if we are the funder
     | AcceptedShutdownWhenNoPendingHTLCs of msgToSend: ClosingSigned option * nextState: NegotiatingData

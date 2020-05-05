@@ -306,7 +306,7 @@ module Transactions =
             |> Map.toList
             |> List.map snd
             |> List.filter(fun v -> v.Direction = Out)
-            |> List.filter(fun v -> (v.Add.AmountMSat.ToMoney()) >= (dustLimit + htlcTimeoutFee))
+            |> List.filter(fun v -> (v.Add.Amount.ToMoney()) >= (dustLimit + htlcTimeoutFee))
 
     let private trimReceivedHTLCs (dustLimit: Money) (spec: CommitmentSpec) : DirectedHTLC list =
         let htlcSuccessFee = spec.FeeRatePerKw.ToFee(HTLC_SUCCESS_WEIGHT)
@@ -314,7 +314,7 @@ module Transactions =
             |> Map.toList
             |> List.map snd
             |> List.filter(fun v -> v.Direction = In)
-            |> List.filter(fun v -> (v.Add.AmountMSat.ToMoney()) >= (dustLimit + htlcSuccessFee))
+            |> List.filter(fun v -> (v.Add.Amount.ToMoney()) >= (dustLimit + htlcSuccessFee))
 
     let internal commitTxFee (dustLimit: Money) (spec: CommitmentSpec): Money =
         let trimmedOfferedHTLCs = trimOfferedHTLCs (dustLimit) (spec)
@@ -395,12 +395,12 @@ module Transactions =
             trimOfferedHTLCs (localDustLimit) (spec)
             |> List.map(fun htlc ->
                 let redeem = Scripts.htlcOffered (localHTLCPubKey) (remoteHTLCPubkey) localRevocationPubKey (htlc.Add.PaymentHash)
-                (TxOut(htlc.Add.AmountMSat.ToMoney(), redeem.WitHash.ScriptPubKey)), Some htlc.Add)
+                (TxOut(htlc.Add.Amount.ToMoney(), redeem.WitHash.ScriptPubKey)), Some htlc.Add)
         let htlcReceivedOutputsWithMetadata =
             trimReceivedHTLCs(localDustLimit) (spec)
             |> List.map(fun htlc ->
                     let redeem = Scripts.htlcReceived (localHTLCPubKey) (remoteHTLCPubkey) (localRevocationPubKey) (htlc.Add.PaymentHash) (htlc.Add.CLTVExpiry.Value)
-                    TxOut(htlc.Add.AmountMSat.ToMoney(), redeem.WitHash.ScriptPubKey), Some htlc.Add)
+                    TxOut(htlc.Add.Amount.ToMoney(), redeem.WitHash.ScriptPubKey), Some htlc.Add)
         
         let txNumber = obscuredCommitTxNumber commitTxNumber localIsFunder localPaymentBasePoint remotePaymentBasePoint
         let (sequence, lockTime) = encodeTxNumber(txNumber)
@@ -512,25 +512,25 @@ module Transactions =
         let redeem = Scripts.htlcOffered(localHTLCPubKey) (remoteHTLCPubKey) (localRevocationPubKey) (htlc.PaymentHash)
         let spk = redeem.WitHash.ScriptPubKey
         let spkIndex = findScriptPubKeyIndex commitTx spk
-        let amount = htlc.AmountMSat.ToMoney() - fee
+        let amount = htlc.Amount.ToMoney() - fee
         if (amount < localDustLimit) then
             AmountBelowDustLimit amount |> Error
         else
             let psbt = 
                 let txb = n.CreateTransactionBuilder()
                 let indexedTxOut = commitTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex)
-                let scoin = ScriptCoin(indexedTxOut, redeem)
+                let scriptCoin = ScriptCoin(indexedTxOut, redeem)
                 let dest = Scripts.toLocalDelayed localRevocationPubKey toLocalDelay localDelayedPaymentPubKey
                 // we have already done dust limit check above
                 txb.DustPrevention <- false
-                let tx = txb.AddCoins(scoin)
+                let tx = txb.AddCoins(scriptCoin)
                             .Send(dest.WitHash, amount)
                             .SendFees(fee)
                             .SetLockTime(!> htlc.CLTVExpiry.Value)
                             .BuildTransaction(false)
                 tx.Version <- 2u
                 PSBT.FromTransaction(tx, n)
-                    .AddCoins(scoin)
+                    .AddCoins scriptCoin
             let whichInput = psbt.Inputs |> Seq.findIndex(fun i -> not (isNull i.WitnessScript))
             { HTLCTimeoutTx.Value = psbt; WhichInput = whichInput } |> Ok
 
@@ -548,26 +548,26 @@ module Transactions =
         let redeem = Scripts.htlcReceived (localHTLCPubKey) (remoteHTLCPubKey) (localRevocationPubKey) (htlc.PaymentHash) (htlc.CLTVExpiry.Value)
         let spk = redeem.WitHash.ScriptPubKey
         let spkIndex = findScriptPubKeyIndex commitTx spk
-        let amount = htlc.AmountMSat.ToMoney() - fee
+        let amount = htlc.Amount.ToMoney() - fee
         if (amount < localDustLimit) then
             AmountBelowDustLimit amount |> Error
         else
             let psbt = 
                 let txb = n.CreateTransactionBuilder()
-                let scoin =
+                let scriptCoin =
                     let coin = commitTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex)
                     ScriptCoin(coin, redeem)
                 let dest = Scripts.toLocalDelayed localRevocationPubKey toLocalDelay localDelayedPaymentPubKey
                 // we have already done dust limit check above
                 txb.DustPrevention <- false
-                let tx = txb.AddCoins(scoin)
+                let tx = txb.AddCoins(scriptCoin)
                             .Send(dest.WitHash, amount)
                             .SendFees(fee)
                             .SetLockTime(!> 0u)
                             .BuildTransaction(false)
                 tx.Version <- 2u
                 PSBT.FromTransaction(tx, n)
-                    .AddCoins(scoin)
+                    .AddCoins scriptCoin
             let whichInput = psbt.Inputs |> Seq.findIndex(fun i -> not (isNull i.WitnessScript))
             { HTLCSuccessTx.Value = psbt; WhichInput = whichInput; PaymentHash = htlc.PaymentHash } |> Ok
 
@@ -602,7 +602,7 @@ module Transactions =
         let redeem = Scripts.htlcOffered(remoteHTLCPubKey) (localHTLCPubKey) (remoteRevocationPubKey) (htlc.PaymentHash)
         let spk = redeem.WitHash.ScriptPubKey
         let spkIndex = findScriptPubKeyIndex commitTx spk
-        let amount = htlc.AmountMSat.ToMoney() - fee
+        let amount = htlc.Amount.ToMoney() - fee
         if (amount < localDustLimit) then
             AmountBelowDustLimit amount |> Error
         else
@@ -633,7 +633,7 @@ module Transactions =
         let redeem = Scripts.htlcReceived remoteHTLCPubKey localHTLCPubKey remoteRevocationPubKey htlc.PaymentHash htlc.CLTVExpiry.Value
         let spk = redeem.WitHash.ScriptPubKey
         let spkIndex = findScriptPubKeyIndex commitTx spk
-        let amount = htlc.AmountMSat.ToMoney() - fee
+        let amount = htlc.Amount.ToMoney() - fee
         if (amount < localDustLimit) then
             AmountBelowDustLimit amount |> Error
         else

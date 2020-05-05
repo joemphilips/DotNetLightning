@@ -50,21 +50,21 @@ type CommitmentSpec = {
             (fun v cs -> { cs with ToRemote = v })
 
         member this.TotalFunds =
-            this.ToLocal + this.ToRemote + (this.HTLCs |> Seq.sumBy(fun h -> h.Value.Add.AmountMSat))
+            this.ToLocal + this.ToRemote + (this.HTLCs |> Seq.sumBy(fun h -> h.Value.Add.Amount))
 
         member internal this.AddHTLC(direction: Direction, update: UpdateAddHTLC) =
             let htlc = { DirectedHTLC.Direction = direction; Add = update }
             match direction with
-            | Out -> { this with ToLocal = (this.ToLocal - htlc.Add.AmountMSat); HTLCs = this.HTLCs.Add(update.HTLCId, htlc)}
-            | In ->  { this with ToRemote = this.ToRemote - htlc.Add.AmountMSat; HTLCs = this.HTLCs.Add(update.HTLCId, htlc)}
+            | Out -> { this with ToLocal = (this.ToLocal - htlc.Add.Amount); HTLCs = this.HTLCs.Add(update.HTLCId, htlc)}
+            | In ->  { this with ToRemote = this.ToRemote - htlc.Add.Amount; HTLCs = this.HTLCs.Add(update.HTLCId, htlc)}
 
         member internal this.FulfillHTLC(direction: Direction, htlcId: HTLCId) =
             match this.HTLCs |> Map.filter(fun k v  -> v.Direction <> direction) |>  Map.tryFind(htlcId), direction with
             | Some htlc, Out ->
-                { this with ToLocal = this.ToLocal + htlc.Add.AmountMSat; HTLCs = this.HTLCs.Remove htlcId }
+                { this with ToLocal = this.ToLocal + htlc.Add.Amount; HTLCs = this.HTLCs.Remove htlcId }
                 |> Ok
             | Some htlc, In ->
-                { this with ToRemote = this.ToRemote + htlc.Add.AmountMSat; HTLCs = this.HTLCs.Remove(htlcId) }
+                { this with ToRemote = this.ToRemote + htlc.Add.Amount; HTLCs = this.HTLCs.Remove htlcId }
                 |> Ok
             | None, _ ->
                 UnknownHTLC htlcId |> Error
@@ -72,10 +72,10 @@ type CommitmentSpec = {
         member internal this.FailHTLC(direction: Direction, htlcId: HTLCId) =
             match this.HTLCs |> Map.filter(fun k v -> v.Direction <> direction) |> Map.tryFind (htlcId), direction with
             | Some htlc, Out ->
-                { this with ToRemote = this.ToRemote + htlc.Add.AmountMSat; HTLCs = this.HTLCs.Remove(htlcId)}
+                { this with ToRemote = this.ToRemote + htlc.Add.Amount; HTLCs = this.HTLCs.Remove htlcId }
                 |> Ok
             | Some htlc, In ->
-                { this with ToLocal = this.ToLocal + htlc.Add.AmountMSat; HTLCs = this.HTLCs.Remove(htlcId)}
+                { this with ToLocal = this.ToLocal + htlc.Add.Amount; HTLCs = this.HTLCs.Remove htlcId }
                 |> Ok
             | None, _ ->
                 UnknownHTLC htlcId |> Error

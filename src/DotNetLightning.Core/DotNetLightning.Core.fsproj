@@ -62,7 +62,7 @@
     <Compile Include="Channel\ChannelUtils.fs" />
     <Compile Include="Channel\HTLCChannelType.fs" />
     <Compile Include="Channel\ChannelConstants.fs" />
-    <Compile Include="Channel\ChannelCommands.fs" />
+    <Compile Include="Channel\ChannelOperations.fs" />
     <Compile Include="Channel\Commitments.fs" />
     <Compile Include="Channel\ChannelTypes.fs" />
     <Compile Include="Channel\ChannelHelpers.fs" />

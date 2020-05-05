@@ -32,35 +32,35 @@ let htlcs = [
     { DirectedHTLC.Direction = In;
       Add = { UpdateAddHTLC.ChannelId = ChannelId.Zero;
               HTLCId = HTLCId.Zero;
-              AmountMSat = LNMoney.MilliSatoshis(1000000L);
+              Amount = LNMoney.MilliSatoshis 1000000L
               PaymentHash = paymentPreImages.[0].Hash
               CLTVExpiry = 500u |> BlockHeight;
               OnionRoutingPacket = OnionPacket.LastPacket } }
     { DirectedHTLC.Direction = In;
       Add = { UpdateAddHTLC.ChannelId = ChannelId.Zero;
               HTLCId = HTLCId(1UL);
-              AmountMSat = LNMoney.MilliSatoshis(2000000L);
+              Amount = LNMoney.MilliSatoshis 2000000L
               PaymentHash = paymentPreImages.[1].Hash
               CLTVExpiry = 501u |> BlockHeight;
               OnionRoutingPacket = OnionPacket.LastPacket } }
     { DirectedHTLC.Direction = Out;
       Add = { UpdateAddHTLC.ChannelId = ChannelId.Zero;
               HTLCId = HTLCId(2UL);
-              AmountMSat = LNMoney.MilliSatoshis(2000000L);
+              Amount = LNMoney.MilliSatoshis 2000000L
               PaymentHash = paymentPreImages.[2].Hash
               CLTVExpiry = 502u |> BlockHeight;
               OnionRoutingPacket = OnionPacket.LastPacket } }
     { DirectedHTLC.Direction = Out;
       Add = { UpdateAddHTLC.ChannelId = ChannelId.Zero;
               HTLCId = HTLCId(3UL);
-              AmountMSat = LNMoney.MilliSatoshis(3000000L);
+              Amount = LNMoney.MilliSatoshis 3000000L
               PaymentHash = paymentPreImages.[3].Hash
               CLTVExpiry = 503u |> BlockHeight;
               OnionRoutingPacket = OnionPacket.LastPacket } }
     { DirectedHTLC.Direction = In;
       Add = { UpdateAddHTLC.ChannelId = ChannelId.Zero;
               HTLCId = HTLCId(4UL);
-              AmountMSat = LNMoney.MilliSatoshis(4000000L);
+              Amount = LNMoney.MilliSatoshis 4000000L
               PaymentHash = paymentPreImages.[4].Hash
               CLTVExpiry = 504u |> BlockHeight;
               OnionRoutingPacket = OnionPacket.LastPacket } }
@@ -85,19 +85,19 @@ let tests =
             let remoteRepo = DefaultKeyRepository(remoteNodeSecret, remoteChannelIndex) :> IKeysRepository
             let remoteKeys = remoteRepo.GetChannelKeys(false)
             let remotePubKeys = remoteKeys.ToChannelPubKeys()
-            
-            let fundingSCoin = ChannelHelpers.getFundingSCoin(localPubKeys)
-                                                              (remotePubKeys.FundingPubKey)
-                                                              (fundingTxId)
-                                                              (TxOutIndex 0us)
-                                                              fundingAmount
+
+            let fundingScriptCoin = ChannelHelpers.getFundingScriptCoin localPubKeys
+                                                                        remotePubKeys.FundingPubKey
+                                                                        fundingTxId
+                                                                        (TxOutIndex 0us)
+                                                                        fundingAmount
             
             let localDustLimit = Money.Satoshis(546L)
             let toLocalDelay = 200us |> BlockHeightOffset16
             let specBase = { CommitmentSpec.HTLCs = htlcMap; FeeRatePerKw = 15000u |> FeeRatePerKw;
                              ToLocal = LNMoney.MilliSatoshis(6988000000L); ToRemote =  3000000000L |> LNMoney.MilliSatoshis}
             let commitTx =
-                Transactions.makeCommitTx fundingSCoin
+                Transactions.makeCommitTx fundingScriptCoin
                                           0UL
                                           (localPubKeys.PaymentBasePubKey)
                                           (remotePubKeys.PaymentBasePubKey)
@@ -119,7 +119,7 @@ let tests =
             let remoteDustLimit = Money.Satoshis(1000L)
             let remoteDelay = 160us |> BlockHeightOffset16
             let remoteCommitTx =
-                Transactions.makeCommitTx fundingSCoin
+                Transactions.makeCommitTx fundingScriptCoin
                                           0UL
                                           remotePubKeys.PaymentBasePubKey
                                           localPubKeys.PaymentBasePubKey

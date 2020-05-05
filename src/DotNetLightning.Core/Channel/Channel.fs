@@ -58,7 +58,7 @@ module Channel =
             assert (Scripts.isValidFinalScriptPubKey (remoteSpk) && Scripts.isValidFinalScriptPubKey (localSpk))
             let dustLimitSatoshis = Money.Max(cm.LocalParams.DustLimitSatoshis, cm.RemoteParams.DustLimitSatoshis)
             result {
-                let! closingTx = Transactions.makeClosingTx (cm.FundingSCoin) (localSpk) (remoteSpk) (cm.LocalParams.IsFunder) (dustLimitSatoshis) (closingFee) (cm.LocalCommit.Spec) n
+                let! closingTx = Transactions.makeClosingTx (cm.FundingScriptCoin) (localSpk) (remoteSpk) (cm.LocalParams.IsFunder) (dustLimitSatoshis) (closingFee) (cm.LocalCommit.Spec) n
                 let localSignature, psbtUpdated = keyRepo.GetSignatureFor(closingTx.Value, localFundingPk)
                 let msg = { ClosingSigned.ChannelId = cm.ChannelId
                             FeeSatoshis = closingFee
@@ -68,7 +68,7 @@ module Channel =
 
         let firstClosingFee (cm: Commitments, localSpk: Script, remoteSpk: Script, feeEst: IFeeEstimator, n) =
             result {
-                let! dummyClosingTx = Transactions.makeClosingTx cm.FundingSCoin localSpk remoteSpk cm.LocalParams.IsFunder Money.Zero Money.Zero cm.LocalCommit.Spec n
+                let! dummyClosingTx = Transactions.makeClosingTx cm.FundingScriptCoin localSpk remoteSpk cm.LocalParams.IsFunder Money.Zero Money.Zero cm.LocalCommit.Spec n
                 let tx = dummyClosingTx.Value.GetGlobalTransaction()
                 tx.Inputs.[0].WitScript <-
                     let witness = seq [ dummySig.ToBytes(); dummySig.ToBytes(); dummyClosingTx.Value.Inputs.[0].WitnessScript.ToBytes() ] |> Array.concat
@@ -204,9 +204,9 @@ module Channel =
                 let commitments = { Commitments.LocalParams = state.LocalParams
                                     RemoteParams = state.RemoteParams
                                     ChannelFlags = state.ChannelFlags
-                                    FundingSCoin =
+                                    FundingScriptCoin =
                                         let amount = state.FundingTx.Value.Outputs.[int state.LastSent.FundingOutputIndex.Value].Value
-                                        ChannelHelpers.getFundingSCoin state.LocalParams.ChannelPubKeys
+                                        ChannelHelpers.getFundingScriptCoin state.LocalParams.ChannelPubKeys
                                                                 state.RemoteParams.FundingPubKey
                                                                 state.LastSent.FundingTxId
                                                                 state.LastSent.FundingOutputIndex
@@ -301,7 +301,7 @@ module Channel =
                 let commitments = { Commitments.LocalParams = state.LocalParams
                                     RemoteParams = state.RemoteParams
                                     ChannelFlags = state.ChannelFlags
-                                    FundingSCoin = ChannelHelpers.getFundingSCoin state.LocalParams.ChannelPubKeys state.RemoteParams.FundingPubKey msg.FundingTxId msg.FundingOutputIndex state.FundingSatoshis
+                                    FundingScriptCoin = ChannelHelpers.getFundingScriptCoin state.LocalParams.ChannelPubKeys state.RemoteParams.FundingPubKey msg.FundingTxId msg.FundingOutputIndex state.FundingSatoshis
                                     LocalCommit = { LocalCommit.Index = 0UL;
                                                     Spec = localSpec
                                                     PublishableTxs = { PublishableTxs.CommitTx = finalizedCommitTx;
@@ -342,7 +342,7 @@ module Channel =
                 // this is not specified in BOLT.
                 let shortChannelId = { ShortChannelId.BlockHeight = height;
                                        BlockIndex = txindex
-                                       TxOutIndex = state.Commitments.FundingSCoin.Outpoint.N |> uint16 |> TxOutIndex }
+                                       TxOutIndex = state.Commitments.FundingScriptCoin.Outpoint.N |> uint16 |> TxOutIndex }
                 let nextState = { Data.WaitForFundingLockedData.Commitments = state.Commitments
                                   ShortChannelId = shortChannelId
                                   OurMessage = msgToSend
@@ -388,22 +388,22 @@ module Channel =
                 [] |> Ok
 
         // ---------- normal operation ---------
-        | ChannelState.Normal state, AddHTLC cmd when state.LocalShutdown.IsSome || state.RemoteShutdown.IsSome ->
-            sprintf "Could not add new HTLC %A since shutdown is already in progress." cmd
+        | ChannelState.Normal state, AddHTLC op when state.LocalShutdown.IsSome || state.RemoteShutdown.IsSome ->
+            sprintf "Could not add new HTLC %A since shutdown is already in progress." op
             |> apiMisuse
-        | ChannelState.Normal state, AddHTLC cmd ->
+        | ChannelState.Normal state, AddHTLC op ->
             result {
-                do! Validation.checkCMDAddHTLC state cmd
+                do! Validation.checkOperationAddHTLC state op
                 let add: UpdateAddHTLC = { UpdateAddHTLC.ChannelId = state.Commitments.ChannelId
                                            HTLCId = state.Commitments.LocalNextHTLCId
-                                           AmountMSat = cmd.AmountMSat
-                                           PaymentHash = cmd.PaymentHash
-                                           CLTVExpiry = cmd.Expiry
-                                           OnionRoutingPacket = cmd.Onion }
+                                           Amount = op.Amount
+                                           PaymentHash = op.PaymentHash
+                                           CLTVExpiry = op.Expiry
+                                           OnionRoutingPacket = op.Onion }
                 let commitments1 = { state.Commitments.AddLocalProposal(add)
                                         with LocalNextHTLCId = state.Commitments.LocalNextHTLCId + 1UL }
                                         |> fun commitments ->
-                                            match cmd.Origin with
+                                            match op.Origin with
                                             | None -> commitments
                                             | Some o -> { commitments with OriginChannels = state.Commitments.OriginChannels |> Map.add add.HTLCId o }
                 // we need to base the next current commitment on the last sig we sent, even if we didn't yet receive their revocation
@@ -413,7 +413,7 @@ module Channel =
                     | RemoteNextCommitInfo.Revoked _info -> commitments1.RemoteCommit
                 let! reduced = remoteCommit1.Spec.Reduce(commitments1.RemoteChanges.ACKed, commitments1.LocalChanges.Proposed) |> expectTransactionError
                 do! Validation.checkOurUpdateAddHTLCIsAcceptableWithCurrentSpec reduced commitments1 add
-                return [ WeAcceptedCMDAddHTLC(add, commitments1) ]
+                return [ WeAcceptedOperationAddHTLC(add, commitments1) ]
             }
         | ChannelState.Normal state, ApplyUpdateAddHTLC (msg, height) ->
             result {
@@ -428,17 +428,17 @@ module Channel =
         | ChannelState.Normal state, FulfillHTLC cmd ->
             result {
                 let! t = state.Commitments |> Commitments.sendFulfill (cmd)
-                return [ WeAcceptedCMDFulfillHTLC(t) ]
+                return [ WeAcceptedOperationFulfillHTLC t ]
             }
 
         | ChannelState.Normal state, ChannelCommand.ApplyUpdateFulfillHTLC msg ->
             state.Commitments |> Commitments.receiveFulfill msg
 
-        | ChannelState.Normal state, FailHTLC cmd ->
-            state.Commitments |> Commitments.sendFail cs.LocalNodeSecret cmd
+        | ChannelState.Normal state, FailHTLC op ->
+            state.Commitments |> Commitments.sendFail cs.LocalNodeSecret op
 
-        | ChannelState.Normal state, FailMalformedHTLC cmd ->
-            state.Commitments |> Commitments.sendFailMalformed cmd
+        | ChannelState.Normal state, FailMalformedHTLC op ->
+            state.Commitments |> Commitments.sendFailMalformed op
 
         | ChannelState.Normal state, ApplyUpdateFailHTLC msg ->
             state.Commitments |> Commitments.receiveFail msg
@@ -446,8 +446,8 @@ module Channel =
         | ChannelState.Normal state, ApplyUpdateFailMalformedHTLC msg ->
             state.Commitments |> Commitments.receiveFailMalformed msg
 
-        | ChannelState.Normal state, UpdateFee cmd ->
-            state.Commitments |> Commitments.sendFee cmd
+        | ChannelState.Normal state, UpdateFee op ->
+            state.Commitments |> Commitments.sendFee op
         | ChannelState.Normal state, ApplyUpdateFee msg ->
             let localFeerate = cs.FeeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority)
             state.Commitments |> Commitments.receiveFee cs.Config localFeerate msg
@@ -498,7 +498,7 @@ module Channel =
             else
                 let shutDown = { Shutdown.ChannelId = state.ChannelId
                                  ScriptPubKey = localSPK }
-                [ AcceptedShutdownCMD shutDown ]
+                [ AcceptedOperationShutdown shutDown ]
                 |> Ok
         | ChannelState.Normal state, RemoteShutdown msg ->
             result {
@@ -576,21 +576,21 @@ module Channel =
                         return [ AcceptedShutdownWhenWeHavePendingHTLCs(nextState) ]
             }
         // ----------- closing ---------
-        | Shutdown state, FulfillHTLC cmd ->
+        | Shutdown state, FulfillHTLC op ->
             result {
-                let! t = state.Commitments |> Commitments.sendFulfill cmd
-                return [ WeAcceptedCMDFulfillHTLC(t) ]
+                let! t = state.Commitments |> Commitments.sendFulfill op
+                return [ WeAcceptedOperationFulfillHTLC t ]
             }
         | Shutdown state, ApplyUpdateFulfillHTLC msg ->
             state.Commitments |> Commitments.receiveFulfill msg
-        | Shutdown state, FailHTLC cmd ->
-            state.Commitments |> Commitments.sendFail (cs.LocalNodeSecret) cmd
-        | Shutdown state, FailMalformedHTLC cmd ->
-            state.Commitments |> Commitments.sendFailMalformed cmd
+        | Shutdown state, FailHTLC op ->
+            state.Commitments |> Commitments.sendFail cs.LocalNodeSecret op
+        | Shutdown state, FailMalformedHTLC op ->
+            state.Commitments |> Commitments.sendFailMalformed op
         | Shutdown state, ApplyUpdateFailMalformedHTLC msg ->
             state.Commitments |> Commitments.receiveFailMalformed msg
-        | Shutdown state, UpdateFee cmd ->
-            state.Commitments |> Commitments.sendFee cmd
+        | Shutdown state, UpdateFee op ->
+            state.Commitments |> Commitments.sendFee op
         | Shutdown state, ApplyUpdateFee msg ->
             let localFeerate = cs.FeeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority)
             state.Commitments |> Commitments.receiveFee cs.Config localFeerate msg
@@ -614,7 +614,7 @@ module Channel =
             result {
                 let cm = state.Commitments
                 let lastCommitFeeSatoshi =
-                    cm.FundingSCoin.TxOut.Value - (cm.LocalCommit.PublishableTxs.CommitTx.Value.TotalOut)
+                    cm.FundingScriptCoin.TxOut.Value - (cm.LocalCommit.PublishableTxs.CommitTx.Value.TotalOut)
                 do! checkRemoteProposedHigherFeeThanBefore lastCommitFeeSatoshi msg.FeeSatoshis
                 let! closingTx, closingSignedMsg =
                     Closing.makeClosingTx (cs.KeysRepository, cm, state.LocalShutdown.ScriptPubKey, state.RemoteShutdown.ScriptPubKey, msg.FeeSatoshis, cm.LocalParams.ChannelPubKeys.FundingPubKey, cs.Network)
@@ -663,11 +663,11 @@ module Channel =
                         let nextState = { state with ClosingTxProposed = closingTxProposed1; MaybeBestUnpublishedTx = Some(finalizedTx) }
                         return [ WeProposedNewClosingSigned(closingSignedMsg, nextState) ]
             }
-        | Closing state, FulfillHTLC cmd ->
+        | Closing state, FulfillHTLC op ->
             // got valid payment preimage, recalculating txs to redeem the corresponding htlc on-chain
             result {
                 let cm = state.Commitments
-                let! (msgToSend, newCommitments) = cm |> Commitments.sendFulfill cmd
+                let! (msgToSend, newCommitments) = cm |> Commitments.sendFulfill op
                 let localCommitPublished =
                     state.LocalCommitPublished
                     |> Option.map (fun localCommitPublished -> Closing.claimCurrentLocalCommitTxOutputs (cs.KeysRepository, newCommitments.LocalParams.ChannelPubKeys, newCommitments, localCommitPublished.CommitTx))
@@ -730,31 +730,31 @@ module Channel =
             { c with State = ChannelState.Normal data }
 
         // ----- normal operation --------
-        | WeAcceptedCMDAddHTLC(_, newCommitments), ChannelState.Normal d ->
+        | WeAcceptedOperationAddHTLC(_, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
         | WeAcceptedUpdateAddHTLC(newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
 
-        | WeAcceptedCMDFulfillHTLC(_, newCommitments), ChannelState.Normal d ->
+        | WeAcceptedOperationFulfillHTLC(_, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
         | WeAcceptedFulfillHTLC(_msg, _origin, _htlc, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
 
-        | WeAcceptedCMDFailHTLC(_msg, newCommitments), ChannelState.Normal d ->
+        | WeAcceptedOperationFailHTLC(_msg, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
         | WeAcceptedFailHTLC(_origin, _msg, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
 
-        | WeAcceptedCMDFailMalformedHTLC(_msg, newCommitments), ChannelState.Normal d ->
+        | WeAcceptedOperationFailMalformedHTLC(_msg, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
         | WeAcceptedFailMalformedHTLC(_origin, _msg, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
 
-        | WeAcceptedCMDUpdateFee(_msg, newCommitments), ChannelState.Normal d ->
+        | WeAcceptedOperationUpdateFee(_msg, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
         | WeAcceptedUpdateFee(_msg), ChannelState.Normal _d -> c
 
-        | WeAcceptedCMDSign(_msg, newCommitments), ChannelState.Normal d ->
+        | WeAcceptedOperationSign(_msg, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
         | WeAcceptedCommitmentSigned(_msg, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
@@ -763,7 +763,7 @@ module Channel =
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
 
         // -----  closing ------
-        | AcceptedShutdownCMD msg, ChannelState.Normal d ->
+        | AcceptedOperationShutdown msg, ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with LocalShutdown = Some msg }) }
         | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs(remoteShutdown, nextCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal ({ d with RemoteShutdown = Some remoteShutdown; Commitments = nextCommitments }) }

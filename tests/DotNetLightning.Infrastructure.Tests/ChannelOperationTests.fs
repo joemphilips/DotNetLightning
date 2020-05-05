@@ -324,17 +324,17 @@ let tests =
                     PaymentPreimage.Create([|for _ in 0..31 -> (uint8 i)|])
                 )
                 
-            let baseAddHTLCCmd = { CMDAddHTLC.Expiry = BlockHeight (130u)
-                                   AmountMSat = LNMoney.Zero
-                                   PaymentHash = paymentPreImages.[0].Hash
-                                   Onion = OnionPacket.LastPacket
-                                   Upstream = None
-                                   Origin = None
-                                   CurrentHeight = BlockHeight(101u) }
+            let baseAddHTLCOperation = { OperationAddHTLC.Expiry = BlockHeight 130u
+                                         Amount = LNMoney.Zero
+                                         PaymentHash = paymentPreImages.[0].Hash
+                                         Onion = OnionPacket.LastPacket
+                                         Upstream = None
+                                         Origin = None
+                                         CurrentHeight = BlockHeight 101u }
                 
             // send update_add_htlc from alice to bob
-            let addHtlcCmd = { baseAddHTLCCmd with AmountMSat = LNMoney.MilliSatoshis(1000L) }
-            do! alice.CM.AcceptCommandAsync({ NodeId = bobNodeId; ChannelCommand = ChannelCommand.AddHTLC addHtlcCmd }).AsTask() |> Async.AwaitTask
+            let addHtlcOperation = { baseAddHTLCOperation with Amount = LNMoney.MilliSatoshis 1000L }
+            do! alice.CM.AcceptCommandAsync({ NodeId = bobNodeId; ChannelCommand = ChannelCommand.AddHTLC addHtlcOperation }).AsTask() |> Async.AwaitTask
             let bobAcceptedAddHTLCTask =
                 bob.EventAggregator.AwaitChannelEvent(function WeAcceptedUpdateAddHTLC _ -> Some () | _ -> None)
                 
@@ -347,15 +347,15 @@ let tests =
                 alice.EventAggregator.AwaitChannelEvent(function WeAcceptedUpdateAddHTLC _ -> Some () | _ -> None)
             let bobAcceptedAddHTLCTask =
                 bob.EventAggregator.AwaitChannelEvent(function WeAcceptedUpdateAddHTLC _ -> Some () | _ -> None)
-            let addHtlcCmd = { baseAddHTLCCmd with
-                                    AmountMSat = LNMoney.MilliSatoshis(100000L)
-                                    PaymentHash = paymentPreImages.[1].Hash }
-            do! bob.CM.AcceptCommandAsync({ NodeId = aliceNodeId; ChannelCommand = AddHTLC addHtlcCmd }).AsTask() |> Async.AwaitTask
+            let addHtlcOperation = { baseAddHTLCOperation with
+                                         Amount = LNMoney.MilliSatoshis 100000L
+                                         PaymentHash = paymentPreImages.[1].Hash }
+            do! bob.CM.AcceptCommandAsync({ NodeId = aliceNodeId; ChannelCommand = AddHTLC addHtlcOperation }).AsTask() |> Async.AwaitTask
             
-            let addHtlcCmd = { baseAddHTLCCmd with
-                                    AmountMSat = LNMoney.MilliSatoshis(40000L)
-                                    PaymentHash = paymentPreImages.[2].Hash }
-            do! alice.CM.AcceptCommandAsync({ NodeId = bobNodeId; ChannelCommand = AddHTLC addHtlcCmd }).AsTask() |> Async.AwaitTask
+            let addHtlcOperation = { baseAddHTLCOperation with
+                                         Amount = LNMoney.MilliSatoshis 40000L
+                                         PaymentHash = paymentPreImages.[2].Hash }
+            do! alice.CM.AcceptCommandAsync({ NodeId = bobNodeId; ChannelCommand = AddHTLC addHtlcOperation }).AsTask() |> Async.AwaitTask
             
             let! r = aliceAcceptedAddHTLCTask
             Expect.isSome r "timeout"
