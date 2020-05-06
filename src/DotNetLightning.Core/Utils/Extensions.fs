@@ -148,11 +148,10 @@ type System.Collections.BitArray with
         BitArray.From5BitEncoding(b)
         
     member this.Reverse() =
-        let length = this.Length
-        let mutable result = Array.zeroCreate length
-        for i in 0 .. (length - 1) do
-            result.[i] <- this.[length - i - 1]
-        result
+        let boolArray: array<bool> = Array.ofSeq (Seq.cast this)
+        Array.Reverse boolArray
+        BitArray(boolArray)
+
     member this.PrintBits() =
         let sb = StringBuilder()
         for b in this do
