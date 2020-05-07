@@ -390,25 +390,10 @@ type Init =
                 this.Features <- oredFeatures |> FeatureBit.CreateUnsafe
                 this.TLVStream <- ls.ReadTLVStream() |> Array.map(InitTLV.FromGenericTLV)
             member this.Serialize(ls) =
-                // Trim any leading zero bytes from the from of the local features
-                let localFeatures =
-                    let features = this.Features.ToByteArray()
-                    let startIndex =
-                        match Array.tryFindIndex (fun (b: byte) -> b <> 0uy) features with
-                        | Some index -> index
-                        | None -> features.Length
-                    features.[startIndex..]
-                // For legacy compatibility, the last (lowest) 13 bits get
-                // duplicated in the globalFeatures array.
-                let globalFeatures =
-                    if localFeatures.Length < 2 then
-                        localFeatures
-                    else
-                        let features = localFeatures.[(localFeatures.Length - 2)..]
-                        features.[0] <- features.[0] &&& 0b00111111uy
-                        features
-                ls.WriteWithLen(globalFeatures)
-                ls.WriteWithLen(localFeatures)
+                // For backwards compatibility reason, we must consider legacy `global features` section. (see bolt 1)
+                let g: byte[] = [||]
+                ls.WriteWithLen(g)
+                ls.WriteWithLen(this.Features.ToByteArray())
                 ls.WriteTLVStream(this.TLVStream |> Array.map(fun tlv -> tlv.ToGenericTLV()))
 
 [<CLIMutable>]
