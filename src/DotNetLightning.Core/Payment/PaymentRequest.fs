@@ -285,13 +285,11 @@ type TaggedField =
             let routeInfoBase32 = routeInfoBase256 |> Array.concat |>  Helpers.convert8BitsTo5
             this.WriteField(writer, routeInfoBase32)
         | FeaturesTaggedField f ->
-            if f.BitArray.Length = 0 then () else
-            let pad = if (f.BitArray.Length % 40 = 0) then 0 else 40 - (f.BitArray.Length % 40)
             let dBase32 =
-                let ba =
-                    [BitArray(pad, false); f.BitArray] |> BitArray.Concat |> fun baa -> baa.ToByteArray()
-                ba |> Helpers.convert8BitsTo5
-                |> Array.skipWhile((=)0uy)
+                let mutable byteArray = f.BitArray.ToByteArray()
+                while (byteArray.Length * 8) % 5 <> 0 do
+                    byteArray <- Array.concat [ [| 0uy |]; byteArray ]
+                byteArray |> Helpers.convert8BitsTo5 |> Array.skipWhile((=)0uy)
             this.WriteField(writer, dBase32)
             
 

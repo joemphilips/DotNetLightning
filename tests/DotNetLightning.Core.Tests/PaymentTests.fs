@@ -172,17 +172,17 @@ let tests =
         testCase "Please send $30 for coffee beans to the same peer, which supports features 9, 15 and 99, using secret 0x1111111111111111111111111111111111111111111111111111111111111111" <| fun _ ->
             let data = "lnbc25m1pvjluezpp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypqdq5vdhkven9v5sxyetpdeessp5zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygs9q5sqqqqqqqqqqqqqqqpqsq67gye39hfg3zd8rgc80k32tvy9xk2xunwm5lzexnvpx6fd77en8qaq424dxgt56cag2dpt359k3ssyhetktkpqh24jqnjyw6uqd08sgptq44qu"
             let pr = PaymentRequest.Parse(data) |> Result.deref
-            Expect.equal pr.PrefixValue "lnbc" ""
-            Expect.equal pr.PaymentHash ("0001020304050607080900010203040506070809000102030405060708090102" |> uint256.Parse |> PaymentHash) ""
-            Expect.equal (pr.TimestampValue.ToUnixTimeSeconds()) 1496314658L ""
-            Expect.equal (pr.NodeIdValue) ("03e7156ae33b0a208d0744199163177e909e80176e55d97a2f221ede0f934dd9ad" |> hex.DecodeData |> PubKey |> NodeId) ""
-            Expect.equal (pr.Description) (Choice1Of2 "coffee beans") ""
-            Expect.isEmpty pr.FallbackAddresses ""
-            Expect.isSome (pr.Features) ""
-            Expect.isTrue(pr.Features.Value.HasFeature(Feature.PaymentSecret, Optional)) ""
-            Expect.isTrue(pr.Features.Value.HasFeature(Feature.VariableLengthOnion, Optional)) ""
-            Expect.equal (pr.ToString()) data ""
-            Expect.equal (pr.ToString(msgSigner)) data ""
+            Expect.equal pr.PrefixValue "lnbc" "pr.PrefixValue mismatch"
+            Expect.equal pr.PaymentHash ("0001020304050607080900010203040506070809000102030405060708090102" |> uint256.Parse |> PaymentHash) "pr.PaymentHash mismatch"
+            Expect.equal (pr.TimestampValue.ToUnixTimeSeconds()) 1496314658L "pr.TimestampValue mismatch"
+            Expect.equal (pr.NodeIdValue) ("03e7156ae33b0a208d0744199163177e909e80176e55d97a2f221ede0f934dd9ad" |> hex.DecodeData |> PubKey |> NodeId) "pr.NodeIdValue mismatch"
+            Expect.equal (pr.Description) (Choice1Of2 "coffee beans") "pr.Description mismatch"
+            Expect.isEmpty pr.FallbackAddresses "pr.FallbackAddress mismatch"
+            Expect.isSome (pr.Features) "pr.Features mismatch"
+            Expect.isTrue(pr.Features.Value.HasFeature(Feature.PaymentSecret, Optional)) "pr.Features.Value (PaymentSecret) mismatch"
+            Expect.isTrue(pr.Features.Value.HasFeature(Feature.VariableLengthOnion, Optional)) "pr.Features.Value (VariableLengthOnion) mismatch"
+            Expect.equal (pr.ToString()) data "pr.ToString() mismatch"
+            Expect.equal (pr.ToString(msgSigner)) data "pr.ToString(msgSigned) mismatch"
             
         testCase "Same, but adding invalid unknown feature 100" <| fun _ ->
             let data = "lnbc25m1pvjluezpp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypqdq5vdhkven9v5sxyetpdeessp5zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygs9q4psqqqqqqqqqqqqqqqpqsqq40wa3khl49yue3zsgm26jrepqr2eghqlx86rttutve3ugd05em86nsefzh4pfurpd9ek9w2vp95zxqnfe2u7ckudyahsa52q66tgzcp6t2dyk"

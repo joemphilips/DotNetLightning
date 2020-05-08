@@ -9,6 +9,7 @@ open NBitcoin
 open DotNetLightning.Utils
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils.OnionError
+open DotNetLightning.Core.Utils.Extensions
 
 open DotNetLightning.Serialize
 
@@ -368,7 +369,8 @@ type Init =
         interface ISetupMsg
         interface ILightningSerializable<Init> with
             member this.Deserialize(ls: LightningReaderStream) =
-                // For backwards compatibility reason, we must consider legacy `global features` section. (see bolt 1)
+                // For backwards compatibility reason, we must consider legacy
+                // `global features` section. (see bolt 1)
                 let globalFeatures = ls.ReadWithLen()
                 let localFeatures = ls.ReadWithLen()
                 let oredFeatures =
@@ -389,11 +391,54 @@ type Init =
                     oredFeatures
                 this.Features <- oredFeatures |> FeatureBit.CreateUnsafe
                 this.TLVStream <- ls.ReadTLVStream() |> Array.map(InitTLV.FromGenericTLV)
+
             member this.Serialize(ls) =
-                // For backwards compatibility reason, we must consider legacy `global features` section. (see bolt 1)
-                let g: byte[] = [||]
-                ls.WriteWithLen(g)
-                ls.WriteWithLen(this.Features.ToByteArray())
+                // For legacy compatiblity we treat the VariableLengthOnion feature specially.
+                // Older versions of the lightning protocol spec had a
+                // distinction between global and local features, of which
+                // VariableLengthOnion was the only global feature. Although
+                // this distinction has since been removed, older clients still
+                // expect VariableLengthOnion to appear only in the
+                // global_features field of an init message and other features
+                // to appear only in the local_features field. This is still
+                // compatible with newer clients since those clients simply OR
+                // the two feature fields.
+                let localFeatures =
+                    let localFeatures = this.Features
+                    localFeatures.SetFeature
+                        Feature.VariableLengthOnion
+                        FeaturesSupport.Mandatory
+                        false
+                    localFeatures.SetFeature
+                        Feature.VariableLengthOnion
+                        FeaturesSupport.Optional
+                        false
+                    localFeatures.ToByteArray()
+                let globalFeatures =
+                    let globalFeatures = FeatureBit.Zero
+                    let mandatory =
+                        this.Features.HasFeature(
+                            Feature.VariableLengthOnion,
+                            FeaturesSupport.Mandatory
+                        )
+                    let optional =
+                        this.Features.HasFeature(
+                            Feature.VariableLengthOnion,
+                            FeaturesSupport.Optional
+                        )
+                    if mandatory then
+                        globalFeatures.SetFeature
+                            Feature.VariableLengthOnion
+                            FeaturesSupport.Mandatory
+                            true
+                    if optional then
+                        globalFeatures.SetFeature
+                            Feature.VariableLengthOnion
+                            FeaturesSupport.Optional
+                            true
+                    globalFeatures.ToByteArray()
+                ls.WriteWithLen(globalFeatures)
+                ls.WriteWithLen(localFeatures)
                 ls.WriteTLVStream(this.TLVStream |> Array.map(fun tlv -> tlv.ToGenericTLV()))
 
 [<CLIMutable>]
