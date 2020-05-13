@@ -428,9 +428,8 @@ module internal AcceptChannelMsgValidation =
             Ok()
 
     let checkDustLimitIsLargerThanOurChannelReserve (state: Data.WaitForAcceptChannelData) msg =
-        let reserve = ChannelConstantHelpers.getOurChannelReserve state.LastSent.FundingSatoshis
         check
-            msg.DustLimitSatoshis (>) reserve
+            msg.DustLimitSatoshis (>) state.LastSent.ChannelReserveSatoshis
             "dust limit (%A) is bigger than our channel reserve (%A)" 
 
     let checkMinimumHTLCValueIsAcceptable (state: Data.WaitForAcceptChannelData) (msg: AcceptChannel) =
