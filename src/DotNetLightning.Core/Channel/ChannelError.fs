@@ -386,7 +386,7 @@ module internal OpenChannelMsgValidation =
             let ourChannelReserve = ChannelConstantHelpers.getOurChannelReserve msg.FundingSatoshis
             let toLocalMSat = msg.PushMSat
             let toRemoteMSat = fundersAmount - backgroundFeeRate.ToFee(COMMITMENT_TX_BASE_WEIGHT).ToLNMoney()
-            if (toLocalMSat <= (msg.ChannelReserveSatoshis.ToLNMoney()) && toRemoteMSat <= ourChannelReserve.ToLNMoney()) then
+            if (toLocalMSat <= (msg.ChannelReserveSatoshis.ToLNMoney()) || toRemoteMSat <= ourChannelReserve.ToLNMoney()) then
                 ("Insufficient funding amount for initial commitment. ")
                 |> Error
             else
