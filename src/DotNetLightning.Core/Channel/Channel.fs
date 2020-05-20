@@ -145,9 +145,16 @@ module Channel =
                 ChannelFlags = inputInitFunder.ChannelFlags
                 ShutdownScriptPubKey = cs.Config.ChannelOptions.ShutdownScriptPubKey
             }
-            [ NewOutboundChannelStarted(openChannelMsgToSend, { InputInitFunder = inputInitFunder;
-                                                                LastSent = openChannelMsgToSend }) ]
-            |> Ok
+            result {
+                do! Validation.checkOurOpenChannelMsgAcceptable (cs.Config) openChannelMsgToSend
+                return [
+                    NewOutboundChannelStarted(
+                        openChannelMsgToSend, {
+                            InputInitFunder = inputInitFunder
+                            LastSent = openChannelMsgToSend
+                    })
+                ]
+            }
         | WaitForAcceptChannel state, ApplyAcceptChannel msg ->
             result {
                 do! Validation.checkAcceptChannelMsgAcceptable (cs.Config) state msg

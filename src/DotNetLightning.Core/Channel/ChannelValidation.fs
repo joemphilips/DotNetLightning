@@ -146,9 +146,17 @@ module internal ChannelHelpers =
 module internal Validation =
 
     open DotNetLightning.Channel
-
+    let checkOurOpenChannelMsgAcceptable (conf: ChannelConfig) (msg: OpenChannel) =
+        Validation.ofResult(OpenChannelMsgValidation.checkFundingSatoshisLessThanMax msg)
+        *^> OpenChannelMsgValidation.checkChannelReserveSatohisLessThanFundingSatoshis msg
+        *^> OpenChannelMsgValidation.checkPushMSatLesserThanFundingValue msg
+        *^> OpenChannelMsgValidation.checkFundingSatoshisLessThanDustLimitSatoshis msg
+        *^> OpenChannelMsgValidation.checkMaxAcceptedHTLCs msg
+        *^> OpenChannelMsgValidation.checkFunderCanAffordFee (msg.FeeRatePerKw) msg
+        |> Result.mapError((@)["our open_channel msg is invalid"] >> InvalidOpenChannelError.Create msg >> InvalidOpenChannel)
 
     let internal checkOpenChannelMsgAcceptable (feeEstimator: IFeeEstimator) (conf: ChannelConfig) (msg: OpenChannel) =
+        let feeRate = feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background)
         Validation.ofResult(OpenChannelMsgValidation.checkFundingSatoshisLessThanMax msg)
         *^> OpenChannelMsgValidation.checkChannelReserveSatohisLessThanFundingSatoshis msg
         *^> OpenChannelMsgValidation.checkPushMSatLesserThanFundingValue msg
@@ -159,7 +167,8 @@ module internal Validation =
         *> OpenChannelMsgValidation.checkConfigPermits conf.PeerChannelConfigLimits msg
         *^> OpenChannelMsgValidation.checkChannelAnnouncementPreferenceAcceptable conf msg
         *> OpenChannelMsgValidation.checkIsAcceptableByCurrentFeeRate feeEstimator msg
-        |> Result.mapError(InvalidOpenChannelError.Create msg >> InvalidOpenChannel)
+        *^> OpenChannelMsgValidation.checkFunderCanAffordFee feeRate msg
+        |> Result.mapError((@)["their open_channel msg is invalid"] >> InvalidOpenChannelError.Create msg >> InvalidOpenChannel)
 
 
     let internal checkAcceptChannelMsgAcceptable (conf: ChannelConfig) (state) (msg: AcceptChannel) =
