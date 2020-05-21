@@ -193,6 +193,11 @@ module private ValidationHelper =
 /// Helpers to create channel error
 [<AutoOpen>]
 module internal ChannelError =
+    let feeRateMismatch (FeeRatePerKw remote, FeeRatePerKw local) =
+        let remote = float remote
+        let local = float local
+        abs (2.0 * (remote - local) / (remote + local))
+
     let inline feeDeltaTooHigh msg (actualDelta, maxAccepted) =
         InvalidUpdateFeeError.Create
             msg
@@ -294,13 +299,16 @@ module internal OpenChannelMsgValidation =
         else
             Ok()
             
-    let checkRemoteFee (feeEstimator: IFeeEstimator) (feeRate: FeeRatePerKw) =
-        let ourLowest = feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background)
-        let ourHighest = (feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority) * 2u)
-        if feeRate < ourLowest || ourHighest < feeRate then
+    let checkRemoteFee (feeEstimator: IFeeEstimator)
+                       (remoteFeeRatePerKw: FeeRatePerKw)
+                       (maxFeeRateMismatchRatio: float) =
+        let localFeeRatePerKw =
+            feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background)
+        let diff = feeRateMismatch(remoteFeeRatePerKw, localFeeRatePerKw)
+        if (diff > maxFeeRateMismatchRatio) then
             sprintf
-                "Peer's feerate (%A) was in unacceptable range, it must in between %A and %A"
-                feeRate ourLowest ourHighest
+                "Peer's feerate (%A) was unacceptably far from the estimated fee rate of %A"
+                remoteFeeRatePerKw localFeeRatePerKw
             |> Error
         else
             Ok()
@@ -500,9 +508,6 @@ module internal UpdateAddHTLCValidationWithContext =
         else
             Ok()
 module internal UpdateFeeValidation =
-    let private feeRateMismatch (FeeRatePerKw remote, FeeRatePerKw local) =
-        (2.0 * float (remote - local) / float (remote + local))
-        |> abs
     let checkFeeDiffTooHigh (msg: UpdateFee) (localFeeRatePerKw: FeeRatePerKw) (maxFeeRateMismatchRatio) =
         let remoteFeeRatePerKw = msg.FeeRatePerKw
         let diff = feeRateMismatch(remoteFeeRatePerKw, localFeeRatePerKw)

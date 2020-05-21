@@ -153,7 +153,7 @@ module internal Validation =
         *^> OpenChannelMsgValidation.checkChannelReserveSatohisLessThanFundingSatoshis msg
         *^> OpenChannelMsgValidation.checkPushMSatLesserThanFundingValue msg
         *^> OpenChannelMsgValidation.checkFundingSatoshisLessThanDustLimitSatoshis msg
-        *^> OpenChannelMsgValidation.checkRemoteFee feeEstimator msg.FeeRatePerKw
+        *^> OpenChannelMsgValidation.checkRemoteFee feeEstimator msg.FeeRatePerKw conf.ChannelOptions.MaxFeeRateMismatchRatio
         *^> OpenChannelMsgValidation.checkToSelfDelayIsInAcceptableRange msg
         *^> OpenChannelMsgValidation.checkMaxAcceptedHTLCs msg
         *> OpenChannelMsgValidation.checkConfigPermits conf.PeerChannelConfigLimits msg
