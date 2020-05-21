@@ -293,7 +293,7 @@ module internal OpenChannelMsgValidation =
     let checkFundingSatoshisLessThanDustLimitSatoshis (msg: OpenChannel) =
         if (msg.DustLimitSatoshis > msg.FundingSatoshis) then
             sprintf
-                "Peer never wants payout outputs? dust_limit_satoshis: %A; funding_satoshi %A"
+                "The dust limit (%A) is larger than the funding amount (%A)"
                 msg.FundingSatoshis msg.DustLimitSatoshis
             |> Error
         else
@@ -382,23 +382,17 @@ module internal OpenChannelMsgValidation =
                 ourChannelReserve (<) msg.DustLimitSatoshis
                 "Dust limit too high for our channel reserve. our channel reserve is: %A . received dust_limit is: %A"
         Validation.ofResult(check1) *^> check2 *^> check3
-        
-    let checkIfFundersAmountSufficient (feeEst: IFeeEstimator) msg =
+
+    let checkFunderCanAffordFee (feeRate: FeeRatePerKw) (msg: OpenChannel) =
         let fundersAmount = LNMoney.Satoshis(msg.FundingSatoshis.Satoshi) - msg.PushMSat
-        let backgroundFeeRate = feeEst.GetEstSatPer1000Weight(ConfirmationTarget.Background)
-        let backgroundFee = backgroundFeeRate.ToFee COMMITMENT_TX_BASE_WEIGHT
-        if (fundersAmount.ToMoney() < backgroundFee) then
-            (sprintf "Insufficient funding amount for initial commitment. BackgroundFee %A. funders amount %A" backgroundFee fundersAmount)
+        let fee = feeRate.ToFee COMMITMENT_TX_BASE_WEIGHT
+        if fundersAmount.ToMoney() < fee then
+            sprintf
+                "funding amount (%A) minus push amount (%A) does not cover commitment tx fee (%A)"
+                msg.FundingSatoshis msg.PushMSat fee
             |> Error
         else
-            let ourChannelReserve = ChannelConstantHelpers.getOurChannelReserve msg.FundingSatoshis
-            let toLocalMSat = msg.PushMSat
-            let toRemoteMSat = fundersAmount - backgroundFeeRate.ToFee(COMMITMENT_TX_BASE_WEIGHT).ToLNMoney()
-            if (toLocalMSat <= (msg.ChannelReserveSatoshis.ToLNMoney()) && toRemoteMSat <= ourChannelReserve.ToLNMoney()) then
-                ("Insufficient funding amount for initial commitment. ")
-                |> Error
-            else
-                Ok()
+            Ok()
 
 module internal AcceptChannelMsgValidation =
     let private check left predicate right msg =
