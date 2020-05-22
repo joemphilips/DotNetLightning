@@ -15,28 +15,15 @@ jobs:
       with:
         dotnet-version: ${{ matrix.dotnet }}
 
-    - name: Run tests (BouncyCastle)
+    - name: Run unit tests
       # we want to run only once.
       if: startsWith(matrix.os, 'ubuntu-18')
       run: |
-        dotnet build tests/DotNetLightning.Core.Tests -p:BouncyCastle=True
-        dotnet run --project tests/DotNetLightning.Core.Tests
-    - name: Run Infrastructure tests on BouncyCastle
-      # we want to run only once.
-      if: startsWith(matrix.os, 'ubuntu-18')
-      run: |
-        dotnet build tests/DotNetLightning.Infrastructure.Tests -p:BouncyCastle=True
-        dotnet run --project tests/DotNetLightning.Infrastructure.Tests
-
-    - name: Clean to prepare for NSec build
-      run: |
-        dotnet clean
-    - name: Run core tests
-      run: |
+        dotnet build tests/DotNetLightning.Core.Tests
         dotnet run --project tests/DotNetLightning.Core.Tests
     - name: Run Infrastructure tests
+      # we want to run only once.
+      if: startsWith(matrix.os, 'ubuntu-18')
       run: |
+        dotnet build tests/DotNetLightning.Infrastructure.Tests
         dotnet run --project tests/DotNetLightning.Infrastructure.Tests
-    - name: Run other tests
-      run: |
-        dotnet test

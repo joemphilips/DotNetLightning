@@ -30,7 +30,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\DotNetLightning.Infrastructure\DotNetLightning.Infrastructure.fsproj" />
     <ProjectReference Include="..\..\src\EventAggregator\EventAggregator.fsproj" />
-    <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\..\src\NSec\Cryptography\NSec.Cryptography.csproj" />
     <ProjectReference Include="..\..\src\TaskUtils\TaskUtils.fsproj" />
   </ItemGroup>
 </Project>

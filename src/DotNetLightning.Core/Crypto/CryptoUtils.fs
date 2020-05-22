@@ -3,12 +3,8 @@ namespace DotNetLightning.Crypto
 open System
 open NBitcoin // For e.g. uint256
 
-#if BouncyCastle
 open Org.BouncyCastle.Crypto.Parameters
 open Org.BouncyCastle.Crypto.Macs // For Poly1305
-#else
-open Secp256k1Net
-#endif
 
 type CryptoError =
     | BadMac
@@ -38,57 +34,7 @@ type ICryptoImpl =
     abstract member encryptWithoutAD: nonce: uint64 * key: byte[] * plainText: ReadOnlySpan<byte> -> byte[]
     abstract member newSecp256k1: unit -> ISecp256k1
 
-#if !BouncyCastle
-module Sodium =
-    let internal getNonce (n: uint64) =
-        let nonceBytes = ReadOnlySpan(Array.concat[| Array.zeroCreate 4; BitConverter.GetBytes n |]) // little endian
-        NSec.Cryptography.Nonce(nonceBytes, 0)
 
-    let internal chacha20AD = NSec.Cryptography.ChaCha20Poly1305.ChaCha20Poly1305
-    let internal chacha20 = NSec.Experimental.ChaCha20.ChaCha20
-
-    type internal SodiumSecp256k1() =
-        let instance = new Secp256k1()
-        interface IDisposable with
-            member this.Dispose() = instance.Dispose()
-        interface ISecp256k1 with
-            member this.PublicKeyCreate privKey = instance.PublicKeyCreate privKey
-            member this.PublicKeySerializeCompressed publicKey = instance.PublicKeySerialize (publicKey, Flags.SECP256K1_EC_COMPRESSED)
-            member this.PublicKeyParse serializedPublicKey = instance.PublicKeyParse serializedPublicKey
-            member this.PublicKeyCombine (pubkey1, pubkey2) = instance.PublicKeyCombine (pubkey1, pubkey2)
-            member this.PrivateKeyTweakAdd (tweak, privKeyToMutate) = instance.PrivateKeyTweakAdd (tweak, privKeyToMutate)
-            member this.PrivateKeyTweakMultiply (tweak, privKeyToMutate) = instance.PrivateKeyTweakMultiply (tweak, privKeyToMutate)
-            member this.PublicKeyTweakMultiply (tweak, publicKeyToMutate) = instance.PublicKeyTweakMultiply (tweak, publicKeyToMutate)
-
-    type CryptoImpl() =
-        interface ICryptoImpl with
-            member this.newSecp256k1() =
-                new SodiumSecp256k1() :> ISecp256k1
-            member this.decryptWithAD(n: uint64, key: uint256, ad: byte[], cipherText: ReadOnlySpan<byte>): Result<byte[], CryptoError> =
-                let nonce = getNonce n
-                let keySpan = ReadOnlySpan (key.ToBytes())
-                let adSpan = ReadOnlySpan ad
-                let blobF = NSec.Cryptography.KeyBlobFormat.RawSymmetricKey
-                let chachaKey = NSec.Cryptography.Key.Import(chacha20AD, keySpan, blobF)
-                match chacha20AD.Decrypt(chachaKey, &nonce, adSpan, cipherText) with
-                | true, plainText -> Ok plainText
-                | false, _ -> Error(BadMac)
-
-            member this.encryptWithoutAD(n: uint64, key: byte[], plainText: ReadOnlySpan<byte>) =
-                let nonce = getNonce n
-                let keySpan = ReadOnlySpan key
-                let blobF = NSec.Cryptography.KeyBlobFormat.RawSymmetricKey
-                use chachaKey = NSec.Cryptography.Key.Import(chacha20, keySpan, blobF)
-                let res = chacha20.XOr(chachaKey, &nonce, plainText)
-                res
-
-            member this.encryptWithAD(n: uint64, key: uint256, ad: ReadOnlySpan<byte>, plainText: ReadOnlySpan<byte>) =
-                let nonce = getNonce n
-                let keySpan = ReadOnlySpan (key.ToBytes())
-                let blobF = NSec.Cryptography.KeyBlobFormat.RawSymmetricKey
-                use chachaKey = NSec.Cryptography.Key.Import(chacha20AD, keySpan, blobF)
-                chacha20AD.Encrypt(chachaKey, &nonce, ad, plainText)
-#else
 type internal Op = Mul | Add
 
 type internal BouncySecp256k1() =
@@ -206,11 +152,5 @@ module BouncyCastle =
                 let nonce = Array.concat [| Array.zeroCreate 4; BitConverter.GetBytes n |]
                 encryptOrDecrypt Encrypt (plainText.ToArray()) key nonce false
 
-#endif
-
 module CryptoUtils =
-#if BouncyCastle
     let impl = BouncyCastle.CryptoImpl() :> ICryptoImpl
-#else
-    let impl = Sodium.CryptoImpl() :> ICryptoImpl
-#endif

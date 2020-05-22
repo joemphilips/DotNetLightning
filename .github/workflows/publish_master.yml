@@ -27,15 +27,9 @@ jobs:
       with:
         dotnet-version: '3.1.200'
 
-    - name: Upload nuget packages (BouncyCastle)
+    - name: Upload nuget packages
       if: startsWith(matrix.os, 'ubuntu')
       run: |
         cd $GITHUB_WORKSPACE/src/DotNetLightning.Core
-        dotnet pack . -p:Configuration=Release --version-suffix date`date +%Y%m%d-%H%M`-git-`echo $GITHUB_SHA | cut -c 1-7` -p:BouncyCastle=True
+        dotnet pack . -p:Configuration=Release --version-suffix date`date +%Y%m%d-%H%M`-git-`echo $GITHUB_SHA | cut -c 1-7`
         dotnet nuget push ./bin/Release/DotNetLightning.1*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
-
-    - name: Upload nuget packages (native)
-      run: |
-        cd $GITHUB_WORKSPACE/src/DotNetLightning.Core
-        dotnet pack . -p:Configuration=Release --version-suffix date`date +%Y%m%d-%H%M`-git-`echo $GITHUB_SHA | cut -c 1-7`-${{ matrix.RID }}
-        dotnet nuget push ./bin/Release/DotNetLightning.Core.1*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
