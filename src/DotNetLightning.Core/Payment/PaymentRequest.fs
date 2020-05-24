@@ -209,7 +209,7 @@ type ExtraHop = {
     static member Size = 264 + 64 + 32 + 32 + 16
 type TaggedField =
     | PaymentHashTaggedField of PaymentHash
-    | PaymentSecretTaggedField of PaymentPreimage
+    | PaymentSecretTaggedField of uint256
     | NodeIdTaggedField of NodeId
     | DescriptionTaggedField of string
     /// Hash that will be included in the payment request, and can be checked against the hash of a
@@ -380,7 +380,7 @@ type private Bolt11Data = {
                                 if (size <> 52 * 5) then
                                     return! loop r acc afterReadPosition  // we must omit instead of returning an error (according to the BOLT11)
                                 else
-                                    let ps = r.ReadBytes(32) |> PaymentPreimage.Create |> PaymentSecretTaggedField
+                                    let ps = r.ReadBytes(32) |> fun x -> uint256(x, false) |> PaymentSecretTaggedField
                                     return! loop r { acc with Fields = ps :: acc.Fields } afterReadPosition
                             | 6UL -> // expiry
                                 let expiryDate = timestamp + TimeSpan.FromSeconds(r.ReadULongBE(size) |> float) |> ExpiryTaggedField
