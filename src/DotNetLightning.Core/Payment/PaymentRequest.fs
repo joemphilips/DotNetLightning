@@ -208,7 +208,6 @@ type ExtraHop = {
     with
     static member Size = 264 + 64 + 32 + 32 + 16
 type TaggedField =
-    private
     | PaymentHashTaggedField of PaymentHash
     | PaymentSecretTaggedField of PaymentPreimage
     | NodeIdTaggedField of NodeId
