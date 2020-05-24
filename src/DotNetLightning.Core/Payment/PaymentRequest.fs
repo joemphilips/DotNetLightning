@@ -523,16 +523,18 @@ type PaymentRequest = private {
     Signature: (LNECDSASignature * byte) option
 }
     with
-    static member TryCreate (prefix: string, amount: LNMoney option, timestamp, nodeId, tags, signature) =
+    static member TryCreate(prefix: string, amount: LNMoney option, timestamp, nodeId, tags: TaggedFields) =
+        PaymentRequest.TryCreate(prefix, amount, timestamp, nodeId, tags, None)
+    static member TryCreate (prefix: string, amount: LNMoney option, timestamp, nodeId, tags: TaggedFields, signature) =
         result {
             do! amount |> function None -> Ok() | Some a -> Result.requireTrue "amount must be larger than 0" (a > LNMoney.Zero)
-            do! tags.Tags.CheckSanity()
+            do! tags.CheckSanity()
             return {
                 Prefix = prefix
                 Amount = amount
                 Timestamp = timestamp
                 NodeId = nodeId
-                Tags = tags.Tags
+                Tags = tags
                 Signature = signature
             }
         }
