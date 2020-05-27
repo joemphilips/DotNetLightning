@@ -661,6 +661,11 @@ type PaymentRequest = private {
                 Signature = (sigCompact, recv) |> Some
             }
         }
+    static member TryCreate(prefix: string, amount: LNMoney option, timestamp, nodeId, tags: TaggedFields, nodeSecret: Key) =
+        let msgSigner  = { new IMessageSigner
+                           with
+                               member this.SignMessage(data) = nodeSecret.SignCompact(data, false) }
+        PaymentRequest.TryCreate(prefix, amount, timestamp, nodeId, tags, msgSigner)
         
     /// signer must sign by node_secret which corresponds to node_id
     static member TryCreate (prefix: string, amount: LNMoney option, timestamp, nodeId, tags: TaggedFields, signer: IMessageSigner) =
