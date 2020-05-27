@@ -189,3 +189,42 @@ let tests =
             let pr = PaymentRequest.Parse(data)
             Expect.isError(pr) ""
     ]
+    
+[<Tests>]
+let unitTest =
+    let utf8 = System.Text.UTF8Encoding()
+    let hex = NBitcoin.DataEncoders.HexEncoder()
+    testList "PaymentRequest Unit tests" [
+        testCase "Can create PaymentRequest correctly" <| fun _ ->
+            let h =
+                "af919878bd5d09dc58e86689a8cd3a6a03dabc37a1d9445eb413ea7837c50ac3"
+                |> uint256.Parse
+                |> PaymentHash
+                |> TaggedField.PaymentHashTaggedField
+            let nodeSecret =
+                "897469da69a4aae063b98454bdb5dce9efb71a6001b09ff9aaf32d730a127bfc"
+                |> hex.DecodeData
+                |> Key
+            let nodeId =
+                "02b8042a54520cb3228d7b0aa3de81ffcb424e1dcd958821285696ce088d4486e4"
+                |> PubKey
+                |> NodeId
+                
+            let nodeIdt =
+                nodeId
+                |> TaggedField.NodeIdTaggedField
+            let d = "this is description"
+            let dht = d |> utf8.GetBytes |> Hashes.SHA256 |> uint256 |> TaggedField.DescriptionHashTaggedField
+            let dt = d |> TaggedField.DescriptionTaggedField
+            let taggedFields = {TaggedFields.Fields = [h; nodeIdt; dht]}
+            let msgSigner  = { new IMessageSigner
+                               with
+                                   member this.SignMessage(data) = nodeSecret.SignCompact(data, false) }
+            let r = PaymentRequest.TryCreate("lnbc", None, DateTimeOffset.UnixEpoch, nodeId, taggedFields, msgSigner)
+            Expect.isOk r ""
+            let r2 = PaymentRequest.Parse(r |> Result.deref |> fun x -> x.ToString())
+            Expect.isOk r2 ""
+            Expect.equal r r2 "Should not change by de/serializing it"
+            let r3 = PaymentRequest.TryCreate("lnbc", None, DateTimeOffset.UnixEpoch, nodeId, {Fields = [dht; dt]}, msgSigner)
+            Expect.isError r3 "Field contains both description and description hash! this must be invalid"
+    ]

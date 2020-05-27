@@ -522,21 +522,6 @@ type PaymentRequest = private {
     Signature: (LNECDSASignature * byte) option
 }
     with
-    static member TryCreate(prefix: string, amount: LNMoney option, timestamp, nodeId, tags: TaggedFields) =
-        PaymentRequest.TryCreate(prefix, amount, timestamp, nodeId, tags, None)
-    static member TryCreate (prefix: string, amount: LNMoney option, timestamp, nodeId, tags: TaggedFields, signature) =
-        result {
-            do! amount |> function None -> Ok() | Some a -> Result.requireTrue "amount must be larger than 0" (a > LNMoney.Zero)
-            do! tags.CheckSanity()
-            return {
-                Prefix = prefix
-                Amount = amount
-                Timestamp = timestamp
-                NodeId = nodeId
-                Tags = tags
-                Signature = signature
-            }
-        }
     member this.PrefixValue = this.Prefix
     member this.AmountValue = this.Amount
     member this.TimestampValue = this.Timestamp
@@ -675,4 +660,23 @@ type PaymentRequest = private {
                 Tags = bolt11Data.TaggedFields
                 Signature = (sigCompact, recv) |> Some
             }
+        }
+        
+    /// signer must sign by node_secret which corresponds to node_id
+    static member TryCreate (prefix: string, amount: LNMoney option, timestamp, nodeId, tags: TaggedFields, signer: IMessageSigner) =
+        result {
+            do! amount |> function None -> Ok() | Some a -> Result.requireTrue "amount must be larger than 0" (a > LNMoney.Zero)
+            do! tags.CheckSanity()
+            let r = {
+                Prefix = prefix
+                Amount = amount
+                Timestamp = timestamp
+                NodeId = nodeId
+                Tags = tags
+                Signature = None
+            }
+            let signature65bytes = signer.SignMessage (r.Hash)
+            let recvId = signature65bytes.[0] - 27uy - 4uy
+            let signature = signature65bytes |> fun s -> LNECDSASignature.FromBytesCompact(s, true)
+            return { r with Signature = Some(signature, recvId) }
         }
