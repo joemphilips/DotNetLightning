@@ -93,7 +93,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="4.7.0" />
-    <PackageReference Include="NBitcoin" Version="5.0.3" />
+    <PackageReference Include="NBitcoin" Version="5.0.41" />
     <PackageReference Condition="'$(BouncyCastle)'=='true'" Include="Portable.BouncyCastle" Version="1.8.5.2" />
     <PackageReference Include="System.Memory" Version="4.5.3" />
   </ItemGroup>

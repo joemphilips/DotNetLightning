@@ -108,16 +108,6 @@ module Primitives =
             member this.Equals(o: LNECDSASignature) =
                 Utils.ArrayEqual(o.ToBytesCompact(), this.ToBytesCompact())
                 
-        /// Originally this method is in NBitcoin.Utils.
-        /// But we ported here since it was internal method.
-        member private this.BigIntegerToBytes(b: BouncyCastle.Math.BigInteger, numBytes: int) =
-            if isNull b then null else
-            let a = Array.zeroCreate numBytes
-            let a2 = b.ToByteArray()
-            let sourceIndex = if (a2.Length = numBytes + 1) then 1 else 0;
-            let num = System.Math.Min(a2.Length, numBytes)
-            array.Copy(a2, sourceIndex, a, numBytes - num, num);
-            a
 
         override this.ToString() =
             sprintf "LNECDSASignature (%A)" (this.ToBytesCompact())
@@ -135,9 +125,7 @@ module Primitives =
         ///
         /// (serialized R value + S value) in byte array.
         member this.ToBytesCompact() =
-            let r = Array.append (this.BigIntegerToBytes(b = this.Value.R, numBytes = 32)) (this.BigIntegerToBytes(this.Value.S, 32))
-            if (isNull <| box r.[0]) then r.[0] <- 255uy
-            r
+            this.Value.ToCompact()
             
         /// Logic does not really matter here. This is just for making life easier by enabling automatic implementation
         /// of `StructuralComparison` for wrapper types.
@@ -164,9 +152,9 @@ module Primitives =
                 invalidArg "bytes" "ECDSASignature was not specified to have recovery id, but it was not 64 bytes length."
             else
                 let data = if withRecId then bytes.[1..] else bytes
-                let r = NBitcoin.BouncyCastle.Math.BigInteger(1, data.[0..31])
-                let s = NBitcoin.BouncyCastle.Math.BigInteger(1, data.[32..63])
-                ECDSASignature(r, s) |> LNECDSASignature
+                match ECDSASignature.TryParseFromCompact data with
+                | true, x -> LNECDSASignature x
+                | _ -> failwithf "failed to parse compact ecdsa signature %A" data
 
         static member op_Implicit (ec: ECDSASignature) =
             ec |> LNECDSASignature
