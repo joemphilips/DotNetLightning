@@ -2,6 +2,7 @@ namespace DotNetLightning.Crypto
 
 open System
 open NBitcoin // For e.g. uint256
+open DotNetLightning.Utils
 
 #if BouncyCastle
 open Org.BouncyCastle.Crypto.Parameters
@@ -17,6 +18,18 @@ type CryptoError =
     | InvalidMessageLength of int
     | FailedToParseErrorPacket of packet: byte[] * sharedSecrets: (byte[] * PubKey) list
     
+    member this.Message =
+        match this with
+        | BadMac -> "Bad MAC"
+        | InvalidErrorPacketLength (expected, actual) ->
+            sprintf "Invalid error packet length. Expected %i, got %i" expected actual
+        | InvalidPublicKey publicKeyBytes ->
+            sprintf "Invalid public key: %s" (publicKeyBytes.ToHexString())
+        | InvalidMessageLength length ->
+            sprintf "Invalid message length (%i)" length
+        | FailedToParseErrorPacket _ ->
+            "failed to parse error packet."
+
 module Secret =
     let FromKeyPair(pub: PubKey, priv: Key) =
         NBitcoin.Crypto.Hashes.SHA256 <| pub.GetSharedPubkey(priv).ToBytes()

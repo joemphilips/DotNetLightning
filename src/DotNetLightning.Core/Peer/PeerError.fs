@@ -14,5 +14,13 @@ type PeerError =
     
     // ---- handshake logic errors ----
     | UnknownHandshakeVersionNumber of uint8
-    | UnexpectedHandshake
-    
+
+    member this.Message =
+        match this with
+        | CryptoError cryptoError ->
+            sprintf "crypto error: %s" cryptoError.Message
+        | P2PMessageDecodeError p2pDecodeError ->
+            sprintf "deserialization error: %s" p2pDecodeError.Message
+        | UnknownHandshakeVersionNumber version ->
+            sprintf "unknown handshake version number. expected 0, got %i." version
+

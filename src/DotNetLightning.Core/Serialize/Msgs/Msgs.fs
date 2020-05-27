@@ -22,6 +22,23 @@ type P2PDecodeError =
     | BadLengthDescriptor
     | UnexpectedEndOfStream of EndOfStreamException
     | IO of IOException
+    
+    member this.Message =
+        match this with
+        | UnknownVersion ->
+            "Unknown version"
+        | FeatureError featureError ->
+            sprintf "Feature error: %s" featureError.Message
+        | InvalidValue ->
+            "Invalid value"
+        | ExtraAddressesPerType ->
+            "Extra address per type"
+        | BadLengthDescriptor ->
+            "Bad length descriptor"
+        | UnexpectedEndOfStream endOfStreamException ->
+            sprintf "Unexpected end of stream: %s" (endOfStreamException.Message)
+        | IO ioException ->
+            sprintf "IO error: %s" ioException.Message
 
 type UnknownVersionException(msg) =
     inherit FormatException(msg)
