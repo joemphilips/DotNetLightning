@@ -15,7 +15,7 @@ type FeaturesSupport =
 type FeatureError =
     | UnknownRequiredFeature of msg: string
     | BogusFeatureDependency of msg: string
-    override this.ToString() =
+    member this.Message =
         match this with
         | UnknownRequiredFeature msg
         | BogusFeatureDependency msg -> msg

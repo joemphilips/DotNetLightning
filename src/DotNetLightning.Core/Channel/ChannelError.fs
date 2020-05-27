@@ -79,10 +79,10 @@ type ChannelError =
         | InvalidOperationAddHTLC _ -> Ignore
         | RemoteProposedHigherFeeThanBefore(_, _) -> Close
     
-    override this.ToString() =
+    member this.Message =
         match this with
         | HTLCAlreadySent htlcId ->
-            sprintf "We have already sent a fail/fulfill for this htlc: %A" htlcId
+            sprintf "We have already sent a fail/fulfill for htlc id %i" htlcId.Value
         | InvalidPaymentPreimage(e, actual) ->
             sprintf "Invalid HTLC PreImage %A. Hash (%A) does not match the one expected %A"
                     actual
@@ -98,8 +98,8 @@ type ChannelError =
             sprintf "Number of signatures went from the remote (%A) does not match the number expected (%A)" actual expected
         | TheyCannotAffordFee (toRemote, fee, channelReserve) ->
             sprintf "they are funder but cannot afford their fee. to_remote output is: %A; actual fee is %A; channel_reserve_satoshis is: %A" toRemote fee channelReserve
-        | InvalidOpenChannel x ->
-            sprintf "Invalid open_channel from the peer. \n %s" (x.ToString())
+        | InvalidOpenChannel invalidOpenChannelError ->
+            sprintf "Invalid open_channel from the peer.: %s" invalidOpenChannelError.Message
         | OnceConfirmedFundingTxHasBecomeUnconfirmed (height, depth) ->
             sprintf "once confirmed funding tx has become less confirmed than threshold %A! This is probably caused by reorg. current depth is: %A " height depth
         | ReceivedShutdownWhenRemoteHasUnsignedOutgoingHTLCs msg ->
@@ -109,7 +109,37 @@ type ChannelError =
         | RemoteProposedHigherFeeThanBefore(prev, current) ->
             "remote proposed a commitment fee higher than the last commitment fee in the course of fee negotiation"
             + sprintf "previous fee=%A; fee remote proposed=%A;" prev current
-        | x -> sprintf "%A" x
+        | CryptoError cryptoError ->
+            sprintf "Crypto error: %s" cryptoError.Message
+        | TransactionRelatedErrors transactionErrors ->
+            let getMessage(transactionError: TransactionError): string =
+                transactionError.Message
+            sprintf "Transaction errors: %s" (String.concat "; " (Seq.map getMessage transactionErrors))
+        | UnknownHTLCId htlcId ->
+            sprintf "Unknown HTLC id (%i)" htlcId.Value
+        | HTLCOriginNotKnown htlcId ->
+            sprintf "Origin of HTLC %i not known" htlcId.Value
+        | APIMisuse error ->
+            sprintf "Internal error (API misuse): %s" error
+        | CanNotSignBeforeRevocation ->
+            "Cannot sign before revocation"
+        | ReceivedCommitmentSignedWhenWeHaveNoPendingChanges ->
+            "Received commitment signed when we have not pending changes"
+        | InvalidAcceptChannel invalidAcceptChannelError ->
+            sprintf "Invalid accept_channel msg: %s" invalidAcceptChannelError.Message
+        | InvalidUpdateAddHTLC invalidUpdateAddHTLCError ->
+            sprintf "Invalid udpate_add_htlc msg: %s" invalidUpdateAddHTLCError.Message
+        | InvalidRevokeAndACK invalidRevokeAndACKError ->
+            sprintf "Invalid revoke_and_ack msg: %s" invalidRevokeAndACKError.Message
+        | InvalidUpdateFee invalidUpdateFeeError ->
+            sprintf "Invalid update_fee msg: %s" invalidUpdateFeeError.Message
+        | FundingTxNotGiven msg ->
+            sprintf "Funding tx not given: %s" msg
+        | CannotCloseChannel msg ->
+            sprintf "Cannot close channel: %s" msg
+        | InvalidOperationAddHTLC invalidOperationAddHTLCError ->
+            sprintf "Invalid operation (add htlc): %s" invalidOperationAddHTLCError.Message
+
 and ChannelConsumerAction =
     /// The error which should never happen.
     /// This implies a bug so we must do something on this Library
@@ -134,6 +164,8 @@ and InvalidOpenChannelError = {
         Msg = msg
         Errors = e
     }
+    member this.Message =
+        String.concat "; " this.Errors
     
 and InvalidAcceptChannelError = {
     Msg: AcceptChannel
@@ -144,6 +176,8 @@ and InvalidAcceptChannelError = {
         Msg = msg
         Errors = e
     }
+    member this.Message =
+        String.concat "; " this.Errors
     
 and InvalidUpdateAddHTLCError = {
     Msg: UpdateAddHTLC
@@ -154,6 +188,9 @@ and InvalidUpdateAddHTLCError = {
         Msg = msg
         Errors = e
     }
+    member this.Message =
+        String.concat "; " this.Errors
+
 and InvalidRevokeAndACKError = {
     Msg: RevokeAndACK
     Errors: string list
@@ -163,6 +200,9 @@ and InvalidRevokeAndACKError = {
         Msg = msg
         Errors = e
     }
+    member this.Message =
+        String.concat "; " this.Errors
+
 and InvalidUpdateFeeError = {
     Msg: UpdateFee
     Errors: string list
@@ -172,6 +212,9 @@ and InvalidUpdateFeeError = {
         Msg = msg
         Errors = e
     }
+    member this.Message =
+        String.concat "; " this.Errors
+
 and InvalidOperationAddHTLCError = {
     Operation: OperationAddHTLC
     Errors: string list
@@ -181,6 +224,9 @@ and InvalidOperationAddHTLCError = {
         Operation = op
         Errors = e
     }
+    member this.Message =
+        String.concat "; " this.Errors
+
 [<AutoOpen>]
 module private ValidationHelper =
     let check left predicate right msg =
@@ -372,15 +418,17 @@ module internal OpenChannelMsgValidation =
         let check1 =
             check
                 ourChannelReserve (<) ourDustLimit
-                "Suitable channel reserve not found. Aborting. (our channel reserve was (%A). and our dust limit was(%A))"
+                "Funder's channel reserve (%A, dictated by the fundee) is less than the fundee's dust limit (%A). \
+                The funder must use a larger amount to open a channel."
         let check2 =
             check
                 msg.ChannelReserveSatoshis (<) ourDustLimit
-                "channel_reserve_satoshis too small. It was: %A; but our dust_limit is: %A"
+                "Fundee's channel reserve (%A, dictated by the funder) is less than the fundee's dust limit (%A). \
+                The funder must use a larger amount to open the channel, or require a smaller channel reserve."
         let check3 =
             check
                 ourChannelReserve (<) msg.DustLimitSatoshis
-                "Dust limit too high for our channel reserve. our channel reserve is: %A . received dust_limit is: %A"
+                "Funder's channel reserve (%A, dictated by the fundee) is less than the funder's dust limit (%A)."
         Validation.ofResult(check1) *^> check2 *^> check3
 
     let checkFunderCanAffordFee (feeRate: FeeRatePerKw) (msg: OpenChannel) =

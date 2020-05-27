@@ -153,7 +153,7 @@ module internal Validation =
         *^> OpenChannelMsgValidation.checkFundingSatoshisLessThanDustLimitSatoshis msg
         *^> OpenChannelMsgValidation.checkMaxAcceptedHTLCs msg
         *^> OpenChannelMsgValidation.checkFunderCanAffordFee (msg.FeeRatePerKw) msg
-        |> Result.mapError((@)["our open_channel msg is invalid"] >> InvalidOpenChannelError.Create msg >> InvalidOpenChannel)
+        |> Result.mapError((@)["open_channel msg is invalid"] >> InvalidOpenChannelError.Create msg >> InvalidOpenChannel)
 
     let internal checkOpenChannelMsgAcceptable (feeEstimator: IFeeEstimator) (conf: ChannelConfig) (msg: OpenChannel) =
         let feeRate = feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background)
@@ -168,7 +168,7 @@ module internal Validation =
         *^> OpenChannelMsgValidation.checkChannelAnnouncementPreferenceAcceptable conf msg
         *> OpenChannelMsgValidation.checkIsAcceptableByCurrentFeeRate feeEstimator msg
         *^> OpenChannelMsgValidation.checkFunderCanAffordFee feeRate msg
-        |> Result.mapError((@)["their open_channel msg is invalid"] >> InvalidOpenChannelError.Create msg >> InvalidOpenChannel)
+        |> Result.mapError((@)["rejected received open_channel msg"] >> InvalidOpenChannelError.Create msg >> InvalidOpenChannel)
 
 
     let internal checkAcceptChannelMsgAcceptable (conf: ChannelConfig) (state) (msg: AcceptChannel) =
