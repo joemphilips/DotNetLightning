@@ -1,14 +1,11 @@
 module DotNetLightning.Tests.PaymentTests
 
 open System
-open System.IO
-open System.Text.Json
 
 open DotNetLightning.Payment
 open DotNetLightning.Utils
 
 open DotNetLightning.Serialize
-open DotNetLightning.Utils
 open ResultUtils
 open Expecto
 open NBitcoin
