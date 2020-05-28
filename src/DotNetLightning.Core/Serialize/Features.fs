@@ -130,15 +130,15 @@ module internal Feature =
         }
         
     let private supportedMandatoryFeatures =
-        seq { Feature.OptionDataLossProtect
-              Feature.InitialRoutingSync
-              Feature.OptionUpfrontShutdownScript
-              Feature.ChannelRangeQueries
-              Feature.VariableLengthOnion
+        seq { yield Feature.OptionDataLossProtect
+              yield Feature.InitialRoutingSync
+              yield Feature.OptionUpfrontShutdownScript
+              yield Feature.ChannelRangeQueries
+              yield Feature.VariableLengthOnion
               // TODO: support this feature
               // Feature.ChannelRangeQueriesExtended
-              Feature.OptionStaticRemoteKey
-              Feature.PaymentSecret
+              yield Feature.OptionStaticRemoteKey
+              yield Feature.PaymentSecret
               // TODO: support this feature
               // Feature.BasicMultiPartPayment
           }
@@ -161,16 +161,16 @@ module internal Feature =
         
     let allFeatures =
         seq {
-            Feature.OptionDataLossProtect
-            Feature.InitialRoutingSync
-            Feature.OptionUpfrontShutdownScript
-            Feature.ChannelRangeQueries
-            Feature.VariableLengthOnion
-            Feature.ChannelRangeQueriesExtended
-            Feature.OptionStaticRemoteKey
-            Feature.PaymentSecret
-            Feature.BasicMultiPartPayment
-            Feature.OptionSupportLargeChannel
+            yield Feature.OptionDataLossProtect
+            yield Feature.InitialRoutingSync
+            yield Feature.OptionUpfrontShutdownScript
+            yield Feature.ChannelRangeQueries
+            yield Feature.VariableLengthOnion
+            yield Feature.ChannelRangeQueriesExtended
+            yield Feature.OptionStaticRemoteKey
+            yield Feature.PaymentSecret
+            yield Feature.BasicMultiPartPayment
+            yield Feature.OptionSupportLargeChannel
         }
         |> Set
         

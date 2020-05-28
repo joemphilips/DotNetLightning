@@ -176,16 +176,16 @@ type FallbackAddress = private {
     member this.ToAddress(prefix: string) =
         match this.Version with
         | 17uy when prefix = "lnbc" ->
-            let data = Array.concat (seq { [| Helpers.PREFIX_ADDRESS_PUBKEYHASH |]; this.Data })
+            let data = Array.concat (seq { yield [| Helpers.PREFIX_ADDRESS_PUBKEYHASH |]; yield this.Data })
             Helpers.base58check.EncodeData(data)
         | 18uy when prefix = "lnbc" ->
-            let data = Array.concat (seq { [| Helpers.PREFIX_ADDRESS_SCRIPTHASH |]; this.Data })
+            let data = Array.concat (seq { yield [| Helpers.PREFIX_ADDRESS_SCRIPTHASH |]; yield this.Data })
             Helpers.base58check.EncodeData(data)
         | 17uy when prefix = "lntb" || prefix = "lnbcrt" ->
-            let data = Array.concat (seq { [| Helpers.PREFIX_ADDRESS_PUBKEYHASH_TESTNET |]; this.Data })
+            let data = Array.concat (seq { yield [| Helpers.PREFIX_ADDRESS_PUBKEYHASH_TESTNET |]; yield this.Data })
             Helpers.base58check.EncodeData(data)
         | 18uy when prefix = "lnbc" || prefix = "lnbcrt" ->
-            let data = Array.concat (seq { [| Helpers.PREFIX_ADDRESS_SCRIPTHASH_TESTNET |]; this.Data })
+            let data = Array.concat (seq { yield [| Helpers.PREFIX_ADDRESS_SCRIPTHASH_TESTNET |]; yield this.Data })
             Helpers.base58check.EncodeData(data)
         | v when prefix = "lnbc" ->
             let encoder = Bech32Encoder(Encoders.ASCII.DecodeData("bc"))
@@ -589,7 +589,7 @@ type PaymentRequest = private {
                      TaggedFields = this.Tags
                      Signature = None }
         let bin = data.ToBytes()
-        let msg = Array.concat(seq { hrp; bin })
+        let msg = Array.concat(seq { yield hrp; yield bin })
         Hashes.SHA256(msg) |> uint256
         
     member this.Sign(privKey: Key, ?forceLowR: bool) =
@@ -645,7 +645,7 @@ type PaymentRequest = private {
                         if (!remainder <> 0) then
                             byteCount <- byteCount + 1
                     
-                        seq { (hrp |> Helpers.utf8.GetBytes); (reader.ReadBytes(byteCount)) }
+                        seq { yield (hrp |> Helpers.utf8.GetBytes); yield (reader.ReadBytes(byteCount)) }
                         |> Array.concat
                     let signatureInNBitcoinFormat = Array.zeroCreate(65)
                     Array.blit (sigCompact.ToBytesCompact()) 0 signatureInNBitcoinFormat 1 64
