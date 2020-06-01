@@ -76,13 +76,14 @@ module private Helpers =
         |> Map.add (Network.TestNet.GenesisHash) ("lntb")
         |> Map.add (Network.Main.GenesisHash) ("lnbc")
         
-    let prefixValues = prefixes |> Map.toList |> List.map(fun (_, v) -> v)
-        
+    /// The values for prefix are sorted by its length, in this way we assure that we try to match the longest
+    /// value first, so that e.g. when we have "lnbcrt" it will not match "lnbc"
+    let sortedPrefixValues = prefixes |> Map.toSeq |> Seq.map(fun (_, v) -> v) |> Seq.sortByDescending(fun x -> x.Length)
     let checkAndGetPrefixFromHrp (hrp: string) =
-        let maybePrefix = prefixValues |> List.filter(fun p -> hrp.StartsWith(p)) |> List.tryExactlyOne
+        let maybePrefix = sortedPrefixValues |> Seq.filter(fun p -> hrp.StartsWith(p)) |> Seq.tryExactlyOne
         match maybePrefix with
         | None ->
-            Error(sprintf "Unknown prefix type %s! hrp must be either of %A" hrp prefixValues)
+            Error(sprintf "Unknown prefix type %s! hrp must be either of %A" hrp sortedPrefixValues)
         | Some(prefix) ->
             Ok(prefix)
         
