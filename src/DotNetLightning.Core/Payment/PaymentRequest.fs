@@ -80,7 +80,7 @@ module private Helpers =
     /// value first, so that e.g. when we have "lnbcrt" it will not match "lnbc"
     let sortedPrefixValues = prefixes |> Map.toSeq |> Seq.map(fun (_, v) -> v) |> Seq.sortByDescending(fun x -> x.Length)
     let checkAndGetPrefixFromHrp (hrp: string) =
-        let maybePrefix = sortedPrefixValues |> Seq.filter(fun p -> hrp.StartsWith(p)) |> Seq.tryExactlyOne
+        let maybePrefix = sortedPrefixValues |> Seq.filter(fun p -> hrp.StartsWith(p)) |> Seq.tryHead
         match maybePrefix with
         | None ->
             Error(sprintf "Unknown prefix type %s! hrp must be either of %A" hrp sortedPrefixValues)
