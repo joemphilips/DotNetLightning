@@ -76,7 +76,7 @@ module Data =
                                             FundingSatoshis: Money
                                             PushMsat: LNMoney
                                             InitialFeeRatePerKw: FeeRatePerKw
-                                            RemoteFirstPerCommitmentPoint: PubKey
+                                            RemoteFirstPerCommitmentPoint: CommitmentPubKey
                                             LastSent: OpenChannelMsg
                                         }
         with interface IChannelStateData
@@ -88,7 +88,7 @@ module Data =
                                             FundingSatoshis: Money
                                             PushMSat: LNMoney
                                             InitialFeeRatePerKw: FeeRatePerKw
-                                            RemoteFirstPerCommitmentPoint: PubKey
+                                            RemoteFirstPerCommitmentPoint: CommitmentPubKey
                                             ChannelFlags: uint8
                                             LastSent: AcceptChannelMsg
                                       }

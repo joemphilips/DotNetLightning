@@ -98,7 +98,7 @@ let tests =
                              ToLocal = LNMoney.MilliSatoshis(6988000000L); ToRemote =  3000000000L |> LNMoney.MilliSatoshis}
             let commitTx =
                 Transactions.makeCommitTx fundingScriptCoin
-                                          0UL
+                                          CommitmentNumber.FirstCommitment
                                           (localPubKeys.PaymentBasePubKey)
                                           (remotePubKeys.PaymentBasePubKey)
                                           (true)
@@ -120,7 +120,7 @@ let tests =
             let remoteDelay = 160us |> BlockHeightOffset16
             let remoteCommitTx =
                 Transactions.makeCommitTx fundingScriptCoin
-                                          0UL
+                                          CommitmentNumber.FirstCommitment
                                           remotePubKeys.PaymentBasePubKey
                                           localPubKeys.PaymentBasePubKey
                                           false

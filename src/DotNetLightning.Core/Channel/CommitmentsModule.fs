@@ -23,25 +23,25 @@ module internal Commitments =
 
         let makeRemoteTxs
             (ctx: ISecp256k1)
-            (channelKeys: ChannelKeys)
-            (commitTxNumber: uint64)
+            (commitTxNumber: CommitmentNumber)
             (localParams: LocalParams)
             (remoteParams: RemoteParams)
             (commitmentInput: ScriptCoin)
-            (remotePerCommitmentPoint: PubKey)
+            (remotePerCommitmentPoint: CommitmentPubKey)
             (spec) (n) =
-            let pkGen = Generators.derivePubKey ctx remotePerCommitmentPoint
-            let localPaymentPK = pkGen (channelKeys.PaymentBaseKey.PubKey)
-            let localHTLCPK = pkGen channelKeys.HTLCBaseKey.PubKey
-            let remotePaymentPK = pkGen (remoteParams.PaymentBasePoint)
-            let remoteDelayedPaymentPK = pkGen (remoteParams.DelayedPaymentBasePoint)
-            let remoteHTLCPK = pkGen (remoteParams.HTLCBasePoint)
-            let remoteRevocationPK = pkGen (channelKeys.RevocationBaseKey.PubKey)
+            let channelKeys = localParams.ChannelPubKeys
+            let pkGen = Generators.derivePubKey ctx remotePerCommitmentPoint.PubKey
+            let localPaymentPK = pkGen channelKeys.PaymentBasePubKey
+            let localHTLCPK = pkGen channelKeys.HTLCBasePubKey
+            let remotePaymentPK = pkGen remoteParams.PaymentBasePoint
+            let remoteDelayedPaymentPK = pkGen remoteParams.DelayedPaymentBasePoint
+            let remoteHTLCPK = pkGen remoteParams.HTLCBasePoint
+            let remoteRevocationPK = pkGen channelKeys.RevocationBasePubKey
             let commitTx =
                 Transactions.makeCommitTx commitmentInput 
                                           commitTxNumber
                                           remoteParams.PaymentBasePoint
-                                          channelKeys.PaymentBaseKey.PubKey
+                                          channelKeys.PaymentBasePubKey
                                           (not localParams.IsFunder)
                                           (remoteParams.DustLimitSatoshis)
                                           (remoteRevocationPK)
@@ -68,15 +68,15 @@ module internal Commitments =
 
         let makeLocalTXs
             (ctx: ISecp256k1)
-            (channelKeys: ChannelPubKeys)
-            (commitTxNumber: uint64)
+            (commitTxNumber: CommitmentNumber)
             (localParams: LocalParams)
             (remoteParams: RemoteParams)
             (commitmentInput: ScriptCoin)
-            (localPerCommitmentPoint: PubKey)
+            (localPerCommitmentPoint: CommitmentPubKey)
             (spec: CommitmentSpec)
             n: Result<(CommitTx * HTLCTimeoutTx list * HTLCSuccessTx list), _> =
-            let pkGen = Generators.derivePubKey ctx localPerCommitmentPoint
+            let channelKeys = localParams.ChannelPubKeys
+            let pkGen = Generators.derivePubKey ctx localPerCommitmentPoint.PubKey
             let localPaymentPK = pkGen channelKeys.PaymentBasePubKey
             let localDelayedPaymentPK = pkGen channelKeys.DelayedPaymentBasePubKey
             let localHTLCPK = pkGen channelKeys.HTLCBasePubKey
@@ -277,11 +277,9 @@ module internal Commitments =
             result {
                 // remote commitment will include all local changes + remote acked changes
                 let! spec = cm.RemoteCommit.Spec.Reduce(cm.RemoteChanges.ACKed, cm.LocalChanges.Proposed) |> expectTransactionError
-                let localKeys = keyRepo.GetChannelKeys(not cm.LocalParams.IsFunder)
                 let! (remoteCommitTx, htlcTimeoutTxs, htlcSuccessTxs) =
                     Helpers.makeRemoteTxs (ctx)
-                                          (localKeys)
-                                          (cm.RemoteCommit.Index + 1UL)
+                                          cm.RemoteCommit.Index.NextCommitment
                                           (cm.LocalParams)
                                           (cm.RemoteParams)
                                           (cm.FundingScriptCoin)
@@ -292,7 +290,7 @@ module internal Commitments =
                 let htlcSigs =
                     sortedHTLCTXs
                     |> List.map(
-                            (fun htlc -> keyRepo.GenerateKeyFromBasePointAndSign(htlc.Value, cm.LocalParams.ChannelPubKeys.HTLCBasePubKey, remoteNextPerCommitmentPoint))
+                            (fun htlc -> keyRepo.GenerateKeyFromBasePointAndSign(htlc.Value, cm.LocalParams.ChannelPubKeys.HTLCBasePubKey, remoteNextPerCommitmentPoint.PubKey))
                             >> fst
                             >> (fun txSig -> txSig.Signature)
                             )
@@ -300,17 +298,19 @@ module internal Commitments =
                             Signature = !> signature.Signature
                             HTLCSignatures = htlcSigs |> List.map (!>) }
                 let nextCommitments =
-                    let nextRemoteCommitInfo = { WaitingForRevocation.NextRemoteCommit =
-                                                    { cm.RemoteCommit
-                                                        with
-                                                            Index = cm.RemoteCommit.Index + 1UL;
-                                                            Spec = spec;
-                                                            RemotePerCommitmentPoint = remoteNextPerCommitmentPoint
-                                                            TxId = remoteCommitTx.GetTxId() }
-                                                 Sent = msg
-                                                 SentAfterLocalCommitmentIndex = cm.LocalCommit.Index
-                                                 ReSignASAP = false }
-
+                    let nextRemoteCommitInfo = {
+                        WaitingForRevocation.NextRemoteCommit = {
+                            cm.RemoteCommit
+                            with
+                                Index = cm.RemoteCommit.Index.NextCommitment
+                                Spec = spec
+                                RemotePerCommitmentPoint = remoteNextPerCommitmentPoint
+                                TxId = remoteCommitTx.GetTxId()
+                        }
+                        Sent = msg
+                        SentAfterLocalCommitmentIndex = cm.LocalCommit.Index
+                        ReSignASAP = false
+                    }
                     { cm with RemoteNextCommitInfo = RemoteNextCommitInfo.Waiting(nextRemoteCommitInfo)
                               LocalChanges = { cm.LocalChanges with Proposed = []; Signed = cm.LocalChanges.Proposed }
                               RemoteChanges = { cm.RemoteChanges with ACKed = []; Signed = cm.RemoteChanges.ACKed } }
@@ -328,13 +328,15 @@ module internal Commitments =
         if cm.RemoteHasChanges() |> not then
             ReceivedCommitmentSignedWhenWeHaveNoPendingChanges |> Error
         else
+            let chanPrivateKeys = keyRepo.GetChannelKeys cm.LocalParams.IsFunder
+            let commitmentSeed = chanPrivateKeys.CommitmentSeed
             let chanKeys = cm.LocalParams.ChannelPubKeys
-            let nextI = cm.LocalCommit.Index + 1UL
+            let nextI = cm.LocalCommit.Index.NextCommitment
             result {
                 let! spec = cm.LocalCommit.Spec.Reduce(cm.LocalChanges.ACKed, cm.RemoteChanges.Proposed) |> expectTransactionError
-                let localPerCommitmentPoint = ChannelUtils.buildCommitmentPoint (chanKeys.CommitmentSeed, nextI)
+                let localPerCommitmentPoint = commitmentSeed.DeriveCommitmentPubKey nextI
                 let! (localCommitTx, htlcTimeoutTxs, htlcSuccessTxs) =
-                    Helpers.makeLocalTXs (ctx) chanKeys (nextI) (cm.LocalParams) (cm.RemoteParams) (cm.FundingScriptCoin) (localPerCommitmentPoint) spec n
+                    Helpers.makeLocalTXs (ctx) (nextI) (cm.LocalParams) (cm.RemoteParams) (cm.FundingScriptCoin) (localPerCommitmentPoint) spec n
                     |> expectTransactionErrors
                 let signature, signedCommitTx = keyRepo.GetSignatureFor (localCommitTx.Value, chanKeys.FundingPubKey)
 
@@ -350,10 +352,13 @@ module internal Commitments =
                 do! checkSignatureCountMismatch sortedHTLCTXs msg
                 
                 let _localHTLCSigs, sortedHTLCTXs =
-                    let localHtlcSigsAndHTLCTxs = sortedHTLCTXs |> List.map(fun htlc -> keyRepo.GenerateKeyFromBasePointAndSign(htlc.Value, cm.LocalParams.ChannelPubKeys.HTLCBasePubKey, localPerCommitmentPoint))
+                    let localHtlcSigsAndHTLCTxs =
+                        sortedHTLCTXs |> List.map(fun htlc ->
+                            keyRepo.GenerateKeyFromBasePointAndSign(htlc.Value, cm.LocalParams.ChannelPubKeys.HTLCBasePubKey, localPerCommitmentPoint.PubKey)
+                        )
                     localHtlcSigsAndHTLCTxs |> List.map(fst), localHtlcSigsAndHTLCTxs |> List.map(snd) |> Seq.cast<IHTLCTx> |> List.ofSeq
 
-                let remoteHTLCPubKey = Generators.derivePubKey ctx (cm.RemoteParams.HTLCBasePoint) (localPerCommitmentPoint)
+                let remoteHTLCPubKey = Generators.derivePubKey ctx (cm.RemoteParams.HTLCBasePoint) localPerCommitmentPoint.PubKey
 
                 let checkHTLCSig (htlc: IHTLCTx, remoteECDSASig: LNECDSASignature): Result<_, _> =
                     let remoteS = TransactionSignature(remoteECDSASig.Value, SigHash.All)
@@ -372,19 +377,32 @@ module internal Commitments =
                     |> List.map(checkHTLCSig)
                     |> List.sequenceResultA
                     |> expectTransactionErrors
-                let successTxs = txList |> List.choose(fun o -> match o with | :? HTLCSuccessTx as tx -> Some tx | _ -> None)
-                let finalizedTxs = txList |> List.choose(fun o -> match o with | :? FinalizedTx as tx -> Some tx | _ -> None)
+                let successTxs =
+                    txList |> List.choose(fun o ->
+                        match o with
+                        | :? HTLCSuccessTx as tx -> Some tx
+                        | _ -> None
+                    )
+                let finalizedTxs =
+                    txList |> List.choose(fun o ->
+                        match o with
+                        | :? FinalizedTx as tx -> Some tx
+                        | _ -> None
+                    )
                 let localPerCommitmentSecret =
-                    ChannelUtils.buildCommitmentSecret(cm.LocalParams.ChannelPubKeys.CommitmentSeed, cm.LocalCommit.Index)
+                    chanPrivateKeys.CommitmentSeed.DeriveRevocationKey cm.LocalCommit.Index
                 let localNextPerCommitmentPoint =
-                    ChannelUtils.buildCommitmentPoint(cm.LocalParams.ChannelPubKeys.CommitmentSeed, cm.LocalCommit.Index + 2UL)
+                    let revocationKey =
+                        chanPrivateKeys.CommitmentSeed.DeriveRevocationKey
+                            cm.LocalCommit.Index.NextCommitment.NextCommitment
+                    revocationKey.CommitmentPubKey
 
                 let nextMsg = { RevokeAndACKMsg.ChannelId = cm.ChannelId
-                                PerCommitmentSecret = localPerCommitmentSecret.ToBytes() |> PaymentPreimage.Create
+                                PerCommitmentSecret = localPerCommitmentSecret
                                 NextPerCommitmentPoint = localNextPerCommitmentPoint }
                 
                 let nextCommitments =
-                    let localCommit1 = { LocalCommit.Index = cm.LocalCommit.Index + 1UL
+                    let localCommit1 = { LocalCommit.Index = cm.LocalCommit.Index.NextCommitment
                                          Spec = spec
                                          PublishableTxs = { PublishableTxs.CommitTx = finalizedCommitTx
                                                             HTLCTxs = finalizedTxs }

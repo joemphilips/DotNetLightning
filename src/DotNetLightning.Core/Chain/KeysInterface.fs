@@ -54,7 +54,7 @@ type ChannelKeys = {
     PaymentBaseKey: Key
     DelayedPaymentBaseKey: Key
     HTLCBaseKey: Key
-    CommitmentSeed: uint256
+    CommitmentSeed: CommitmentSeed
 }
 
     with
@@ -65,7 +65,6 @@ type ChannelKeys = {
                 PaymentBasePubKey = this.PaymentBaseKey.PubKey
                 DelayedPaymentBasePubKey = this.DelayedPaymentBaseKey.PubKey
                 HTLCBasePubKey = this.HTLCBaseKey.PubKey
-                CommitmentSeed = this.CommitmentSeed
             }
 
 /// In usual operation we should not hold secrets on memory. So only hold pubkey
@@ -75,7 +74,6 @@ and ChannelPubKeys =  {
     PaymentBasePubKey: PubKey
     DelayedPaymentBasePubKey: PubKey
     HTLCBasePubKey: PubKey
-    CommitmentSeed: uint256
 }
 
 
@@ -108,7 +106,7 @@ type DefaultKeyRepository(nodeSecret: ExtKey, channelIndex: int) =
 
     let destinationKey = channelMasterKey.Derive(1, true).PrivateKey
     let shutdownKey = channelMasterKey.Derive(2, true).PrivateKey
-    let commitmentSeed = channelMasterKey.Derive(3, true).PrivateKey.ToBytes() |> uint256
+    let commitmentSeed = channelMasterKey.Derive(3, true).PrivateKey |> CommitmentSeed
 
     let fundingKey = channelMasterKey.Derive(4, true).PrivateKey
     let fundingPubKey = fundingKey.PubKey

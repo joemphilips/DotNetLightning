@@ -22,6 +22,7 @@
     <Compile Include="SphinxTests.fs" />
     <Compile Include="GeneratorsTests.fs" />
     <Compile Include="GraphTests.fs" />
+    <Compile Include="RevocationSetTests.fs" />
     <Compile Include="RouteCalculationTests.fs" />
     <Compile Include="TransactionBolt3TestVectorTests.fs" />
     <Compile Include="ClaimReceivedHTLCTests.fs" />

@@ -31,7 +31,7 @@ let data1 = dataPath1 |> File.ReadAllText |> JsonDocument.Parse
 let localPerCommitmentPoint = PubKey("025f7117a78150fe2ef97db7cfc83bd57b2e2c0d0dd25eaf467a4a1c2a45ce1486")
 type LocalConfig = {
     Ctx: ISecp256k1
-    CommitTxNumber: uint64
+    CommitTxNumber: CommitmentNumber
     ToSelfDelay: BlockHeightOffset16
     DustLimit: Money
     PaymentBasePointSecret: Key
@@ -53,7 +53,7 @@ let getLocal(): LocalConfig =
     let delayedPaymentBasePointSecret = "3333333333333333333333333333333333333333333333333333333333333333" |> hex.DecodeData |> Key
     {
       Ctx = ctx
-      CommitTxNumber = 42UL
+      CommitTxNumber = CommitmentNumber(UInt48.FromUInt64 42UL)
       ToSelfDelay = 144us |> BlockHeightOffset16
       DustLimit = Money.Satoshis(546L)
       PaymentBasePointSecret = paymentBasePointSecret
@@ -71,7 +71,7 @@ let getLocal(): LocalConfig =
 
 type RemoteConfig = {
     Ctx: ISecp256k1
-    CommitTxNumber: uint64
+    CommitTxNumber: CommitmentNumber
     ToSelfDelay: BlockHeightOffset16
     DustLimit: Money
     PaymentBasePointSecret: Key
@@ -90,7 +90,7 @@ let getRemote(): RemoteConfig =
     let revocationBasePoint = revocationBasePointSecret.PubKey
     {
       Ctx = ctx
-      CommitTxNumber = 42UL
+      CommitTxNumber = CommitmentNumber(UInt48.FromUInt64 42UL)
       ToSelfDelay = 144us |> BlockHeightOffset16
       DustLimit = Money.Satoshis(546L)
       PaymentBasePointSecret = paymentBasePointSecret
@@ -122,8 +122,10 @@ let commitmentInputScriptCoin =
 
 log (sprintf "local payment basepoint is %A" local.PaymentBasePoint)
 log (sprintf "remote payment basepoint is %A" remote.PaymentBasePoint)
-let obscuredTxNumber = Transactions.obscuredCommitTxNumber 42UL true local.PaymentBasePoint remote.PaymentBasePoint
-Expect.equal obscuredTxNumber (0x2bb038521914UL ^^^ 42UL) ""
+let obscuredTxNumber =
+    let commitmentNumber = CommitmentNumber(UInt48.FromUInt64 42UL)
+    commitmentNumber.Obscure true local.PaymentBasePoint remote.PaymentBasePoint
+Expect.equal obscuredTxNumber (0x2bb038521914UL ^^^ 42UL |> UInt48.FromUInt64 |> ObscuredCommitmentNumber) ""
 
 sprintf "local_payment_basepoint: %A " local.PaymentBasePoint |> log
 sprintf "remote_payment_basepoint: %A" remote.PaymentBasePoint |> log
@@ -257,13 +259,14 @@ let run (spec: CommitmentSpec): (Transaction * _) =
                                           (sprintf "to-local amount %A \n to-local wscript (%A)" txOut.Value htlcScripts.[i])
                                           |> log
                                   | x -> failwithf "unexpected scriptPubKey length %A" x)
-    let actualCommitTxNum = Transactions.getCommitTxNumber
-                                (commitTx.Value.GetGlobalTransaction())
-                                (true)
-                                (local.PaymentBasePoint)
-                                (remote.PaymentBasePoint)
+    let actualCommitTxNumOpt =
+        Transactions.getCommitTxNumber
+            (commitTx.Value.GetGlobalTransaction())
+            (true)
+            (local.PaymentBasePoint)
+            (remote.PaymentBasePoint)
     let expectedCommitTxNumber = local.CommitTxNumber
-    Expect.equal (actualCommitTxNum) (expectedCommitTxNumber) ""
+    Expect.equal actualCommitTxNumOpt.Value (expectedCommitTxNumber) ""
     commitTx.Value.Finalize() |> ignore
     Expect.isTrue (commitTx.Value.CanExtractTransaction()) ""
     sprintf "output commit_tx %A" commitTx.Value |> log

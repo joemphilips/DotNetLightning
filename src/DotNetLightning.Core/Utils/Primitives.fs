@@ -4,9 +4,11 @@ open NBitcoin
 open NBitcoin.Crypto
 
 open System
+open System.IO
 open System.Net
 open System.Linq
 
+open DotNetLightning.Core.Utils.Extensions
 open ResultUtils
 
 [<AutoOpen>]
@@ -216,11 +218,6 @@ module Primitives =
         match x with
         | PaymentPreimage x -> x
         
-    type ChannelId = | ChannelId of uint256 with
-        member x.Value = let (ChannelId v) = x in v
-
-        static member Zero = uint256.Zero |> ChannelId
-
     type ConnectionId = ConnectionId of Guid
     [<CustomEquality;CustomComparison>]
     type PeerId = PeerId of EndPoint
@@ -276,11 +273,6 @@ module Primitives =
         override this.GetHashCode() =
             this.Value.GetHashCode()
 
-    [<StructuralComparison;StructuralEquality>]
-    type TxId = | TxId of uint256 with
-        member x.Value = let (TxId v) = x in v
-        static member Zero = uint256.Zero |> TxId
-        
     /// Small wrapper for NBitcoin's OutPoint type
     /// So that it supports comparison and equality constraints
     [<CustomComparison;CustomEquality>]
@@ -421,3 +413,157 @@ module Primitives =
         | SortedPlain = 0uy
         | ZLib = 1uy
     
+    [<StructAttribute>]
+    type CommitmentNumber(index: UInt48) =
+        member this.Index = index
+
+        override this.ToString() =
+            sprintf "%012x (#%i)" this.Index.UInt64 (UInt48.MaxValue - this.Index).UInt64
+
+        static member LastCommitment: CommitmentNumber =
+            CommitmentNumber UInt48.Zero
+
+        static member FirstCommitment: CommitmentNumber =
+            CommitmentNumber UInt48.MaxValue
+
+        static member ObscureFactor (isFunder: bool)
+                                    (localPaymentBasePoint: PubKey)
+                                    (remotePaymentBasePoint: PubKey)
+                                        : UInt48 =
+            let pubKeysHash =
+                if isFunder then
+                    Hashes.SHA256 <| Array.concat
+                        [| localPaymentBasePoint.ToBytes(); remotePaymentBasePoint.ToBytes() |]
+                else
+                    Hashes.SHA256 <| Array.concat
+                        [| remotePaymentBasePoint.ToBytes(); localPaymentBasePoint.ToBytes() |]
+            UInt48.FromBytesBigEndian pubKeysHash.[26..]
+
+        member this.PreviousCommitment: CommitmentNumber =
+            CommitmentNumber(this.Index + UInt48.One)
+
+        member this.NextCommitment: CommitmentNumber =
+            CommitmentNumber(this.Index - UInt48.One)
+
+        member this.Subsumes(other: CommitmentNumber): bool =
+            let trailingZeros = this.Index.TrailingZeros
+            (this.Index >>> trailingZeros) = (other.Index >>> trailingZeros)
+
+        member this.Obscure (isFunder: bool)
+                            (localPaymentBasePoint: PubKey)
+                            (remotePaymentBasePoint: PubKey)
+                                : ObscuredCommitmentNumber =
+            let obscureFactor =
+                CommitmentNumber.ObscureFactor
+                    isFunder
+                    localPaymentBasePoint
+                    remotePaymentBasePoint
+            ObscuredCommitmentNumber(this.Index ^^^ obscureFactor)
+
+    and [<StructAttribute>] ObscuredCommitmentNumber(obscuredIndex: UInt48) =
+        member this.ObscuredIndex: UInt48 = obscuredIndex
+
+        override this.ToString() =
+            sprintf "%012x" this.ObscuredIndex.UInt64
+
+        member this.LockTime: LockTime =
+            Array.concat [| [| 0x20uy |]; this.ObscuredIndex.GetBytesBigEndian().[3..] |]
+            |> System.UInt32.FromBytesBigEndian
+            |> LockTime
+
+        member this.Sequence: Sequence =
+            Array.concat [| [| 0x80uy |]; this.ObscuredIndex.GetBytesBigEndian().[..2] |]
+            |> System.UInt32.FromBytesBigEndian
+            |> Sequence
+
+        static member TryFromLockTimeAndSequence (lockTime: LockTime)
+                                                 (sequence: Sequence)
+                                                     : Option<ObscuredCommitmentNumber> =
+            let lockTimeBytes = lockTime.Value.GetBytesBigEndian()
+            let sequenceBytes = sequence.Value.GetBytesBigEndian()
+            if lockTimeBytes.[0] <> 0x20uy || sequenceBytes.[0] <> 0x80uy then
+                None
+            else
+                Array.concat [| sequenceBytes.[1..]; lockTimeBytes.[1..] |]
+                |> UInt48.FromBytesBigEndian
+                |> ObscuredCommitmentNumber
+                |> Some
+
+        member this.Unobscure (isFunder: bool)
+                              (localPaymentBasePoint: PubKey)
+                              (remotePaymentBasePoint: PubKey)
+                                  : CommitmentNumber =
+            let obscureFactor =
+                CommitmentNumber.ObscureFactor
+                    isFunder
+                    localPaymentBasePoint
+                    remotePaymentBasePoint
+            CommitmentNumber(this.ObscuredIndex ^^^ obscureFactor)
+
+    [<StructAttribute>]
+    type RevocationKey(key: Key) =
+        member this.Key = key
+
+        static member BytesLength: int = Key.BytesLength
+
+        static member FromBytes(bytes: array<byte>): RevocationKey =
+            RevocationKey <| Key bytes
+
+        member this.ToByteArray(): array<byte> =
+            this.Key.ToBytes()
+
+        member this.DeriveChild (thisCommitmentNumber: CommitmentNumber)
+                                (childCommitmentNumber: CommitmentNumber)
+                                    : Option<RevocationKey> =
+            if thisCommitmentNumber.Subsumes childCommitmentNumber then
+                let commonBits = thisCommitmentNumber.Index.TrailingZeros
+                let index = childCommitmentNumber.Index
+                let mutable secret = this.ToByteArray()
+                for bit in (commonBits - 1) .. -1 .. 0 do
+                    if (index >>> bit) &&& UInt48.One = UInt48.One then
+                        let byteIndex = bit / 8
+                        let bitIndex = bit % 8
+                        secret.[byteIndex] <- secret.[byteIndex] ^^^ (1uy <<< bitIndex)
+                        secret <- Hashes.SHA256 secret
+                Some <| RevocationKey(Key secret)
+            else
+                None
+
+        member this.CommitmentPubKey: CommitmentPubKey =
+            CommitmentPubKey this.Key.PubKey
+
+    and [<StructAttribute>] CommitmentPubKey(pubKey: PubKey) =
+        member this.PubKey = pubKey
+
+        static member BytesLength: int = PubKey.BytesLength
+
+        static member FromBytes(bytes: array<byte>): CommitmentPubKey =
+            CommitmentPubKey <| PubKey bytes
+
+        member this.ToByteArray(): array<byte> =
+            this.PubKey.ToBytes()
+
+
+    [<StructAttribute>]
+    type CommitmentSeed(masterRevocationKey: RevocationKey) =
+        new(key: Key) =
+            CommitmentSeed(RevocationKey key)
+
+        member this.MasterRevocationKey = masterRevocationKey
+
+        member this.DeriveRevocationKey (commitmentNumber: CommitmentNumber): RevocationKey =
+            let res =
+                this.MasterRevocationKey.DeriveChild
+                    CommitmentNumber.LastCommitment
+                    commitmentNumber
+            match res with
+            | Some revocationKey -> revocationKey
+            | None ->
+                failwith
+                    "The master revocation key should be able to derive the revocation key for \
+                    all commitments. This is a bug."
+
+        member this.DeriveCommitmentPubKey (commitmentNumber: CommitmentNumber): CommitmentPubKey =
+            let revocationKey = this.DeriveRevocationKey commitmentNumber
+            revocationKey.CommitmentPubKey
+

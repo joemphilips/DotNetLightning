@@ -8,6 +8,7 @@ open System.Threading.Tasks
 open DotNetLightning.Chain
 open DotNetLightning.Infrastructure
 open DotNetLightning.Infrastructure.Interfaces
+open DotNetLightning.Utils
 open DotNetLightning.Utils.Primitives
 open Microsoft.Extensions.Hosting
 open NBitcoin

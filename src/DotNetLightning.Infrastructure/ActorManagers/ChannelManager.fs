@@ -6,6 +6,7 @@ open System.Threading.Tasks
 open FSharp.Control.Tasks
 open FSharp.Control.Reactive
 
+open DotNetLightning.Utils
 open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Serialize.Msgs

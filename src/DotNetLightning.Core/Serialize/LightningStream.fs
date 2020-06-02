@@ -328,6 +328,14 @@ type LightningReaderStream(inner: Stream) =
         else
             raise (FormatException("Invalid Pubkey encoding"))
 
+    member this.ReadRevocationKey() =
+        let bytes = this.ReadBytes RevocationKey.BytesLength
+        RevocationKey.FromBytes bytes
+
+    member this.ReadCommitmentPubKey() =
+        let bytes = this.ReadBytes CommitmentPubKey.BytesLength
+        CommitmentPubKey.FromBytes bytes
+
     member this.ReadECDSACompact() =
         let data = this.ReadBytes(64)
         LNECDSASignature.FromBytesCompact(data)
