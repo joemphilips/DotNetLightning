@@ -22,7 +22,7 @@
     <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\NSec\Experimental\NSec.Experimental.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\ResultUtils\ResultUtils.fsproj" PrivateAssets="all" />
     <ProjectReference Include="..\InternalBech32Encoder\InternalBech32Encoder.csproj" PrivateAssets="all" />
-    <ProjectReference Include="..\Macaroons\Macaroons.csproj" />
+    <ProjectReference Include="..\Macaroons\Macaroons.csproj" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
