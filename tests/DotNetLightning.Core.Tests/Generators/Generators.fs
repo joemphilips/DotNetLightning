@@ -1,5 +1,7 @@
 module Generators
 
+open DotNetLightning.Payment
+open DotNetLightning.Payment.LSAT
 open DotNetLightning.Serialize
 open NBitcoin
 open DotNetLightning.Utils
@@ -7,6 +9,7 @@ open DotNetLightning.Serialize.Msgs
 open FsCheck
 open PrimitiveGenerators
 open MsgGenerators
+open PaymentGenerators
 
 
 type PrimitiveGenerators =
@@ -140,3 +143,8 @@ type P2PMsgGenerators =
             gossipTimestampFilterGen |> Gen.map(fun i -> i :> ILightningMsg)
         ]
         |> Arb.fromGen
+        
+        
+type PaymentGenerators =
+    static member MacaroonIdentifier: Arbitrary<MacaroonIdentifier> =
+        macaroonIdGen |> Arb.fromGen

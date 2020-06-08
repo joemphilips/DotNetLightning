@@ -22,6 +22,7 @@
     <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\NSec\Experimental\NSec.Experimental.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\ResultUtils\ResultUtils.fsproj" PrivateAssets="all" />
     <ProjectReference Include="..\InternalBech32Encoder\InternalBech32Encoder.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\Macaroons\Macaroons.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
@@ -74,6 +75,11 @@
     <Compile Include="Payment\PaymentEvents.fs" />
     <Compile Include="Payment\Amount.fs" />
     <Compile Include="Payment\PaymentRequest.fs" />
+    <Compile Include="Payment\LSAT\Constants.fs" />
+    <Compile Include="Payment\LSAT\CaveatsExtensions.fs" />
+    <Compile Include="Payment\LSAT\MacaroonIdentifier.fs" />
+    <Compile Include="Payment\LSAT\Service.fs" />
+    <Compile Include="Payment\LSAT\Satisfier.fs" />
     <Compile Include="Routing\Graph.fs" />
     <Compile Include="Routing\RouterPrimitives.fs" />
     <Compile Include="Routing\NetworkStats.fs" />

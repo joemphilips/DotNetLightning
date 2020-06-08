@@ -193,6 +193,10 @@ module Primitives =
                 member this.Value =
                     let (PaymentPreimage v) = this in v
 
+                member this.ToHex() =
+                    let h = NBitcoin.DataEncoders.HexEncoder()
+                    this.ToByteArray() |> h.EncodeData
+                    
                 member this.ToBytes() =
                     this.Value
 

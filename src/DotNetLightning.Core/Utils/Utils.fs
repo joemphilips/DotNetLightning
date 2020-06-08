@@ -6,6 +6,8 @@ open System.Runtime.CompilerServices
 
 [<AutoOpen>]
 module Utils =
+    let inline checkNull name (o) =
+        if isNull (box <| o) then nullArg (name) else ()
     let inline (!>) (x: ^a): ^b = ((^a or ^b): (static member op_Implicit: ^a -> ^b) x)
 
     let inline curry2 f a b = f (a, b)
@@ -50,6 +52,7 @@ type Extensions() =
 
 module Async =
     let result = async.Return
+    
 
     let map f value = async {
         let! v = value

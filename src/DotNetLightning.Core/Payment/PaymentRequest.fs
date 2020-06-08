@@ -514,12 +514,13 @@ type private Bolt11Data = {
         |> Helpers.convert5BitsTo8
             
 
+/// a.k.a bolt11-invoice, lightning-invoice
 type PaymentRequest = private {
     Prefix: string
     Amount: LNMoney option
     Timestamp: DateTimeOffset
     NodeId: NodeId
-    Tags:TaggedFields
+    Tags: TaggedFields
     Signature: (LNECDSASignature * byte) option
 }
     with

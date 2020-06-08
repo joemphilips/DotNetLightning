@@ -13,6 +13,7 @@
     <Compile Include="Utils/FromRustLightning.fs" />
     <Compile Include="Generators/Primitives.fs" />
     <Compile Include="Generators/Msgs.fs" />
+    <Compile Include="Generators\Payments.fs" />
     <Compile Include="Generators/Generators.fs" />
     <Compile Include="Serialization.fs" />
     <Compile Include="TLVSerialize.fs" />
@@ -29,6 +30,8 @@
     <Compile Include="KeyRepositoryTests.fs" />
     <Compile Include="EncryptDecrypt.fs" />
     <Compile Include="PaymentTests.fs" />
+    <Compile Include="LSATTests.fs" />
+    <Compile Include="PaymentPropertyTests.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
   <ItemGroup>
