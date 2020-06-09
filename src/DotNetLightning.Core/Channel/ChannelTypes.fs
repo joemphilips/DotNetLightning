@@ -23,7 +23,7 @@ open NBitcoin
 module Data =
     type ClosingTxProposed = {
         UnsignedTx: ClosingTx
-        LocalClosingSigned: ClosingSigned
+        LocalClosingSigned: ClosingSignedMsg
     }
     with
         static member LocalClosingSigned_: Lens<_ ,_> =
@@ -65,7 +65,7 @@ module Data =
 
     type WaitForAcceptChannelData = {
             InputInitFunder: InputInitFunder;
-            LastSent: OpenChannel
+            LastSent: OpenChannelMsg
         }
         with interface IChannelStateData
 
@@ -77,7 +77,7 @@ module Data =
                                             PushMsat: LNMoney
                                             InitialFeeRatePerKw: FeeRatePerKw
                                             RemoteFirstPerCommitmentPoint: PubKey
-                                            LastSent: OpenChannel
+                                            LastSent: OpenChannelMsg
                                         }
         with interface IChannelStateData
 
@@ -90,11 +90,11 @@ module Data =
                                             InitialFeeRatePerKw: FeeRatePerKw
                                             RemoteFirstPerCommitmentPoint: PubKey
                                             ChannelFlags: uint8
-                                            LastSent: AcceptChannel
+                                            LastSent: AcceptChannelMsg
                                       }
         with
             interface IChannelStateData
-            static member Create (localParams) (remoteParams) (msg: OpenChannel) acceptChannel =
+            static member Create (localParams) (remoteParams) (msg: OpenChannelMsg) acceptChannel =
                 { ChannelFlags = msg.ChannelFlags
                   TemporaryFailure = msg.TemporaryChannelId
                   LocalParams = localParams
@@ -113,15 +113,15 @@ module Data =
                                             LocalCommitTx: CommitTx
                                             RemoteCommit: RemoteCommit
                                             ChannelFlags: uint8
-                                            LastSent: FundingCreated
+                                            LastSent: FundingCreatedMsg
                                             InitialFeeRatePerKw: FeeRatePerKw
                                        }
         with interface IChannelStateData
 
     type WaitForFundingConfirmedData = {
                                             Commitments: Commitments
-                                            Deferred: FundingLocked option
-                                            LastSent: Choice<FundingCreated, FundingSigned>
+                                            Deferred: FundingLockedMsg option
+                                            LastSent: Choice<FundingCreatedMsg, FundingSignedMsg>
                                             InitialFeeRatePerKw: FeeRatePerKw
                                             ChannelId: ChannelId
                                           }
@@ -135,8 +135,8 @@ module Data =
 
     type WaitForFundingLockedData = { Commitments: Commitments;
                                       ShortChannelId: ShortChannelId;
-                                      OurMessage: FundingLocked
-                                      TheirMessage: FundingLocked option
+                                      OurMessage: FundingLockedMsg
+                                      TheirMessage: FundingLockedMsg option
                                       InitialFeeRatePerKw: FeeRatePerKw
                                       HaveWeSentFundingLocked:bool
                                       ChannelId: ChannelId }
@@ -150,10 +150,10 @@ module Data =
                             Commitments: Commitments;
                             ShortChannelId: ShortChannelId;
                             Buried: bool;
-                            ChannelAnnouncement: ChannelAnnouncement option
-                            ChannelUpdate: ChannelUpdate
-                            LocalShutdown: Shutdown option
-                            RemoteShutdown: Shutdown option
+                            ChannelAnnouncement: ChannelAnnouncementMsg option
+                            ChannelUpdate: ChannelUpdateMsg
+                            LocalShutdown: ShutdownMsg option
+                            RemoteShutdown: ShutdownMsg option
                             ChannelId: ChannelId
                         }
         with
@@ -166,7 +166,7 @@ module Data =
                 member this.Commitments: Commitments = 
                     this.Commitments
 
-    type ShutdownData = { Commitments: Commitments; LocalShutdown: Shutdown; RemoteShutdown: Shutdown; ChannelId: ChannelId }
+    type ShutdownData = { Commitments: Commitments; LocalShutdown: ShutdownMsg; RemoteShutdown: ShutdownMsg; ChannelId: ChannelId }
         with interface IHasCommitments with
                 member this.ChannelId: ChannelId = 
                     this.ChannelId
@@ -175,8 +175,8 @@ module Data =
 
     type NegotiatingData = {
                             Commitments: Commitments;
-                            LocalShutdown: Shutdown;
-                            RemoteShutdown: Shutdown;
+                            LocalShutdown: ShutdownMsg;
+                            RemoteShutdown: ShutdownMsg;
                             ClosingTxProposed: ClosingTxProposed list list
                             MaybeBestUnpublishedTx: FinalizedTx option
                             ChannelId: ChannelId
@@ -224,7 +224,7 @@ module Data =
 
     type WaitForRemotePublishFutureCommitmentData = {
                                                     Commitments: Commitments;
-                                                    RemoteChannelReestablish: ChannelReestablish
+                                                    RemoteChannelReestablish: ChannelReestablishMsg
                                                     ChannelId: ChannelId
                                                    }
         with interface IHasCommitments with
@@ -248,56 +248,56 @@ type ChannelEvent =
     // --- ln events ---
     // --------- init fundee --------
     | NewInboundChannelStarted of nextState: Data.WaitForOpenChannelData
-    | WeAcceptedOpenChannel of nextMsg: AcceptChannel * nextState: Data.WaitForFundingCreatedData
-    | WeAcceptedFundingCreated of nextMsg: FundingSigned * nextState: Data.WaitForFundingConfirmedData
+    | WeAcceptedOpenChannel of nextMsg: AcceptChannelMsg * nextState: Data.WaitForFundingCreatedData
+    | WeAcceptedFundingCreated of nextMsg: FundingSignedMsg * nextState: Data.WaitForFundingConfirmedData
 
     // --------- init fender --------
-    | NewOutboundChannelStarted of nextMsg: OpenChannel * nextState: Data.WaitForAcceptChannelData
-    | WeAcceptedAcceptChannel of nextMsg: FundingCreated * nextState: Data.WaitForFundingSignedData
+    | NewOutboundChannelStarted of nextMsg: OpenChannelMsg * nextState: Data.WaitForAcceptChannelData
+    | WeAcceptedAcceptChannel of nextMsg: FundingCreatedMsg * nextState: Data.WaitForFundingSignedData
     | WeAcceptedFundingSigned of txToPublish: FinalizedTx * nextState: Data.WaitForFundingConfirmedData
 
     /// -------- init both -----
     | FundingConfirmed of nextState: Data.WaitForFundingLockedData
-    | TheySentFundingLocked of msg: FundingLocked
-    | WeSentFundingLocked of msg: FundingLocked
-    | WeResumedDelayedFundingLocked of msg: FundingLocked
+    | TheySentFundingLocked of msg: FundingLockedMsg
+    | WeSentFundingLocked of msg: FundingLockedMsg
+    | WeResumedDelayedFundingLocked of msg: FundingLockedMsg
     | BothFundingLocked of nextState: Data.NormalData
 
     // -------- normal operation ------
-    | WeAcceptedOperationAddHTLC of msg: UpdateAddHTLC * newCommitments: Commitments
+    | WeAcceptedOperationAddHTLC of msg: UpdateAddHTLCMsg * newCommitments: Commitments
     | WeAcceptedUpdateAddHTLC of newCommitments: Commitments
 
-    | WeAcceptedOperationFulfillHTLC of msg: UpdateFulfillHTLC * newCommitments: Commitments
-    | WeAcceptedFulfillHTLC of msg: UpdateFulfillHTLC * origin: HTLCSource * htlc: UpdateAddHTLC * newCommitments: Commitments
+    | WeAcceptedOperationFulfillHTLC of msg: UpdateFulfillHTLCMsg * newCommitments: Commitments
+    | WeAcceptedFulfillHTLC of msg: UpdateFulfillHTLCMsg * origin: HTLCSource * htlc: UpdateAddHTLCMsg * newCommitments: Commitments
 
-    | WeAcceptedOperationFailHTLC of msg: UpdateFailHTLC * newCommitments: Commitments
-    | WeAcceptedFailHTLC of origin: HTLCSource * msg: UpdateAddHTLC * nextCommitments: Commitments
+    | WeAcceptedOperationFailHTLC of msg: UpdateFailHTLCMsg * newCommitments: Commitments
+    | WeAcceptedFailHTLC of origin: HTLCSource * msg: UpdateAddHTLCMsg * nextCommitments: Commitments
 
-    | WeAcceptedOperationFailMalformedHTLC of msg: UpdateFailMalformedHTLC * newCommitments: Commitments
-    | WeAcceptedFailMalformedHTLC of origin: HTLCSource * msg: UpdateAddHTLC * newCommitments: Commitments
+    | WeAcceptedOperationFailMalformedHTLC of msg: UpdateFailMalformedHTLCMsg * newCommitments: Commitments
+    | WeAcceptedFailMalformedHTLC of origin: HTLCSource * msg: UpdateAddHTLCMsg * newCommitments: Commitments
 
-    | WeAcceptedOperationUpdateFee of msg: UpdateFee  * nextCommitments: Commitments
-    | WeAcceptedUpdateFee of msg: UpdateFee 
+    | WeAcceptedOperationUpdateFee of msg: UpdateFeeMsg  * nextCommitments: Commitments
+    | WeAcceptedUpdateFee of msg: UpdateFeeMsg 
 
-    | WeAcceptedOperationSign of msg: CommitmentSigned * nextCommitments: Commitments
-    | WeAcceptedCommitmentSigned of msg: RevokeAndACK * nextCommitments: Commitments
+    | WeAcceptedOperationSign of msg: CommitmentSignedMsg * nextCommitments: Commitments
+    | WeAcceptedCommitmentSigned of msg: RevokeAndACKMsg * nextCommitments: Commitments
 
     | WeAcceptedRevokeAndACK of nextCommitments: Commitments
 
-    | AcceptedOperationShutdown of msg: Shutdown
-    | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs of remoteShutdown: Shutdown * nextCommitments: Commitments
+    | AcceptedOperationShutdown of msg: ShutdownMsg
+    | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs of remoteShutdown: ShutdownMsg * nextCommitments: Commitments
     /// We have to send closing_signed to initiate the negotiation only when if we are the funder
-    | AcceptedShutdownWhenNoPendingHTLCs of msgToSend: ClosingSigned option * nextState: NegotiatingData
+    | AcceptedShutdownWhenNoPendingHTLCs of msgToSend: ClosingSignedMsg option * nextState: NegotiatingData
     | AcceptedShutdownWhenWeHavePendingHTLCs of nextState: ShutdownData
 
     // ------ closing ------
     | MutualClosePerformed of nextState : ClosingData
-    | WeProposedNewClosingSigned of msgToSend: ClosingSigned * nextState: NegotiatingData
+    | WeProposedNewClosingSigned of msgToSend: ClosingSignedMsg * nextState: NegotiatingData
     // -------- else ---------
     | Closed
     | Disconnected
     | ChannelStateRequestedSignCommitment
-    | WeSentChannelReestablish of msg: ChannelReestablish
+    | WeSentChannelReestablish of msg: ChannelReestablishMsg
 
 
 //      .d8888b. 88888888888     d8888 88888888888 8888888888 .d8888b.

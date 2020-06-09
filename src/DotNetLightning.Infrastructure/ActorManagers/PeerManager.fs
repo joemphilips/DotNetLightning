@@ -82,7 +82,7 @@ type PeerManager(eventAggregator: IEventAggregator,
         (this.KnownPeers.[peerId] :> IDisposable).Dispose()
         this.KnownPeers.Remove(peerId) |> ignore
     member val Init = {
-            Init.Features = nodeParamsValue.Features
+            InitMsg.Features = nodeParamsValue.Features
             TLVStream = [| InitTLV.Networks[|network.ChainHash|] |]
         } with get
         
@@ -120,7 +120,7 @@ type PeerManager(eventAggregator: IEventAggregator,
                 sprintf "Received ping from %A" e.PeerId
                 |> log.LogDebug
                 if (ping.PongLen < 65532us) then
-                    let pong = { Pong.BytesLen = ping.PongLen }
+                    let pong = { PongMsg.BytesLen = ping.PongLen }
                     do! (this.KnownPeers.[e.PeerId] :> IActor<_>). Put(EncodeMsg pong)
                 else
                     log.LogError(sprintf "PongLen is too long %A" ping)

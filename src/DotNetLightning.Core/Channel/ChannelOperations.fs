@@ -17,7 +17,7 @@ type OperationAddHTLC = {
     PaymentHash: PaymentHash
     Expiry: BlockHeight
     Onion: OnionPacket
-    Upstream: UpdateAddHTLC option
+    Upstream: UpdateAddHTLCMsg option
     Origin: HTLCSource option
     CurrentHeight: BlockHeight
 }
@@ -99,7 +99,7 @@ type RemoteParams = {
     MinimumDepth: BlockHeightOffset32
 }
     with
-        static member FromAcceptChannel nodeId (remoteInit: Init) (msg: AcceptChannel) =
+        static member FromAcceptChannel nodeId (remoteInit: InitMsg) (msg: AcceptChannelMsg) =
             {
                 NodeId = nodeId
                 DustLimitSatoshis = msg.DustLimitSatoshis
@@ -117,7 +117,7 @@ type RemoteParams = {
                 MinimumDepth = msg.MinimumDepth
             }
 
-        static member FromOpenChannel (nodeId) (remoteInit: Init) (msg: OpenChannel) (channelHandshakeConfig: ChannelHandshakeConfig) =
+        static member FromOpenChannel (nodeId) (remoteInit: InitMsg) (msg: OpenChannelMsg) (channelHandshakeConfig: ChannelHandshakeConfig) =
             {
                 NodeId = nodeId
                 DustLimitSatoshis = msg.DustLimitSatoshis
@@ -142,12 +142,12 @@ type InputInitFunder = {
     InitFeeRatePerKw: FeeRatePerKw
     FundingTxFeeRatePerKw: FeeRatePerKw
     LocalParams: LocalParams
-    RemoteInit: Init
+    RemoteInit: InitMsg
     ChannelFlags: uint8
     ChannelKeys: ChannelKeys
 }
     with
-        static member FromOpenChannel (localParams) (remoteInit) (channelKeys) (o: OpenChannel) =
+        static member FromOpenChannel (localParams) (remoteInit) (channelKeys) (o: OpenChannelMsg) =
             {
                 InputInitFunder.TemporaryChannelId = o.TemporaryChannelId
                 FundingSatoshis = o.FundingSatoshis
@@ -169,7 +169,7 @@ type InputInitFunder = {
 and InputInitFundee = {
     TemporaryChannelId: ChannelId
     LocalParams: LocalParams
-    RemoteInit: Init
+    RemoteInit: InitMsg
     ToLocal: LNMoney
     ChannelKeys: ChannelKeys
 }
@@ -184,38 +184,38 @@ and InputInitFundee = {
 type ChannelCommand =
     // open: funder
     | CreateOutbound of InputInitFunder
-    | ApplyAcceptChannel of AcceptChannel
-    | ApplyFundingSigned of FundingSigned
-    | ApplyFundingLocked of FundingLocked
+    | ApplyAcceptChannel of AcceptChannelMsg
+    | ApplyFundingSigned of FundingSignedMsg
+    | ApplyFundingLocked of FundingLockedMsg
     | ApplyFundingConfirmedOnBC of height: BlockHeight * txIndex: TxIndexInBlock * depth: BlockHeightOffset32
 
     // open: fundee
     | CreateInbound of InputInitFundee
-    | ApplyOpenChannel of OpenChannel
-    | ApplyFundingCreated of FundingCreated
+    | ApplyOpenChannel of OpenChannelMsg
+    | ApplyFundingCreated of FundingCreatedMsg
 
     | CreateChannelReestablish
 
     // normal
     | AddHTLC of OperationAddHTLC
-    | ApplyUpdateAddHTLC of msg: UpdateAddHTLC * currentHeight: BlockHeight
+    | ApplyUpdateAddHTLC of msg: UpdateAddHTLCMsg * currentHeight: BlockHeight
     | FulfillHTLC of OperationFulfillHTLC
-    | ApplyUpdateFulfillHTLC of UpdateFulfillHTLC
+    | ApplyUpdateFulfillHTLC of UpdateFulfillHTLCMsg
     | FailHTLC of OperationFailHTLC
-    | ApplyUpdateFailHTLC of UpdateFailHTLC
+    | ApplyUpdateFailHTLC of UpdateFailHTLCMsg
     | FailMalformedHTLC of OperationFailMalformedHTLC
-    | ApplyUpdateFailMalformedHTLC of UpdateFailMalformedHTLC
+    | ApplyUpdateFailMalformedHTLC of UpdateFailMalformedHTLCMsg
     | UpdateFee of OperationUpdateFee
-    | ApplyUpdateFee of UpdateFee
+    | ApplyUpdateFee of UpdateFeeMsg
 
     | SignCommitment
-    | ApplyCommitmentSigned of CommitmentSigned
-    | ApplyRevokeAndACK of RevokeAndACK
+    | ApplyCommitmentSigned of CommitmentSignedMsg
+    | ApplyRevokeAndACK of RevokeAndACKMsg
 
     // close
     | Close of OperationClose
-    | ApplyClosingSigned of ClosingSigned
-    | RemoteShutdown of Shutdown
+    | ApplyClosingSigned of ClosingSignedMsg
+    | RemoteShutdown of ShutdownMsg
 
     // else
     | ForceClose

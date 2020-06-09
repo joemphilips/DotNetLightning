@@ -50,14 +50,14 @@ let makeUpdateCore(shortChannelId: ShortChannelId,
                     minHtlc: LNMoney option,
                     maxHtlc: LNMoney option,
                     cltvDelta: BlockHeightOffset16 option
-                    ): (ChannelDesc * UnsignedChannelUpdate) =
+                    ): (ChannelDesc * UnsignedChannelUpdateMsg) =
     let minHtlc = Option.defaultValue Constants.DEFAULT_AMOUNT_MSAT minHtlc
     let cltvDelta = Option.defaultValue (BlockHeightOffset16(0us)) cltvDelta
     let desc = { ChannelDesc.ShortChannelId = shortChannelId
                  A = nodeid1
                  B = nodeid2 }
     let update =
-        { UnsignedChannelUpdate.MessageFlags =
+        { UnsignedChannelUpdateMsg.MessageFlags =
               match maxHtlc with Some _ -> 1uy | _ -> 0uy
           ChannelFlags = 0uy
           ChainHash = Network.RegTest.GenesisHash
@@ -77,7 +77,7 @@ let makeUpdate (shortChannelId: uint64,
                 feeProportionalMillions: uint32,
                 minHtlc: LNMoney option,
                 maxHtlc: LNMoney option,
-                cltvDelta: BlockHeightOffset16 option ): (ChannelDesc * UnsignedChannelUpdate) =
+                cltvDelta: BlockHeightOffset16 option ): (ChannelDesc * UnsignedChannelUpdateMsg) =
      makeUpdateCore(shortChannelId |> ShortChannelId.FromUInt64, nodeid1, nodeid2, feeBase, feeProportionalMillions, minHtlc, maxHtlc, cltvDelta)
 let makeUpdate2 (s, a, b, feeBase, feeProp, minHTLC, maxHTLC, cltvDelta) =
     makeUpdateCore(ShortChannelId.ParseUnsafe(s), a, b, feeBase, feeProp, minHTLC, maxHTLC, cltvDelta)

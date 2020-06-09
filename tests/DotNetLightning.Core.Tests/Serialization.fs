@@ -46,8 +46,8 @@ module SerializationTest =
         testList "Serialization unit tests" [
             testCase "node_announcement" <| fun _ ->
                 let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
-                let msg = { NodeAnnouncement.Signature = sig1
-                            Contents = { UnsignedNodeAnnouncement.NodeId = NodeId(PubKey("03f3c15dbc4d425a4f4c36162a9159bb83511fa920dba1cc2785c434ecaf094015"))
+                let msg = { NodeAnnouncementMsg.Signature = sig1
+                            Contents = { UnsignedNodeAnnouncementMsg.NodeId = NodeId(PubKey("03f3c15dbc4d425a4f4c36162a9159bb83511fa920dba1cc2785c434ecaf094015"))
                                          Features = FeatureBit.CreateUnsafe([|0uy|])
                                          Timestamp = 1u
                                          RGB = { Red = 217uy; Green = 228uy; Blue = 166uy }
@@ -372,7 +372,7 @@ module SerializationTest =
                     }
                     addrLen <- addrLen + uint16 unsignedNodeAnnouncement.ExcessAddressData.Length
                     let nodeAnnouncement = {
-                        NodeAnnouncement.Signature = sig1
+                        NodeAnnouncementMsg.Signature = sig1
                         Contents = unsignedNodeAnnouncement
                     }
 
@@ -409,7 +409,7 @@ module SerializationTest =
                 let channelUpdateTestCore (nonBitcoinChainHash: bool, direction: bool, disable: bool, htlcMaximumMSat: bool) =
                     let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
                     let unsignedChannelUpdate = {
-                        UnsignedChannelUpdate.ChainHash = if (not nonBitcoinChainHash) then uint256(hex.DecodeData("6fe28c0ab6f1b372c1a6a246ae63f74f931e8365e15a089c68d6190000000000")) else uint256(hex.DecodeData("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"))
+                        UnsignedChannelUpdateMsg.ChainHash = if (not nonBitcoinChainHash) then uint256(hex.DecodeData("6fe28c0ab6f1b372c1a6a246ae63f74f931e8365e15a089c68d6190000000000")) else uint256(hex.DecodeData("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"))
                         ShortChannelId = ShortChannelId.FromUInt64(2316138423780173UL)
                         Timestamp = 20190119u
                         MessageFlags = (if htlcMaximumMSat then 1uy else 0uy)
@@ -428,7 +428,7 @@ module SerializationTest =
                                 None
                     }
                     let channelUpdate = {
-                        ChannelUpdate.Signature = sig1
+                        ChannelUpdateMsg.Signature = sig1
                         Contents = unsignedChannelUpdate
                     }
                     let actual = channelUpdate.ToBytes()
@@ -504,7 +504,7 @@ module SerializationTest =
             testCase "accept_channel" <| fun _ ->
                 let acceptChannelTestCore(shutdown: bool) =
                     let acceptChannel = {
-                        AcceptChannel.TemporaryChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy|]))
+                        AcceptChannelMsg.TemporaryChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy|]))
                         DustLimitSatoshis = Money.Satoshis(1311768467284833366L)
                         MaxHTLCValueInFlightMsat = LNMoney.MilliSatoshis(2536655962884945560L)
                         ChannelReserveSatoshis = Money.Satoshis(3608586615801332854L)
@@ -532,7 +532,7 @@ module SerializationTest =
                 let txData = hex.DecodeData("c2d4449afa8d26140898dd54d3390b057ba2a5afcf03ba29d7dc0d8b9ffe966e")
                 Array.Reverse txData
                 let fundingCreated = {
-                    FundingCreated.TemporaryChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
+                    FundingCreatedMsg.TemporaryChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
                     FundingTxId = TxId(uint256(txData, true))
                     FundingOutputIndex = 255us |> TxOutIndex
                     Signature = sig1
@@ -544,7 +544,7 @@ module SerializationTest =
             testCase "funding_signed" <| fun _ ->
                 let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
                 let fundingSigned = {
-                    FundingSigned.ChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
+                    FundingSignedMsg.ChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
                     Signature = sig1
                 }
                 let expected = hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202d977cb9b53d93a6ff64bb5f1e158b4094b66e798fb12911168a3ccdf80a83096340a6a95da0ae8d9f776528eecdbb747eb6b545495a4319ed5378e35b21e073a")
@@ -552,7 +552,7 @@ module SerializationTest =
                 ()
             testCase "funding_locked" <| fun _ ->
                 let fundingLocked = {
-                    FundingLocked.ChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
+                    FundingLockedMsg.ChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
                     NextPerCommitmentPoint = pubkey1
                 }
                 let expected = hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f")
@@ -570,7 +570,7 @@ module SerializationTest =
                         else
                             script.WitHash.ScriptPubKey
                     let shutdown = {
-                        Shutdown.ChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
+                        ShutdownMsg.ChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
                         ScriptPubKey = spk
                     }
                     let mutable expected = hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202")
@@ -595,7 +595,7 @@ module SerializationTest =
                     HMAC = uint256([| for _ in 0..31 -> 2uy |])
                 }
                 let updateAddHtlc = {
-                    UpdateAddHTLC.ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
+                    UpdateAddHTLCMsg.ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
                     HTLCId = HTLCId(2316138423780173UL)
                     Amount = LNMoney.MilliSatoshis 3608586615801332854L
                     PaymentHash = PaymentHash(uint256[| for _ in 0..31 -> 1uy |])

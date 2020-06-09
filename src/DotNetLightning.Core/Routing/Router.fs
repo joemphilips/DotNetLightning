@@ -118,10 +118,10 @@ module Routing =
                 |> List.head
                 |> fun x -> (x.Path |> Seq.map ChannelHop.FromGraphEdge) |> Ok
     
-    let private toFakeUpdate(extraHop: ExtraHop) (htlcMaximum: LNMoney): UnsignedChannelUpdate =
+    let private toFakeUpdate(extraHop: ExtraHop) (htlcMaximum: LNMoney): UnsignedChannelUpdateMsg =
         // the `direction` bit in flags will not be accurate but it doesn't matter because it is not used
         // what matters is that the `disable` bit is 0 so that this update doesn't get filtered out
-        { UnsignedChannelUpdate.ShortChannelId = extraHop.ShortChannelId;
+        { UnsignedChannelUpdateMsg.ShortChannelId = extraHop.ShortChannelId;
           ChainHash = uint256.Zero
           Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds() |> uint32
           MessageFlags = 1uy

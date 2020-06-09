@@ -192,7 +192,7 @@ type InputInfo = {
 [<CustomComparison;CustomEquality>]
 type SortableTxOut = {
        TxOut: TxOut
-       UpdateAddHTLC: UpdateAddHTLC option
+       UpdateAddHTLC: UpdateAddHTLCMsg option
     }
     with
         override this.Equals(other: obj): bool =
@@ -506,7 +506,7 @@ module Transactions =
                           (localHTLCPubKey: PubKey)
                           (remoteHTLCPubKey: PubKey)
                           (feeratePerKw: FeeRatePerKw)
-                          (htlc: UpdateAddHTLC)
+                          (htlc: UpdateAddHTLCMsg)
                           (n: Network) =
         let fee = feeratePerKw.ToFee(HTLC_TIMEOUT_WEIGHT)
         let redeem = Scripts.htlcOffered(localHTLCPubKey) (remoteHTLCPubKey) (localRevocationPubKey) (htlc.PaymentHash)
@@ -542,7 +542,7 @@ module Transactions =
                           (localHTLCPubKey: PubKey)
                           (remoteHTLCPubKey: PubKey)
                           (feeratePerKw: FeeRatePerKw)
-                          (htlc: UpdateAddHTLC)
+                          (htlc: UpdateAddHTLCMsg)
                           (n: Network)=
         let fee = feeratePerKw.ToFee(HTLC_SUCCESS_WEIGHT)
         let redeem = Scripts.htlcReceived (localHTLCPubKey) (remoteHTLCPubKey) (localRevocationPubKey) (htlc.PaymentHash) (htlc.CLTVExpiry.Value)
@@ -595,7 +595,7 @@ module Transactions =
                                (remoteHTLCPubKey: PubKey)
                                (remoteRevocationPubKey: PubKey)
                                (localFinalScriptPubKey: Script)
-                               (htlc: UpdateAddHTLC)
+                               (htlc: UpdateAddHTLCMsg)
                                (feeRatePerKw: FeeRatePerKw)
                                (n: Network): Result<ClaimHTLCSuccessTx, TransactionError> =
         let fee = feeRatePerKw.ToFee(CLAIM_HTLC_SUCCESS_WEIGHT)
@@ -626,7 +626,7 @@ module Transactions =
                                (remoteHTLCPubKey: PubKey)
                                (remoteRevocationPubKey: PubKey)
                                (localFinalScriptPubKey: Script)
-                               (htlc: UpdateAddHTLC)
+                               (htlc: UpdateAddHTLCMsg)
                                (feeRatePerKw: FeeRatePerKw)
                                (n: Network): Result<_, _> =
         let fee = feeRatePerKw.ToFee(CLAIM_HTLC_TIMEOUT_WEIGHT)

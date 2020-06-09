@@ -12,10 +12,10 @@ type PeerEvent =
     
     // --- else ---
     // --- receiving ---
-    | ReceivedError of error: ErrorMessage * newPCE: PeerChannelEncryptor
-    | ReceivedPing of ping: Ping * newPCE: PeerChannelEncryptor
-    | ReceivedPong of ping: Pong * newPCE: PeerChannelEncryptor
-    | ReceivedInit of init: Init * newPCE: PeerChannelEncryptor
+    | ReceivedError of error: ErrorMsg * newPCE: PeerChannelEncryptor
+    | ReceivedPing of ping: PingMsg * newPCE: PeerChannelEncryptor
+    | ReceivedPong of ping: PongMsg * newPCE: PeerChannelEncryptor
+    | ReceivedInit of init: InitMsg * newPCE: PeerChannelEncryptor
     | ReceivedRoutingMsg of msg: IRoutingMsg * newPCE: PeerChannelEncryptor
     | ReceivedChannelMsg of msg: IChannelMsg * newPCE: PeerChannelEncryptor
     

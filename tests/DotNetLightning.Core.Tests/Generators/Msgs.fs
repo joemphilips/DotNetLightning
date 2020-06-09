@@ -59,7 +59,7 @@ let pongGen =
 
 let openChannelGen =
     let constructor = fun arg1 arg2 arg3 arg4 arg5 arg6 arg7 arg8 arg9 arg10 arg11 arg12 arg13 arg14 arg15 arg16 arg17 arg18 arg19 -> {
-            OpenChannel.Chainhash = arg1
+            OpenChannelMsg.Chainhash = arg1
             TemporaryChannelId = arg2
             FundingSatoshis = arg3
             PushMSat = arg4
@@ -156,7 +156,7 @@ let fundingSignedGen = gen {
     let! c = ChannelId <!> uint256Gen
     let! s = signatureGen
     return {
-        FundingSigned.ChannelId = c
+        FundingSignedMsg.ChannelId = c
         Signature = s
     }
 }
@@ -372,7 +372,7 @@ let nodeAnnouncementGen = gen {
     let! c = unsignedNodeAnnouncementGen
     let! s = signatureGen
     return {
-        NodeAnnouncement.Contents = c
+        NodeAnnouncementMsg.Contents = c
         Signature = s
     }
 }
@@ -480,7 +480,7 @@ let queryShortChannelIdsGen = gen {
     let! knownTLVs = queryFlagsGen n.Get |> Gen.map Array.singleton
     let! unknownTLVs = (genericTLVGen([1UL]) |> Gen.map(QueryShortChannelIdsTLV.Unknown)) |> Gen.optionOf |> Gen.map(Option.toArray)
     let tlvs = [knownTLVs; unknownTLVs] |> Array.concat
-    return { QueryShortChannelIds.ChainHash = s
+    return { QueryShortChannelIdsMsg.ChainHash = s
              ShortIdsEncodingType = ty
              ShortIds = ids
              TLVs = tlvs }
@@ -490,7 +490,7 @@ let replyShortChannelIdsEndGen = gen {
     let! b = Arb.generate<bool>
     let! chainHash = chainHashGen
     return {
-        ReplyShortChannelIdsEnd.Complete = b
+        ReplyShortChannelIdsEndMsg.Complete = b
         ChainHash = chainHash
     }
 }
@@ -500,13 +500,13 @@ let private queryChannelRangeTLVGen =
         (1, Arb.generate<uint8>  |> Gen.filter(fun x -> 0xfduy > x) |> Gen.map(QueryOption.Create >> QueryChannelRangeTLV.Opt))
         (1, genericTLVGen([1UL]) |> Gen.map(QueryChannelRangeTLV.Unknown))
     |]
-let queryChannelRangeGen: Gen<QueryChannelRange> = gen {
+let queryChannelRangeGen: Gen<QueryChannelRangeMsg> = gen {
     let! chainHash = chainHashGen
     let! firstBlockNum = Arb.generate<uint32> |> Gen.map(BlockHeight)
     let! nBlocks = Arb.generate<uint32>
     let! tlvs = queryChannelRangeTLVGen |> Gen.arrayOf
     return {
-        QueryChannelRange.ChainHash = chainHash
+        QueryChannelRangeMsg.ChainHash = chainHash
         FirstBlockNum = firstBlockNum
         NumberOfBlocks = nBlocks
         TLVs = tlvs
@@ -537,7 +537,7 @@ let private replyChannelRangeTLVGen n =
         (1, checksumPairsGen n)
         (1, genericTLVGen([1UL; 3UL]) |> Gen.map(ReplyChannelRangeTLV.Unknown))
     ]
-let replyChannelRangeGen: Gen<ReplyChannelRange> = gen {
+let replyChannelRangeGen: Gen<ReplyChannelRangeMsg> = gen {
     let! ch = chainHashGen
     let! firstBlockNum = Arb.generate<uint32> |> Gen.map(BlockHeight)
     let! nBlocks = Arb.generate<uint32>
@@ -547,7 +547,7 @@ let replyChannelRangeGen: Gen<ReplyChannelRange> = gen {
     let! shortChannelIds = shortChannelIdsGen |> Gen.arrayOfLength n.Get
     let! tlvs = replyChannelRangeTLVGen n.Get |> Gen.map(Array.singleton)
     return {
-        ReplyChannelRange.ChainHash = ch
+        ReplyChannelRangeMsg.ChainHash = ch
         FirstBlockNum = firstBlockNum
         NumOfBlocks = nBlocks
         Complete = complete
@@ -557,7 +557,7 @@ let replyChannelRangeGen: Gen<ReplyChannelRange> = gen {
     }
 }
 
-let gossipTimestampFilterGen: Gen<GossipTimestampFilter> = gen {
+let gossipTimestampFilterGen: Gen<GossipTimestampFilterMsg> = gen {
     let! ch = chainHashGen
     let! tsFirst = Arb.generate<uint32>
     let! tsRange = Arb.generate<uint32>

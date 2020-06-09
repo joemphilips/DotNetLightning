@@ -24,82 +24,82 @@ type PrimitiveGenerators =
     static member NodeId() = Arb.fromGen(NodeId <!> pubKeyGen)
     
 type P2PMsgGenerators =
-    static member Init() : Arbitrary<Init> =
+    static member Init() : Arbitrary<InitMsg> =
         Arb.fromGen(initGen)
 
-    static member ErrorMsg(): Arbitrary<ErrorMessage> =
+    static member ErrorMsg(): Arbitrary<ErrorMsg> =
         Arb.fromGen(errorMsgGen)
 
-    static member Ping() : Arbitrary<Ping> =
+    static member Ping() : Arbitrary<PingMsg> =
         Arb.fromGen(pingGen)
 
-    static member Pong() : Arbitrary<Pong> =
+    static member Pong() : Arbitrary<PongMsg> =
         Arb.fromGen(pongGen)
 
-    static member OpenChannel(): Arbitrary<OpenChannel> =
+    static member OpenChannel(): Arbitrary<OpenChannelMsg> =
         Arb.fromGen(openChannelGen)
 
-    static member AcceptChannel(): Arbitrary<AcceptChannel> =
+    static member AcceptChannel(): Arbitrary<AcceptChannelMsg> =
         Arb.fromGen(acceptChannelGen)
 
-    static member FundingCreated(): Arbitrary<FundingCreated> =
+    static member FundingCreated(): Arbitrary<FundingCreatedMsg> =
         Arb.fromGen(fundingCreatedGen)
 
-    static member FundingSigned(): Arbitrary<FundingSigned> =
+    static member FundingSigned(): Arbitrary<FundingSignedMsg> =
         Arb.fromGen(fundingSignedGen)
 
-    static member FundingLocked(): Arbitrary<FundingLocked> =
+    static member FundingLocked(): Arbitrary<FundingLockedMsg> =
         Arb.fromGen(fundingLockedGen)
 
-    static member Shutdown(): Arbitrary<Shutdown> =
+    static member Shutdown(): Arbitrary<ShutdownMsg> =
         Arb.fromGen(shutdownGen)
 
-    static member ClosingSigned(): Arbitrary<ClosingSigned> =
+    static member ClosingSigned(): Arbitrary<ClosingSignedMsg> =
         Arb.fromGen(closingSignedGen)
 
     static member OnionPacket(): Arbitrary<OnionPacket> =
         Arb.fromGen(onionPacketGen)
 
-    static member UpdateAddHTLC(): Arbitrary<UpdateAddHTLC> =
+    static member UpdateAddHTLC(): Arbitrary<UpdateAddHTLCMsg> =
         Arb.fromGen(updateAddHTLCGen)
 
-    static member UpdateFulfillHTLC(): Arbitrary<UpdateFulfillHTLC> =
+    static member UpdateFulfillHTLC(): Arbitrary<UpdateFulfillHTLCMsg> =
         Arb.fromGen(updateFulfillHTLCGen)
 
-    static member UpdateFailHTLC(): Arbitrary<UpdateFailHTLC> =
+    static member UpdateFailHTLC(): Arbitrary<UpdateFailHTLCMsg> =
         Arb.fromGen(updateFailHTLCGen)
 
-    static member UpdateFailMalformedHTLC(): Arbitrary<UpdateFailMalformedHTLC> =
+    static member UpdateFailMalformedHTLC(): Arbitrary<UpdateFailMalformedHTLCMsg> =
         Arb.fromGen(updateFailMalformedHTLCGen)
 
-    static member CommitmentSigned(): Arbitrary<CommitmentSigned> =
+    static member CommitmentSigned(): Arbitrary<CommitmentSignedMsg> =
         Arb.fromGen(commitmentSignedGen)
 
-    static member RevokeAndACK(): Arbitrary<RevokeAndACK> =
+    static member RevokeAndACK(): Arbitrary<RevokeAndACKMsg> =
         Arb.fromGen(revokeAndACKGen)
 
-    static member UdpateFee(): Arbitrary<UpdateFee> =
+    static member UpdateFee(): Arbitrary<UpdateFeeMsg> =
         Arb.fromGen(updateFeeGen)
 
-    static member ChannelReestablish(): Arbitrary<ChannelReestablish> =
+    static member ChannelReestablish(): Arbitrary<ChannelReestablishMsg> =
         Arb.fromGen(channelReestablishGen)
 
-    static member AnnouncementSignature(): Arbitrary<AnnouncementSignatures> =
+    static member AnnouncementSignatures(): Arbitrary<AnnouncementSignaturesMsg> =
         Arb.fromGen(announcementSignaturesGen)
 
-    static member UnsignedNodeAnnouncement(): Arbitrary<UnsignedNodeAnnouncement> =
+    static member UnsignedNodeAnnouncement(): Arbitrary<UnsignedNodeAnnouncementMsg> =
         Arb.fromGen unsignedNodeAnnouncementGen
 
-    static member NodeAnnouncement(): Arbitrary<NodeAnnouncement> =
+    static member NodeAnnouncement(): Arbitrary<NodeAnnouncementMsg> =
         Arb.fromGen nodeAnnouncementGen
 
-    static member ChannelAnnouncement(): Arbitrary<ChannelAnnouncement> =
+    static member ChannelAnnouncement(): Arbitrary<ChannelAnnouncementMsg> =
         Arb.fromGen channelAnnouncementGen
 
-    static member ChannelUpdate(): Arbitrary<ChannelUpdate> =
+    static member ChannelUpdate(): Arbitrary<ChannelUpdateMsg> =
         Arb.fromGen channelUpdateGen
         
-    static member QueryShortChannelIds(): Arbitrary<QueryShortChannelIds> =
+    static member QueryShortChannelIds(): Arbitrary<QueryShortChannelIdsMsg> =
         Arb.fromGen queryShortChannelIdsGen
 
     static member ReplyShortChannelIds() =

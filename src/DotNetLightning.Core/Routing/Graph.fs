@@ -91,11 +91,11 @@ module Graph =
     }
     
     type PublicChannel = private {
-        Announcement:  UnsignedChannelAnnouncement
+        Announcement:  UnsignedChannelAnnouncementMsg
         FundingTxId: TxId
         Capacity: Money
-        Update1Opt: UnsignedChannelUpdate option
-        Update2Opt: UnsignedChannelUpdate option
+        Update1Opt: UnsignedChannelUpdateMsg option
+        Update2Opt: UnsignedChannelUpdateMsg option
     }
         with
         member this.Ann = this.Announcement
@@ -107,7 +107,7 @@ module Graph =
                 Update1Opt = u1
                 Update2Opt = u2
             }
-    type GraphLabel = { Desc: ChannelDesc; Update: UnsignedChannelUpdate }
+    type GraphLabel = { Desc: ChannelDesc; Update: UnsignedChannelUpdateMsg }
         with
         static member Create (d, u) = { Desc = d; Update = u }
     module GraphEdge =
@@ -146,7 +146,7 @@ module Graph =
                 | :? WeightedPath as x -> this.CompareTo(x)
                 | _ -> -1
             
-    let internal getDesc (u: UnsignedChannelUpdate, ann: UnsignedChannelAnnouncement): ChannelDesc =
+    let internal getDesc (u: UnsignedChannelUpdateMsg, ann: UnsignedChannelAnnouncementMsg): ChannelDesc =
         let isNode1 = (u.ChannelFlags &&& 1uy) = 0uy
         let a, b = if (isNode1) then ann.NodeId1, ann.NodeId2 else ann.NodeId2, ann.NodeId1
         { ShortChannelId = u.ShortChannelId; A = a; B = b }
@@ -177,7 +177,7 @@ module Graph =
         member this.AddEdge(desc, update) =
             this.AddEdge({ Desc = desc; Update = update })
             
-        member this.AddEdges(edges: seq<ChannelDesc * UnsignedChannelUpdate>) =
+        member this.AddEdges(edges: seq<ChannelDesc * UnsignedChannelUpdateMsg>) =
             edges
             |> Seq.fold
                     (fun (acc: DirectedLNGraph) (desc, update) ->
@@ -238,7 +238,7 @@ module Graph =
         static member MakeGraph(channels: Map<ShortChannelId, PublicChannel>): DirectedLNGraph=
             let result = Dictionary<NodeId, GraphLabel list>()
             
-            let addDescToDict(desc: ChannelDesc, u: UnsignedChannelUpdate) =
+            let addDescToDict(desc: ChannelDesc, u: UnsignedChannelUpdateMsg) =
                 let previousV = result.TryGetValue(desc.B) |> function true, v -> v | false, _ -> List.empty
                 result.AddOrReplace(desc.B, GraphLabel.Create(desc, u) :: previousV)
                 match result.TryGetValue desc.A with

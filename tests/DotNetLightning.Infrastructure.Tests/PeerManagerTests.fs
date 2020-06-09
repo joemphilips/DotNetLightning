@@ -211,7 +211,7 @@ let tests = testList "PeerManagerTests" [
           bob.EventAggregator.AwaitPeerEvent(function | { PeerEvent = ReceivedPing _ } -> Some() | _ -> None)
       let aliceReceivedPongTask =
           alice.EventAggregator.AwaitPeerEvent(function | { PeerEvent = ReceivedPong _ } -> Some() | _ -> None)
-      do! actors.Initiator.PM.AcceptCommand({ PeerCommand = PeerCommand.EncodeMsg({ Ping.BytesLen = 22us;
+      do! actors.Initiator.PM.AcceptCommand({ PeerCommand = PeerCommand.EncodeMsg({ PingMsg.BytesLen = 22us;
                                                                                     PongLen = 32us })
                                               PeerId = bob.Id }).AsTask()
       let! t = bobReceivedPingTask |> Async.StartAsTask
@@ -225,7 +225,7 @@ let tests = testList "PeerManagerTests" [
           alice.EventAggregator.AwaitPeerEvent(function | { PeerEvent = ReceivedPing _ } -> Some() | _ -> None)
       let bobReceivedPongTask =
           bob.EventAggregator.AwaitPeerEvent(function | { PeerEvent = ReceivedPong _ } -> Some() | _ -> None)
-      do! actors.Responder.PM.AcceptCommand({ PeerCommand = PeerCommand.EncodeMsg({ Ping.BytesLen = 22us;
+      do! actors.Responder.PM.AcceptCommand({ PeerCommand = PeerCommand.EncodeMsg({ PingMsg.BytesLen = 22us;
                                                                                     PongLen = 32us })
                                               PeerId = alice.Id }).AsTask()
       let! t = aliceReceivedPingTask |> Async.StartAsTask
