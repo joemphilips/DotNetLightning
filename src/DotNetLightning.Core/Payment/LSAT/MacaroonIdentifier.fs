@@ -1,14 +1,10 @@
 namespace DotNetLightning.Payment.LSAT
+
 open System
-open System.Net
-open System.Net.Http.Headers
 open DotNetLightning.Utils.Primitives
 open NBitcoin
 open DotNetLightning.Core.Utils.Extensions
 open DotNetLightning.Utils
-open Macaroons
-open NSec.Cryptography
-open ResultUtils
 open NBitcoin.Crypto
 
 module private Helpers =
