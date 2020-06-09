@@ -69,7 +69,7 @@ namespace Macaroons.Tests
         }
 
 
-        [Fact]
+        [Fact(Skip = "Skip third party caveat tests")]
         public void CanSerializeAndDeserializeThirdPartyCaveats()
         {
             // Arrange

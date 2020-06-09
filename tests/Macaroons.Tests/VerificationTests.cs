@@ -160,7 +160,7 @@ namespace Macaroons.Tests
         }
 
 
-        [Fact]
+        [Fact(Skip = "Skip third party caveat tests")]
         public void CanVerifyWithMultipleDischargeMacaroons()
         {
             // Arrange
@@ -201,7 +201,7 @@ namespace Macaroons.Tests
         }
 
 
-        [Fact]
+        [Fact(Skip = "Skip third party caveat tests")]
         public void VerificationFailsWhenDischargeMacaroonIsMissing()
         {
             // Arrange
@@ -244,7 +244,7 @@ namespace Macaroons.Tests
         }
 
 
-        [Fact]
+        [Fact(Skip = "Skip third party caveat tests")]
         public void VerificationFailsWhenPredicatesForThirdPartyCaveatIsMissing()
         {
             // Arrange
@@ -285,7 +285,7 @@ namespace Macaroons.Tests
         }
 
 
-        [Fact]
+        [Fact(Skip = "Skip third party caveat tests")]
         public void VerificationFailsWhenHavingCircularMacaroonReferences()
         {
             // Arrange
