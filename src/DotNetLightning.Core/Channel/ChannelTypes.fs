@@ -94,7 +94,7 @@ module Data =
                                       }
         with
             interface IChannelStateData
-            static member Create (localParams) (remoteParams) (msg: OpenChannelMsg) acceptChannel =
+            static member Create (localParams) (remoteParams) (msg: OpenChannelMsg) acceptChannelMsg =
                 { ChannelFlags = msg.ChannelFlags
                   TemporaryFailure = msg.TemporaryChannelId
                   LocalParams = localParams
@@ -103,7 +103,7 @@ module Data =
                   PushMSat = msg.PushMSat
                   InitialFeeRatePerKw = msg.FeeRatePerKw
                   RemoteFirstPerCommitmentPoint = msg.FirstPerCommitmentPoint
-                  LastSent = acceptChannel }
+                  LastSent = acceptChannelMsg }
     type WaitForFundingSignedData = {
                                             ChannelId: ChannelId
                                             LocalParams: LocalParams

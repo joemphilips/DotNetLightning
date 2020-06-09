@@ -258,7 +258,7 @@ module Channel =
                 let localParams = state.InitFundee.LocalParams
                 let channelKeys = state.InitFundee.ChannelKeys
                 let localCommitmentSecret = ChannelUtils.buildCommitmentSecret (channelKeys.CommitmentSeed, 0UL)
-                let acceptChannel: AcceptChannelMsg = {
+                let acceptChannelMsg: AcceptChannelMsg = {
                     TemporaryChannelId = msg.TemporaryChannelId
                     DustLimitSatoshis = localParams.DustLimitSatoshis
                     MaxHTLCValueInFlightMsat = localParams.MaxHTLCValueInFlightMSat
@@ -276,8 +276,8 @@ module Channel =
                     ShutdownScriptPubKey = cs.Config.ChannelOptions.ShutdownScriptPubKey
                 }
                 let remoteParams = RemoteParams.FromOpenChannel cs.RemoteNodeId state.InitFundee.RemoteInit msg cs.Config.ChannelHandshakeConfig
-                let data = Data.WaitForFundingCreatedData.Create localParams remoteParams msg acceptChannel
-                return [ WeAcceptedOpenChannel(acceptChannel, data) ]
+                let data = Data.WaitForFundingCreatedData.Create localParams remoteParams msg acceptChannelMsg
+                return [ WeAcceptedOpenChannel(acceptChannelMsg, data) ]
             }
         | WaitForOpenChannel _state, ChannelCommand.Close _spk ->
             [ ChannelEvent.Closed ] |> Ok

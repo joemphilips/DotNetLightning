@@ -218,8 +218,8 @@ type ChannelManager(log: ILogger<ChannelManager>,
                     return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyUpdateFee m)
                 | m ->
                         return failwithf "Unknown Channel Message (%A). This should never happen" m
-            | PeerEvent.ReceivedInit(init, _) ->
-                this.RemoteInits.TryAdd(e.NodeId.Value, init) |> ignore
+            | PeerEvent.ReceivedInit(initMsg, _) ->
+                this.RemoteInits.TryAdd(e.NodeId.Value, initMsg) |> ignore
                 return ()
             | PeerEvent.FailedToBroadcastTransaction(_tx) ->
                 return ()

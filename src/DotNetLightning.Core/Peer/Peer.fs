@@ -133,10 +133,10 @@ module Peer =
         | NoiseComplete, ReceivedRoutingMsg (_, pce)
         | NoiseComplete, ReceivedChannelMsg (_, pce) ->
             { state with ChannelEncryptor = pce; }
-        | NoiseComplete, ReceivedInit (init, pce) ->
+        | NoiseComplete, ReceivedInit (initMsg, pce) ->
             { state with
                 ChannelEncryptor = pce;
-                TheirFeatures = Some init.Features }
+                TheirFeatures = Some initMsg.Features }
         | NoiseComplete, MsgEncoded(_, pce) ->
             { state with ChannelEncryptor = pce }
         | state, e ->

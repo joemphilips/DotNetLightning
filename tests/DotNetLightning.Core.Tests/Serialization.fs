@@ -63,20 +63,20 @@ module SerializationTest =
         testList "SerializationTest ported from rust-lightning" [
             testCase "channel_reestablish no secret" <| fun _ ->
                 let cid = ChannelId (uint256([|4; 0; 0; 0; 0; 0; 0; 0; 5; 0; 0; 0; 0; 0; 0; 0; 6; 0; 0; 0; 0; 0; 0; 0; 7; 0; 0; 0; 0; 0; 0; 0|] |> Array.map((uint8)))) 
-                let cr = {
+                let channelReestablishMsg = {
                     ChannelId = cid
                     NextLocalCommitmentNumber = 3UL
                     NextRemoteCommitmentNumber = 4UL
                     DataLossProtect = None
                     }
-                let actual = cr.ToBytes()
+                let actual = channelReestablishMsg.ToBytes()
                 let expected =
                     [|4; 0; 0; 0; 0; 0; 0; 0; 5; 0; 0; 0; 0; 0; 0; 0; 6; 0; 0; 0; 0; 0; 0; 0; 7; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 3; 0; 0; 0; 0; 0; 0; 0; 4|] 
                     |> Array.map(uint8)
                 Expect.equal actual expected "channel_reestablish_no_secret failed"
 
             testCase "channel_reestablish with secret" <| fun _ ->
-                let cr = {
+                let channelReestablishMsg = {
                     ChannelId = ChannelId(uint256([|4; 0; 0; 0; 0; 0; 0; 0; 5; 0; 0; 0; 0; 0; 0; 0; 6; 0; 0; 0; 0; 0; 0; 0; 7; 0; 0; 0; 0; 0; 0; 0 |] |> Array.map(uint8)))
                     NextLocalCommitmentNumber = 3UL
                     NextRemoteCommitmentNumber = 4UL
@@ -86,7 +86,7 @@ module SerializationTest =
                                       })
                 }
                 let expected = [|4; 0; 0; 0; 0; 0; 0; 0; 5; 0; 0; 0; 0; 0; 0; 0; 6; 0; 0; 0; 0; 0; 0; 0; 7; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 3; 0; 0; 0; 0; 0; 0; 0; 4; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 3; 27; 132; 197; 86; 123; 18; 100; 64; 153; 93; 62; 213; 170; 186; 5; 101; 215; 30; 24; 52; 96; 72; 25; 255; 156; 23; 245; 233; 213; 221; 7; 143 |] |> Array.map (byte)
-                Expect.equal (cr.ToBytes()) expected ""
+                Expect.equal (channelReestablishMsg.ToBytes()) expected ""
             testCase "short_channel_id" <| fun _ ->
                 let actual = ShortChannelId.FromUInt64(2316138423780173UL)
                 let expected = [| 0uy; 8uy; 58uy; 132uy; 0uy; 0uy; 3uy; 77uy;|]
@@ -124,7 +124,7 @@ module SerializationTest =
                         BitcoinKey2 = !> privKey4.PubKey
                         ExcessData = if excessData then ([| 10; 0; 0; 20; 0; 0; 30; 0; 0; 40 |] |> Array.map(byte)) else [||]
                     }
-                    let channelAnnouncement = {
+                    let channelAnnouncementMsg = {
                                                   NodeSignature1 = sig1
                                                   NodeSignature2 = sig2
                                                   BitcoinSignature1 = sig3
@@ -141,8 +141,8 @@ module SerializationTest =
                     expected <- Array.append expected (hex.DecodeData("00083a840000034d031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f024d4b6cd1361032ca9bd2aeb9d900aa4d45d9ead80ac9423374c451a7254d076602531fe6068134503d2723133227c867ac8fa6c83c537e9a44c3c5bdbdcb1fe33703462779ad4aad39514614751a71085f2f10e1c7a593e4e030efb5b8721ce55b0b"))
                     if excessData then
                         expected <- Array.append expected (hex.DecodeData("0a00001400001e000028"))
-                    Expect.equal (channelAnnouncement.ToBytes().[300..]) expected.[300..] "mismatch in postfix"
-                    Expect.equal (channelAnnouncement.ToBytes()) expected ""
+                    Expect.equal (channelAnnouncementMsg.ToBytes().[300..]) expected.[300..] "mismatch in postfix"
+                    Expect.equal (channelAnnouncementMsg.ToBytes()) expected ""
                 channelAnnouncementTestCore (false, false)
                 channelAnnouncementTestCore (false, false)
                 channelAnnouncementTestCore (true, false)
@@ -234,7 +234,7 @@ module SerializationTest =
                     for addr in addresses do
                         addrLen <- addrLen + addr.Length + 1us
 
-                    let unsignedNodeAnnouncement = {
+                    let unsignedNodeAnnouncementMsg = {
                         Features = features
                         Timestamp = 20190119u
                         NodeId = NodeId(pubkey1)
@@ -370,13 +370,13 @@ module SerializationTest =
                                                           127uy
                                                           253uy|] else [||]
                     }
-                    addrLen <- addrLen + uint16 unsignedNodeAnnouncement.ExcessAddressData.Length
-                    let nodeAnnouncement = {
+                    addrLen <- addrLen + uint16 unsignedNodeAnnouncementMsg.ExcessAddressData.Length
+                    let nodeAnnouncementMsg = {
                         NodeAnnouncementMsg.Signature = sig1
-                        Contents = unsignedNodeAnnouncement
+                        Contents = unsignedNodeAnnouncementMsg
                     }
 
-                    let actual = nodeAnnouncement.ToBytes()
+                    let actual = nodeAnnouncementMsg.ToBytes()
                     let mutable expected = hex.DecodeData("d977cb9b53d93a6ff64bb5f1e158b4094b66e798fb12911168a3ccdf80a83096340a6a95da0ae8d9f776528eecdbb747eb6b545495a4319ed5378e35b21e073a")
                     expected <- Array.append expected (hex.DecodeData("0000"))
                     expected <- Array.append expected (hex.DecodeData("013413a7031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f2020201010101010101010101010101010101010101010101010101010101010101010"))
@@ -408,7 +408,7 @@ module SerializationTest =
             testCase "channel_update msg" <| fun _ ->
                 let channelUpdateTestCore (nonBitcoinChainHash: bool, direction: bool, disable: bool, htlcMaximumMSat: bool) =
                     let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
-                    let unsignedChannelUpdate = {
+                    let unsignedChannelUpdateMsg = {
                         UnsignedChannelUpdateMsg.ChainHash = if (not nonBitcoinChainHash) then uint256(hex.DecodeData("6fe28c0ab6f1b372c1a6a246ae63f74f931e8365e15a089c68d6190000000000")) else uint256(hex.DecodeData("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"))
                         ShortChannelId = ShortChannelId.FromUInt64(2316138423780173UL)
                         Timestamp = 20190119u
@@ -427,11 +427,11 @@ module SerializationTest =
                             else
                                 None
                     }
-                    let channelUpdate = {
+                    let channelUpdateMsg = {
                         ChannelUpdateMsg.Signature = sig1
-                        Contents = unsignedChannelUpdate
+                        Contents = unsignedChannelUpdateMsg
                     }
-                    let actual = channelUpdate.ToBytes()
+                    let actual = channelUpdateMsg.ToBytes()
                     let mutable expected = hex.DecodeData("d977cb9b53d93a6ff64bb5f1e158b4094b66e798fb12911168a3ccdf80a83096340a6a95da0ae8d9f776528eecdbb747eb6b545495a4319ed5378e35b21e073a")
                     if nonBitcoinChainHash then
                         expected <- Array.append expected (hex.DecodeData("43497fd7f826957108f4a30fd9cec3aeba79972084e90ead01ea330900000000"))
@@ -460,7 +460,7 @@ module SerializationTest =
 
             testCase "open_channel" <| fun _ ->
                 let openChannelTestCore(nonBitcoinChainHash: bool, randomBit: bool, shutdown: bool) =
-                    let openChannel = {
+                    let openChannelMsg = {
                         Chainhash = if (not nonBitcoinChainHash) then uint256(hex.DecodeData("6fe28c0ab6f1b372c1a6a246ae63f74f931e8365e15a089c68d6190000000000")) else uint256(hex.DecodeData("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"))
                         TemporaryChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
                         FundingSatoshis = Money.Satoshis(1311768467284833366UL)
@@ -481,7 +481,7 @@ module SerializationTest =
                         ChannelFlags = if randomBit then 1uy <<< 5 else 0uy
                         ShutdownScriptPubKey = if shutdown then Some (pubkey1.Hash.ScriptPubKey) else None
                     }
-                    let actual = openChannel.ToBytes()
+                    let actual = openChannelMsg.ToBytes()
                     let mutable expected = [||]
                     if nonBitcoinChainHash then
                         expected <- Array.append expected (hex.DecodeData("43497fd7f826957108f4a30fd9cec3aeba79972084e90ead01ea330900000000"))
@@ -495,7 +495,7 @@ module SerializationTest =
                     if shutdown then
                         expected <- Array.append expected (hex.DecodeData("001976a91479b000887626b294a914501a4cd226b58b23598388ac"))
                     CheckArrayEqual actual expected
-                    Expect.equal (openChannel.Clone()) openChannel ""
+                    Expect.equal (openChannelMsg.Clone()) openChannelMsg ""
                 openChannelTestCore(false, false, false)
                 openChannelTestCore(true, false, false)
                 openChannelTestCore(false, true, false)
@@ -503,7 +503,7 @@ module SerializationTest =
                 openChannelTestCore(true, true, true)
             testCase "accept_channel" <| fun _ ->
                 let acceptChannelTestCore(shutdown: bool) =
-                    let acceptChannel = {
+                    let acceptChannelMsg = {
                         AcceptChannelMsg.TemporaryChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy|]))
                         DustLimitSatoshis = Money.Satoshis(1311768467284833366L)
                         MaxHTLCValueInFlightMsat = LNMoney.MilliSatoshis(2536655962884945560L)
@@ -520,7 +520,7 @@ module SerializationTest =
                         FirstPerCommitmentPoint = pubkey6
                         ShutdownScriptPubKey = if shutdown then Some(pubkey1.Hash.ScriptPubKey) else None
                     }
-                    let actual = acceptChannel.ToBytes()
+                    let actual = acceptChannelMsg.ToBytes()
                     let mutable expected = hex.DecodeData("020202020202020202020202020202020202020202020202020202020202020212345678901234562334032891223698321446687011447600083a840000034d000c89d4c0bcc0bc031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f024d4b6cd1361032ca9bd2aeb9d900aa4d45d9ead80ac9423374c451a7254d076602531fe6068134503d2723133227c867ac8fa6c83c537e9a44c3c5bdbdcb1fe33703462779ad4aad39514614751a71085f2f10e1c7a593e4e030efb5b8721ce55b0b0362c0a046dacce86ddd0343c6d3c7c79c2208ba0d9c9cf24a6d046d21d21f90f703f006a18d5653c4edf5391ff23a61f03ff83d237e880ee61187fa9f379a028e0a")
                     if shutdown then
                         expected <- Array.append expected (hex.DecodeData("001976a91479b000887626b294a914501a4cd226b58b23598388ac"))
@@ -531,32 +531,32 @@ module SerializationTest =
                 let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
                 let txData = hex.DecodeData("c2d4449afa8d26140898dd54d3390b057ba2a5afcf03ba29d7dc0d8b9ffe966e")
                 Array.Reverse txData
-                let fundingCreated = {
+                let fundingCreatedMsg = {
                     FundingCreatedMsg.TemporaryChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
                     FundingTxId = TxId(uint256(txData, true))
                     FundingOutputIndex = 255us |> TxOutIndex
                     Signature = sig1
                 }
-                let actual = fundingCreated.ToBytes()
+                let actual = fundingCreatedMsg.ToBytes()
                 let expected = hex.DecodeData("02020202020202020202020202020202020202020202020202020202020202026e96fe9f8b0ddcd729ba03cfafa5a27b050b39d354dd980814268dfa9a44d4c200ffd977cb9b53d93a6ff64bb5f1e158b4094b66e798fb12911168a3ccdf80a83096340a6a95da0ae8d9f776528eecdbb747eb6b545495a4319ed5378e35b21e073a")
                 // Expect.equal (actual) expected ""
                 CheckArrayEqual actual expected
             testCase "funding_signed" <| fun _ ->
                 let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
-                let fundingSigned = {
+                let fundingSignedMsg = {
                     FundingSignedMsg.ChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
                     Signature = sig1
                 }
                 let expected = hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202d977cb9b53d93a6ff64bb5f1e158b4094b66e798fb12911168a3ccdf80a83096340a6a95da0ae8d9f776528eecdbb747eb6b545495a4319ed5378e35b21e073a")
-                CheckArrayEqual (fundingSigned.ToBytes()) expected
+                CheckArrayEqual (fundingSignedMsg.ToBytes()) expected
                 ()
             testCase "funding_locked" <| fun _ ->
-                let fundingLocked = {
+                let fundingLockedMsg = {
                     FundingLockedMsg.ChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
                     NextPerCommitmentPoint = pubkey1
                 }
                 let expected = hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f")
-                CheckArrayEqual (fundingLocked.ToBytes()) expected
+                CheckArrayEqual (fundingLockedMsg.ToBytes()) expected
             testCase "shutdown" <| fun _ ->
                 let shutDownTestCore (scriptType: uint8) =
                     let script = Script("OP_TRUE")
@@ -569,7 +569,7 @@ module SerializationTest =
                             pubkey1.WitHash.ScriptPubKey
                         else
                             script.WitHash.ScriptPubKey
-                    let shutdown = {
+                    let shutdownMsg = {
                         ShutdownMsg.ChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
                         ScriptPubKey = spk
                     }
@@ -582,7 +582,7 @@ module SerializationTest =
                                                            hex.DecodeData("0016001479b000887626b294a914501a4cd226b58b235983")
                                                        else
                                                            hex.DecodeData("002200204ae81572f06e1b88fd5ced7a1a000945432e83e1551e6f721ee9c00b8cc33260"))
-                    CheckArrayEqual (shutdown.ToBytes()) expected
+                    CheckArrayEqual (shutdownMsg.ToBytes()) expected
                 shutDownTestCore(1uy)
                 shutDownTestCore(2uy)
                 shutDownTestCore(3uy)
@@ -594,7 +594,7 @@ module SerializationTest =
                     HopData = [| for _ in 1..(20*65) -> 1uy |]
                     HMAC = uint256([| for _ in 0..31 -> 2uy |])
                 }
-                let updateAddHtlc = {
+                let updateAddHtlcMsg = {
                     UpdateAddHTLCMsg.ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
                     HTLCId = HTLCId(2316138423780173UL)
                     Amount = LNMoney.MilliSatoshis 3608586615801332854L
@@ -603,43 +603,43 @@ module SerializationTest =
                     OnionRoutingPacket = onionRoutingPacket
                 }
                 let expected = hex.DecodeData("020202020202020202020202020202020202020202020202020202020202020200083a840000034d32144668701144760101010101010101010101010101010101010101010101010101010101010101000c89d4ff031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010202020202020202020202020202020202020202020202020202020202020202")
-                CheckArrayEqual (updateAddHtlc.ToBytes()) expected
+                CheckArrayEqual (updateAddHtlcMsg.ToBytes()) expected
 
             testCase "update_fulfill_htlc" <| fun _ ->
-                let updateFulfillHTLC = {
+                let updateFulfillHTLCMsg = {
                     ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
                     HTLCId = HTLCId(2316138423780173UL)
                     PaymentPreimage = PaymentPreimage.Create([| for _ in 0..(PaymentPreimage.LENGTH - 1) -> 1uy |])
                 }
                 let expected = hex.DecodeData("020202020202020202020202020202020202020202020202020202020202020200083a840000034d0101010101010101010101010101010101010101010101010101010101010101")
-                CheckArrayEqual (updateFulfillHTLC.ToBytes()) expected
+                CheckArrayEqual (updateFulfillHTLCMsg.ToBytes()) expected
             testCase "update_fail_htlc" <| fun _ ->
                 let reason = {
                     Data = [| for _ in 0..31 -> 1uy |]
                 }
-                let updateFailHTLC = {
+                let updateFailHTLCMsg = {
                     ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
                     HTLCId = HTLCId(2316138423780173UL)
                     Reason = reason
                 }
                 let expected = hex.DecodeData("020202020202020202020202020202020202020202020202020202020202020200083a840000034d00200101010101010101010101010101010101010101010101010101010101010101")
-                CheckArrayEqual (updateFailHTLC.ToBytes()) expected
+                CheckArrayEqual (updateFailHTLCMsg.ToBytes()) expected
             testCase "update_fail_malformed_htlc" <| fun _ ->
-                let updateFailMalformedHTLC = {
+                let updateFailMalformedHTLCMsg = {
                     ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
                     HTLCId = HTLCId(2316138423780173UL)
                     Sha256OfOnion = uint256([| for _ in 0..31 -> 1uy |])
                     FailureCode = OnionError.FailureCode(255us)
                 } 
                 let expected = hex.DecodeData("020202020202020202020202020202020202020202020202020202020202020200083a840000034d010101010101010101010101010101010101010101010101010101010101010100ff")
-                Expect.equal (updateFailMalformedHTLC.ToBytes()) expected ""
+                Expect.equal (updateFailMalformedHTLCMsg.ToBytes()) expected ""
             testCase "commitment_signed" <| fun _ ->
                 let testCommitmentSignedCore (htlcs: bool) =
                     let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
                     let sig2 = signMessageWith privKey2 "01010101010101010101010101010101"
                     let sig3 = signMessageWith privKey3 "01010101010101010101010101010101"
                     let sig4 = signMessageWith privKey4 "01010101010101010101010101010101"
-                    let commitmentSigned = {
+                    let commitmentSignedMsg = {
                         ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
                         Signature = sig1
                         HTLCSignatures = if htlcs then [ sig2; sig3; sig4 ] else []
@@ -649,26 +649,26 @@ module SerializationTest =
                         expected <- Array.append expected (hex.DecodeData("00031735b6a427e80d5fe7cd90a2f4ee08dc9c27cda7c35a4172e5d85b12c49d4232537e98f9b1f3c5e6989a8b9644e90e8918127680dbd0d4043510840fc0f1e11a216c280b5395a2546e7e4b2663e04f811622f15a4f91e83aa2e92ba2a573c139142c54ae63072a1ec1ee7dc0c04bde5c847806172aa05c92c22ae8e308d1d2692b12cc195ce0a2d1bda6a88befa19fa07f51caa75ce83837f28965600b8aacab0855ffb0e741ec5f7c41421e9829a9d48611c8c831f71be5ea73e66594977ffd"))
                     else
                         expected <- Array.append expected (hex.DecodeData("0000"))
-                    CheckArrayEqual (commitmentSigned.ToBytes()) expected
+                    CheckArrayEqual (commitmentSignedMsg.ToBytes()) expected
 
                 testCommitmentSignedCore true
                 testCommitmentSignedCore false
             testCase "revoke_and_ack" <| fun _ ->
-                let raa = {
+                let revokeAndACKMsg = {
                     ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
                     PerCommitmentSecret = PaymentPreimage.Create([| for _ in 0..(PaymentPreimage.LENGTH - 1) -> 1uy |])
                     NextPerCommitmentPoint = pubkey1
                 }
                 let expected = hex.DecodeData("02020202020202020202020202020202020202020202020202020202020202020101010101010101010101010101010101010101010101010101010101010101031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f")
-                CheckArrayEqual (raa.ToBytes()) expected
+                CheckArrayEqual (revokeAndACKMsg.ToBytes()) expected
             testCase "update_fee" <| fun _ ->
-                let updateFee = {
+                let updateFeeMsg = {
                     ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
                     FeeRatePerKw = FeeRatePerKw(20190119u)
                 }
                 let expected = hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202013413a7")
                 // not using CheckArrayEqual since it is smaller than 50
-                Expect.equal (updateFee.ToBytes()) expected ""
+                Expect.equal (updateFeeMsg.ToBytes()) expected ""
 
             testCase "init" <| fun _ ->
                 let initTestCore (initialRoutingSync: bool) =
@@ -678,7 +678,7 @@ module SerializationTest =
                         if initialRoutingSync then "0b1000" |> BitArray.TryParse else BitArray.TryParse("")
                         |> function Ok ba -> ba | Error e -> failwith e
 
-                    let init = {
+                    let initMsg = {
                         Features = [| globalFeatures; localFeatures |] |> BitArray.Concat |> FeatureBit.CreateUnsafe
                         TLVStream = [||]
                     }
@@ -688,31 +688,31 @@ module SerializationTest =
                         expected <- Array.append expected (hex.DecodeData("000108"))
                     else
                         expected <- Array.append expected (hex.DecodeData("0000"))
-                    Expect.equal (init.ToBytes()) (expected) ""
+                    Expect.equal (initMsg.ToBytes()) (expected) ""
                 initTestCore(false)
                 initTestCore(true)
 
             testCase "error" <| fun _ ->
-                let err = {
+                let errorMsg = {
                     ChannelId = WhichChannel.SpecificChannel(ChannelId(uint256([| for _ in 0..31 -> 2uy |])))
                     Data = ascii.GetBytes("rust-lightning")
                 }
                 let expected = hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202000e727573742d6c696768746e696e67")
-                Expect.equal (err.ToBytes()) (expected) ""
+                Expect.equal (errorMsg.ToBytes()) (expected) ""
 
             testCase "ping" <| fun _ ->
-                let ping = {
+                let pingMsg = {
                     PongLen = 64us
                     BytesLen = 64us
                 }
                 let expected = hex.DecodeData("0040004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
-                Expect.equal (ping.ToBytes()) (expected) ""
+                Expect.equal (pingMsg.ToBytes()) (expected) ""
             testCase "pong" <| fun _ ->
-                let ping = {
+                let pongMsg = {
                     BytesLen = 64us
                 }
                 let expected = hex.DecodeData("004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
-                Expect.equal (ping.ToBytes()) (expected) ""
+                Expect.equal (pongMsg.ToBytes()) (expected) ""
                 
       ]
         

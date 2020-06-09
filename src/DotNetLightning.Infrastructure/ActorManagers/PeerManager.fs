@@ -126,11 +126,11 @@ type PeerManager(eventAggregator: IEventAggregator,
                     log.LogError(sprintf "PongLen is too long %A" ping)
             | ReceivedPong (_pong, _) ->
                 sprintf "Received pong from %A"  e.PeerId |> log.LogDebug
-            | ReceivedInit (init, _) ->
+            | ReceivedInit (initMsg, _) ->
                 let peerId = e.PeerId
                 let peerActor = this.KnownPeers.[peerId]
                 let peer = peerActor.State
-                sprintf "Received peer Init message: %A" init
+                sprintf "Received peer Init message: %A" initMsg
                     |> log.LogInformation
                 let theirNodeId = if peer.TheirNodeId.IsSome then peer.TheirNodeId.Value else
                                     let msg = "peer node id is not set. This should never happen"

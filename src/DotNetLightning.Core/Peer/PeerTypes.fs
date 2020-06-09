@@ -15,7 +15,7 @@ type PeerEvent =
     | ReceivedError of error: ErrorMsg * newPCE: PeerChannelEncryptor
     | ReceivedPing of ping: PingMsg * newPCE: PeerChannelEncryptor
     | ReceivedPong of ping: PongMsg * newPCE: PeerChannelEncryptor
-    | ReceivedInit of init: InitMsg * newPCE: PeerChannelEncryptor
+    | ReceivedInit of initMsg: InitMsg * newPCE: PeerChannelEncryptor
     | ReceivedRoutingMsg of msg: IRoutingMsg * newPCE: PeerChannelEncryptor
     | ReceivedChannelMsg of msg: IChannelMsg * newPCE: PeerChannelEncryptor
     
