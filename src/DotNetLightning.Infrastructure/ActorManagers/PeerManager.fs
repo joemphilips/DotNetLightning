@@ -82,7 +82,7 @@ type PeerManager(eventAggregator: IEventAggregator,
         (this.KnownPeers.[peerId] :> IDisposable).Dispose()
         this.KnownPeers.Remove(peerId) |> ignore
     member val Init = {
-            Init.Features = nodeParamsValue.Features
+            InitMsg.Features = nodeParamsValue.Features
             TLVStream = [| InitTLV.Networks[|network.ChainHash|] |]
         } with get
         
@@ -120,17 +120,17 @@ type PeerManager(eventAggregator: IEventAggregator,
                 sprintf "Received ping from %A" e.PeerId
                 |> log.LogDebug
                 if (ping.PongLen < 65532us) then
-                    let pong = { Pong.BytesLen = ping.PongLen }
+                    let pong = { PongMsg.BytesLen = ping.PongLen }
                     do! (this.KnownPeers.[e.PeerId] :> IActor<_>). Put(EncodeMsg pong)
                 else
                     log.LogError(sprintf "PongLen is too long %A" ping)
             | ReceivedPong (_pong, _) ->
                 sprintf "Received pong from %A"  e.PeerId |> log.LogDebug
-            | ReceivedInit (init, _) ->
+            | ReceivedInit (initMsg, _) ->
                 let peerId = e.PeerId
                 let peerActor = this.KnownPeers.[peerId]
                 let peer = peerActor.State
-                sprintf "Received peer Init message: %A" init
+                sprintf "Received peer Init message: %A" initMsg
                     |> log.LogInformation
                 let theirNodeId = if peer.TheirNodeId.IsSome then peer.TheirNodeId.Value else
                                     let msg = "peer node id is not set. This should never happen"

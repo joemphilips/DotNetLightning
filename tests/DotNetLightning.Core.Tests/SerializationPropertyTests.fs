@@ -26,91 +26,91 @@ let testList1 =
 [<Tests>]
 let testList2 =
     testList "SerializationPropertyTest" [
-        testPropertyWithConfig config "init" <| fun (msg: Init) ->
+        testPropertyWithConfig config "init" <| fun (msg: InitMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        testPropertyWithConfig config "ping" <| fun (msg: Ping) ->
+        testPropertyWithConfig config "ping" <| fun (msg: PingMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        testPropertyWithConfig config "pong" <| fun (msg: Pong) ->
+        testPropertyWithConfig config "pong" <| fun (msg: PongMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        testPropertyWithConfig config "open_channel" <| fun (msg: OpenChannel) ->
+        testPropertyWithConfig config "open_channel" <| fun (msg: OpenChannelMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        testPropertyWithConfig config "accept_channel" <| fun (msg: AcceptChannel) ->
+        testPropertyWithConfig config "accept_channel" <| fun (msg: AcceptChannelMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        testPropertyWithConfig config "funding_created" <| fun (msg: FundingCreated) ->
+        testPropertyWithConfig config "funding_created" <| fun (msg: FundingCreatedMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        testPropertyWithConfig config "funding_signed" <| fun (msg: FundingSigned) ->
+        testPropertyWithConfig config "funding_signed" <| fun (msg: FundingSignedMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        testPropertyWithConfig config "funding_locked" <| fun (msg: FundingLocked) ->
+        testPropertyWithConfig config "funding_locked" <| fun (msg: FundingLockedMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        testPropertyWithConfig config "shutdown" <| fun (msg: Shutdown) ->
+        testPropertyWithConfig config "shutdown" <| fun (msg: ShutdownMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        testPropertyWithConfig config "closing_signed" <| fun (msg: ClosingSigned) ->
+        testPropertyWithConfig config "closing_signed" <| fun (msg: ClosingSignedMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
 
         testPropertyWithConfig config "onion_packet" <| fun (msg: OnionPacket) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        testPropertyWithConfig config "update_add_htlc" <| fun (msg: UpdateAddHTLC) ->
+        testPropertyWithConfig config "update_add_htlc" <| fun (msg: UpdateAddHTLCMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        testPropertyWithConfig config "update_fulfill_htlc" <| fun (msg: UpdateFulfillHTLC) ->
+        testPropertyWithConfig config "update_fulfill_htlc" <| fun (msg: UpdateFulfillHTLCMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        testPropertyWithConfig config "update_fail_htlc" <| fun (msg: UpdateFailHTLC) ->
+        testPropertyWithConfig config "update_fail_htlc" <| fun (msg: UpdateFailHTLCMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        testPropertyWithConfig config "update_fail_malformed_htlc" <| fun (msg: UpdateFailMalformedHTLC) ->
+        testPropertyWithConfig config "update_fail_malformed_htlc" <| fun (msg: UpdateFailMalformedHTLCMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        testPropertyWithConfig config "commitment_signed" <| fun (msg: CommitmentSigned) ->
+        testPropertyWithConfig config "commitment_signed" <| fun (msg: CommitmentSignedMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        testPropertyWithConfig config "revoke_and_ack" <| fun (msg: RevokeAndACK) ->
+        testPropertyWithConfig config "revoke_and_ack" <| fun (msg: RevokeAndACKMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        testPropertyWithConfig config "update_fee" <| fun (msg: UpdateFee) ->
+        testPropertyWithConfig config "update_fee" <| fun (msg: UpdateFeeMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        testPropertyWithConfig config "channel_reestablish" <| fun (msg: ChannelReestablish) ->
+        testPropertyWithConfig config "channel_reestablish" <| fun (msg: ChannelReestablishMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        testPropertyWithConfig config "announcement_signatures" <| fun (msg: AnnouncementSignatures) ->
+        testPropertyWithConfig config "announcement_signatures" <| fun (msg: AnnouncementSignaturesMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        testPropertyWithConfig config "node_announcement(unsigned contents)" <| fun (msg: UnsignedNodeAnnouncement) ->
+        testPropertyWithConfig config "node_announcement(unsigned contents)" <| fun (msg: UnsignedNodeAnnouncementMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        testPropertyWithConfig config "node_announcement" <| fun (msg: NodeAnnouncement) ->
+        testPropertyWithConfig config "node_announcement" <| fun (msg: NodeAnnouncementMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        testPropertyWithConfig config "channel_announcement" <| fun (msg: ChannelAnnouncement) ->
+        testPropertyWithConfig config "channel_announcement" <| fun (msg: ChannelAnnouncementMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        testPropertyWithConfig config "channel_update" <| fun (msg: ChannelUpdate) ->
+        testPropertyWithConfig config "channel_update" <| fun (msg: ChannelUpdateMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
 
-        testPropertyWithConfig config "query_short_channel_ids" <| fun (msg: QueryShortChannelIds) ->
+        testPropertyWithConfig config "query_short_channel_ids" <| fun (msg: QueryShortChannelIdsMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
         
-        testPropertyWithConfig config "reply_short_channel_ids" <| fun (msg: ReplyShortChannelIdsEnd) ->
+        testPropertyWithConfig config "reply_short_channel_ids" <| fun (msg: ReplyShortChannelIdsEndMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
             
-        testPropertyWithConfig config "query_channel_range" <| fun (msg: QueryChannelRange) ->
+        testPropertyWithConfig config "query_channel_range" <| fun (msg: QueryChannelRangeMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
             
-        testPropertyWithConfig config "reply_channel_range" <| fun (msg: ReplyChannelRange) ->
+        testPropertyWithConfig config "reply_channel_range" <| fun (msg: ReplyChannelRangeMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
             
-        testPropertyWithConfig config "gossip_timestamp_filter" <| fun (msg: GossipTimestampFilter) ->
+        testPropertyWithConfig config "gossip_timestamp_filter" <| fun (msg: GossipTimestampFilterMsg) ->
             Expect.equal (msg.Clone()) (msg) ""
             
         testPropertyWithConfig config "lightning p2p msg" <| fun (msg: ILightningMsg) ->

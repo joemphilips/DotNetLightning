@@ -14,8 +14,8 @@ type PendingForwardHTLCInfo = {
 }
 
 type HTLCFailureMsg =
-    | Relay of UpdateFailHTLC
-    | Malformed of UpdateFailMalformedHTLC
+    | Relay of UpdateFailHTLCMsg
+    | Malformed of UpdateFailMalformedHTLCMsg
 
 type PendingHTLCStatus =
     | Forward of PendingForwardHTLCInfo

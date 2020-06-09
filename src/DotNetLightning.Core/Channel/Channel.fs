@@ -60,9 +60,11 @@ module Channel =
             result {
                 let! closingTx = Transactions.makeClosingTx (cm.FundingScriptCoin) (localSpk) (remoteSpk) (cm.LocalParams.IsFunder) (dustLimitSatoshis) (closingFee) (cm.LocalCommit.Spec) n
                 let localSignature, psbtUpdated = keyRepo.GetSignatureFor(closingTx.Value, localFundingPk)
-                let msg = { ClosingSigned.ChannelId = cm.ChannelId
-                            FeeSatoshis = closingFee
-                            Signature = localSignature.Signature |> LNECDSASignature }
+                let msg: ClosingSignedMsg = {
+                    ChannelId = cm.ChannelId
+                    FeeSatoshis = closingFee
+                    Signature = localSignature.Signature |> LNECDSASignature
+                }
                 return (ClosingTx psbtUpdated, msg)
             }
 
@@ -124,8 +126,8 @@ module Channel =
 
         // --------------- open channel procedure: case we are funder -------------
         | WaitForInitInternal, CreateOutbound inputInitFunder ->
-            let openChannelMsgToSend = {
-                OpenChannel.Chainhash = cs.Network.GenesisHashRev
+            let openChannelMsgToSend: OpenChannelMsg = {
+                Chainhash = cs.Network.GenesisHashRev
                 TemporaryChannelId = inputInitFunder.TemporaryChannelId
                 FundingSatoshis = inputInitFunder.FundingSatoshis
                 PushMSat = inputInitFunder.PushMSat
@@ -180,11 +182,12 @@ module Channel =
                                                cs.Secp256k1Context
                                                cs.Network
                 let localSigOfRemoteCommit, _ = (cs.KeysRepository.GetSignatureFor(remoteCommitTx.Value, state.LastSent.FundingPubKey))
-                let nextMsg = { FundingCreated.TemporaryChannelId = msg.TemporaryChannelId
-                                FundingTxId = fundingTx.Value.GetTxId()
-                                FundingOutputIndex = outIndex
-                                Signature = !>localSigOfRemoteCommit.Signature }
-
+                let nextMsg: FundingCreatedMsg = {
+                    TemporaryChannelId = msg.TemporaryChannelId
+                    FundingTxId = fundingTx.Value.GetTxId()
+                    FundingOutputIndex = outIndex
+                    Signature = !>localSigOfRemoteCommit.Signature
+                }
                 let data = { Data.WaitForFundingSignedData.ChannelId = msg.TemporaryChannelId
                              LocalParams = localParams
                              RemoteParams = remoteParams
@@ -255,25 +258,26 @@ module Channel =
                 let localParams = state.InitFundee.LocalParams
                 let channelKeys = state.InitFundee.ChannelKeys
                 let localCommitmentSecret = ChannelUtils.buildCommitmentSecret (channelKeys.CommitmentSeed, 0UL)
-                let acceptChannel = { AcceptChannel.TemporaryChannelId = msg.TemporaryChannelId
-                                      DustLimitSatoshis = localParams.DustLimitSatoshis
-                                      MaxHTLCValueInFlightMsat = localParams.MaxHTLCValueInFlightMSat
-                                      ChannelReserveSatoshis = localParams.ChannelReserveSatoshis
-                                      HTLCMinimumMSat = localParams.HTLCMinimumMSat
-                                      MinimumDepth = cs.Config.ChannelHandshakeConfig.MinimumDepth
-                                      ToSelfDelay = localParams.ToSelfDelay
-                                      MaxAcceptedHTLCs = localParams.MaxAcceptedHTLCs
-                                      FundingPubKey = channelKeys.FundingKey.PubKey
-                                      RevocationBasepoint = channelKeys.RevocationBaseKey.PubKey
-                                      PaymentBasepoint = channelKeys.PaymentBaseKey.PubKey
-                                      DelayedPaymentBasepoint = channelKeys.DelayedPaymentBaseKey.PubKey
-                                      HTLCBasepoint = channelKeys.HTLCBaseKey.PubKey
-                                      FirstPerCommitmentPoint = localCommitmentSecret.PubKey
-                                      ShutdownScriptPubKey = cs.Config.ChannelOptions.ShutdownScriptPubKey }
-
+                let acceptChannelMsg: AcceptChannelMsg = {
+                    TemporaryChannelId = msg.TemporaryChannelId
+                    DustLimitSatoshis = localParams.DustLimitSatoshis
+                    MaxHTLCValueInFlightMsat = localParams.MaxHTLCValueInFlightMSat
+                    ChannelReserveSatoshis = localParams.ChannelReserveSatoshis
+                    HTLCMinimumMSat = localParams.HTLCMinimumMSat
+                    MinimumDepth = cs.Config.ChannelHandshakeConfig.MinimumDepth
+                    ToSelfDelay = localParams.ToSelfDelay
+                    MaxAcceptedHTLCs = localParams.MaxAcceptedHTLCs
+                    FundingPubKey = channelKeys.FundingKey.PubKey
+                    RevocationBasepoint = channelKeys.RevocationBaseKey.PubKey
+                    PaymentBasepoint = channelKeys.PaymentBaseKey.PubKey
+                    DelayedPaymentBasepoint = channelKeys.DelayedPaymentBaseKey.PubKey
+                    HTLCBasepoint = channelKeys.HTLCBaseKey.PubKey
+                    FirstPerCommitmentPoint = localCommitmentSecret.PubKey
+                    ShutdownScriptPubKey = cs.Config.ChannelOptions.ShutdownScriptPubKey
+                }
                 let remoteParams = RemoteParams.FromOpenChannel cs.RemoteNodeId state.InitFundee.RemoteInit msg cs.Config.ChannelHandshakeConfig
-                let data = Data.WaitForFundingCreatedData.Create localParams remoteParams msg acceptChannel
-                return [ WeAcceptedOpenChannel(acceptChannel, data) ]
+                let data = Data.WaitForFundingCreatedData.Create localParams remoteParams msg acceptChannelMsg
+                return [ WeAcceptedOpenChannel(acceptChannelMsg, data) ]
             }
         | WaitForOpenChannel _state, ChannelCommand.Close _spk ->
             [ ChannelEvent.Closed ] |> Ok
@@ -304,7 +308,7 @@ module Channel =
                     |> expectTransactionError
                 let localSigOfRemoteCommit, _ = cs.KeysRepository.GetSignatureFor (remoteCommitTx.Value, state.LocalParams.ChannelPubKeys.FundingPubKey)
                 let channelId = OutPoint(msg.FundingTxId.Value, uint32 msg.FundingOutputIndex.Value).ToChannelId()
-                let msgToSend: FundingSigned = { ChannelId = channelId; Signature = !>localSigOfRemoteCommit.Signature }
+                let msgToSend: FundingSignedMsg = { ChannelId = channelId; Signature = !>localSigOfRemoteCommit.Signature }
                 let commitments = { Commitments.LocalParams = state.LocalParams
                                     RemoteParams = state.RemoteParams
                                     ChannelFlags = state.ChannelFlags
@@ -341,7 +345,7 @@ module Channel =
             else
                 let nextPerCommitmentPoint =
                     ChannelUtils.buildCommitmentPoint (state.Commitments.LocalParams.ChannelPubKeys.CommitmentSeed, 1UL)
-                let msgToSend: FundingLocked = { ChannelId = state.Commitments.ChannelId; NextPerCommitmentPoint = nextPerCommitmentPoint }
+                let msgToSend: FundingLockedMsg = { ChannelId = state.Commitments.ChannelId; NextPerCommitmentPoint = nextPerCommitmentPoint }
 
                 // This is temporary channel id that we will use in our channel_update message, the goal is to be able to use our channel
                 // as soon as it reaches NORMAL state, and before it is announced on the network
@@ -401,12 +405,14 @@ module Channel =
         | ChannelState.Normal state, AddHTLC op ->
             result {
                 do! Validation.checkOperationAddHTLC state op
-                let add: UpdateAddHTLC = { UpdateAddHTLC.ChannelId = state.Commitments.ChannelId
-                                           HTLCId = state.Commitments.LocalNextHTLCId
-                                           Amount = op.Amount
-                                           PaymentHash = op.PaymentHash
-                                           CLTVExpiry = op.Expiry
-                                           OnionRoutingPacket = op.Onion }
+                let add: UpdateAddHTLCMsg = {
+                    ChannelId = state.Commitments.ChannelId
+                    HTLCId = state.Commitments.LocalNextHTLCId
+                    Amount = op.Amount
+                    PaymentHash = op.PaymentHash
+                    CLTVExpiry = op.Expiry
+                    OnionRoutingPacket = op.Onion
+                }
                 let commitments1 = { state.Commitments.AddLocalProposal(add)
                                         with LocalNextHTLCId = state.Commitments.LocalNextHTLCId + 1UL }
                                         |> fun commitments ->
@@ -503,8 +509,10 @@ module Channel =
             else if (state.Commitments.LocalHasUnsignedOutgoingHTLCs()) then
                 cannotCloseChannel "Cannot close with unsigned outgoing htlcs"
             else
-                let shutDown = { Shutdown.ChannelId = state.ChannelId
-                                 ScriptPubKey = localSPK }
+                let shutDown: ShutdownMsg = {
+                    ChannelId = state.ChannelId
+                    ScriptPubKey = localSPK
+                }
                 [ AcceptedOperationShutdown shutDown ]
                 |> Ok
         | ChannelState.Normal state, RemoteShutdown msg ->
@@ -546,8 +554,10 @@ module Channel =
                     let (localShutdown, sendList) = match state.LocalShutdown with
                                                     | Some localShutdown -> (localShutdown, [])
                                                     | None ->
-                                                        let localShutdown = { Shutdown.ChannelId = state.ChannelId
-                                                                              ScriptPubKey = cm.LocalParams.DefaultFinalScriptPubKey }
+                                                        let localShutdown: ShutdownMsg = {
+                                                            ChannelId = state.ChannelId
+                                                            ScriptPubKey = cm.LocalParams.DefaultFinalScriptPubKey
+                                                        }
                                                         (localShutdown, [ localShutdown ])
                     if (cm.HasNoPendingHTLCs()) then
                         // we have to send first closing_signed msg iif we are the funder

@@ -157,7 +157,7 @@ type internal ActorCreator =
     
     static member initiateOpenedChannel(alice, bob) = async {
         let bobInitTask = alice.EventAggregator.GetObservable<PeerEventWithContext>()
-                          |> Observable.awaitFirst(function | { PeerEvent = ReceivedInit(init, _) } -> Some init | _ -> None)
+                          |> Observable.awaitFirst(function | { PeerEvent = ReceivedInit(initMsg, _) } -> Some initMsg | _ -> None)
         let! actors = ActorCreator.initiateActor(alice, bob)
         let! bobInit = bobInitTask
         let channelKeys = actors.Initiator.CM.KeysRepository.GetChannelKeys(false)
@@ -220,7 +220,7 @@ let tests =
 
             let alice = ActorCreator.getAlice()
             let bob = ActorCreator.getBob()
-            let bobInitTask = alice.EventAggregator.AwaitPeerEvent((function | { PeerEvent = ReceivedInit(init, _) } -> Some init | _ -> None))
+            let bobInitTask = alice.EventAggregator.AwaitPeerEvent((function | { PeerEvent = ReceivedInit(initMsg, _) } -> Some initMsg | _ -> None))
             let! _actors = ActorCreator.initiateActor(alice, bob)
             
             let! bobInit = bobInitTask

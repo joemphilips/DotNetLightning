@@ -75,7 +75,7 @@ type RemoteCommit = {
 
 type WaitingForRevocation = {
     NextRemoteCommit: RemoteCommit
-    Sent: CommitmentSigned
+    Sent: CommitmentSignedMsg
     SentAfterLocalCommitmentIndex: uint64
     ReSignASAP: bool
 }
@@ -158,15 +158,15 @@ type Commitments = {
             (not this.LocalChanges.ACKed.IsEmpty) || (not this.RemoteChanges.Proposed.IsEmpty)
 
         member internal this.LocalHasUnsignedOutgoingHTLCs() =
-            this.LocalChanges.Proposed |> List.exists(fun p -> match p with | :? UpdateAddHTLC -> true | _ -> false)
+            this.LocalChanges.Proposed |> List.exists(fun p -> match p with | :? UpdateAddHTLCMsg -> true | _ -> false)
 
         member internal this.RemoteHasUnsignedOutgoingHTLCs() =
-            this.RemoteChanges.Proposed |> List.exists(fun p -> match p with | :? UpdateAddHTLC -> true | _ -> false)
+            this.RemoteChanges.Proposed |> List.exists(fun p -> match p with | :? UpdateAddHTLCMsg -> true | _ -> false)
 
         member internal this.HasNoPendingHTLCs() =
             this.LocalCommit.Spec.HTLCs.IsEmpty && this.RemoteCommit.Spec.HTLCs.IsEmpty && (this.RemoteNextCommitInfo |> function Waiting _ -> false | Revoked _ -> true)
 
-        member internal this.GetHTLCCrossSigned(directionRelativeToLocal: Direction, htlcId: HTLCId): UpdateAddHTLC option =
+        member internal this.GetHTLCCrossSigned(directionRelativeToLocal: Direction, htlcId: HTLCId): UpdateAddHTLCMsg option =
             let remoteSigned =
                 this.LocalCommit.Spec.HTLCs
                 |> Map.tryPick (fun k v -> if v.Direction = directionRelativeToLocal && v.Add.HTLCId = htlcId then Some v else None)

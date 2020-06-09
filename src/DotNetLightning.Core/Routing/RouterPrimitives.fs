@@ -10,7 +10,7 @@ open Graph
 
 [<AutoOpen>]
 module RouterPrimitives =
-    let checkUpdate(x: ChannelUpdate option, msg ) =
+    let checkUpdate(x: ChannelUpdateMsg option, msg ) =
         match x with
         | Some x -> Result.requireTrue msg (x.IsNode1)
         | None -> Ok()
@@ -33,30 +33,30 @@ module RouterPrimitives =
     }
 
     type PublicChannel = private {
-        Announce: ChannelAnnouncement
+        Announce: ChannelAnnouncementMsg
         FundingTxId: TxId
         Cap: Money
-        MaybeUpdate1: ChannelUpdate option
-        MaybeUpdate2: ChannelUpdate option
+        MaybeUpdate1: ChannelUpdateMsg option
+        MaybeUpdate2: ChannelUpdateMsg option
     }
         with
-        static member TryCreate (a, f, c, ?update1: ChannelUpdate, ?update2: ChannelUpdate) =
+        static member TryCreate (a, f, c, ?update1: ChannelUpdateMsg, ?update2: ChannelUpdateMsg) =
             result {
                 do! checkUpdate(update1, "Update 1 must be node 1 according to bolt 7 definition")
                 do! checkUpdate(update2, "Update 2 must be node 2 according to bolt 7 definition")
                 return { Announce = a; FundingTxId = f; Cap = c; MaybeUpdate1 = update1; MaybeUpdate2 = update2 }
             }
 
-        member this.GetNodeIdSameSideAs(u: ChannelUpdate) =
+        member this.GetNodeIdSameSideAs(u: ChannelUpdateMsg) =
             if (u.IsNode1) then this.Announce.Contents.NodeId1 else this.Announce.Contents.NodeId2
             
-        member this.GetChannelUpdateSameSideAs(u: ChannelUpdate) =
+        member this.GetChannelUpdateSameSideAs(u: ChannelUpdateMsg) =
             if (u.IsNode1) then this.MaybeUpdate1 else this.MaybeUpdate2
             
-        member this.UpdateChannelUpdateSameSideAs(u: ChannelUpdate) =
+        member this.UpdateChannelUpdateSameSideAs(u: ChannelUpdateMsg) =
             if (u.IsNode1) then { this with MaybeUpdate1 = Some u } else { this with MaybeUpdate2 = Some u }
             
-        member this.GetChannelUpdateField<'T> (f: ChannelUpdate -> 'T): seq<'T> =
+        member this.GetChannelUpdateField<'T> (f: ChannelUpdateMsg -> 'T): seq<'T> =
             seq {
                 yield! this.MaybeUpdate1 |> Option.toList
                 yield! this.MaybeUpdate2 |> Option.toList
@@ -65,21 +65,21 @@ module RouterPrimitives =
     type PrivateChannel = {
         LocalNodeId: NodeId
         RemoteNodeId: NodeId
-        MaybeUpdate1: ChannelUpdate option
-        MaybeUpdate2: ChannelUpdate option
+        MaybeUpdate1: ChannelUpdateMsg option
+        MaybeUpdate2: ChannelUpdateMsg option
     }
 
         with
-        member this.GetNodeIdSameSideAs(u: ChannelUpdate) =
+        member this.GetNodeIdSameSideAs(u: ChannelUpdateMsg) =
             let node1, node2 =
                 if (isNode1(this.LocalNodeId, this.RemoteNodeId)) then
                     (this.LocalNodeId, this.RemoteNodeId)
                 else (this.RemoteNodeId, this.LocalNodeId)
             if (u.IsNode1) then node1 else node2
             
-        member this.GetChannelUpdateSameSideAs(u: ChannelUpdate) =
+        member this.GetChannelUpdateSameSideAs(u: ChannelUpdateMsg) =
             if (u.IsNode1) then this.MaybeUpdate1 else this.MaybeUpdate2
-        member this.UpdateChannelUpdateSameSideAs(u: ChannelUpdate) =
+        member this.UpdateChannelUpdateSameSideAs(u: ChannelUpdateMsg) =
             if (u.IsNode1) then { this with MaybeUpdate1 = Some u } else { this with MaybeUpdate2 = Some u }
             
     type AssistedChannel = {
@@ -100,13 +100,13 @@ module RouterPrimitives =
         /// The id of the end node
         NextNodeId: NodeId
         CLTVExpiryDelta: BlockHeightOffset16
-        LastUpdate: UnsignedChannelUpdate
+        LastUpdate: UnsignedChannelUpdateMsg
     }
         with
         member this.LastUpdateValue = this.LastUpdate
         member this.NodeIdValue = this.NodeId
         member this.NextNodeIdValue = this.NextNodeId
-        static member Create (a, b, u: UnsignedChannelUpdate) =
+        static member Create (a, b, u: UnsignedChannelUpdateMsg) =
             {
                 NodeId = a
                 NextNodeId = b

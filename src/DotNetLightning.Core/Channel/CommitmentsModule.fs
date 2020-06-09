@@ -13,12 +13,12 @@ open DotNetLightning.Serialize.Msgs
 [<RequireQualifiedAccess; CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module internal Commitments =
     module private Helpers =
-        let isAlreadySent (htlc: UpdateAddHTLC) (proposed: IUpdateMsg list) =
+        let isAlreadySent (htlc: UpdateAddHTLCMsg) (proposed: IUpdateMsg list) =
             proposed
             |> List.exists(fun p -> match p with
-                                    | :? UpdateFulfillHTLC as u -> u.HTLCId = htlc.HTLCId
-                                    | :? UpdateFailHTLC as u -> u.HTLCId = htlc.HTLCId
-                                    | :? UpdateFailMalformedHTLC as u -> u.HTLCId = htlc.HTLCId
+                                    | :? UpdateFulfillHTLCMsg as u -> u.HTLCId = htlc.HTLCId
+                                    | :? UpdateFailHTLCMsg as u -> u.HTLCId = htlc.HTLCId
+                                    | :? UpdateFailMalformedHTLCMsg as u -> u.HTLCId = htlc.HTLCId
                                     | _ -> false)
 
         let makeRemoteTxs
@@ -119,7 +119,7 @@ module internal Commitments =
             |> List.ofSeq
             |> List.sortBy(fun htlc -> htlc.Value.GetGlobalTransaction().Inputs.[htlc.WhichInput].PrevOut.N)
 
-        let checkUpdateFee (config: ChannelConfig) (msg: UpdateFee) (localFeeRate: FeeRatePerKw) =
+        let checkUpdateFee (config: ChannelConfig) (msg: UpdateFeeMsg) (localFeeRate: FeeRatePerKw) =
             let maxMismatch = config.ChannelOptions.MaxFeeRateMismatchRatio
             UpdateFeeValidation.checkFeeDiffTooHigh (msg) (localFeeRate) (maxMismatch)
 
@@ -128,7 +128,7 @@ module internal Commitments =
         | Some htlc when (cm.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
             htlc.HTLCId |> htlcAlreadySent
         | Some htlc when (htlc.PaymentHash = op.PaymentPreimage.Hash) ->
-            let msgToSend: UpdateFulfillHTLC =
+            let msgToSend: UpdateFulfillHTLCMsg =
                 { ChannelId = cm.ChannelId; HTLCId = op.Id; PaymentPreimage = op.PaymentPreimage }
             let newCommitments = cm.AddLocalProposal(msgToSend)
             (msgToSend, newCommitments) |> Ok
@@ -139,7 +139,7 @@ module internal Commitments =
             op.Id
             |> unknownHTLCId
 
-    let receiveFulfill(msg: UpdateFulfillHTLC) (cm: Commitments) =
+    let receiveFulfill(msg: UpdateFulfillHTLCMsg) (cm: Commitments) =
         match cm.GetHTLCCrossSigned(Direction.Out, msg.HTLCId) with
         | Some htlc when htlc.PaymentHash = msg.PaymentPreimage.Hash ->
             let commitments = cm.AddRemoteProposal(msg)
@@ -164,7 +164,7 @@ module internal Commitments =
                 let reason =
                     op.Reason
                     |> function Choice1Of2 b -> Sphinx.forwardErrorPacket(b, ss) | Choice2Of2 f -> Sphinx.ErrorPacket.Create(ss, f)
-                let f = { UpdateFailHTLC.ChannelId = cm.ChannelId
+                let f = { UpdateFailHTLCMsg.ChannelId = cm.ChannelId
                           HTLCId = op.Id
                           Reason = { Data = reason } }
                 let nextComitments = cm.AddLocalProposal(f)
@@ -173,7 +173,7 @@ module internal Commitments =
         | None ->
             op.Id |> unknownHTLCId
 
-    let receiveFail (msg: UpdateFailHTLC) (cm: Commitments) =
+    let receiveFail (msg: UpdateFailHTLCMsg) (cm: Commitments) =
         match cm.GetHTLCCrossSigned(Direction.Out, msg.HTLCId) with
         | Some htlc ->
             result {
@@ -198,7 +198,7 @@ module internal Commitments =
             | Some htlc when (cm.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
                 htlc.HTLCId |> htlcAlreadySent
             | Some _htlc ->
-                let msg = { UpdateFailMalformedHTLC.ChannelId = cm.ChannelId
+                let msg = { UpdateFailMalformedHTLCMsg.ChannelId = cm.ChannelId
                             HTLCId = op.Id
                             Sha256OfOnion = op.Sha256OfOnion
                             FailureCode = op.FailureCode }
@@ -208,7 +208,7 @@ module internal Commitments =
             | None ->
                 op.Id |> unknownHTLCId
 
-    let receiveFailMalformed (msg: UpdateFailMalformedHTLC) (cm: Commitments) =
+    let receiveFailMalformed (msg: UpdateFailMalformedHTLCMsg) (cm: Commitments) =
         if msg.FailureCode.Value &&& OnionError.BADONION = 0us then
             msg.FailureCode |> invalidFailureCode
         else
@@ -230,7 +230,7 @@ module internal Commitments =
             if (not cm.LocalParams.IsFunder) then
                 "Local is Fundee so it cannot send update fee" |> apiMisuse
             else
-                let fee = { UpdateFee.ChannelId = cm.ChannelId
+                let fee = { UpdateFeeMsg.ChannelId = cm.ChannelId
                             FeeRatePerKw = op.FeeRatePerKw }
                 let c1 = cm.AddLocalProposal(fee)
                 result {
@@ -250,7 +250,7 @@ module internal Commitments =
                             [ WeAcceptedOperationUpdateFee(fee, c1) ]
                 }
 
-    let receiveFee (config: ChannelConfig) (localFeerate) (msg: UpdateFee) (cm: Commitments) =
+    let receiveFee (config: ChannelConfig) (localFeerate) (msg: UpdateFeeMsg) (cm: Commitments) =
         if (cm.LocalParams.IsFunder) then
             "Remote is Fundee so it cannot send update fee" |> apiMisuse
         else
@@ -296,7 +296,7 @@ module internal Commitments =
                             >> fst
                             >> (fun txSig -> txSig.Signature)
                             )
-                let msg = { CommitmentSigned.ChannelId = cm.ChannelId
+                let msg = { CommitmentSignedMsg.ChannelId = cm.ChannelId
                             Signature = !> signature.Signature
                             HTLCSignatures = htlcSigs |> List.map (!>) }
                 let nextCommitments =
@@ -324,7 +324,7 @@ module internal Commitments =
             signatureCountMismatch (sortedHTLCTXs.Length, msg.HTLCSignatures.Length)
         else
             Ok()
-    let receiveCommit (ctx) (keyRepo: IKeysRepository) (msg: CommitmentSigned) (n: Network) (cm: Commitments): Result<ChannelEvent list, ChannelError> =
+    let receiveCommit (ctx) (keyRepo: IKeysRepository) (msg: CommitmentSignedMsg) (n: Network) (cm: Commitments): Result<ChannelEvent list, ChannelError> =
         if cm.RemoteHasChanges() |> not then
             ReceivedCommitmentSignedWhenWeHaveNoPendingChanges |> Error
         else
@@ -379,7 +379,7 @@ module internal Commitments =
                 let localNextPerCommitmentPoint =
                     ChannelUtils.buildCommitmentPoint(cm.LocalParams.ChannelPubKeys.CommitmentSeed, cm.LocalCommit.Index + 2UL)
 
-                let nextMsg = { RevokeAndACK.ChannelId = cm.ChannelId
+                let nextMsg = { RevokeAndACKMsg.ChannelId = cm.ChannelId
                                 PerCommitmentSecret = localPerCommitmentSecret.ToBytes() |> PaymentPreimage.Create
                                 NextPerCommitmentPoint = localNextPerCommitmentPoint }
                 

@@ -19,7 +19,7 @@ type internal Direction =
 
 type DirectedHTLC = internal {
     Direction: Direction
-    Add: UpdateAddHTLC
+    Add: UpdateAddHTLCMsg
 }
 
 type CommitmentSpec = {
@@ -52,7 +52,7 @@ type CommitmentSpec = {
         member this.TotalFunds =
             this.ToLocal + this.ToRemote + (this.HTLCs |> Seq.sumBy(fun h -> h.Value.Add.Amount))
 
-        member internal this.AddHTLC(direction: Direction, update: UpdateAddHTLC) =
+        member internal this.AddHTLC(direction: Direction, update: UpdateAddHTLCMsg) =
             let htlc = { DirectedHTLC.Direction = direction; Add = update }
             match direction with
             | Out -> { this with ToLocal = (this.ToLocal - htlc.Add.Amount); HTLCs = this.HTLCs.Add(update.HTLCId, htlc)}
@@ -85,7 +85,7 @@ type CommitmentSpec = {
                 localChanges
                 |> List.fold(fun (acc: CommitmentSpec) updateMsg ->
                         match box updateMsg with
-                        | :? UpdateAddHTLC as u -> acc.AddHTLC(Out, u)
+                        | :? UpdateAddHTLCMsg as u -> acc.AddHTLC(Out, u)
                         | _ -> acc
                     )
                     this
@@ -94,7 +94,7 @@ type CommitmentSpec = {
                 remoteChanges
                 |> List.fold(fun (acc: CommitmentSpec) updateMsg ->
                         match box updateMsg with
-                        | :? UpdateAddHTLC as u -> acc.AddHTLC(In, u)
+                        | :? UpdateAddHTLCMsg as u -> acc.AddHTLC(In, u)
                         | _ -> acc
                     )
                     spec1
@@ -103,11 +103,11 @@ type CommitmentSpec = {
                 localChanges
                 |> List.fold(fun (acc: Result<CommitmentSpec, TransactionError>) updateMsg ->
                             match box updateMsg with
-                            | :? UpdateFulfillHTLC as u ->
+                            | :? UpdateFulfillHTLCMsg as u ->
                                 acc >>= fun a -> a.FulfillHTLC(Out, u.HTLCId)
-                            | :? UpdateFailHTLC as u ->
+                            | :? UpdateFailHTLCMsg as u ->
                                 acc >>= fun a -> a.FailHTLC(Out, u.HTLCId)
-                            | :? UpdateFailMalformedHTLC as u ->
+                            | :? UpdateFailMalformedHTLCMsg as u ->
                                 acc >>= fun a -> a.FailHTLC(Out, u.HTLCId)
                             | _ -> acc
                         )
@@ -117,11 +117,11 @@ type CommitmentSpec = {
                 remoteChanges
                 |> List.fold(fun (acc: Result<CommitmentSpec, TransactionError>) updateMsg ->
                             match box updateMsg with
-                            | :? UpdateFulfillHTLC as u ->
+                            | :? UpdateFulfillHTLCMsg as u ->
                                 acc >>= fun a -> a.FulfillHTLC(In, u.HTLCId)
-                            | :? UpdateFailHTLC as u ->
+                            | :? UpdateFailHTLCMsg as u ->
                                 acc >>= fun a -> a.FailHTLC(In, u.HTLCId)
-                            | :? UpdateFailMalformedHTLC as u ->
+                            | :? UpdateFailMalformedHTLCMsg as u ->
                                 acc >>= fun a -> a.FailHTLC(In, u.HTLCId)
                             | _ -> acc
                     )
@@ -131,7 +131,7 @@ type CommitmentSpec = {
                 (localChanges @ remoteChanges)
                 |> List.fold(fun (acc) updateMsg ->
                         match box updateMsg with
-                        | :? UpdateFee as u ->
+                        | :? UpdateFeeMsg as u ->
                             (fun a -> { a with CommitmentSpec.FeeRatePerKw = u.FeeRatePerKw }) <!> acc
                         | _ -> acc
                     )

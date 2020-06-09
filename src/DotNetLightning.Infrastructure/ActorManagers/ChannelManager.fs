@@ -99,7 +99,7 @@ type ChannelManager(log: ILogger<ChannelManager>,
     member val FundingTxs = ConcurrentDictionary<TxId, NodeId * (TxIndexInBlock * BlockHeight) option>()
     
     member val CurrentBlockHeight = BlockHeight.Zero with get, set
-    member val RemoteInits: ConcurrentDictionary<NodeId, Init> = ConcurrentDictionary<_,_>()
+    member val RemoteInits: ConcurrentDictionary<NodeId, InitMsg> = ConcurrentDictionary<_,_>()
     
     member val Actors: ConcurrentDictionary<NodeId, ChannelActor> = ConcurrentDictionary<_,_>() with get
     
@@ -175,7 +175,7 @@ type ChannelManager(log: ILogger<ChannelManager>,
             | PeerEvent.ReceivedChannelMsg (msg, _) ->
                 log.LogTrace(sprintf "channel manager has observed %A" (msg.GetType()))
                 match msg with
-                | :? OpenChannel as m ->
+                | :? OpenChannelMsg as m ->
                     let channelKeys = keysRepository.GetChannelKeys(true)
                     let initFundee = { InputInitFundee.LocalParams =
                                            let channelPubKeys = channelKeys.ToChannelPubKeys()
@@ -188,38 +188,38 @@ type ChannelManager(log: ILogger<ChannelManager>,
                     do! this.AcceptCommandAsync({ ChannelCommand =  ChannelCommand.CreateInbound(initFundee);
                                                   NodeId = e.NodeId.Value })
                     return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyOpenChannel m)
-                | :? AcceptChannel as m ->
+                | :? AcceptChannelMsg as m ->
                     return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put( ChannelCommand.ApplyAcceptChannel m)
-                | :? FundingCreated as m ->
+                | :? FundingCreatedMsg as m ->
                     log.LogTrace(sprintf "we received funding created so adding funding tx %A" m.FundingTxId)
                     this.FundingTxs.TryAdd(m.FundingTxId, (e.NodeId.Value, None)) |> ignore
                     return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyFundingCreated m)
-                | :? FundingSigned as m ->
+                | :? FundingSignedMsg as m ->
                     return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyFundingSigned m)
-                | :? FundingLocked as m ->
+                | :? FundingLockedMsg as m ->
                     return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyFundingLocked m)
-                | :? Shutdown as m ->
+                | :? ShutdownMsg as m ->
                     return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.RemoteShutdown m)
-                | :? ClosingSigned as m ->
+                | :? ClosingSignedMsg as m ->
                     return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyClosingSigned m)
-                | :? UpdateAddHTLC as m ->
+                | :? UpdateAddHTLCMsg as m ->
                     return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyUpdateAddHTLC (m, this.CurrentBlockHeight))
-                | :? UpdateFulfillHTLC as m ->
+                | :? UpdateFulfillHTLCMsg as m ->
                     return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyUpdateFulfillHTLC m)
-                | :? UpdateFailHTLC as m ->
+                | :? UpdateFailHTLCMsg as m ->
                     return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyUpdateFailHTLC m)
-                | :? UpdateFailMalformedHTLC as m ->
+                | :? UpdateFailMalformedHTLCMsg as m ->
                     return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyUpdateFailMalformedHTLC m)
-                | :? CommitmentSigned as m ->
+                | :? CommitmentSignedMsg as m ->
                     return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyCommitmentSigned m)
-                | :? RevokeAndACK as m ->
+                | :? RevokeAndACKMsg as m ->
                     return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyRevokeAndACK m)
-                | :? UpdateFee as m ->
+                | :? UpdateFeeMsg as m ->
                     return! (this.Actors.[e.NodeId.Value] :> IActor<_>).Put(ChannelCommand.ApplyUpdateFee m)
                 | m ->
                         return failwithf "Unknown Channel Message (%A). This should never happen" m
-            | PeerEvent.ReceivedInit(init, _) ->
-                this.RemoteInits.TryAdd(e.NodeId.Value, init) |> ignore
+            | PeerEvent.ReceivedInit(initMsg, _) ->
+                this.RemoteInits.TryAdd(e.NodeId.Value, initMsg) |> ignore
                 return ()
             | PeerEvent.FailedToBroadcastTransaction(_tx) ->
                 return ()

@@ -85,20 +85,20 @@ type RouteResponse = private {
 
 type RoutingState = {
     Channels: PublicChannel seq
-    Nodes: NodeAnnouncement seq
+    Nodes: NodeAnnouncementMsg seq
 }
 
 type GossipOrigin =
     | Remote of PeerId
     | Local
 type Stash = {
-    Updates: Map<ChannelUpdate, Set<GossipOrigin>>
-    Nodes: Map<NodeAnnouncement, Set<GossipOrigin>>
+    Updates: Map<ChannelUpdateMsg, Set<GossipOrigin>>
+    Nodes: Map<NodeAnnouncementMsg, Set<GossipOrigin>>
 }
 type ReBroadcast = {
-    Channels: Map<ChannelAnnouncement, Set<GossipOrigin>>
-    Updates: Map<ChannelUpdate, Set<GossipOrigin>>
-    Nodes: Map<NodeAnnouncement, Set<GossipOrigin>>
+    Channels: Map<ChannelAnnouncementMsg, Set<GossipOrigin>>
+    Updates: Map<ChannelUpdateMsg, Set<GossipOrigin>>
+    Nodes: Map<NodeAnnouncementMsg, Set<GossipOrigin>>
 }
 
 type Sync = {
@@ -107,11 +107,11 @@ type Sync = {
 }
 
 type RouterData = private {
-    Nodes: Map<NodeId, NodeAnnouncement>
+    Nodes: Map<NodeId, NodeAnnouncementMsg>
     Channels: SortedDictionary<ShortChannelId, PublicChannel>
     Stats: NetworkStats
     ReBroadcast: ReBroadcast
-    Awaiting: Map<ChannelAnnouncement, seq<PeerId>>
+    Awaiting: Map<ChannelAnnouncementMsg, seq<PeerId>>
     PrivateChannels: Map<ShortChannelId, PrivateChannel>
     ExcludedChannels: Set<ChannelDesc>
     Graph: DirectedLNGraph

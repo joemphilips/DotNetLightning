@@ -12,11 +12,11 @@ open ResultUtils
 
 
 type NetworkEvent =
-    | NodeDiscovered of msg: NodeAnnouncement
-    | NodeUpdated of msg: NodeAnnouncement
+    | NodeDiscovered of msg: NodeAnnouncementMsg
+    | NodeUpdated of msg: NodeAnnouncementMsg
     | NodeLost of nodeId: NodeId
-    | ChannelDiscovered of msg: ChannelAnnouncement * capacity : Money
-    | ChannelUpdateReceived of msg: ChannelUpdate
+    | ChannelDiscovered of msg: ChannelAnnouncementMsg * capacity : Money
+    | ChannelUpdateReceived of msg: ChannelUpdateMsg
     // when funding tx on the blockchain has been spent, we must consider that the channel is closed in a graph view
     | FundingTxSpent of ShortChannelId
 

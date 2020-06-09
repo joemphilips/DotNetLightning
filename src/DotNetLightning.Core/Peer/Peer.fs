@@ -97,13 +97,13 @@ module Peer =
                 let! msg = LightningMsg.fromBytes b |> Result.mapError(PeerError.P2PMessageDecodeError)
                 return
                     match msg with
-                    | :? ErrorMessage as msg ->
+                    | :? ErrorMsg as msg ->
                         [ReceivedError (msg, newPCE)]
-                    | :? Ping as msg ->
+                    | :? PingMsg as msg ->
                         [ReceivedPing (msg, newPCE)]
-                    | :? Pong as msg ->
+                    | :? PongMsg as msg ->
                         [ReceivedPong (msg, newPCE)]
-                    | :? Init as msg ->
+                    | :? InitMsg as msg ->
                         [ReceivedInit (msg, newPCE)]
                     | :? IRoutingMsg as msg ->
                         [ReceivedRoutingMsg (msg, newPCE)]
@@ -133,10 +133,10 @@ module Peer =
         | NoiseComplete, ReceivedRoutingMsg (_, pce)
         | NoiseComplete, ReceivedChannelMsg (_, pce) ->
             { state with ChannelEncryptor = pce; }
-        | NoiseComplete, ReceivedInit (init, pce) ->
+        | NoiseComplete, ReceivedInit (initMsg, pce) ->
             { state with
                 ChannelEncryptor = pce;
-                TheirFeatures = Some init.Features }
+                TheirFeatures = Some initMsg.Features }
         | NoiseComplete, MsgEncoded(_, pce) ->
             { state with ChannelEncryptor = pce }
         | state, e ->
