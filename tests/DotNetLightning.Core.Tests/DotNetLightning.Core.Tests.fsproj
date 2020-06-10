@@ -46,5 +46,6 @@
     <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\..\src\Secp256k1.Net\Secp256k1.Net.csproj" />
     <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\..\src\NSec\Experimental\NSec.Experimental.csproj" />
     <ProjectReference Include="..\..\src\ResultUtils\ResultUtils.fsproj" />
+    <ProjectReference Include="..\..\src\Macaroons\Macaroons.csproj" />
   </ItemGroup>
 </Project>
