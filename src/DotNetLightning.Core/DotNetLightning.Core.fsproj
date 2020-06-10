@@ -26,10 +26,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Utils/Primitives.fs" />
     <Compile Include="Utils/LNMoney.fs" />
-    <Compile Include="Utils/NBitcoinExtensions.fs" />
     <Compile Include="Utils\Extensions.fs" />
+    <Compile Include="Utils/UInt48.fs" />
+    <Compile Include="Utils/TxId.fs" />
+    <Compile Include="Utils/ChannelId.fs" />
+    <Compile Include="Utils/NBitcoinExtensions.fs" />
+    <Compile Include="Utils/Primitives.fs" />
     <Compile Include="Utils/Utils.fs" />
     <Compile Include="Utils/Aether.fs" />
     <Compile Include="Utils/Config.fs" />
@@ -47,6 +50,7 @@
     <Compile Include="Serialize/Msgs/Msgs.fs" />
     <Compile Include="DomainUtils/Types.fs" />
     <Compile Include="Crypto/CryptoUtils.fs" />
+    <Compile Include="Crypto/RevocationSet.fs" />
     <Compile Include="Crypto/ShaChain.fs" />
     <Compile Include="Crypto/Sphinx.fs" />
     <Compile Include="Crypto/Generators.fs" />
@@ -60,7 +64,6 @@
     <Compile Include="Peer\PeerChannelEncryptor.fs" />
     <Compile Include="Peer\PeerTypes.fs" />
     <Compile Include="Peer\Peer.fs" />
-    <Compile Include="Channel\ChannelUtils.fs" />
     <Compile Include="Channel\HTLCChannelType.fs" />
     <Compile Include="Channel\ChannelConstants.fs" />
     <Compile Include="Channel\ChannelOperations.fs" />

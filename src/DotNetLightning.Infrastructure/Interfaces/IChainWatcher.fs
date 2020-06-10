@@ -4,6 +4,7 @@ open System
 
 open NBitcoin
 
+open DotNetLightning.Utils
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Chain
 open DotNetLightning.Infrastructure

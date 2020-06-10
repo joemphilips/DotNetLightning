@@ -322,36 +322,22 @@ module Transactions =
         let weight = COMMIT_WEIGHT + 172UL * (uint64 trimmedOfferedHTLCs.Length + uint64 trimmedReceivedHTLCs.Length)
         spec.FeeRatePerKw.ToFee(weight)
 
-    let internal getCommitmentTxNumberObscureFactor (isFunder: bool) (localPaymentBasePoint: PubKey) (remotePaymentBasePoint: PubKey) =
-        let res =
-            if (isFunder) then
-                Hashes.SHA256(Array.concat[| localPaymentBasePoint.ToBytes(); remotePaymentBasePoint.ToBytes() |])
-            else
-                Hashes.SHA256(Array.concat[| remotePaymentBasePoint.ToBytes(); localPaymentBasePoint.ToBytes() |])
-        res.[26..]
-    let obscuredCommitTxNumber (commitTxNumber: uint64) (isFunder) (localPaymentBasePoint) (remotePaymentBasePoint) =
-        let obs = getCommitmentTxNumberObscureFactor isFunder localPaymentBasePoint remotePaymentBasePoint
-        let numData = commitTxNumber.GetBytesBigEndian().[2..]
-        
-        let res = Array.zeroCreate (obs.Length + 2)
-        obs |> Array.iteri(fun i ob ->
-            res.[i + 2] <- ob ^^^ numData.[i]
-            )
-        let resSpanBigE = ReadOnlySpan(res |> Array.rev)
-        BitConverter.ToUInt64(resSpanBigE.ToArray(), 0)
-
-    let private encodeTxNumber (txNumber): (_ * _) =
-        if (txNumber > 0xffffffffffffUL) then raise <| ArgumentException("tx number must be lesser than 48 bits long")
-        (0x80000000UL ||| (txNumber >>> 24)) |> uint32, ((txNumber &&& 0xffffffUL) ||| 0x20000000UL) |> uint32
-
-    let private decodeTxNumber (sequence: uint32) (lockTime: uint32) =
-        ((uint64 sequence) &&& 0xffffffUL <<< 24) + ((uint64 lockTime) &&& 0xffffffUL)
-
-    /// unblind commit tx number
-    let getCommitTxNumber(commitTx: Transaction) (isFunder: bool) (localPaymentBasePoint: PubKey) (remotePaymentBasePoint) =
-        let blind =  obscuredCommitTxNumber (0UL) isFunder localPaymentBasePoint remotePaymentBasePoint
-        let obscured = decodeTxNumber (!> commitTx.Inputs.[0].Sequence) (!> commitTx.LockTime)
-        obscured ^^^ blind
+    let getCommitTxNumber (commitTx: Transaction)
+                          (isFunder: bool)
+                          (localPaymentBasePoint: PubKey)
+                          (remotePaymentBasePoint: PubKey)
+                              : Option<CommitmentNumber> =
+        let obscuredCommitmentNumberOpt =
+            ObscuredCommitmentNumber.TryFromLockTimeAndSequence
+                commitTx.LockTime
+                commitTx.Inputs.[0].Sequence
+        match obscuredCommitmentNumberOpt with
+        | None -> None
+        | Some obscuredCommitmentNumber ->
+            Some <| obscuredCommitmentNumber.Unobscure
+                isFunder
+                localPaymentBasePoint
+                remotePaymentBasePoint
 
     /// Sort by BOLT 3: Compliant way (i.e. BIP69 + CLTV order)
     let sortTxOut (txOutsWithMeta: (TxOut * _) list) =
@@ -360,7 +346,7 @@ module Transactions =
         |> List.map(fst)
 
     let makeCommitTx (inputInfo: ScriptCoin)
-                     (commitTxNumber)
+                     (commitmentNumber: CommitmentNumber)
                      (localPaymentBasePoint: PubKey)
                      (remotePaymentBasePoint: PubKey)
                      (localIsFunder: bool)
@@ -402,21 +388,23 @@ module Transactions =
                     let redeem = Scripts.htlcReceived (localHTLCPubKey) (remoteHTLCPubkey) (localRevocationPubKey) (htlc.Add.PaymentHash) (htlc.Add.CLTVExpiry.Value)
                     TxOut(htlc.Add.Amount.ToMoney(), redeem.WitHash.ScriptPubKey), Some htlc.Add)
         
-        let txNumber = obscuredCommitTxNumber commitTxNumber localIsFunder localPaymentBasePoint remotePaymentBasePoint
-        let (sequence, lockTime) = encodeTxNumber(txNumber)
+        let obscuredCommitmentNumber =
+            commitmentNumber.Obscure localIsFunder localPaymentBasePoint remotePaymentBasePoint
+        let sequence = obscuredCommitmentNumber.Sequence
+        let lockTime = obscuredCommitmentNumber.LockTime
 
         let tx =
             let tx = n.CreateTransaction()
             tx.Version <- 2u
             let txin = TxIn(inputInfo.Outpoint)
-            txin.Sequence <- Sequence(sequence)
+            txin.Sequence <- sequence
             tx.Inputs.Add(txin) |> ignore
             let txOuts =
                 ([toLocalDelayedOutput_opt; toRemoteOutput_opt;] |> List.choose id |> List.map(fun x -> x, None))
                 @ (htlcOfferedOutputsWithMetadata)
                 @ htlcReceivedOutputsWithMetadata
             tx.Outputs.AddRange(txOuts |> sortTxOut)
-            tx.LockTime <- !> lockTime
+            tx.LockTime <- lockTime
             tx
         let psbt =
             let p = PSBT.FromTransaction(tx, n)
@@ -752,5 +740,4 @@ module Transactions =
                 PSBT.FromTransaction(tx, n)
                     .AddCoins(commitTxInput)
             psbt |> ClosingTx |> Ok
-
 

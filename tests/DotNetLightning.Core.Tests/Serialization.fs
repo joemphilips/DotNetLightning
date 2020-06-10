@@ -80,10 +80,12 @@ module SerializationTest =
                     ChannelId = ChannelId(uint256([|4; 0; 0; 0; 0; 0; 0; 0; 5; 0; 0; 0; 0; 0; 0; 0; 6; 0; 0; 0; 0; 0; 0; 0; 7; 0; 0; 0; 0; 0; 0; 0 |] |> Array.map(uint8)))
                     NextLocalCommitmentNumber = 3UL
                     NextRemoteCommitmentNumber = 4UL
-                    DataLossProtect = OptionalField.Some({
-                                          YourLastPerCommitmentSecret = PaymentPreimage.Create([|for _ in 0..(PaymentPreimage.LENGTH - 1) -> 9uy|])
-                                          MyCurrentPerCommitmentPoint = pubkey1
-                                      })
+                    DataLossProtect = OptionalField.Some <| {
+                        YourLastPerCommitmentSecret = 
+                            RevocationKey.FromBytes
+                                [| for _ in 0..(RevocationKey.BytesLength - 1) -> 9uy |]
+                        MyCurrentPerCommitmentPoint = CommitmentPubKey pubkey1
+                    }
                 }
                 let expected = [|4; 0; 0; 0; 0; 0; 0; 0; 5; 0; 0; 0; 0; 0; 0; 0; 6; 0; 0; 0; 0; 0; 0; 0; 7; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 3; 0; 0; 0; 0; 0; 0; 0; 4; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 3; 27; 132; 197; 86; 123; 18; 100; 64; 153; 93; 62; 213; 170; 186; 5; 101; 215; 30; 24; 52; 96; 72; 25; 255; 156; 23; 245; 233; 213; 221; 7; 143 |] |> Array.map (byte)
                 Expect.equal (channelReestablishMsg.ToBytes()) expected ""
@@ -477,7 +479,7 @@ module SerializationTest =
                         PaymentBasepoint = pubkey3
                         DelayedPaymentBasepoint = pubkey4
                         HTLCBasepoint = pubkey5
-                        FirstPerCommitmentPoint = pubkey6
+                        FirstPerCommitmentPoint = CommitmentPubKey pubkey6
                         ChannelFlags = if randomBit then 1uy <<< 5 else 0uy
                         ShutdownScriptPubKey = if shutdown then Some (pubkey1.Hash.ScriptPubKey) else None
                     }
@@ -517,7 +519,7 @@ module SerializationTest =
                         PaymentBasepoint = pubkey3
                         DelayedPaymentBasepoint = pubkey4
                         HTLCBasepoint = pubkey5
-                        FirstPerCommitmentPoint = pubkey6
+                        FirstPerCommitmentPoint = CommitmentPubKey pubkey6
                         ShutdownScriptPubKey = if shutdown then Some(pubkey1.Hash.ScriptPubKey) else None
                     }
                     let actual = acceptChannelMsg.ToBytes()
@@ -553,7 +555,7 @@ module SerializationTest =
             testCase "funding_locked" <| fun _ ->
                 let fundingLockedMsg = {
                     FundingLockedMsg.ChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
-                    NextPerCommitmentPoint = pubkey1
+                    NextPerCommitmentPoint = CommitmentPubKey pubkey1
                 }
                 let expected = hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f")
                 CheckArrayEqual (fundingLockedMsg.ToBytes()) expected
@@ -656,8 +658,10 @@ module SerializationTest =
             testCase "revoke_and_ack" <| fun _ ->
                 let revokeAndACKMsg = {
                     ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
-                    PerCommitmentSecret = PaymentPreimage.Create([| for _ in 0..(PaymentPreimage.LENGTH - 1) -> 1uy |])
-                    NextPerCommitmentPoint = pubkey1
+                    PerCommitmentSecret =
+                        RevocationKey.FromBytes
+                            [| for _ in 0..(PaymentPreimage.LENGTH - 1) -> 1uy |]
+                    NextPerCommitmentPoint = CommitmentPubKey pubkey1
                 }
                 let expected = hex.DecodeData("02020202020202020202020202020202020202020202020202020202020202020101010101010101010101010101010101010101010101010101010101010101031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f")
                 CheckArrayEqual (revokeAndACKMsg.ToBytes()) expected

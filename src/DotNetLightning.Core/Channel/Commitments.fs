@@ -60,23 +60,23 @@ type PublishableTxs = {
 }
 
 type LocalCommit = {
-    Index: uint64
+    Index: CommitmentNumber
     Spec: CommitmentSpec
     PublishableTxs: PublishableTxs
     /// These are not redeemable on-chain until we get a corresponding preimage.
     PendingHTLCSuccessTxs: HTLCSuccessTx list
 }
 type RemoteCommit = {
-    Index: uint64
+    Index: CommitmentNumber
     Spec: CommitmentSpec
     TxId: TxId
-    RemotePerCommitmentPoint: PubKey
+    RemotePerCommitmentPoint: CommitmentPubKey
 }
 
 type WaitingForRevocation = {
     NextRemoteCommit: RemoteCommit
     Sent: CommitmentSignedMsg
-    SentAfterLocalCommitmentIndex: uint64
+    SentAfterLocalCommitmentIndex: CommitmentNumber
     ReSignASAP: bool
 }
     with
@@ -90,7 +90,7 @@ type WaitingForRevocation = {
 
 type RemoteNextCommitInfo =
     | Waiting of WaitingForRevocation
-    | Revoked of PubKey
+    | Revoked of CommitmentPubKey
     with
         static member Waiting_: Prism<RemoteNextCommitInfo, WaitingForRevocation> =
             (fun remoteNextCommitInfo ->
@@ -102,15 +102,15 @@ type RemoteNextCommitInfo =
                 | Waiting _ -> Waiting waitingForRevocation
                 | Revoked _ -> remoteNextCommitInfo)
 
-        static member Revoked_: Prism<RemoteNextCommitInfo, PubKey> =
+        static member Revoked_: Prism<RemoteNextCommitInfo, CommitmentPubKey> =
             (fun remoteNextCommitInfo ->
                 match remoteNextCommitInfo with
                 | Waiting _ -> None
-                | Revoked pubKey -> Some pubKey),
-            (fun pubKey remoteNextCommitInfo ->
+                | Revoked commitmentPubKey -> Some commitmentPubKey),
+            (fun commitmentPubKey remoteNextCommitInfo ->
                 match remoteNextCommitInfo with
                 | Waiting _ -> remoteNextCommitInfo
-                | Revoked pubKey -> Revoked pubKey)
+                | Revoked commitmentPubKecommitmentPubKey -> Revoked commitmentPubKey)
 
 type Commitments = {
     LocalParams: LocalParams
@@ -125,7 +125,7 @@ type Commitments = {
     RemoteNextHTLCId: HTLCId
     OriginChannels: Map<HTLCId, HTLCSource>
     RemoteNextCommitInfo: RemoteNextCommitInfo
-    RemotePerCommitmentSecrets: ShaChain
+    RemotePerCommitmentSecrets: RevocationSet
     ChannelId: ChannelId
 }
     with

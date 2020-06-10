@@ -1,7 +1,9 @@
 namespace DotNetLightning.Utils
 
+open System.IO
 open NBitcoin
 
+[<AutoOpen>]
 module NBitcoinExtensions =
     module FeeRate =
         let FeePerKWeight (feeRate: FeeRate) =
@@ -35,3 +37,10 @@ module NBitcoinExtensions =
 
         member this.GetTxId() =
             this.GetGlobalTransaction().GetTxId()
+
+    type Key with
+        static member BytesLength: int = 32
+
+    type PubKey with
+        static member BytesLength: int = 33
+

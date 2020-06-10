@@ -2,6 +2,7 @@ namespace DotNetLightning.Infrastructure.Services
 
 open System
 open NBitcoin
+open DotNetLightning.Utils
 open DotNetLightning.Utils.Primitives
 
 /// Utility for tracking registered txn/outpoints and checking for matches

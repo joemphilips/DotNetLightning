@@ -73,8 +73,8 @@ module internal ChannelHelpers =
                           (initialFeeRatePerKw: FeeRatePerKw)
                           (fundingOutputIndex: TxOutIndex)
                           (fundingTxId: TxId)
-                          (localPerCommitmentPoint: PubKey)
-                          (remotePerCommitmentPoint: PubKey)
+                          (localPerCommitmentPoint: CommitmentPubKey)
+                          (remotePerCommitmentPoint: CommitmentPubKey)
                           (secpContext: ISecp256k1)
                           (n: Network): Result<CommitmentSpec * CommitTx * CommitmentSpec * CommitTx, ChannelError> =
         let toLocal = if (localParams.IsFunder) then fundingSatoshis.ToLNMoney() - pushMSat else pushMSat
@@ -95,12 +95,12 @@ module internal ChannelHelpers =
                                                   fundingTxId
                                                   fundingOutputIndex
                                                   fundingSatoshis
-            let revPubKeyForLocal = Generators.revocationPubKey secpContext remoteParams.RevocationBasePoint localPerCommitmentPoint
-            let delayedPubKeyForLocal = Generators.derivePubKey secpContext localParams.ChannelPubKeys.DelayedPaymentBasePubKey localPerCommitmentPoint
-            let paymentPubKeyForLocal = Generators.derivePubKey secpContext remoteParams.PaymentBasePoint localPerCommitmentPoint
+            let revPubKeyForLocal = Generators.revocationPubKey secpContext remoteParams.RevocationBasePoint localPerCommitmentPoint.PubKey
+            let delayedPubKeyForLocal = Generators.derivePubKey secpContext localParams.ChannelPubKeys.DelayedPaymentBasePubKey localPerCommitmentPoint.PubKey
+            let paymentPubKeyForLocal = Generators.derivePubKey secpContext remoteParams.PaymentBasePoint localPerCommitmentPoint.PubKey
             let localCommitTx =
                 Transactions.makeCommitTx scriptCoin
-                                          0UL
+                                          CommitmentNumber.FirstCommitment
                                           localParams.ChannelPubKeys.PaymentBasePubKey
                                           remoteParams.PaymentBasePoint
                                           localParams.IsFunder
@@ -113,12 +113,12 @@ module internal ChannelHelpers =
                                           (remoteParams.HTLCBasePoint)
                                           localSpec
                                           n
-            let revPubKeyForRemote = Generators.revocationPubKey secpContext localParams.ChannelPubKeys.RevocationBasePubKey remotePerCommitmentPoint
-            let delayedPubKeyForRemote = Generators.derivePubKey secpContext remoteParams.DelayedPaymentBasePoint remotePerCommitmentPoint
-            let paymentPubKeyForRemote = Generators.derivePubKey secpContext localParams.ChannelPubKeys.PaymentBasePubKey remotePerCommitmentPoint
+            let revPubKeyForRemote = Generators.revocationPubKey secpContext localParams.ChannelPubKeys.RevocationBasePubKey remotePerCommitmentPoint.PubKey
+            let delayedPubKeyForRemote = Generators.derivePubKey secpContext remoteParams.DelayedPaymentBasePoint remotePerCommitmentPoint.PubKey
+            let paymentPubKeyForRemote = Generators.derivePubKey secpContext localParams.ChannelPubKeys.PaymentBasePubKey remotePerCommitmentPoint.PubKey
             let remoteCommitTx =
                 Transactions.makeCommitTx scriptCoin
-                                          0UL
+                                          CommitmentNumber.FirstCommitment
                                           remoteParams.PaymentBasePoint
                                           localParams.ChannelPubKeys.PaymentBasePubKey
                                           (not localParams.IsFunder)

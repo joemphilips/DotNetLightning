@@ -17,7 +17,22 @@ let shortChannelIdsGen = Arb.generate<uint64> |> Gen.map(ShortChannelId.FromUInt
 // crypto stuffs
 
 let keyGen = Gen.fresh (fun () -> Key())
-let pubKeyGen = keyGen |> Gen.map(fun k -> k.PubKey)
+
+let pubKeyGen = gen {
+    let! key = keyGen
+    return key.PubKey
+}
+
+let revocationKeyGen = gen {
+    let! key = keyGen
+    return RevocationKey key
+}
+
+let commitmentPubKeyGen = gen {
+    let! pubKey = pubKeyGen
+    return CommitmentPubKey pubKey
+}
+
 let signatureGen: Gen<LNECDSASignature> = gen {
     let! h = uint256Gen
     let! k = keyGen

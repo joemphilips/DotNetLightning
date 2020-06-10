@@ -17,6 +17,15 @@ type System.UInt64 with
     member this.GetBytesBigEndian() =
         let d = BitConverter.GetBytes(this)
         if BitConverter.IsLittleEndian then (d |> Array.rev) else d
+
+    static member FromBytesBigEndian(bytes8: array<byte>): uint64 =
+        let bytes =
+            if BitConverter.IsLittleEndian then
+                Array.rev bytes8
+            else
+                bytes8
+        BitConverter.ToUInt64(bytes, 0)
+
     member x.ToVarInt() =
         if x < 0xfdUL then
             [|uint8 x|]
@@ -51,6 +60,15 @@ type System.UInt32 with
     member this.GetBytesBigEndian() =
         let d = BitConverter.GetBytes(this)
         if BitConverter.IsLittleEndian then (d |> Array.rev) else d
+
+    static member FromBytesBigEndian(bytes4: array<byte>): uint32 =
+        let bytes =
+            if BitConverter.IsLittleEndian then
+                Array.rev bytes4
+            else
+                bytes4
+        BitConverter.ToUInt32(bytes, 0)
+
 type System.UInt16 with
     member this.GetBytesBigEndian() =
         let d = BitConverter.GetBytes(this)
