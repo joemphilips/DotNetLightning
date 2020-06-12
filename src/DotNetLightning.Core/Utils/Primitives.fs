@@ -125,6 +125,7 @@ module Primitives =
         ///
         /// (serialized R value + S value) in byte array.
         member this.ToBytesCompact() =
+            Secp256k1.
             this.Value.ToCompact()
             
         /// Logic does not really matter here. This is just for making life easier by enabling automatic implementation

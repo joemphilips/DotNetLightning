@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <VersionPrefix>1.1.2</VersionPrefix>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
   <Choose>
@@ -93,7 +93,8 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="4.7.0" />
-    <PackageReference Include="NBitcoin" Version="5.0.41" />
+    <PackageReference Include="NBitcoin" Version="5.0.40" />
+    <PackageReference Include="NBitcoin.Secp256k1" Version="1.0.2" />
     <PackageReference Condition="'$(BouncyCastle)'=='true'" Include="Portable.BouncyCastle" Version="1.8.5.2" />
     <PackageReference Include="System.Memory" Version="4.5.3" />
   </ItemGroup>
