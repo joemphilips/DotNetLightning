@@ -13,13 +13,13 @@ open DotNetLightning.Crypto.Sphinx
 
 let hex = NBitcoin.DataEncoders.HexEncoder()
 
-let sessionKey = "4141414141414141414141414141414141414141414141414141414141414141" |> hex.DecodeData |> Key
+let sessionKey = "4141414141414141414141414141414141414141414141414141414141414141" |> hex.DecodeData |> fun h -> new Key(h)
 let privKeys = [ "4141414141414141414141414141414141414141414141414141414141414141"
                  "4242424242424242424242424242424242424242424242424242424242424242"
                  "4343434343434343434343434343434343434343434343434343434343434343"
                  "4444444444444444444444444444444444444444444444444444444444444444"
                  "4545454545454545454545454545454545454545454545454545454545454545" ]
-                |> List.map(hex.DecodeData >> Key)
+                |> List.map(hex.DecodeData >> fun h -> new Key(h))
 let pubKeys = privKeys |> List.map(fun k -> k.PubKey)
 
 let expectedPubKeys = [ "02eec7245d6b7d2ccb30380bfbe2a3648cd7a942653f5aa340edcea1f283686619"
@@ -61,7 +61,7 @@ let bolt4Tests1 =
                                           "3a6b412548762f0dbccce5c7ae7bb8147d1caf9b5471c34120b30bc9c04891cc"
                                           "21e13c2d7cfe7e18836df50872466117a295783ab8aab0e7ecc8c725503ad02d"
                                           "b5756b9b542727dbafc6765a49488b023a725d631af688fc031217e90770c328" ]
-                                        |>  List.map(hex.DecodeData >> Key)
+                                        |>  List.map(hex.DecodeData >> fun h -> new Key(h))
             Expect.equal ephKeys expectedEphKeys ""
             Expect.equal sharedSecrets expectedSharedSecrets ""
 

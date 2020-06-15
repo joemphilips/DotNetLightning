@@ -52,7 +52,7 @@ module Sphinx =
         [| pk.ToBytes(); secret.ToBytes() |]
         |> Array.concat
         |> Crypto.Hashes.SHA256
-        |> Key
+        |> fun h -> new Key(h)
 
     let private blind (pk: PubKey) (secret: Key) =
         pk.GetSharedPubkey(secret)
@@ -71,7 +71,7 @@ module Sphinx =
             (ephemeralPubKeys, sharedSecrets)
         else
             let ephemeralPubKey = blind (ephemeralPubKeys |> List.last) (blindingFactors |> List.last)
-            let secret = computeSharedSecret (blindMulti (pubKeys.[0]) (blindingFactors), sessionKey) |> Key
+            let secret = computeSharedSecret (blindMulti (pubKeys.[0]) (blindingFactors), sessionKey) |> fun h -> new Key(h)
             let blindingFactor = computeBlindingFactor(ephemeralPubKey) (secret)
             computeEphemeralPublicKeysAndSharedSecretsCore
                 sessionKey (pubKeys |> List.tail)
@@ -81,7 +81,7 @@ module Sphinx =
 
     let rec internal computeEphemeralPublicKeysAndSharedSecrets(sessionKey: Key) (pubKeys: PubKey list) =
         let ephemeralPK0 = sessionKey.PubKey
-        let secret0 = computeSharedSecret(pubKeys.[0], sessionKey) |> Key
+        let secret0 = computeSharedSecret(pubKeys.[0], sessionKey) |> fun h -> new Key(h)
         let blindingFactor0 = computeBlindingFactor(ephemeralPK0) (secret0)
         computeEphemeralPublicKeysAndSharedSecretsCore
             (sessionKey) (pubKeys |> List.tail) ([ephemeralPK0]) ([blindingFactor0]) ([secret0])
@@ -131,7 +131,7 @@ module Sphinx =
                     let payload = bin.[0..PayloadLength - 1]
                     let hmac = bin.[PayloadLength .. PayloadLength + MacLength - 1] |> uint256
                     let nextRouteInfo = bin.[PayloadLength + MacLength..]
-                    let nextPubKey = blind(pk) (computeBlindingFactor(pk) (Key ss))
+                    let nextPubKey = blind(pk) (computeBlindingFactor(pk) (new Key(ss)))
                     { ParsedPacket.Payload = payload
                       NextPacket = { Version = VERSION; PublicKey = nextPubKey.ToBytes(); HMAC= hmac; HopData = nextRouteInfo }
                       SharedSecret = ss } |> Ok

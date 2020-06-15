@@ -15,7 +15,7 @@ open NBitcoin.Crypto
 let tests =
     let hex = NBitcoin.DataEncoders.HexEncoder()
     let ascii = System.Text.ASCIIEncoding.ASCII
-    let priv = "e126f68f7eafcc8b74f54d269fe206be715000f94dac067d1c04a8ca3b2db734" |> hex.DecodeData |> Key
+    let priv = "e126f68f7eafcc8b74f54d269fe206be715000f94dac067d1c04a8ca3b2db734" |> hex.DecodeData |> fun h -> new Key(h)
     let msgSigner  = { new IMessageSigner
                        with
                            member this.SignMessage(data) = let signature = priv.SignCompact(data, false) in signature }
@@ -201,7 +201,7 @@ let unitTest =
             let nodeSecret =
                 "897469da69a4aae063b98454bdb5dce9efb71a6001b09ff9aaf32d730a127bfc"
                 |> hex.DecodeData
-                |> Key
+                |> fun h -> new Key(h)
             let nodeId =
                 "02b8042a54520cb3228d7b0aa3de81ffcb424e1dcd958821285696ce088d4486e4"
                 |> PubKey

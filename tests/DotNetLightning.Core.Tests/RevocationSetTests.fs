@@ -14,7 +14,7 @@ let tests =
                    : Result<RevocationSet, InsertRevocationKeyError> =
         let hex = NBitcoin.DataEncoders.HexEncoder()
         let commitmentNumber = CommitmentNumber <| UInt48.FromUInt64 commitmentNumber
-        let key = key |> hex.DecodeData |> Key |> RevocationKey
+        let key = key |> hex.DecodeData |> fun h -> new Key(h) |> RevocationKey
         revocationSet.InsertRevocationKey commitmentNumber key
 
     let insertUnwrap (commitmentNumber: uint64)

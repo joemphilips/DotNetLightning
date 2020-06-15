@@ -3,12 +3,14 @@ namespace DotNetLightning.Crypto
 open System
 open NBitcoin // For e.g. uint256
 open DotNetLightning.Utils
+open NBitcoin.Crypto
 
 #if BouncyCastle
 open Org.BouncyCastle.Crypto.Parameters
 open Org.BouncyCastle.Crypto.Macs // For Poly1305
 #else
-open Secp256k1Net
+open NBitcoin.Secp256k1
+
 #endif
 
 type CryptoError =
@@ -32,7 +34,8 @@ type CryptoError =
 
 module Secret =
     let FromKeyPair(pub: PubKey, priv: Key) =
-        NBitcoin.Crypto.Hashes.SHA256 <| pub.GetSharedPubkey(priv).ToBytes()
+        let ba = pub.GetSharedPubkey(priv).ToBytes()
+        Hashes.SHA256 ba
 
 type ISecp256k1 =
     inherit IDisposable

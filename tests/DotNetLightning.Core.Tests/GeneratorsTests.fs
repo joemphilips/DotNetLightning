@@ -10,12 +10,12 @@ let hex = DataEncoders.HexEncoder()
 let baseSecret =
     "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"
     |> hex.DecodeData
-    |> Key
+    |> fun h -> new Key(h)
 
 let perCommitmentSecret =
     "1f1e1d1c1b1a191817161514131211100f0e0d0c0b0a09080706050403020100"
     |> hex.DecodeData
-    |> Key
+    |> fun h -> new Key(h)
 
 let basePoint =
     "036d6caac248af96f6afa7f904f550253a0f3ef3f5aa2fe6838a95b216691468e2"

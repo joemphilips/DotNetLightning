@@ -59,7 +59,7 @@ module Generators =
         Array.append (perCommitmentPoint.ToBytes()) (baseSecret.PubKey.ToBytes())
         |> Hashes.SHA256
         |> combinePrivKey ctx (baseSecret.ToBytes())
-        |> Key
+        |> fun h -> new Key(h)
 
     let derivePubKey (ctx: ISecp256k1) (basePoint: PubKey) (perCommitmentPoint: PubKey) =
         let basePointBytes = basePoint.ToBytes()
@@ -95,4 +95,4 @@ module Generators =
             |> Hashes.SHA256
         (multiplyPrivateKey ctx secret a, multiplyPrivateKey ctx perCommitmentSecret b)
         ||> combinePrivKey ctx
-        |> Key
+        |> fun h -> new Key(h)

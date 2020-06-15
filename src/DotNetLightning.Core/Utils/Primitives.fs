@@ -4,7 +4,6 @@ open NBitcoin
 open NBitcoin.Crypto
 
 open System
-open System.IO
 open System.Net
 open System.Linq
 
@@ -125,7 +124,6 @@ module Primitives =
         ///
         /// (serialized R value + S value) in byte array.
         member this.ToBytesCompact() =
-            Secp256k1.
             this.Value.ToCompact()
             
         /// Logic does not really matter here. This is just for making life easier by enabling automatic implementation
@@ -186,7 +184,8 @@ module Primitives =
 
                 member this.ToHex() =
                     let h = NBitcoin.DataEncoders.HexEncoder()
-                    this.ToByteArray() |> h.EncodeData
+                    let ba: byte[] = this.ToByteArray()
+                    ba |> h.EncodeData
                     
                 member this.ToBytes() =
                     this.Value
@@ -198,7 +197,7 @@ module Primitives =
                     this.ToByteArray() |> Crypto.Hashes.SHA256 |> uint256 |> PaymentHash
 
                 member this.ToPrivKey() =
-                    this.ToByteArray() |> Key
+                    this.ToByteArray() |> fun ba -> new Key(ba)
 
                 member this.ToPubKey() =
                     this.ToPrivKey().PubKey
@@ -421,11 +420,15 @@ module Primitives =
                                         : UInt48 =
             let pubKeysHash =
                 if isFunder then
-                    Hashes.SHA256 <| Array.concat
-                        [| localPaymentBasePoint.ToBytes(); remotePaymentBasePoint.ToBytes() |]
+                    let ba =
+                        Array.concat
+                            (seq [ yield localPaymentBasePoint.ToBytes(); yield remotePaymentBasePoint.ToBytes() ])
+                    Hashes.SHA256 ba
                 else
-                    Hashes.SHA256 <| Array.concat
-                        [| remotePaymentBasePoint.ToBytes(); localPaymentBasePoint.ToBytes() |]
+                    let ba =
+                        Array.concat
+                            (seq [ yield remotePaymentBasePoint.ToBytes(); yield localPaymentBasePoint.ToBytes() ])
+                    Hashes.SHA256 ba
             UInt48.FromBytesBigEndian pubKeysHash.[26..]
 
         member this.PreviousCommitment: CommitmentNumber =
@@ -496,7 +499,7 @@ module Primitives =
         static member BytesLength: int = Key.BytesLength
 
         static member FromBytes(bytes: array<byte>): RevocationKey =
-            RevocationKey <| Key bytes
+            RevocationKey <| new Key(bytes)
 
         member this.ToByteArray(): array<byte> =
             this.Key.ToBytes()
@@ -514,7 +517,7 @@ module Primitives =
                         let bitIndex = bit % 8
                         secret.[byteIndex] <- secret.[byteIndex] ^^^ (1uy <<< bitIndex)
                         secret <- Hashes.SHA256 secret
-                Some <| RevocationKey(Key secret)
+                Some <| RevocationKey(new Key(secret))
             else
                 None
 
