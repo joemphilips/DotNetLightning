@@ -207,6 +207,9 @@ module Data =
                     this.ChannelId
                 member this.Commitments: Commitments = 
                     this.Commitments
+                    
+            member this.FinalizedTx =
+                this.MutualClosePublished |> List.tryHead
             static member Create(channelId, commitments, maybeFundingTx, waitingSince, mutualCloseProposed, ?mutualClosePublished) =
                 {
                     ChannelId = channelId
