@@ -194,7 +194,7 @@ module Data =
                         MaybeFundingTx: Transaction option
                         WaitingSince: System.DateTime
                         MutualCloseProposed: ClosingTx list
-                        MutualClosePublished: FinalizedTx list
+                        MutualClosePublished: FinalizedTx
                         LocalCommitPublished: LocalCommitPublished option
                         RemoteCommitPublished: RemoteCommitPublished option
                         NextRemoteCommitPublished: RemoteCommitPublished option
@@ -209,15 +209,15 @@ module Data =
                     this.Commitments
                     
             member this.FinalizedTx =
-                this.MutualClosePublished |> List.tryHead
-            static member Create(channelId, commitments, maybeFundingTx, waitingSince, mutualCloseProposed, ?mutualClosePublished) =
+                this.MutualClosePublished
+            static member Create(channelId, commitments, maybeFundingTx, waitingSince, mutualCloseProposed, mutualClosePublished) =
                 {
                     ChannelId = channelId
                     Commitments = commitments
                     MaybeFundingTx = maybeFundingTx
                     WaitingSince = waitingSince
                     MutualCloseProposed = mutualCloseProposed
-                    MutualClosePublished = defaultArg mutualClosePublished []
+                    MutualClosePublished = mutualClosePublished
                     LocalCommitPublished = None
                     RemoteCommitPublished = None
                     NextRemoteCommitPublished = None
@@ -294,7 +294,7 @@ type ChannelEvent =
     | AcceptedShutdownWhenWeHavePendingHTLCs of nextState: ShutdownData
 
     // ------ closing ------
-    | MutualClosePerformed of nextState : ClosingData
+    | MutualClosePerformed of txToPublish: FinalizedTx * nextState : ClosingData
     | WeProposedNewClosingSigned of msgToSend: ClosingSignedMsg * nextState: NegotiatingData
     // -------- else ---------
     | Closed
