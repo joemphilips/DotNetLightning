@@ -90,13 +90,10 @@ module Channel =
             ((localClosingFee.Satoshi + remoteClosingFee.Satoshi) / 4L) * 2L
             |> Money.Satoshis
 
-        let handleMutualClose (closingTx: FinalizedTx, d: Choice<NegotiatingData, ClosingData>) =
+        let handleMutualClose (closingTx: FinalizedTx, d: NegotiatingData) =
             let nextData =
-                match d with
-                | Choice1Of2 negotiating ->
-                    ClosingData.Create (negotiating.ChannelId, negotiating.Commitments, None, DateTime.Now, (negotiating.ClosingTxProposed |> List.collect id |> List.map (fun tx -> tx.UnsignedTx)), closingTx :: [])
-                | Choice2Of2 closing -> { closing with MutualClosePublished = closingTx :: closing.MutualClosePublished }
-            [ MutualClosePerformed nextData ]
+                ClosingData.Create (d.ChannelId, d.Commitments, None, DateTime.Now, (d.ClosingTxProposed |> List.collect id |> List.map (fun tx -> tx.UnsignedTx)), closingTx)
+            [ MutualClosePerformed (closingTx, nextData) ]
             |> Ok
 
         let claimCurrentLocalCommitTxOutputs (keyRepo: IKeysRepository, channelPubKeys: ChannelPubKeys, commitments: Commitments, commitTx: CommitTx) =
@@ -661,7 +658,7 @@ module Channel =
                 let hasTooManyNegotiationDone =
                     (state.ClosingTxProposed |> List.collect (id) |> List.length) >= cs.Config.PeerChannelConfigLimits.MaxClosingNegotiationIterations
                 if (areWeInDeal || hasTooManyNegotiationDone) then
-                    return! Closing.handleMutualClose (finalizedTx, Choice1Of2({ state with MaybeBestUnpublishedTx = Some(finalizedTx) }))
+                    return! Closing.handleMutualClose (finalizedTx, { state with MaybeBestUnpublishedTx = Some(finalizedTx) })
                 else
                     let lastLocalClosingFee = state.ClosingTxProposed |> List.tryHead |> Option.bind (List.tryHead) |> Option.map (fun txp -> txp.LocalClosingSigned.FeeSatoshis)
                     let! localF = 
@@ -677,7 +674,7 @@ module Channel =
                     let nextClosingFee =
                         Closing.nextClosingFee (localF, msg.FeeSatoshis)
                     if (Some nextClosingFee = lastLocalClosingFee) then
-                        return! Closing.handleMutualClose (finalizedTx, Choice1Of2({ state with MaybeBestUnpublishedTx = Some(finalizedTx) }))
+                        return! Closing.handleMutualClose (finalizedTx, { state with MaybeBestUnpublishedTx = Some(finalizedTx) })
                     else if (nextClosingFee = msg.FeeSatoshis) then
                         // we have reached on agreement!
                         let closingTxProposed1 =
@@ -686,7 +683,7 @@ module Channel =
                             newProposed :: state.ClosingTxProposed
                         let negoData = { state with ClosingTxProposed = closingTxProposed1
                                                     MaybeBestUnpublishedTx = Some(finalizedTx) }
-                        return! Closing.handleMutualClose (finalizedTx, Choice1Of2(negoData))
+                        return! Closing.handleMutualClose (finalizedTx, negoData)
                     else
                         let closingTxProposed1 =
                             let newProposed = [ { ClosingTxProposed.UnsignedTx = closingTx
@@ -803,7 +800,7 @@ module Channel =
             { c with State = Negotiating nextState }
         | AcceptedShutdownWhenWeHavePendingHTLCs(nextState), ChannelState.Normal _d ->
             { c with State = Shutdown nextState }
-        | MutualClosePerformed nextState, ChannelState.Negotiating _d ->
+        | MutualClosePerformed (_txToPublish, nextState), ChannelState.Negotiating _d ->
             { c with State = Closing nextState }
         | WeProposedNewClosingSigned(_msg, nextState), ChannelState.Negotiating _d ->
             { c with State = Negotiating(nextState) }
