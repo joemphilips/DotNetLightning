@@ -39,12 +39,19 @@ module Secret =
 
 type ISecp256k1 =
     inherit IDisposable
+    /// Create uncompressed public key(64 bytes) from private key (32 bytes)
     abstract member PublicKeyCreate: privateKeyInput: ReadOnlySpan<byte> -> bool * byte[]
+    /// Convert secp256k1 compatible style pubkey (64 bytes) into compressed form (33 bytes)
     abstract member PublicKeySerializeCompressed: publicKey: ReadOnlySpan<byte> -> bool * byte[]
+    /// Convert compressed pubkey (33 bytes) to secp256k1 compatible style (64 bytes).
     abstract member PublicKeyParse: serializedPublicKey: ReadOnlySpan<byte> -> bool * publicKeyOutput: byte[]
+    /// Combine 2 public keys. Input can be either 33 bytes or 64 bytes. So normalization by PublicKeyParse is required.
     abstract member PublicKeyCombine: inputPubKey1: Span<byte> * inputPubKey2: Span<byte> -> bool * pubkeyOutput: byte[]
+    /// Add a tweak (32 bytes) to a private key. Causes a mutation to `privateKeyToMutate`.
     abstract member PrivateKeyTweakAdd: tweak: ReadOnlySpan<byte> * privateKeyToMutate: Span<byte> -> bool
-    abstract member PrivateKeyTweakMultiply: tweak: ReadOnlySpan<byte> * privKeyToMutate: Span<byte> -> bool
+    /// Assume tweak (32 bytes) as a scalar and add `G` (basepoint) for tweak times. Causes a mutation to `privateKeyToMutate`
+     abstract member PrivateKeyTweakMultiply: tweak: ReadOnlySpan<byte> * privKeyToMutate: Span<byte> -> bool
+    /// Add a public key (64 bytes) to itself for tweak times. Causes a mutation to `pubKeyToMutate`
     abstract member PublicKeyTweakMultiply: tweak: ReadOnlySpan<byte> * pubKeyToMutate: Span<byte> -> bool
 
 type ICryptoImpl =
@@ -56,30 +63,113 @@ type ICryptoImpl =
 
 #if !BouncyCastle
 module Sodium =
+
+    type NBitcoinSecp256k1() =
+        let context = NBitcoin.Secp256k1.Context()
+                
+        member this.PublicKeyParse serializedPublicKey =
+            match context.TryCreatePubKey(serializedPublicKey, compressed = ref false) with
+            | true, pk ->
+                let pk64 = Array.zeroCreate 65
+                pk.WriteToSpan(compressed = false, output = pk64.AsSpan()) |> ignore
+                (true, pk64.[1..])
+            | false, _ ->
+                false, [||]
+                
+        /// Normalize any representation of PublicKey into secp256k1 internal representation. (64 bytes)
+        member private this.NormalizePubKey (pk: ReadOnlySpan<byte>) =
+            if pk.Length = 64 then
+                pk
+            else if pk.Length = 65 then
+                pk.Slice(1)
+            else if pk.Length = 33 then
+                 match this.PublicKeyParse (pk) with
+                 | false, _ ->
+                     let hex = pk.ToArray().ToHexString()
+                     raise <| ArgumentException(sprintf "Failed to parse public key %s" hex)
+                     ReadOnlySpan.Empty // to avoid weird compiler error
+                 | true, pk64 -> ReadOnlySpan(pk64)
+            else
+                raise <| ArgumentException(sprintf "invalid public key with length %d" pk.Length)
+                ReadOnlySpan.Empty // to avoid weird compiler error
+                
+        member private this.NormalizePubKey(pk: ECPubKey) =
+            this.NormalizePubKey (ReadOnlySpan(pk.ToBytes()))
+            
+        interface ISecp256k1 with
+            member this.PublicKeyCreate privKey =
+                match context.TryCreateECPrivKey(privKey) with
+                | true, priv ->
+                    true, this.NormalizePubKey(priv.CreatePubKey()).ToArray()
+                | false, _ -> false, [||]
+            member this.PublicKeySerializeCompressed pubKey =
+                let pk = this.NormalizePubKey pubKey
+                match NBitcoin.Secp256k1.ECPubKey.TryCreateRawFormat(pk, context) with
+                | true, pk ->
+                    (true, pk.ToBytes(true))
+                | false, _ ->
+                    false, [||]
+            member this.PublicKeyParse serializedPublicKey =
+                this.PublicKeyParse serializedPublicKey
+                    
+            member this.PublicKeyCombine(pk1, pk2) =
+                let pk1 = this.NormalizePubKey(Span<byte>.op_Implicit(pk1))
+                let pk2 = this.NormalizePubKey(Span<byte>.op_Implicit(pk2))
+                match ECPubKey.TryCreateRawFormat(pk1, context), ECPubKey.TryCreateRawFormat(pk2, context) with
+                | (true, pk1), (true, pk2) ->
+                    match NBitcoin.Secp256k1.ECPubKey.TryCombine(context, seq {yield pk1; yield pk2}) with
+                    | true, pk ->
+                        true, this.NormalizePubKey(pk).ToArray()
+                    | false, _ ->
+                        false, [||]
+                | _ -> failwithf "failed to combine public key %s and %s" (pk1.ToArray().ToHexString()) (pk2.ToArray().ToHexString())
+                
+            member this.PrivateKeyTweakAdd(tweak, privateKey) =
+                use ecPrivateKey = context.CreateECPrivKey(Span<byte>.op_Implicit( privateKey))
+                match ecPrivateKey.TryTweakAdd tweak with
+                | true, r ->
+                    r.WriteToSpan privateKey
+                    true
+                | false, _ ->
+                    false
+                
+            member this.PrivateKeyTweakMultiply(tweak, privateKey) =
+                use ecPrivateKey = context.CreateECPrivKey(Span<byte>.op_Implicit(privateKey))
+                match ecPrivateKey.TryTweakMul tweak with
+                | true, r ->
+                    r.WriteToSpan privateKey
+                    true
+                | false, _ -> false
+                
+            member this.PublicKeyTweakMultiply(tweak, publicKey) =
+                let pk: ReadOnlySpan<byte> = Span<byte>.op_Implicit(publicKey)
+                let pk = this.NormalizePubKey pk
+                match ECPubKey.TryCreateRawFormat(pk, context) with
+                | true, ecPubKey ->
+                    /// This function must update publicKey object which is 64 bytes.
+                    /// But NBitcoin.Secp256k1 does not have a way to do that directly.
+                    /// So We must first convert into uncompressed serialized form (65 bytes)
+                    /// And normalize that by removing header byte.
+                    let tweaked = ecPubKey.MultTweak tweak
+                    let tweaked = this.NormalizePubKey(tweaked)
+                    tweaked.CopyTo publicKey
+                    true
+                | false, _ ->
+                    false
+                
+            member this.Dispose() =
+                ()
+                
     let internal getNonce (n: uint64) =
         let nonceBytes = ReadOnlySpan(Array.concat[| Array.zeroCreate 4; BitConverter.GetBytes n |]) // little endian
         NSec.Cryptography.Nonce(nonceBytes, 0)
 
     let internal chacha20AD = NSec.Cryptography.ChaCha20Poly1305.ChaCha20Poly1305
     let internal chacha20 = NSec.Experimental.ChaCha20.ChaCha20
-
-    type internal SodiumSecp256k1() =
-        let instance = new Secp256k1()
-        interface IDisposable with
-            member this.Dispose() = instance.Dispose()
-        interface ISecp256k1 with
-            member this.PublicKeyCreate privKey = instance.PublicKeyCreate privKey
-            member this.PublicKeySerializeCompressed publicKey = instance.PublicKeySerialize (publicKey, Flags.SECP256K1_EC_COMPRESSED)
-            member this.PublicKeyParse serializedPublicKey = instance.PublicKeyParse serializedPublicKey
-            member this.PublicKeyCombine (pubkey1, pubkey2) = instance.PublicKeyCombine (pubkey1, pubkey2)
-            member this.PrivateKeyTweakAdd (tweak, privKeyToMutate) = instance.PrivateKeyTweakAdd (tweak, privKeyToMutate)
-            member this.PrivateKeyTweakMultiply (tweak, privKeyToMutate) = instance.PrivateKeyTweakMultiply (tweak, privKeyToMutate)
-            member this.PublicKeyTweakMultiply (tweak, publicKeyToMutate) = instance.PublicKeyTweakMultiply (tweak, publicKeyToMutate)
-
     type CryptoImpl() =
         interface ICryptoImpl with
             member this.newSecp256k1() =
-                new SodiumSecp256k1() :> ISecp256k1
+                new NBitcoinSecp256k1() :> ISecp256k1
             member this.decryptWithAD(n: uint64, key: uint256, ad: byte[], cipherText: ReadOnlySpan<byte>): Result<byte[], CryptoError> =
                 let nonce = getNonce n
                 let keySpan = ReadOnlySpan (key.ToBytes())
@@ -104,6 +194,7 @@ module Sodium =
                 let blobF = NSec.Cryptography.KeyBlobFormat.RawSymmetricKey
                 use chachaKey = NSec.Cryptography.Key.Import(chacha20AD, keySpan, blobF)
                 chacha20AD.Encrypt(chachaKey, &nonce, ad, plainText)
+    
 #else
 type internal Op = Mul | Add
 
