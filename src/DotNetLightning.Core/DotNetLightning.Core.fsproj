@@ -18,7 +18,6 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\Secp256k1.Net\Secp256k1.Net.csproj" PrivateAssets="all" />
     <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\NSec\Experimental\NSec.Experimental.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\ResultUtils\ResultUtils.fsproj" PrivateAssets="all" />
     <ProjectReference Include="..\InternalBech32Encoder\InternalBech32Encoder.csproj" PrivateAssets="all" />
