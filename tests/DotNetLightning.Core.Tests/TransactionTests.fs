@@ -13,14 +13,14 @@ let n = Network.RegTest
 [<Tests>]
 let testList = [
     testCase "check pre-computed transaction weights" <| fun _ ->
-        let localRevocationPriv = [| for _ in 0..31 -> 0xccuy |] |> Key
-        let localPaymentPriv = [| for _ in 0..31 -> 0xdduy |] |> Key
-        let remotePaymentPriv = [| for _ in 0..31 -> 0xeeuy |] |> Key
-        let localHtlcPriv = [| for _ in 0..31 -> 0xeauy |] |> Key
-        let remoteHtlcPriv = [| for _ in 0..31 -> 0xebuy |] |> Key
-        let localFinalPriv = [| for _ in 0..31 -> 0xffuy |] |> Key
+        let localRevocationPriv = [| for _ in 0..31 -> 0xccuy |] |> fun b -> new Key(b)
+        let localPaymentPriv = [| for _ in 0..31 -> 0xdduy |] |> fun b -> new Key(b)
+        let remotePaymentPriv = [| for _ in 0..31 -> 0xeeuy |] |> fun b -> new Key(b)
+        let localHtlcPriv = [| for _ in 0..31 -> 0xeauy |] |> fun b -> new Key(b)
+        let remoteHtlcPriv = [| for _ in 0..31 -> 0xebuy |] |> fun b -> new Key(b)
+        let localFinalPriv = [| for _ in 0..31 -> 0xffuy |] |> fun b -> new Key(b)
         let finalSpk =
-            let s = [| for _ in 0..31 -> 0xfeuy |] |> Key
+            let s = [| for _ in 0..31 -> 0xfeuy |] |> fun b -> new Key(b)
             s.PubKey.WitHash
         let localDustLimit = 546L |> Money.Satoshis
         let toLocalDelay= 144us |> BlockHeightOffset16
@@ -45,7 +45,7 @@ let testList = [
                 let tx = claimP2WPKHOutputTx.Value.GetGlobalTransaction()
                 let witScript =
                     let dummySig = [| for _ in 0..70 -> 0xbbuy |]
-                    let dummyPk = Key().PubKey.ToBytes()
+                    let dummyPk = (new Key()).PubKey.ToBytes()
                     let dummy = seq[ Op.GetPushOp(dummySig); Op.GetPushOp(dummyPk)]
                     Script(dummy).ToWitScript()
                 tx.Inputs.[0].WitScript <- witScript

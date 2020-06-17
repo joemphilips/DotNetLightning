@@ -21,7 +21,7 @@ let logger = TestLogger.Create("bolt3-transaction tests")
 let log =
     // uncomment this if you want to see the debug message for this test
     // logger.LogSimple
-    fun s -> ()
+    fun _s -> ()
 
 
 /// data formatted to json
@@ -48,9 +48,9 @@ type LocalConfig = {
 }
 let getLocal(): LocalConfig =
     let ctx = newSecp256k1()
-    let paymentBasePointSecret = "1111111111111111111111111111111111111111111111111111111111111111" |> hex.DecodeData |> Key
+    let paymentBasePointSecret = "1111111111111111111111111111111111111111111111111111111111111111" |> hex.DecodeData |> fun h -> new Key(h)
     let paymentBasePoint = paymentBasePointSecret.PubKey
-    let delayedPaymentBasePointSecret = "3333333333333333333333333333333333333333333333333333333333333333" |> hex.DecodeData |> Key
+    let delayedPaymentBasePointSecret = "3333333333333333333333333333333333333333333333333333333333333333" |> hex.DecodeData |> fun h -> new Key(h)
     {
       Ctx = ctx
       CommitTxNumber = CommitmentNumber(UInt48.FromUInt64 42UL)
@@ -61,7 +61,7 @@ let getLocal(): LocalConfig =
       RevocationBasePointSecret = uint256.Parse("2222222222222222222222222222222222222222222222222222222222222222")
       DelayedPaymentBasePointSecret = delayedPaymentBasePointSecret
       delayedPaymentBasePoint = delayedPaymentBasePointSecret.PubKey
-      FundingPrivKey = "30ff4956bbdd3222d44cc5e8a1261dab1e07957bdac5ae88fe3261ef321f3749" |> hex.DecodeData |> Key
+      FundingPrivKey = "30ff4956bbdd3222d44cc5e8a1261dab1e07957bdac5ae88fe3261ef321f3749" |> hex.DecodeData |> fun h -> new Key(h)
       PerCommitmentPoint = localPerCommitmentPoint
       PaymentPrivKey = Generators.derivePrivKey(ctx) (paymentBasePointSecret) (localPerCommitmentPoint)
       DelayedPaymentPrivKey = Generators.derivePrivKey(ctx) (delayedPaymentBasePointSecret) (localPerCommitmentPoint)
@@ -84,9 +84,9 @@ type RemoteConfig = {
 }
 let getRemote(): RemoteConfig =
     let ctx = newSecp256k1()
-    let paymentBasePointSecret = "4444444444444444444444444444444444444444444444444444444444444444" |> hex.DecodeData |> Key
+    let paymentBasePointSecret = "4444444444444444444444444444444444444444444444444444444444444444" |> hex.DecodeData |> fun h -> new Key(h)
     let paymentBasePoint = paymentBasePointSecret.PubKey
-    let revocationBasePointSecret = "2222222222222222222222222222222222222222222222222222222222222222" |> hex.DecodeData |> Key
+    let revocationBasePointSecret = "2222222222222222222222222222222222222222222222222222222222222222" |> hex.DecodeData |> fun h -> new Key(h)
     let revocationBasePoint = revocationBasePointSecret.PubKey
     {
       Ctx = ctx
@@ -97,7 +97,7 @@ let getRemote(): RemoteConfig =
       PaymentBasePoint = paymentBasePoint
       RevocationBasePointSecret = revocationBasePointSecret
       RevocationBasePoint = revocationBasePoint
-      FundingPrivKey = "1552dfba4f6cf29a62a0af13c8d6981d36d0ef8d61ba10fb0fe90da7634d7e13" |> hex.DecodeData |> Key
+      FundingPrivKey = "1552dfba4f6cf29a62a0af13c8d6981d36d0ef8d61ba10fb0fe90da7634d7e13" |> hex.DecodeData |> fun h -> new Key(h)
       PaymentPrivKey = Generators.derivePrivKey (ctx) (paymentBasePointSecret) localPerCommitmentPoint
       PerCommitmentPoint = "022c76692fd70814a8d1ed9dedc833318afaaed8188db4d14727e2e99bc619d325" |> PubKey
     }
@@ -229,9 +229,8 @@ let run (spec: CommitmentSpec): (Transaction * _) =
                          (spec)
                          (n)
         // test vectors requires us to use RFC6974
-        commitTx.Value.Settings.UseLowR <- false
-        let localSig, tx2 = Transactions.sign(commitTx, local.FundingPrivKey)
-        let remoteSig, tx3 = Transactions.sign(tx2, remote.FundingPrivKey)
+        let localSig, tx2 = Transactions.signCore(commitTx, local.FundingPrivKey, false)
+        let remoteSig, tx3 = Transactions.signCore(tx2, remote.FundingPrivKey, false)
         Transactions.checkSigAndAdd (tx3) (localSig) (local.FundingPrivKey.PubKey)
         >>= fun tx4 ->
             Transactions.checkSigAndAdd (tx4) (remoteSig) (remote.FundingPrivKey.PubKey)
@@ -283,8 +282,6 @@ let run (spec: CommitmentSpec): (Transaction * _) =
         |> Result.defaultWith(fun _ -> failwith "fail(BOLT3 transactions): couldn't make HTLC transactions")
     let htlcTxs =
         Seq.append (unsignedHTLCSuccessTxs |> Seq.cast<IHTLCTx>) (unsignedHTLCTimeoutTxs |> Seq.cast<IHTLCTx>)
-        // test vectors requires us to use RFC6974
-        |> Seq.map(fun htlc -> htlc.Value.Settings.UseLowR <- false; htlc)
     sprintf "num htlcs: %A" htlcTxs |> log
     let htlcTxs = htlcTxs
                   |> Seq.toList
@@ -293,8 +290,8 @@ let run (spec: CommitmentSpec): (Transaction * _) =
         htlcTxs
         |> List.map(fun htlcTx -> match htlcTx with
                                   | :? HTLCSuccessTx as tx ->
-                                      let localSig, tx2 = Transactions.sign(tx, local.PaymentPrivKey)
-                                      let remoteSig, _tx3 = Transactions.sign(tx2, remote.PaymentPrivKey)
+                                      let localSig, tx2 = Transactions.signCore(tx, local.PaymentPrivKey, false)
+                                      let remoteSig, _tx3 = Transactions.signCore(tx2, remote.PaymentPrivKey, false)
                                       // just checking preimage is in global list
                                       let paymentPreimage = (paymentPreImages |> List.find(fun p -> p.Hash = tx.PaymentHash))
                                       log (sprintf "Finalizing %A" tx)
@@ -302,8 +299,8 @@ let run (spec: CommitmentSpec): (Transaction * _) =
                                       | Ok tx -> tx
                                       | Error e -> failwithf "%A" e
                                   | :? HTLCTimeoutTx as tx ->
-                                      let localSig, _ = Transactions.sign(tx, local.PaymentPrivKey)
-                                      let remoteSig, _ = Transactions.sign(tx, remote.PaymentPrivKey)
+                                      let localSig, _ = Transactions.signCore(tx, local.PaymentPrivKey, false)
+                                      let remoteSig, _ = Transactions.signCore(tx, remote.PaymentPrivKey, false)
                                       match tx.Finalize(localSig, remoteSig) with
                                       | Ok tx -> tx
                                       | Error e -> failwithf "%A" e
@@ -323,7 +320,7 @@ let runTest(testCase: JsonElement) (spec) (expectedOutputCount) =
     let expectedHTLC = testCase.GetProperty("htlc_output_txs").EnumerateArray()
     expectedHTLC
         |> Seq.iteri( fun i htlc ->
-            Expect.equal (htlcTxs.[i].ToHex()) (htlc.GetProperty("value").GetString())""
+            Expect.equal (htlcTxs.[i].ToHex()) (htlc.GetProperty("value").GetString()) ""
         )
 
 let specBase = { CommitmentSpec.HTLCs = htlcMap; FeeRatePerKw = 15000u |> FeeRatePerKw;

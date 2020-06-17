@@ -44,7 +44,7 @@ module Channel =
 
     let private hex = NBitcoin.DataEncoders.HexEncoder()
     let private ascii = System.Text.ASCIIEncoding.ASCII
-    let private dummyPrivKey = Key(hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101"))
+    let private dummyPrivKey = new Key(hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101"))
     let private dummyPubKey = dummyPrivKey.PubKey
     let private dummySig =
         "01010101010101010101010101010101" |> ascii.GetBytes
@@ -239,7 +239,7 @@ module Channel =
                                     RemoteNextHTLCId = HTLCId.Zero
                                     OriginChannels = Map.empty
                                     // we will receive their next per-commitment point in the next msg, so we temporarily put a random byte array
-                                    RemoteNextCommitInfo = DataEncoders.HexEncoder().DecodeData("0101010101010101010101010101010101010101010101010101010101010101") |> Key |> fun k -> k.PubKey |> CommitmentPubKey |> RemoteNextCommitInfo.Revoked
+                                    RemoteNextCommitInfo = DataEncoders.HexEncoder().DecodeData("0101010101010101010101010101010101010101010101010101010101010101") |> fun h -> new Key(h) |> fun k -> k.PubKey |> CommitmentPubKey |> RemoteNextCommitInfo.Revoked
                                     RemotePerCommitmentSecrets = RevocationSet()
                                     ChannelId =
                                         msg.ChannelId }
@@ -333,7 +333,7 @@ module Channel =
                                     LocalNextHTLCId = HTLCId.Zero
                                     RemoteNextHTLCId = HTLCId.Zero
                                     OriginChannels = Map.empty
-                                    RemoteNextCommitInfo = DataEncoders.HexEncoder().DecodeData("0101010101010101010101010101010101010101010101010101010101010101") |> Key |> fun k -> k.PubKey |> CommitmentPubKey |> RemoteNextCommitInfo.Revoked
+                                    RemoteNextCommitInfo = DataEncoders.HexEncoder().DecodeData("0101010101010101010101010101010101010101010101010101010101010101") |> fun h -> new Key(h) |> fun k -> k.PubKey |> CommitmentPubKey |> RemoteNextCommitInfo.Revoked
                                     RemotePerCommitmentSecrets = RevocationSet()
                                     ChannelId = channelId }
                 let nextState = { WaitForFundingConfirmedData.Commitments = commitments

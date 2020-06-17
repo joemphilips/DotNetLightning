@@ -398,7 +398,7 @@ module PeerChannelEncryptor =
         let processActOneWithKey (actOne: byte[]) (ourNodeSecret: Key) (pce: PeerChannelEncryptor): Result<byte[] * _, PeerError> =
             if (actOne.Length <> 50) then raise <| ArgumentException(sprintf "invalid actOne length: %d" (actOne.Length))
 
-            let ephemeralKey = Key()
+            let ephemeralKey = new Key()
             processActOneWithEphemeralKey actOne ourNodeSecret ephemeralKey pce
 
         let processActTwo (actTwo: byte[]) (ourNodeSecret: Key) (pce: PeerChannelEncryptor): Result<(byte[] * NodeId) * PeerChannelEncryptor, PeerError> = 

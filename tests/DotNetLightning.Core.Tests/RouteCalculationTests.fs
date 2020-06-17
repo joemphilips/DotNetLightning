@@ -28,8 +28,8 @@ let makeChannelAnnCore(shortChannelId: ShortChannelId, nodeIdA, nodeIdB) =
     { UnsignedChannelAnnouncementMsg.ShortChannelId = shortChannelId
       NodeId1 = nodeId1
       NodeId2 = nodeId2
-      BitcoinKey1 = (Key().PubKey |> ComparablePubKey)
-      BitcoinKey2 = (Key().PubKey |> ComparablePubKey)
+      BitcoinKey1 = ((new Key()).PubKey |> ComparablePubKey)
+      BitcoinKey2 = ((new Key()).PubKey |> ComparablePubKey)
       ChainHash = Network.RegTest.GenesisHash
       Features = FeatureBit.Zero
       ExcessData = [||]}
@@ -539,7 +539,7 @@ let tests = testList "Route Calculation" [
             )
             
         let ignored =
-            Routing.getIgnoredChannelDesc(publicChannels) (Set[c; j; (NodeId(Key().PubKey))])
+            Routing.getIgnoredChannelDesc(publicChannels) (Set[c; j; (NodeId((new Key()).PubKey))])
             |> Set
         Expect.isTrue(ignored.Contains({ ChannelDesc.ShortChannelId = ShortChannelId.FromUInt64(2UL); A = b; B = c })) ""
         Expect.isTrue(ignored.Contains({ ChannelDesc.ShortChannelId = ShortChannelId.FromUInt64(2UL); A = c; B = b })) ""
@@ -547,7 +547,7 @@ let tests = testList "Route Calculation" [
         Expect.isTrue(ignored.Contains({ ChannelDesc.ShortChannelId = ShortChannelId.FromUInt64(8UL); A = i; B = j })) ""
         
     testCase "limit routes to 20 hops" <| fun () ->
-        let nodes = [ for _ in 0..22 -> Key().PubKey |> NodeId ]
+        let nodes = [ for _ in 0..22 -> (new Key()).PubKey |> NodeId ]
         let updates =
             Seq.zip (nodes |> List.rev |> List.skip 1 |> List.rev) (nodes |> Seq.skip 1) // (0, 1) :: (1, 2) :: ...
             |> Seq.mapi (fun i (na, nb) -> makeUpdate((uint64 i), na, nb, LNMoney.MilliSatoshis(5), 0u, None, None, None) )
@@ -570,7 +570,7 @@ let tests = testList "Route Calculation" [
         Expect.isError(r21) ""
         
     testCase "ignore cheaper route when it has more than 20 hops" <| fun _ ->
-        let nodes = [ for _ in 0..50 -> Key().PubKey |> NodeId ]
+        let nodes = [ for _ in 0..50 -> (new Key()).PubKey |> NodeId ]
         let updates =
             List.zip (nodes |> List.rev |> List.skip 1 |> List.rev) (nodes |> List.skip 1) // (0, 1) :: (1, 2) :: ...
             |> List.mapi (fun i (na, nb) -> makeUpdate((uint64 i), na, nb, LNMoney.One, 0u, None, None, None) )

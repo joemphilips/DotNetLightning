@@ -4,14 +4,12 @@ open System
 open System.Linq
 
 open NBitcoin
-open NBitcoin.Crypto
 
 open ResultUtils
 
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils
 open DotNetLightning.Core.Utils.Extensions
-open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Utils.Aether
 open DotNetLightning.Serialize.Msgs
 
@@ -44,7 +42,7 @@ type CommitTx = {
 
 module private HTLCHelper =
     let createHTLCWitScript(localSig: TransactionSignature, remoteSig: TransactionSignature, witScript: Script, paymentPreimage: PaymentPreimage option) =
-        let l = new ResizeArray<Op>()
+        let l = ResizeArray<Op>()
         l.Add(!> OpcodeType.OP_0)
         l.Add(Op.GetPushOp(remoteSig.ToBytes()))
         l.Add(Op.GetPushOp(localSig.ToBytes()))
@@ -456,9 +454,11 @@ module Transactions =
     /// 2. ILightningTx updated
     /// Technically speaking, we could just return one of them.
     /// Returning both is just for ergonomic reason. (pretending to be referential transparent)
-    let sign(tx: ILightningTx, key: Key) =
+    let signCore(tx: ILightningTx, key: Key, enforceLowR) =
+        let signingOptions = SigningOptions()
+        signingOptions.EnforceLowR <- enforceLowR
         try
-            tx.Value.SignWithKeys(key) |> ignore
+            tx.Value.SignWithKeys(signingOptions, key) |> ignore
             match tx.Value.GetMatchingSig(key.PubKey) with
             | Some signature -> (signature, tx)
             | None -> failwith "unreachable"
@@ -478,14 +478,15 @@ module Transactions =
                 |> Seq.indexed
                 |> Seq.find(fun (i, _txIn) -> i = tx.WhichInput)
                 |> snd
-            let txSig = txIn.Sign(key, coin, SigHash.All, psbt.Settings.UseLowR)
+            let txSig = txIn.Sign(key, coin, SigHash.All, enforceLowR)
             match checkSigAndAdd tx txSig key.PubKey with
             | Ok txWithSig ->
                 (txSig, txWithSig)
             | Error(InvalidSignature signature) ->
                 failwithf "Failed to check signature. (%A) This should never happen." signature
-            | Error e -> failwith "%A" e
+            | Error e -> failwithf "%A" e
 
+    let sign(tx, key) = signCore(tx, key, true)
     let makeHTLCTimeoutTx (commitTx: Transaction)
                           (localDustLimit: Money)
                           (localRevocationPubKey: PubKey)
@@ -517,6 +518,11 @@ module Transactions =
                             .SetLockTime(!> htlc.CLTVExpiry.Value)
                             .BuildTransaction(false)
                 tx.Version <- 2u
+                
+                /// We must set 0 to sequence for HTLC-success/timeout (defined in bolt3)
+                for i in tx.Inputs do
+                    i.Sequence <- Sequence(0)
+                    
                 PSBT.FromTransaction(tx, n)
                     .AddCoins scriptCoin
             let whichInput = psbt.Inputs |> Seq.findIndex(fun i -> not (isNull i.WitnessScript))
@@ -554,6 +560,11 @@ module Transactions =
                             .SetLockTime(!> 0u)
                             .BuildTransaction(false)
                 tx.Version <- 2u
+                
+                /// We must set 0 to sequence for HTLC-success/timeout (defined in bolt3)
+                for i in tx.Inputs do
+                    i.Sequence <- Sequence(0)
+                
                 PSBT.FromTransaction(tx, n)
                     .AddCoins scriptCoin
             let whichInput = psbt.Inputs |> Seq.findIndex(fun i -> not (isNull i.WitnessScript))

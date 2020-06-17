@@ -23,7 +23,7 @@ module Constants =
                                  RouteMaxCLTV = 2016us |> BlockHeightOffset16
                                  RouteMaxLength = 6
                                  Ratios = None }
-    let privKey1 = Key(hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101"))
+    let privKey1 = new Key(hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101"))
     
     let DUMMY_SIG = signMessageWith privKey1 "01010101010101010101010101010101"
     

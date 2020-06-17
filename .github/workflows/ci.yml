@@ -5,7 +5,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04, macos-latest]
+        os: [ubuntu-18.04, macos-latest, windows-latest]
         dotnet: ['3.1.200']
       fail-fast: true
     steps:
@@ -20,7 +20,7 @@ jobs:
       if: startsWith(matrix.os, 'ubuntu-18')
       run: |
         dotnet build tests/DotNetLightning.Core.Tests -p:BouncyCastle=True
-        dotnet run --project tests/DotNetLightning.Core.Tests
+        dotnet run --no-build --project tests/DotNetLightning.Core.Tests
 
     - name: Clean to prepare for NSec build
       run: |

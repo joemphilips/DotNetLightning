@@ -1,8 +1,6 @@
 module Generators
 
-open DotNetLightning.Payment
 open DotNetLightning.Payment.LSAT
-open DotNetLightning.Serialize
 open NBitcoin
 open DotNetLightning.Utils
 open DotNetLightning.Serialize.Msgs
