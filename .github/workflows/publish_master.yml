@@ -17,6 +17,8 @@ jobs:
             RID: linux
           - os: macos-latest
             RID: osx
+          - os: windows-latest
+            RID: windows
       fail-fast: true
     steps:
 
