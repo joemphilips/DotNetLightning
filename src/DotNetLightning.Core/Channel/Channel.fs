@@ -76,8 +76,7 @@ module Channel =
                     let witness = seq [ dummySig.ToBytes(); dummySig.ToBytes(); dummyClosingTx.Value.Inputs.[0].WitnessScript.ToBytes() ]
                     WitScript(witness)
                 let feeRatePerKw = FeeRatePerKw.Max (feeEst.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority), cm.LocalCommit.Spec.FeeRatePerKw)
-                let vsize = tx.GetVirtualSize()
-                return feeRatePerKw.ToFee(uint64 vsize)
+                return feeRatePerKw.CalculateFeeFromVirtualSize(tx)
             }
 
         let makeFirstClosingTx (keyRepo, commitments, localSpk, remoteSpk, feeEst, localFundingPk, n) =

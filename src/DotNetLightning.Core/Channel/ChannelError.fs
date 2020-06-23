@@ -433,7 +433,7 @@ module internal OpenChannelMsgValidation =
 
     let checkFunderCanAffordFee (feeRate: FeeRatePerKw) (msg: OpenChannelMsg) =
         let fundersAmount = LNMoney.Satoshis(msg.FundingSatoshis.Satoshi) - msg.PushMSat
-        let fee = feeRate.ToFee COMMITMENT_TX_BASE_WEIGHT
+        let fee = feeRate.CalculateFeeFromWeight COMMITMENT_TX_BASE_WEIGHT
         if fundersAmount.ToMoney() < fee then
             sprintf
                 "funding amount (%A) minus push amount (%A) does not cover commitment tx fee (%A)"
