@@ -299,7 +299,7 @@ module Transactions =
 
 
     let private trimOfferedHTLCs (dustLimit: Money) (spec: CommitmentSpec): DirectedHTLC list =
-        let htlcTimeoutFee = spec.FeeRatePerKw.ToFee(HTLC_TIMEOUT_WEIGHT)
+        let htlcTimeoutFee = spec.FeeRatePerKw.CalculateFeeFromWeight(HTLC_TIMEOUT_WEIGHT)
         spec.HTLCs
             |> Map.toList
             |> List.map snd
@@ -307,7 +307,7 @@ module Transactions =
             |> List.filter(fun v -> (v.Add.Amount.ToMoney()) >= (dustLimit + htlcTimeoutFee))
 
     let private trimReceivedHTLCs (dustLimit: Money) (spec: CommitmentSpec) : DirectedHTLC list =
-        let htlcSuccessFee = spec.FeeRatePerKw.ToFee(HTLC_SUCCESS_WEIGHT)
+        let htlcSuccessFee = spec.FeeRatePerKw.CalculateFeeFromWeight(HTLC_SUCCESS_WEIGHT)
         spec.HTLCs
             |> Map.toList
             |> List.map snd
@@ -318,7 +318,7 @@ module Transactions =
         let trimmedOfferedHTLCs = trimOfferedHTLCs (dustLimit) (spec)
         let trimmedReceivedHTLCs = trimReceivedHTLCs dustLimit spec
         let weight = COMMIT_WEIGHT + 172UL * (uint64 trimmedOfferedHTLCs.Length + uint64 trimmedReceivedHTLCs.Length)
-        spec.FeeRatePerKw.ToFee(weight)
+        spec.FeeRatePerKw.CalculateFeeFromWeight(weight)
 
     let getCommitTxNumber (commitTx: Transaction)
                           (isFunder: bool)
@@ -497,7 +497,7 @@ module Transactions =
                           (feeratePerKw: FeeRatePerKw)
                           (htlc: UpdateAddHTLCMsg)
                           (n: Network) =
-        let fee = feeratePerKw.ToFee(HTLC_TIMEOUT_WEIGHT)
+        let fee = feeratePerKw.CalculateFeeFromWeight(HTLC_TIMEOUT_WEIGHT)
         let redeem = Scripts.htlcOffered(localHTLCPubKey) (remoteHTLCPubKey) (localRevocationPubKey) (htlc.PaymentHash)
         let spk = redeem.WitHash.ScriptPubKey
         let spkIndex = findScriptPubKeyIndex commitTx spk
@@ -538,7 +538,7 @@ module Transactions =
                           (feeratePerKw: FeeRatePerKw)
                           (htlc: UpdateAddHTLCMsg)
                           (n: Network)=
-        let fee = feeratePerKw.ToFee(HTLC_SUCCESS_WEIGHT)
+        let fee = feeratePerKw.CalculateFeeFromWeight(HTLC_SUCCESS_WEIGHT)
         let redeem = Scripts.htlcReceived (localHTLCPubKey) (remoteHTLCPubKey) (localRevocationPubKey) (htlc.PaymentHash) (htlc.CLTVExpiry.Value)
         let spk = redeem.WitHash.ScriptPubKey
         let spkIndex = findScriptPubKeyIndex commitTx spk
@@ -597,7 +597,7 @@ module Transactions =
                                (htlc: UpdateAddHTLCMsg)
                                (feeRatePerKw: FeeRatePerKw)
                                (n: Network): Result<ClaimHTLCSuccessTx, TransactionError> =
-        let fee = feeRatePerKw.ToFee(CLAIM_HTLC_SUCCESS_WEIGHT)
+        let fee = feeRatePerKw.CalculateFeeFromWeight(CLAIM_HTLC_SUCCESS_WEIGHT)
         let redeem = Scripts.htlcOffered(remoteHTLCPubKey) (localHTLCPubKey) (remoteRevocationPubKey) (htlc.PaymentHash)
         let spk = redeem.WitHash.ScriptPubKey
         let spkIndex = findScriptPubKeyIndex commitTx spk
@@ -628,7 +628,7 @@ module Transactions =
                                (htlc: UpdateAddHTLCMsg)
                                (feeRatePerKw: FeeRatePerKw)
                                (n: Network): Result<_, _> =
-        let fee = feeRatePerKw.ToFee(CLAIM_HTLC_TIMEOUT_WEIGHT)
+        let fee = feeRatePerKw.CalculateFeeFromWeight(CLAIM_HTLC_TIMEOUT_WEIGHT)
         let redeem = Scripts.htlcReceived remoteHTLCPubKey localHTLCPubKey remoteRevocationPubKey htlc.PaymentHash htlc.CLTVExpiry.Value
         let spk = redeem.WitHash.ScriptPubKey
         let spkIndex = findScriptPubKeyIndex commitTx spk
@@ -656,7 +656,7 @@ module Transactions =
                                 (localFinalDestination: IDestination)
                                 (feeRatePerKw: FeeRatePerKw)
                                 (n: Network): Result<ClaimP2WPKHOutputTx, _> =
-        let fee = feeRatePerKw.ToFee(CLAIM_P2WPKH_OUTPUT_WEIGHT)
+        let fee = feeRatePerKw.CalculateFeeFromWeight(CLAIM_P2WPKH_OUTPUT_WEIGHT)
         let spk = localPaymentPubKey.WitHash.ScriptPubKey
         let spkIndex = findScriptPubKeyIndex delayedOutputTx spk
         let outPut = delayedOutputTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex)
@@ -689,7 +689,7 @@ module Transactions =
                           (remoteDelayedPaymentPubKey: PubKey)
                           (feeRatePerKw: FeeRatePerKw)
                           (n: Network): Result<MainPenaltyTx, _>  =
-        let fee = feeRatePerKw.ToFee(MAIN_PENALTY_WEIGHT)
+        let fee = feeRatePerKw.CalculateFeeFromWeight(MAIN_PENALTY_WEIGHT)
         let redeem = Scripts.toLocalDelayed remoteRevocationKey toRemoteDelay remoteDelayedPaymentPubKey
         let spk = redeem.WitHash.ScriptPubKey
         let spkIndex = findScriptPubKeyIndex commitTx spk

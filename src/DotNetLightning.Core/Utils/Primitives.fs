@@ -7,6 +7,7 @@ open System
 open System.Net
 open System.Linq
 
+open System.Diagnostics
 open DotNetLightning.Core.Utils.Extensions
 open ResultUtils
 
@@ -300,18 +301,30 @@ module Primitives =
         interface IEquatable<LNOutPoint> with
             member this.Equals(other) = this.Equals(other)
 
+    /// feerate per kilo weight
     type FeeRatePerKw = | FeeRatePerKw of uint32 with
         member x.Value = let (FeeRatePerKw v) = x in v
         static member FromFee(fee: Money, weight: uint64) =
             (((uint64 fee.Satoshi) * weight) / 1000UL)
             |> uint32
             |> FeeRatePerKw
+            
+        static member FromFeeAndVSize(fee: Money, vsize: uint64) =
+            FeeRatePerKw.FromFee(fee, vsize * 4UL)
 
-        member this.ToFee(weight) =
-            Money.Satoshis((uint64 this.Value) * weight / 1000UL)
+        member this.CalculateFeeFromWeight(weight) =
+            Money.Satoshis(uint64 this.Value * weight / 1000UL)
+            
+        member this.CalculateFeeFromVirtualSize(vSize) =
+            this.CalculateFeeFromWeight (vSize * 4UL)
+        member this.CalculateFeeFromVirtualSize(tx: Transaction) =
+            for i in tx.Inputs do
+                if isNull i.WitScript || i.WitScript = WitScript.Empty then
+                    invalidArg "tx" "Should never hold non-segwit input."
+            this.CalculateFeeFromVirtualSize(uint64 (tx.GetVirtualSize()))
             
         member this.AsNBitcoinFeeRate() =
-            this.Value |> uint64 |> Money.Satoshis |> FeeRate
+            this.Value |> uint64 |> (*)4UL |> Money.Satoshis |> FeeRate
 
         static member Max(a: FeeRatePerKw, b: FeeRatePerKw) =
             if (a.Value >= b.Value) then a else b
