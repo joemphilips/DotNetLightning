@@ -156,60 +156,60 @@ and ChannelConsumerAction =
     /// But it maybe good to report the log message, or maybe lower the peer score.
     | Ignore
 and InvalidOpenChannelError = {
-    Msg: OpenChannelMsg
+    NetworkMsg: OpenChannelMsg
     Errors: string list
 }
     with
     static member Create msg e = {
-        Msg = msg
+        NetworkMsg = msg
         Errors = e
     }
     member this.Message =
         String.concat "; " this.Errors
     
 and InvalidAcceptChannelError = {
-    Msg: AcceptChannelMsg
+    NetworkMsg: AcceptChannelMsg
     Errors: string list
 }
     with
     static member Create msg e = {
-        Msg = msg
+        NetworkMsg = msg
         Errors = e
     }
     member this.Message =
         String.concat "; " this.Errors
     
 and InvalidUpdateAddHTLCError = {
-    Msg: UpdateAddHTLCMsg
+    NetworkMsg: UpdateAddHTLCMsg
     Errors: string list
 }
     with
     static member Create msg e = {
-        Msg = msg
+        NetworkMsg = msg
         Errors = e
     }
     member this.Message =
         String.concat "; " this.Errors
 
 and InvalidRevokeAndACKError = {
-    Msg: RevokeAndACKMsg
+    NetworkMsg: RevokeAndACKMsg
     Errors: string list
 }
     with
     static member Create msg e = {
-        Msg = msg
+        NetworkMsg = msg
         Errors = e
     }
     member this.Message =
         String.concat "; " this.Errors
 
 and InvalidUpdateFeeError = {
-    Msg: UpdateFeeMsg
+    NetworkMsg: UpdateFeeMsg
     Errors: string list
 }
     with
     static member Create msg e = {
-        Msg = msg
+        NetworkMsg = msg
         Errors = e
     }
     member this.Message =
