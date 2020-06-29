@@ -25,7 +25,30 @@ type InsertRevocationKeyError =
 type RevocationSet private (keys: list<CommitmentNumber * RevocationKey>) =
     new() = RevocationSet(List.empty)
 
-    member private this.Keys = keys
+    member this.Keys = keys
+
+    static member FromKeys (keys: list<CommitmentNumber * RevocationKey>): RevocationSet =
+        let rec sanityCheck (commitmentNumbers: list<CommitmentNumber>): bool =
+            if commitmentNumbers.IsEmpty then
+                true
+            else
+                let commitmentNumber = commitmentNumbers.Head
+                let tail = commitmentNumbers.Tail
+                match commitmentNumber.PreviousUnsubsumed with
+                | None -> tail.IsEmpty
+                | Some expectedCommitmentNumber ->
+                    if tail.IsEmpty then
+                        false
+                    else
+                        let nextCommitmentNumber = tail.Head
+                        if nextCommitmentNumber <> expectedCommitmentNumber then
+                            false
+                        else
+                            sanityCheck tail
+        let commitmentNumbers, _ = List.unzip keys
+        if not (sanityCheck commitmentNumbers) then
+            failwith "commitment number list is malformed: %A" commitmentNumbers
+        RevocationSet keys
 
     member this.NextCommitmentNumber: CommitmentNumber =
         if this.Keys.IsEmpty then
