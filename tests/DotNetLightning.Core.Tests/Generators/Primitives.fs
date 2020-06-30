@@ -8,6 +8,7 @@ open System
 let byteGen = byte <!> Gen.choose(0, 127)
 let bytesGen = Gen.listOf(byteGen) |> Gen.map(List.toArray)
 let bytesOfNGen(n) = Gen.listOfLength n byteGen |> Gen.map(List.toArray)
+let uint48Gen = bytesOfNGen(6) |> Gen.map(fun bs -> UInt48.FromBytesBigEndian bs)
 let uint256Gen = bytesOfNGen(32) |> Gen.map(fun bs -> uint256(bs))
 let temporaryChannelGen = uint256Gen |> Gen.map ChannelId
 let moneyGen = Arb.generate<uint64> |> Gen.map(Money.Satoshis)
@@ -31,6 +32,11 @@ let revocationKeyGen = gen {
 let commitmentPubKeyGen = gen {
     let! pubKey = pubKeyGen
     return CommitmentPubKey pubKey
+}
+
+let commitmentNumberGen = gen {
+    let! n = uint48Gen
+    return CommitmentNumber n
 }
 
 let signatureGen: Gen<LNECDSASignature> = gen {

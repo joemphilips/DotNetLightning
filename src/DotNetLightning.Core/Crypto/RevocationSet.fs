@@ -94,3 +94,10 @@ type RevocationSet private (keys: list<CommitmentNumber * RevocationKey>) =
                 | None -> fold keys.Tail
         fold this.Keys
 
+    member this.LastRevocationKey(): Option<RevocationKey> =
+        if this.Keys.IsEmpty then
+            None
+        else
+            let _, revocationKey = this.Keys.Head
+            Some revocationKey
+

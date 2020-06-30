@@ -3,6 +3,7 @@ namespace rec DotNetLightning.Serialize.Msgs
 open System
 open System.IO
 open System.Runtime.CompilerServices
+open System.Linq
 
 open NBitcoin
 
@@ -842,24 +843,31 @@ with
 
 [<CLIMutable>]
 type DataLossProtect = {
-    mutable YourLastPerCommitmentSecret: RevocationKey
+    mutable YourLastPerCommitmentSecret: Option<RevocationKey>
     mutable MyCurrentPerCommitmentPoint: CommitmentPubKey
 }
     with
         interface ILightningSerializable<DataLossProtect> with
             member this.Deserialize(ls: LightningReaderStream) =
-                this.YourLastPerCommitmentSecret <- ls.ReadRevocationKey()
+                this.YourLastPerCommitmentSecret <-
+                    let bytes = ls.ReadBytes RevocationKey.BytesLength
+                    if bytes.All(fun b -> b = 0uy) then
+                        None
+                    else
+                        Some <| RevocationKey.FromBytes bytes
                 this.MyCurrentPerCommitmentPoint <- ls.ReadCommitmentPubKey()
             member this.Serialize(ls: LightningWriterStream): unit = 
-                ls.Write(this.YourLastPerCommitmentSecret.ToByteArray())
+                match this.YourLastPerCommitmentSecret with
+                | Some revocationKey -> ls.Write(revocationKey.ToByteArray())
+                | None -> ls.Write(Array.zeroCreate RevocationKey.BytesLength)
                 ls.Write(this.MyCurrentPerCommitmentPoint.ToByteArray())
 
 
 [<CLIMutable>]
 type ChannelReestablishMsg = {
     mutable ChannelId: ChannelId
-    mutable NextLocalCommitmentNumber: uint64
-    mutable NextRemoteCommitmentNumber: uint64
+    mutable NextCommitmentNumber: CommitmentNumber
+    mutable NextRevocationNumber: CommitmentNumber
     mutable DataLossProtect: OptionalField<DataLossProtect>
 }
 with
@@ -867,15 +875,16 @@ with
     interface ILightningSerializable<ChannelReestablishMsg> with
         member this.Deserialize(ls) =
             this.ChannelId <- ls.ReadUInt256(true) |> ChannelId
-            this.NextLocalCommitmentNumber <- ls.ReadUInt64(false)
-            this.NextRemoteCommitmentNumber <- ls.ReadUInt64(false)
+            this.NextCommitmentNumber <- ls.ReadCommitmentNumber()
+            this.NextRevocationNumber <- ls.ReadCommitmentNumber()
             this.DataLossProtect <- ls.TryReadAll() |> Option.map ILightningSerializable.fromBytes<DataLossProtect>
         member this.Serialize(ls) =
             ls.Write(this.ChannelId.Value.ToBytes())
-            ls.Write(Utils.ToBytes(this.NextLocalCommitmentNumber, false))
-            ls.Write(Utils.ToBytes(this.NextRemoteCommitmentNumber, false))
-            ls.Write(this.DataLossProtect |> Option.map(fun x -> x.YourLastPerCommitmentSecret.ToByteArray()))
-            ls.Write(this.DataLossProtect |> Option.map(fun x -> x.MyCurrentPerCommitmentPoint.ToByteArray()))
+            ls.Write this.NextCommitmentNumber
+            ls.Write this.NextRevocationNumber
+            match this.DataLossProtect with
+            | None -> ()
+            | Some dataLossProtect -> (dataLossProtect :> ILightningSerializable<DataLossProtect>).Serialize ls
 
 [<CLIMutable>]
 type AnnouncementSignaturesMsg = {
