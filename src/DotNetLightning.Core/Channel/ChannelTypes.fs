@@ -187,7 +187,8 @@ module Data =
                     this.ChannelId
                 member this.Commitments: Commitments = 
                     this.Commitments
-
+    
+    [<CLIMutable>]
     type ClosingData = internal {
                         ChannelId: ChannelId
                         Commitments: Commitments
