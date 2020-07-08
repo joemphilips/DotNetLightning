@@ -53,7 +53,7 @@ let getLocal(): LocalConfig =
     let delayedPaymentBasePointSecret = "3333333333333333333333333333333333333333333333333333333333333333" |> hex.DecodeData |> fun h -> new Key(h)
     {
       Ctx = ctx
-      CommitTxNumber = CommitmentNumber(UInt48.FromUInt64 42UL)
+      CommitTxNumber = CommitmentNumber(UInt48.MaxValue - (UInt48.FromUInt64 42UL))
       ToSelfDelay = 144us |> BlockHeightOffset16
       DustLimit = Money.Satoshis(546L)
       PaymentBasePointSecret = paymentBasePointSecret
@@ -90,7 +90,7 @@ let getRemote(): RemoteConfig =
     let revocationBasePoint = revocationBasePointSecret.PubKey
     {
       Ctx = ctx
-      CommitTxNumber = CommitmentNumber(UInt48.FromUInt64 42UL)
+      CommitTxNumber = CommitmentNumber(UInt48.MaxValue - (UInt48.FromUInt64 42UL))
       ToSelfDelay = 144us |> BlockHeightOffset16
       DustLimit = Money.Satoshis(546L)
       PaymentBasePointSecret = paymentBasePointSecret
@@ -123,7 +123,7 @@ let commitmentInputScriptCoin =
 log (sprintf "local payment basepoint is %A" local.PaymentBasePoint)
 log (sprintf "remote payment basepoint is %A" remote.PaymentBasePoint)
 let obscuredTxNumber =
-    let commitmentNumber = CommitmentNumber(UInt48.FromUInt64 42UL)
+    let commitmentNumber = CommitmentNumber(UInt48.MaxValue - (UInt48.FromUInt64 42UL))
     commitmentNumber.Obscure true local.PaymentBasePoint remote.PaymentBasePoint
 Expect.equal obscuredTxNumber (0x2bb038521914UL ^^^ 42UL |> UInt48.FromUInt64 |> ObscuredCommitmentNumber) ""
 

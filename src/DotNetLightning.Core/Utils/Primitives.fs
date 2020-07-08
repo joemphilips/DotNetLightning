@@ -471,7 +471,7 @@ module Primitives =
                     isFunder
                     localPaymentBasePoint
                     remotePaymentBasePoint
-            ObscuredCommitmentNumber(this.Index ^^^ obscureFactor)
+            ObscuredCommitmentNumber((UInt48.MaxValue - this.Index) ^^^ obscureFactor)
 
     and [<StructAttribute>] ObscuredCommitmentNumber(obscuredIndex: UInt48) =
         member this.ObscuredIndex: UInt48 = obscuredIndex
@@ -511,7 +511,7 @@ module Primitives =
                     isFunder
                     localPaymentBasePoint
                     remotePaymentBasePoint
-            CommitmentNumber(this.ObscuredIndex ^^^ obscureFactor)
+            CommitmentNumber(UInt48.MaxValue - (this.ObscuredIndex ^^^ obscureFactor))
 
     [<StructAttribute>]
     type RevocationKey(key: Key) =
