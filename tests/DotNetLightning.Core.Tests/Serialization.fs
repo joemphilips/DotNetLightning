@@ -56,6 +56,12 @@ module SerializationTest =
                                          ExcessAddressData = [|5uy; 121uy; 62uy; 96uy; 44uy; 34uy|]
                                          ExcessData = [||] }}
                 Expect.equal (msg.Clone()) msg ""
+            testCase "short channel id test" <| fun _ ->
+                let shortChannelId = (ShortChannelId.FromUInt64(140737488420865UL))
+                Expect.equal (shortChannelId.BlockHeight.Value) 128u ""
+                Expect.equal (shortChannelId.BlockIndex.Value) 1u ""
+                Expect.equal (shortChannelId.TxOutIndex.Value) 1us ""
+                ()
         ]
 
     [<Tests>]

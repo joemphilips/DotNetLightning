@@ -361,8 +361,8 @@ module Primitives =
         with
 
         static member From8Bytes(b: byte[]): ShortChannelId =
-            let bh = NBitcoin.Utils.ToUInt32 (Array.concat [| b.[0..2]; [| 0uy |] |], false)
-            let bi = NBitcoin.Utils.ToUInt32 (Array.concat [| b.[3..5]; [| 0uy |] |], false)
+            let bh = NBitcoin.Utils.ToUInt32 (Array.concat [| [| 0uy |]; b.[0..2]; |], false)
+            let bi = NBitcoin.Utils.ToUInt32 (Array.concat [| [| 0uy |]; b.[3..5]; |], false)
             let txOutIndex = NBitcoin.Utils.ToUInt16(b.[6..7], false)
 
             {
@@ -376,8 +376,8 @@ module Primitives =
             
         member this.ToBytes(): byte [] =
             Array.concat [|
-                        NBitcoin.Utils.ToBytes(this.BlockHeight.Value, false).[0..2]
-                        NBitcoin.Utils.ToBytes(this.BlockIndex.Value, false).[0..2]
+                        NBitcoin.Utils.ToBytes(this.BlockHeight.Value, false).[1..3]
+                        NBitcoin.Utils.ToBytes(this.BlockIndex.Value, false).[1..3]
                         NBitcoin.Utils.ToBytes(this.TxOutIndex.Value, false)
                     |]
         override this.ToString() =
