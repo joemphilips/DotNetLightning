@@ -109,19 +109,21 @@ module Channel =
     let makeChannelReestablish (keyRepo: IKeysRepository)
                                (data: Data.IHasCommitments)
                                    : Result<ChannelEvent list, ChannelError> =
-        let chanPrivateKeys = keyRepo.GetChannelKeys data.Commitments.LocalParams.IsFunder
+        let commitments = data.Commitments
+        let chanPrivateKeys = keyRepo.GetChannelKeys commitments.LocalParams.IsFunder
         let commitmentSeed = chanPrivateKeys.CommitmentSeed
         let ourChannelReestablish =
             {
                 ChannelId = data.ChannelId
-                NextLocalCommitmentNumber = 1UL
-                NextRemoteCommitmentNumber = 0UL
+                NextCommitmentNumber =
+                    commitments.RemotePerCommitmentSecrets.NextCommitmentNumber.NextCommitment
+                NextRevocationNumber =
+                    commitments.RemotePerCommitmentSecrets.NextCommitmentNumber
                 DataLossProtect = OptionalField.Some <| {
                     YourLastPerCommitmentSecret =
-                        RevocationKey.FromBytes [|for _ in 0..31 -> 0uy|]
+                        commitments.RemotePerCommitmentSecrets.LastRevocationKey()
                     MyCurrentPerCommitmentPoint =
-                        let revocationKey = commitmentSeed.DeriveRevocationKey CommitmentNumber.LastCommitment
-                        revocationKey.CommitmentPubKey
+                        commitments.RemoteCommit.RemotePerCommitmentPoint
                 }
             }
         [ WeSentChannelReestablish ourChannelReestablish ] |> Ok

@@ -454,6 +454,14 @@ module Primitives =
             let trailingZeros = this.Index.TrailingZeros
             (this.Index >>> trailingZeros) = (other.Index >>> trailingZeros)
 
+        member this.PreviousUnsubsumed: Option<CommitmentNumber> =
+            let trailingZeros = this.Index.TrailingZeros
+            let prev = this.Index.UInt64 + (1UL <<< trailingZeros)
+            if prev > UInt48.MaxValue.UInt64 then
+                None
+            else
+                Some <| CommitmentNumber(UInt48.FromUInt64 prev)
+
         member this.Obscure (isFunder: bool)
                             (localPaymentBasePoint: PubKey)
                             (remotePaymentBasePoint: PubKey)

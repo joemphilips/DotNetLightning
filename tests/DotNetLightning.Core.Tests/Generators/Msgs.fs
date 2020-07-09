@@ -272,21 +272,21 @@ let private dataLossProtectGen = gen {
     let! revocationKey = revocationKeyGen
     let! pk = commitmentPubKeyGen
     return {
-        YourLastPerCommitmentSecret = revocationKey
+        YourLastPerCommitmentSecret = Some revocationKey
         MyCurrentPerCommitmentPoint = pk
     }
 }
 
 let channelReestablishGen = gen {
     let! c = ChannelId <!> uint256Gen
-    let! n1 = Arb.generate<uint64>
-    let! n2 = Arb.generate<uint64>
+    let! n1 = commitmentNumberGen
+    let! n2 = commitmentNumberGen
     let! d = Gen.optionOf dataLossProtectGen
 
     return {
         ChannelId = c
-        NextLocalCommitmentNumber = n1
-        NextRemoteCommitmentNumber = n2
+        NextCommitmentNumber = n1
+        NextRevocationNumber = n2
         DataLossProtect = d
     }
 }

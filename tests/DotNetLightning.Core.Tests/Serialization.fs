@@ -65,8 +65,8 @@ module SerializationTest =
                 let cid = ChannelId (uint256([|4; 0; 0; 0; 0; 0; 0; 0; 5; 0; 0; 0; 0; 0; 0; 0; 6; 0; 0; 0; 0; 0; 0; 0; 7; 0; 0; 0; 0; 0; 0; 0|] |> Array.map((uint8)))) 
                 let channelReestablishMsg = {
                     ChannelId = cid
-                    NextLocalCommitmentNumber = 3UL
-                    NextRemoteCommitmentNumber = 4UL
+                    NextCommitmentNumber = CommitmentNumber <| (UInt48.MaxValue - UInt48.FromUInt64 3UL)
+                    NextRevocationNumber = CommitmentNumber <| (UInt48.MaxValue - UInt48.FromUInt64 4UL)
                     DataLossProtect = None
                     }
                 let actual = channelReestablishMsg.ToBytes()
@@ -78,11 +78,11 @@ module SerializationTest =
             testCase "channel_reestablish with secret" <| fun _ ->
                 let channelReestablishMsg = {
                     ChannelId = ChannelId(uint256([|4; 0; 0; 0; 0; 0; 0; 0; 5; 0; 0; 0; 0; 0; 0; 0; 6; 0; 0; 0; 0; 0; 0; 0; 7; 0; 0; 0; 0; 0; 0; 0 |] |> Array.map(uint8)))
-                    NextLocalCommitmentNumber = 3UL
-                    NextRemoteCommitmentNumber = 4UL
+                    NextCommitmentNumber = CommitmentNumber <| (UInt48.MaxValue - UInt48.FromUInt64 3UL)
+                    NextRevocationNumber = CommitmentNumber <| (UInt48.MaxValue - UInt48.FromUInt64 4UL)
                     DataLossProtect = OptionalField.Some <| {
                         YourLastPerCommitmentSecret = 
-                            RevocationKey.FromBytes
+                            Some <| RevocationKey.FromBytes
                                 [| for _ in 0..(RevocationKey.BytesLength - 1) -> 9uy |]
                         MyCurrentPerCommitmentPoint = CommitmentPubKey pubkey1
                     }
