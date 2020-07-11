@@ -224,4 +224,10 @@ let unitTest =
             Expect.equal r r2 "Should not change by de/serializing it"
             let r3 = PaymentRequest.TryCreate("lnbc", None, DateTimeOffset.UnixEpoch, nodeId, {Fields = [dht; dt]}, msgSigner)
             Expect.isError r3 "Field contains both description and description hash! this must be invalid"
+        testCase "PaymentSecret can get correct PaymentHash by its .Hash field" <| fun _ ->
+            let p = Primitives.PaymentPreimage.Create(hex.DecodeData "60ba77a7f0174a3dd0f4fc8c1b28cda6aa9fab0e87c87e936af40b34cca40883")
+            let h = p.Hash
+            let expectedHash = PaymentHash.PaymentHash (uint256.Parse "b1d9fa54b693576947e3b78eaf8a2595b5b6288b283c7c75f51ee0fe5bb82cba")
+            Expect.equal expectedHash h ""
+            ()
     ]

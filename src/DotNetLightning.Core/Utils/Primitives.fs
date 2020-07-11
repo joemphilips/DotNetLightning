@@ -166,7 +166,7 @@ module Primitives =
             x.Value.ToBytes(e)
 
         member x.GetRIPEMD160() =
-            let b = x.Value.ToBytes()
+            let b = x.Value.ToBytes() |> Array.rev
             Crypto.Hashes.RIPEMD160(b, b.Length)
 
     type PaymentPreimage =
@@ -195,7 +195,7 @@ module Primitives =
                     this.Value |> Array.ofSeq
 
                 member this.Hash =
-                    this.ToByteArray() |> Crypto.Hashes.SHA256 |> uint256 |> PaymentHash
+                    this.ToByteArray() |> Crypto.Hashes.SHA256 |> fun x -> uint256(x, false) |> PaymentHash
 
                 member this.ToPrivKey() =
                     this.ToByteArray() |> fun ba -> new Key(ba)
