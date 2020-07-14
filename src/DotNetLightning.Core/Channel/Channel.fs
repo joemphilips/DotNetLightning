@@ -176,6 +176,7 @@ module Channel =
                 assert (state.LastSent.FundingPubKey = localParams.ChannelPubKeys.FundingPubKey)
                 let commitmentSpec = state.InputInitFunder.DeriveCommitmentSpec()
                 let commitmentSeed = state.InputInitFunder.ChannelKeys.CommitmentSeed
+                let fundingTxId = fundingTx.Value.GetTxId()
                 let! (_localSpec, localCommitTx, remoteSpec, remoteCommitTx) =
                     ChannelHelpers.makeFirstCommitTxs localParams
                                                remoteParams
@@ -183,7 +184,7 @@ module Channel =
                                                state.LastSent.PushMSat
                                                state.LastSent.FeeRatePerKw
                                                outIndex
-                                               (fundingTx.Value.GetHash() |> TxId)
+                                               fundingTxId
                                                (commitmentSeed.DeriveCommitmentPubKey CommitmentNumber.FirstCommitment)
                                                msg.FirstPerCommitmentPoint
                                                cs.Secp256k1Context
@@ -191,11 +192,12 @@ module Channel =
                 let localSigOfRemoteCommit, _ = (cs.KeysRepository.GetSignatureFor(remoteCommitTx.Value, state.LastSent.FundingPubKey))
                 let nextMsg: FundingCreatedMsg = {
                     TemporaryChannelId = msg.TemporaryChannelId
-                    FundingTxId = fundingTx.Value.GetTxId()
+                    FundingTxId = fundingTxId
                     FundingOutputIndex = outIndex
                     Signature = !>localSigOfRemoteCommit.Signature
                 }
-                let data = { Data.WaitForFundingSignedData.ChannelId = msg.TemporaryChannelId
+                let channelId = OutPoint(fundingTxId.Value, uint32 outIndex.Value).ToChannelId()
+                let data = { Data.WaitForFundingSignedData.ChannelId = channelId
                              LocalParams = localParams
                              RemoteParams = remoteParams
                              Data.WaitForFundingSignedData.FundingTx = fundingTx
