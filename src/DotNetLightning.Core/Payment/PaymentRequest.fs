@@ -219,7 +219,7 @@ type TaggedField =
     | FallbackAddressTaggedField of FallbackAddress
     | RoutingInfoTaggedField of ExtraHop list
     | ExpiryTaggedField of DateTimeOffset
-    | MinFinalCltvExpiryTaggedField of BlockHeight
+    | MinFinalCltvExpiryTaggedField of BlockHeightOffset32
     | FeaturesTaggedField of FeatureBit
     with
     member this.Type =
@@ -261,7 +261,7 @@ type TaggedField =
         | NodeIdTaggedField(NodeId pk) ->
             let dBase32 = pk.ToBytes() |> Helpers.convert8BitsTo5
             this.WriteField(writer, dBase32)
-        | MinFinalCltvExpiryTaggedField (BlockHeight c) ->
+        | MinFinalCltvExpiryTaggedField (BlockHeightOffset32 c) ->
             let dBase32 = c |> uint64 |> Helpers.uint64ToBase32
             this.WriteField(writer, dBase32)
         | ExpiryTaggedField x ->
@@ -407,7 +407,7 @@ type private Bolt11Data = {
                                 if (v > (UInt32.MaxValue |> uint64)) then
                                     return! loop r acc afterReadPosition
                                 else
-                                    let minFinalCltvExpiry = v |> uint32 |> BlockHeight |> MinFinalCltvExpiryTaggedField
+                                    let minFinalCltvExpiry = v |> uint32 |> BlockHeightOffset32 |> MinFinalCltvExpiryTaggedField
                                     return! loop r { acc with Fields = minFinalCltvExpiry :: acc.Fields } afterReadPosition
                             | 9UL -> // fallback address
                                 if (size < 5) then
