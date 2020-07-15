@@ -249,7 +249,7 @@ type TaggedField =
     member internal this.WriteTo(writer: BinaryWriter, timestamp) =
         match this with
         | PaymentHashTaggedField p ->
-            this.WriteField(writer, Helpers.convert8BitsTo5(p.ToBytes(false)))
+            this.WriteField(writer, Helpers.convert8BitsTo5(p.ToBytes()))
         | PaymentSecretTaggedField p  ->
             this.WriteField(writer, Helpers.convert8BitsTo5(p.ToBytes()))
         | DescriptionTaggedField d ->

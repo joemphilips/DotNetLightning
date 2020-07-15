@@ -162,7 +162,7 @@ module Primitives =
     type PaymentHash = | PaymentHash of uint256 with
         member x.Value = let (PaymentHash v) = x in v
         member x.ToBytes(?lEndian) =
-            let e = defaultArg lEndian true
+            let e = defaultArg lEndian false
             x.Value.ToBytes(e)
 
         member x.GetRIPEMD160() =
