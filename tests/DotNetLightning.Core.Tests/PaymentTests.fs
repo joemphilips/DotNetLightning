@@ -83,7 +83,7 @@ let tests =
             Expect.equal pr.PaymentHash ("0001020304050607080900010203040506070809000102030405060708090102" |> uint256.Parse |> PaymentHash) ""
             Expect.equal pr.TimestampValue (DateTimeOffset.FromUnixTimeSeconds 1496314658L) ""
             Expect.equal pr.NodeIdValue ("03e7156ae33b0a208d0744199163177e909e80176e55d97a2f221ede0f934dd9ad" |> hex.DecodeData |> PubKey |> NodeId) ""
-            Expect.equal pr.Description ("One piece of chocolate cake, one icecream cone, one pickle, one slice of swiss cheese, one slice of salami, one lollypop, one piece of cherry pie, one sausage, one cupcake, and one slice of watermelon" |> ascii.GetBytes |> Hashes.SHA256 |> uint256 |> Choice2Of2) ""
+            Expect.equal pr.Description ("One piece of chocolate cake, one icecream cone, one pickle, one slice of swiss cheese, one slice of salami, one lollypop, one piece of cherry pie, one sausage, one cupcake, and one slice of watermelon" |> ascii.GetBytes |> Hashes.SHA256 |> fun x -> uint256(x, false) |> Choice2Of2) ""
             Expect.equal pr.FallbackAddresses [] ""
             Expect.equal pr.TagsValue.Fields.Length 2 ""
             Expect.equal (pr.ToString()) data ""
@@ -135,7 +135,7 @@ let tests =
             Expect.equal pr.PaymentHash ("0001020304050607080900010203040506070809000102030405060708090102" |> uint256.Parse |> PaymentHash) ""
             Expect.equal (pr.TimestampValue.ToUnixTimeSeconds()) 1496314658L ""
             Expect.equal (pr.NodeIdValue) ("03e7156ae33b0a208d0744199163177e909e80176e55d97a2f221ede0f934dd9ad" |> hex.DecodeData |> PubKey |> NodeId) ""
-            Expect.equal (pr.Description) ("One piece of chocolate cake, one icecream cone, one pickle, one slice of swiss cheese, one slice of salami, one lollypop, one piece of cherry pie, one sausage, one cupcake, and one slice of watermelon" |> ascii.GetBytes |> Hashes.SHA256 |> uint256 |> Choice2Of2) ""
+            Expect.equal (pr.Description) ("One piece of chocolate cake, one icecream cone, one pickle, one slice of swiss cheese, one slice of salami, one lollypop, one piece of cherry pie, one sausage, one cupcake, and one slice of watermelon" |> ascii.GetBytes |> Hashes.SHA256 |> fun x -> uint256(x, false) |> Choice2Of2) ""
             Expect.equal (pr.FallbackAddresses) (["3EktnHQD7RiAE6uzMj2ZifT9YgRrkSgzQX"]) ""
             Expect.equal (pr.TagsValue.Fields.Length) 3 ""
             Expect.equal (pr.ToString()) data ""
@@ -148,7 +148,7 @@ let tests =
             Expect.equal pr.PaymentHash ("0001020304050607080900010203040506070809000102030405060708090102" |> uint256.Parse |> PaymentHash) ""
             Expect.equal (pr.TimestampValue.ToUnixTimeSeconds()) 1496314658L ""
             Expect.equal (pr.NodeIdValue) ("03e7156ae33b0a208d0744199163177e909e80176e55d97a2f221ede0f934dd9ad" |> hex.DecodeData |> PubKey |> NodeId) ""
-            Expect.equal (pr.Description) ("One piece of chocolate cake, one icecream cone, one pickle, one slice of swiss cheese, one slice of salami, one lollypop, one piece of cherry pie, one sausage, one cupcake, and one slice of watermelon" |> ascii.GetBytes |> Hashes.SHA256 |> uint256 |> Choice2Of2) ""
+            Expect.equal (pr.Description) ("One piece of chocolate cake, one icecream cone, one pickle, one slice of swiss cheese, one slice of salami, one lollypop, one piece of cherry pie, one sausage, one cupcake, and one slice of watermelon" |> ascii.GetBytes |> Hashes.SHA256 |> fun x -> uint256(x, false) |> Choice2Of2) ""
             Expect.equal (pr.FallbackAddresses) (["bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"]) ""
             Expect.isNone (pr.Features) ""
             Expect.equal (pr.ToString()) data ""
@@ -161,7 +161,7 @@ let tests =
             Expect.equal pr.PaymentHash ("0001020304050607080900010203040506070809000102030405060708090102" |> uint256.Parse |> PaymentHash) ""
             Expect.equal (pr.TimestampValue.ToUnixTimeSeconds()) 1496314658L ""
             Expect.equal (pr.NodeIdValue) ("03e7156ae33b0a208d0744199163177e909e80176e55d97a2f221ede0f934dd9ad" |> hex.DecodeData |> PubKey |> NodeId) ""
-            Expect.equal (pr.Description) ("One piece of chocolate cake, one icecream cone, one pickle, one slice of swiss cheese, one slice of salami, one lollypop, one piece of cherry pie, one sausage, one cupcake, and one slice of watermelon" |> ascii.GetBytes |> Hashes.SHA256 |> uint256 |> Choice2Of2) ""
+            Expect.equal (pr.Description) ("One piece of chocolate cake, one icecream cone, one pickle, one slice of swiss cheese, one slice of salami, one lollypop, one piece of cherry pie, one sausage, one cupcake, and one slice of watermelon" |> ascii.GetBytes |> Hashes.SHA256 |> fun x -> uint256(x, false) |> Choice2Of2) ""
             Expect.equal (pr.FallbackAddresses) (["bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3"]) ""
             Expect.equal (pr.ToString()) data ""
             Expect.equal (pr.ToString(msgSigner)) data ""
@@ -224,4 +224,10 @@ let unitTest =
             Expect.equal r r2 "Should not change by de/serializing it"
             let r3 = PaymentRequest.TryCreate("lnbc", None, DateTimeOffset.UnixEpoch, nodeId, {Fields = [dht; dt]}, msgSigner)
             Expect.isError r3 "Field contains both description and description hash! this must be invalid"
+        testCase "PaymentSecret can get correct PaymentHash by its .Hash field" <| fun _ ->
+            let p = Primitives.PaymentPreimage.Create(hex.DecodeData "60ba77a7f0174a3dd0f4fc8c1b28cda6aa9fab0e87c87e936af40b34cca40883")
+            let h = p.Hash
+            let expectedHash = PaymentHash.PaymentHash (uint256.Parse "b1d9fa54b693576947e3b78eaf8a2595b5b6288b283c7c75f51ee0fe5bb82cba")
+            Expect.equal expectedHash h ""
+            ()
     ]

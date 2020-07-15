@@ -162,11 +162,11 @@ module Primitives =
     type PaymentHash = | PaymentHash of uint256 with
         member x.Value = let (PaymentHash v) = x in v
         member x.ToBytes(?lEndian) =
-            let e = defaultArg lEndian true
+            let e = defaultArg lEndian false
             x.Value.ToBytes(e)
 
         member x.GetRIPEMD160() =
-            let b = x.Value.ToBytes()
+            let b = x.Value.ToBytes() |> Array.rev
             Crypto.Hashes.RIPEMD160(b, b.Length)
 
     type PaymentPreimage =
@@ -195,7 +195,7 @@ module Primitives =
                     this.Value |> Array.ofSeq
 
                 member this.Hash =
-                    this.ToByteArray() |> Crypto.Hashes.SHA256 |> uint256 |> PaymentHash
+                    this.ToByteArray() |> Crypto.Hashes.SHA256 |> fun x -> uint256(x, false) |> PaymentHash
 
                 member this.ToPrivKey() =
                     this.ToByteArray() |> fun ba -> new Key(ba)

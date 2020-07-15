@@ -17,14 +17,14 @@ type InitTLV =
             if rem <> 0 then raise <| FormatException(sprintf "Bogus length for TLV in init message (%d), remainder was (%d)" tlv.Value.Length rem) else
             let result = Array.zeroCreate n
             for i in 0..n - 1 do
-                result.[i] <- tlv.Value.[(i * 32)..((i * 32) + 31)] |> uint256
+                result.[i] <- tlv.Value.[(i * 32)..((i * 32) + 31)] |> fun x -> uint256(x, false)
             result |> Networks
         | _ -> Unknown (tlv)
         
     member this.ToGenericTLV() =
         match this with
         | Networks networks ->
-            let v = networks |> Array.map(fun x -> x.ToBytes()) |> Array.concat
+            let v = networks |> Array.map(fun x -> x.ToBytes(false)) |> Array.concat
             { GenericTLV.Type = 1UL; Value = v }
         | Unknown tlv -> tlv
 

@@ -12,12 +12,6 @@ module NBitcoinExtensions =
     type NBitcoin.Transaction with
         member this.GetTxId() = TxId (this.GetHash())
         
-    type Network with
-        /// Bitcoin core uses small-endian for network encoding
-        /// But for LN, it is big-endian. So we must reverse it for network encoding
-        member this.GenesisHashRev =
-            this.Consensus.HashGenesisBlock.ToBytes() |> Array.rev |> uint256
-
     type Money with
         member this.ToLNMoney() = LNMoney.Satoshis(this.Satoshi)
 

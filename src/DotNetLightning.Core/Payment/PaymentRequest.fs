@@ -249,14 +249,14 @@ type TaggedField =
     member internal this.WriteTo(writer: BinaryWriter, timestamp) =
         match this with
         | PaymentHashTaggedField p ->
-            this.WriteField(writer, Helpers.convert8BitsTo5(p.ToBytes(false)))
+            this.WriteField(writer, Helpers.convert8BitsTo5(p.ToBytes()))
         | PaymentSecretTaggedField p  ->
             this.WriteField(writer, Helpers.convert8BitsTo5(p.ToBytes()))
         | DescriptionTaggedField d ->
             let dBase32 = d |> Helpers.utf8.GetBytes |> Helpers.convert8BitsTo5
             this.WriteField(writer, dBase32)
         | DescriptionHashTaggedField h ->
-            let dBase32 = h.ToBytes() |> Helpers.convert8BitsTo5
+            let dBase32 = h.ToBytes(false) |> Helpers.convert8BitsTo5
             this.WriteField(writer, dBase32)
         | NodeIdTaggedField(NodeId pk) ->
             let dBase32 = pk.ToBytes() |> Helpers.convert8BitsTo5
@@ -437,7 +437,7 @@ type private Bolt11Data = {
                                 if (size <> 52 * 5) then
                                     return! loop r acc afterReadPosition // we must omit instead of returning an error (according to the BOLT11)
                                 else
-                                    let dHash = r.ReadBytes(32) |> fun x -> uint256(x, true) |> DescriptionHashTaggedField
+                                    let dHash = r.ReadBytes(32) |> fun x -> uint256(x, false) |> DescriptionHashTaggedField
                                     return! loop r ({ acc with Fields = dHash :: acc.Fields }) afterReadPosition
                             | 3UL -> // routing info
                                 if (size < ExtraHop.Size) then

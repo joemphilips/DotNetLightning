@@ -715,14 +715,14 @@ with
             this.ChannelId <- ls.ReadUInt256(true) |> ChannelId
             this.HTLCId <- ls.ReadUInt64(false) |> HTLCId
             this.Amount <- ls.ReadUInt64(false) |> LNMoney.MilliSatoshis
-            this.PaymentHash <- ls.ReadUInt256(true) |> PaymentHash
+            this.PaymentHash <- ls.ReadUInt256(false) |> PaymentHash
             this.CLTVExpiry <- ls.ReadUInt32(false) |> BlockHeight
             this.OnionRoutingPacket <- ILightningSerializable.deserialize<OnionPacket>(ls)
         member this.Serialize(ls) =
             ls.Write(this.ChannelId.Value.ToBytes())
             ls.Write(this.HTLCId.Value, false)
             ls.Write(this.Amount.MilliSatoshi, false)
-            ls.Write(this.PaymentHash.Value.ToBytes())
+            ls.Write(this.PaymentHash.ToBytes())
             ls.Write(this.CLTVExpiry.Value, false)
             (this.OnionRoutingPacket :> ILightningSerializable<OnionPacket>).Serialize(ls)
 
