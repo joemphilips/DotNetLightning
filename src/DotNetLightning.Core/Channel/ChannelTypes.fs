@@ -187,9 +187,8 @@ module Data =
                     this.ChannelId
                 member this.Commitments: Commitments = 
                     this.Commitments
-    
-    [<CLIMutable>]
-    type ClosingData = internal {
+
+    type ClosingData = {
                         ChannelId: ChannelId
                         Commitments: Commitments
                         MaybeFundingTx: Transaction option
