@@ -688,6 +688,9 @@ module Channel =
                                                     MaybeBestUnpublishedTx = Some(finalizedTx) }
                         return! Closing.handleMutualClose (finalizedTx, negoData)
                     else
+                        let! closingTx, closingSignedMsg =
+                            Closing.makeClosingTx (cs.KeysRepository, cm, state.LocalShutdown.ScriptPubKey, state.RemoteShutdown.ScriptPubKey, nextClosingFee, cm.LocalParams.ChannelPubKeys.FundingPubKey, cs.Network)
+                            |> expectTransactionError
                         let closingTxProposed1 =
                             let newProposed = [ { ClosingTxProposed.UnsignedTx = closingTx
                                                   LocalClosingSigned = closingSignedMsg } ]
