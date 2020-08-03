@@ -123,7 +123,7 @@ module Channel =
                     YourLastPerCommitmentSecret =
                         commitments.RemotePerCommitmentSecrets.LastRevocationKey()
                     MyCurrentPerCommitmentPoint =
-                        commitments.RemoteCommit.RemotePerCommitmentPoint
+                        commitmentSeed.DeriveCommitmentPubKey commitments.RemoteCommit.Index
                 }
             }
         [ WeSentChannelReestablish ourChannelReestablish ] |> Ok
