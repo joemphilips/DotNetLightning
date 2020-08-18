@@ -46,7 +46,7 @@ type QueryShortChannelIdsTLV =
         | QueryFlags (t, flags) ->
             let encodedFlags: byte[] =
                 flags |> Encoder.encodeQueryFlags t
-            let v = Array.concat(seq { [|(uint8)t|]; encodedFlags })
+            let v = Array.concat(seq { yield [|(uint8)t|]; yield encodedFlags })
             { Type = 1UL; Value = v }
         | Unknown tlv -> tlv
         
