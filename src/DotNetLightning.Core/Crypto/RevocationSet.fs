@@ -34,7 +34,7 @@ type RevocationSet private (keys: list<CommitmentNumber * RevocationKey>) =
             else
                 let commitmentNumber = commitmentNumbers.Head
                 let tail = commitmentNumbers.Tail
-                match commitmentNumber.PreviousUnsubsumed with
+                match commitmentNumber.PreviousUnsubsumed() with
                 | None -> tail.IsEmpty
                 | Some expectedCommitmentNumber ->
                     if tail.IsEmpty then
@@ -50,17 +50,17 @@ type RevocationSet private (keys: list<CommitmentNumber * RevocationKey>) =
             failwithf "commitment number list is malformed: %A" commitmentNumbers
         RevocationSet keys
 
-    member this.NextCommitmentNumber: CommitmentNumber =
+    member this.NextCommitmentNumber(): CommitmentNumber =
         if this.Keys.IsEmpty then
             CommitmentNumber.FirstCommitment
         else
             let prevCommitmentNumber, _ = this.Keys.Head
-            prevCommitmentNumber.NextCommitment
+            prevCommitmentNumber.NextCommitment()
 
     member this.InsertRevocationKey (commitmentNumber: CommitmentNumber)
                                     (revocationKey: RevocationKey)
                                         : Result<RevocationSet, InsertRevocationKeyError> =
-        let nextCommitmentNumber = this.NextCommitmentNumber
+        let nextCommitmentNumber = this.NextCommitmentNumber()
         if commitmentNumber <> nextCommitmentNumber then
             Error <| UnexpectedCommitmentNumber (commitmentNumber, nextCommitmentNumber)
         else

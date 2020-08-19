@@ -116,9 +116,9 @@ module Channel =
             {
                 ChannelId = data.ChannelId
                 NextCommitmentNumber =
-                    commitments.RemotePerCommitmentSecrets.NextCommitmentNumber.NextCommitment
+                    (commitments.RemotePerCommitmentSecrets.NextCommitmentNumber().NextCommitment())
                 NextRevocationNumber =
-                    commitments.RemotePerCommitmentSecrets.NextCommitmentNumber
+                    commitments.RemotePerCommitmentSecrets.NextCommitmentNumber()
                 DataLossProtect = OptionalField.Some <| {
                     YourLastPerCommitmentSecret =
                         commitments.RemotePerCommitmentSecrets.LastRevocationKey()
@@ -354,7 +354,7 @@ module Channel =
             else
                 let chanPrivateKeys = cs.KeysRepository.GetChannelKeys state.Commitments.LocalParams.IsFunder
                 let nextPerCommitmentPoint =
-                    chanPrivateKeys.CommitmentSeed.DeriveCommitmentPubKey CommitmentNumber.FirstCommitment.NextCommitment
+                    chanPrivateKeys.CommitmentSeed.DeriveCommitmentPubKey (CommitmentNumber.FirstCommitment.NextCommitment())
                 let msgToSend: FundingLockedMsg = { ChannelId = state.Commitments.ChannelId; NextPerCommitmentPoint = nextPerCommitmentPoint }
 
                 // This is temporary channel id that we will use in our channel_update message, the goal is to be able to use our channel

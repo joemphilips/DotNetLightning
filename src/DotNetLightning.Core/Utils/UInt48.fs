@@ -76,7 +76,7 @@ type UInt48 = {
         UInt64 = (a.UInt64 >>> b) &&& UInt48.BitMask
     }
 
-    member this.TrailingZeros: int =
+    member this.TrailingZeros(): int =
         let rec count (acc: int) (x: uint64): int =
             if acc = 48 || x &&& 1UL = 1UL then
                 acc

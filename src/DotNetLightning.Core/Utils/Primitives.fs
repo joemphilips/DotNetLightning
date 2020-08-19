@@ -444,18 +444,18 @@ module Primitives =
                     Hashes.SHA256 ba
             UInt48.FromBytesBigEndian pubKeysHash.[26..]
 
-        member this.PreviousCommitment: CommitmentNumber =
+        member this.PreviousCommitment(): CommitmentNumber =
             CommitmentNumber(this.Index + UInt48.One)
 
-        member this.NextCommitment: CommitmentNumber =
+        member this.NextCommitment(): CommitmentNumber =
             CommitmentNumber(this.Index - UInt48.One)
 
         member this.Subsumes(other: CommitmentNumber): bool =
-            let trailingZeros = this.Index.TrailingZeros
+            let trailingZeros = this.Index.TrailingZeros()
             (this.Index >>> trailingZeros) = (other.Index >>> trailingZeros)
 
-        member this.PreviousUnsubsumed: Option<CommitmentNumber> =
-            let trailingZeros = this.Index.TrailingZeros
+        member this.PreviousUnsubsumed(): Option<CommitmentNumber> =
+            let trailingZeros = this.Index.TrailingZeros()
             let prev = this.Index.UInt64 + (1UL <<< trailingZeros)
             if prev > UInt48.MaxValue.UInt64 then
                 None
@@ -540,7 +540,7 @@ module Primitives =
                                 (childCommitmentNumber: CommitmentNumber)
                                     : Option<RevocationKey> =
             if thisCommitmentNumber.Subsumes childCommitmentNumber then
-                let commonBits = thisCommitmentNumber.Index.TrailingZeros
+                let commonBits = thisCommitmentNumber.Index.TrailingZeros()
                 let index = childCommitmentNumber.Index
                 let mutable secret = this.ToByteArray()
                 for bit in (commonBits - 1) .. -1 .. 0 do

@@ -277,7 +277,7 @@ module internal Commitments =
                 let! spec = cm.RemoteCommit.Spec.Reduce(cm.RemoteChanges.ACKed, cm.LocalChanges.Proposed) |> expectTransactionError
                 let! (remoteCommitTx, htlcTimeoutTxs, htlcSuccessTxs) =
                     Helpers.makeRemoteTxs (ctx)
-                                          cm.RemoteCommit.Index.NextCommitment
+                                          (cm.RemoteCommit.Index.NextCommitment())
                                           (cm.LocalParams)
                                           (cm.RemoteParams)
                                           (cm.FundingScriptCoin)
@@ -300,7 +300,7 @@ module internal Commitments =
                         WaitingForRevocation.NextRemoteCommit = {
                             cm.RemoteCommit
                             with
-                                Index = cm.RemoteCommit.Index.NextCommitment
+                                Index = cm.RemoteCommit.Index.NextCommitment()
                                 Spec = spec
                                 RemotePerCommitmentPoint = remoteNextPerCommitmentPoint
                                 TxId = remoteCommitTx.GetTxId()
@@ -329,7 +329,7 @@ module internal Commitments =
             let chanPrivateKeys = keyRepo.GetChannelKeys cm.LocalParams.IsFunder
             let commitmentSeed = chanPrivateKeys.CommitmentSeed
             let chanKeys = cm.LocalParams.ChannelPubKeys
-            let nextI = cm.LocalCommit.Index.NextCommitment
+            let nextI = cm.LocalCommit.Index.NextCommitment()
             result {
                 let! spec = cm.LocalCommit.Spec.Reduce(cm.LocalChanges.ACKed, cm.RemoteChanges.Proposed) |> expectTransactionError
                 let localPerCommitmentPoint = commitmentSeed.DeriveCommitmentPubKey nextI
@@ -392,7 +392,7 @@ module internal Commitments =
                 let localNextPerCommitmentPoint =
                     let revocationKey =
                         chanPrivateKeys.CommitmentSeed.DeriveRevocationKey
-                            cm.LocalCommit.Index.NextCommitment.NextCommitment
+                            (cm.LocalCommit.Index.NextCommitment().NextCommitment())
                     revocationKey.CommitmentPubKey
 
                 let nextMsg = { RevokeAndACKMsg.ChannelId = cm.ChannelId
@@ -400,7 +400,7 @@ module internal Commitments =
                                 NextPerCommitmentPoint = localNextPerCommitmentPoint }
                 
                 let nextCommitments =
-                    let localCommit1 = { LocalCommit.Index = cm.LocalCommit.Index.NextCommitment
+                    let localCommit1 = { LocalCommit.Index = cm.LocalCommit.Index.NextCommitment()
                                          Spec = spec
                                          PublishableTxs = { PublishableTxs.CommitTx = finalizedCommitTx
                                                             HTLCTxs = finalizedTxs }
