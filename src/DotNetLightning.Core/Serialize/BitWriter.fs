@@ -3,7 +3,6 @@ namespace DotNetLightning.Serialization
 open System
 open System.Collections
 open System.Text
-open System.Text
 
 type BitReader(ba: BitArray, bitCount: int) =
     
