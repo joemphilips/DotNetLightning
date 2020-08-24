@@ -513,6 +513,17 @@ module Primitives =
                     remotePaymentBasePoint
             CommitmentNumber(UInt48.MaxValue - (this.ObscuredIndex ^^^ obscureFactor))
 
+    type [<StructAttribute>] CommitmentPubKey(pubKey: PubKey) =
+        member this.PubKey = pubKey
+
+        static member BytesLength: int = PubKey.BytesLength
+
+        static member FromBytes(bytes: array<byte>): CommitmentPubKey =
+            CommitmentPubKey <| PubKey bytes
+
+        member this.ToByteArray(): array<byte> =
+            this.PubKey.ToBytes()
+
     [<StructAttribute>]
     type RevocationKey(key: Key) =
         member this.Key = key
@@ -544,17 +555,6 @@ module Primitives =
 
         member this.CommitmentPubKey: CommitmentPubKey =
             CommitmentPubKey this.Key.PubKey
-
-    and [<StructAttribute>] CommitmentPubKey(pubKey: PubKey) =
-        member this.PubKey = pubKey
-
-        static member BytesLength: int = PubKey.BytesLength
-
-        static member FromBytes(bytes: array<byte>): CommitmentPubKey =
-            CommitmentPubKey <| PubKey bytes
-
-        member this.ToByteArray(): array<byte> =
-            this.PubKey.ToBytes()
 
 
     [<StructAttribute>]
