@@ -110,7 +110,7 @@ type RemoteNextCommitInfo =
             (fun commitmentPubKey remoteNextCommitInfo ->
                 match remoteNextCommitInfo with
                 | Waiting _ -> remoteNextCommitInfo
-                | Revoked commitmentPubKecommitmentPubKey -> Revoked commitmentPubKey)
+                | Revoked _ -> Revoked commitmentPubKey)
 
 type Commitments = {
     LocalParams: LocalParams
@@ -169,7 +169,7 @@ type Commitments = {
         member internal this.GetHTLCCrossSigned(directionRelativeToLocal: Direction, htlcId: HTLCId): UpdateAddHTLCMsg option =
             let remoteSigned =
                 this.LocalCommit.Spec.HTLCs
-                |> Map.tryPick (fun k v -> if v.Direction = directionRelativeToLocal && v.Add.HTLCId = htlcId then Some v else None)
+                |> Map.tryPick (fun _k v -> if v.Direction = directionRelativeToLocal && v.Add.HTLCId = htlcId then Some v else None)
 
             let localSigned =
                 let lens =
@@ -179,7 +179,7 @@ type Commitments = {
                 match Optic.get lens this with
                 | Some v -> v
                 | None -> this.RemoteCommit
-                |> fun v -> v.Spec.HTLCs |> Map.tryPick(fun k v -> if v.Direction = directionRelativeToLocal.Opposite && v.Add.HTLCId = htlcId then Some v else None)
+                |> fun v -> v.Spec.HTLCs |> Map.tryPick(fun _k v -> if v.Direction = directionRelativeToLocal.Opposite && v.Add.HTLCId = htlcId then Some v else None)
             match remoteSigned, localSigned with
             | Some _, Some htlcIn -> htlcIn.Add |> Some
             | _ -> None

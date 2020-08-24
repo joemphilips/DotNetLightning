@@ -47,7 +47,7 @@ type RevocationSet private (keys: list<CommitmentNumber * RevocationKey>) =
                             sanityCheck tail
         let commitmentNumbers, _ = List.unzip keys
         if not (sanityCheck commitmentNumbers) then
-            failwith "commitment number list is malformed: %A" commitmentNumbers
+            failwithf "commitment number list is malformed: %A" commitmentNumbers
         RevocationSet keys
 
     member this.NextCommitmentNumber: CommitmentNumber =

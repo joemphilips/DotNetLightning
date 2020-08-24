@@ -146,7 +146,7 @@ module internal ChannelHelpers =
 module internal Validation =
 
     open DotNetLightning.Channel
-    let checkOurOpenChannelMsgAcceptable (conf: ChannelConfig) (msg: OpenChannelMsg) =
+    let checkOurOpenChannelMsgAcceptable (_conf: ChannelConfig) (msg: OpenChannelMsg) =
         Validation.ofResult(OpenChannelMsgValidation.checkFundingSatoshisLessThanMax msg)
         *^> OpenChannelMsgValidation.checkChannelReserveSatohisLessThanFundingSatoshis msg
         *^> OpenChannelMsgValidation.checkPushMSatLesserThanFundingValue msg

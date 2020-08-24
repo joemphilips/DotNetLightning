@@ -59,7 +59,7 @@ type CommitmentSpec = {
             | In ->  { this with ToRemote = this.ToRemote - htlc.Add.Amount; HTLCs = this.HTLCs.Add(update.HTLCId, htlc)}
 
         member internal this.FulfillHTLC(direction: Direction, htlcId: HTLCId) =
-            match this.HTLCs |> Map.filter(fun k v  -> v.Direction <> direction) |>  Map.tryFind(htlcId), direction with
+            match this.HTLCs |> Map.filter(fun _k v  -> v.Direction <> direction) |>  Map.tryFind(htlcId), direction with
             | Some htlc, Out ->
                 { this with ToLocal = this.ToLocal + htlc.Add.Amount; HTLCs = this.HTLCs.Remove htlcId }
                 |> Ok
@@ -70,7 +70,7 @@ type CommitmentSpec = {
                 UnknownHTLC htlcId |> Error
 
         member internal this.FailHTLC(direction: Direction, htlcId: HTLCId) =
-            match this.HTLCs |> Map.filter(fun k v -> v.Direction <> direction) |> Map.tryFind (htlcId), direction with
+            match this.HTLCs |> Map.filter(fun _k v -> v.Direction <> direction) |> Map.tryFind (htlcId), direction with
             | Some htlc, Out ->
                 { this with ToRemote = this.ToRemote + htlc.Add.Amount; HTLCs = this.HTLCs.Remove htlcId }
                 |> Ok

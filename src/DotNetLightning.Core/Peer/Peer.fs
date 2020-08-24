@@ -115,7 +115,7 @@ module Peer =
         | NoiseComplete, EncodeMsg (msg) ->
             state.ChannelEncryptor |> PeerChannelEncryptor.encryptMessage (msg.ToBytes())
             |> (MsgEncoded >> List.singleton >> Ok)
-        | s, cmd ->
+        | _s, cmd ->
             failwithf "Peer does not know how to handle %A while in noise step %A" cmd noiseStep
         
     let applyEvent (state: Peer) (event: PeerEvent): Peer =

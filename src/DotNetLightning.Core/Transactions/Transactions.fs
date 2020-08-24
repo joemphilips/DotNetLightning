@@ -715,7 +715,7 @@ module Transactions =
                     .AddCoins(coin)
             psbt |> MainPenaltyTx |> Ok
             
-    let makeHTLCPenaltyTx (commitTx: Transaction) (localDustLimit: Money): HTLCPenaltyTx =
+    let makeHTLCPenaltyTx (_commitTx: Transaction) (_localDustLimit: Money): HTLCPenaltyTx =
         raise <| NotImplementedException()
 
     let makeClosingTx (commitTxInput: ScriptCoin)

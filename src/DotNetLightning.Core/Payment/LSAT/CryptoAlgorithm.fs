@@ -8,10 +8,10 @@ open NBitcoin
 #if BouncyCastle
 type BouncyCastleCryptoAlgorithm() =
     inherit CryptoAlgorithm()
-    override this.Encrypt(key, plaintext) =
+    override this.Encrypt(_key, _plaintext) =
         raise <| NotSupportedException("Encryption/Decryption for third party caveats are not supported yet for pure C# build.")
         
-    override this.Decrypt(key, cipherText) =
+    override this.Decrypt(_key, _cipherText) =
         raise <| NotSupportedException("Encryption/Decryption for third party caveats are not supported yet for pure C# build.")
 
 module CryptoAlgorithm =
