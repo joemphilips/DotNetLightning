@@ -5,8 +5,8 @@ open System.IO
 
 open Expecto
 open DotNetLightning.Utils
-open DotNetLightning.Serialize
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization
+open DotNetLightning.Serialization.Msgs
 open Generators
 
 let config =

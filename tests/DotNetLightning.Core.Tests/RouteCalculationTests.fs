@@ -6,12 +6,12 @@ open Expecto
 open ResultUtils
 
 open DotNetLightning.Utils
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Routing
 open DotNetLightning.Routing.Graph
 
 open DotNetLightning.Payment
-open DotNetLightning.Serialize
+open DotNetLightning.Serialization
 open Generators
 open GraphTests
 open GraphTests.Constants

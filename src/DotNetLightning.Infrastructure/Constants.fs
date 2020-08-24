@@ -1,6 +1,6 @@
 namespace DotNetLightning.Infrastructure
 
-open DotNetLightning.Serialize
+open DotNetLightning.Serialization
 open System
 
 [<AutoOpen>]

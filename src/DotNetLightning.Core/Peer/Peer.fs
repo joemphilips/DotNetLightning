@@ -4,10 +4,10 @@ open NBitcoin
 
 open ResultUtils
 
-open DotNetLightning.Serialize
+open DotNetLightning.Serialization
 open System.Collections
 open DotNetLightning.Utils
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Utils.Aether
 
 type PeerHandleError = {

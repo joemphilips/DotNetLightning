@@ -8,7 +8,7 @@ open DotNetLightning.Utils.Aether
 open DotNetLightning.Chain
 open DotNetLightning.Crypto
 open DotNetLightning.Transactions
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open NBitcoin
 open System
 

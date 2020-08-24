@@ -1,7 +1,7 @@
 ﻿namespace DotNetLightning.Infrastructure.Services
 
 open System.IO
-open DotNetLightning.Serialize
+open DotNetLightning.Serialization
 open DotNetLightning.Infrastructure
 
 type FlatFileDB(path: string, codec: SupportedCodec) =

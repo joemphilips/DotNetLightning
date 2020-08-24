@@ -3,7 +3,7 @@ module Generators
 open DotNetLightning.Payment.LSAT
 open NBitcoin
 open DotNetLightning.Utils
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open FsCheck
 open PrimitiveGenerators
 open MsgGenerators

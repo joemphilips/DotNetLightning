@@ -10,7 +10,7 @@ open ResultUtils
 
 open DotNetLightning.Utils
 open DotNetLightning.Core.Utils.Extensions
-open DotNetLightning.Serialize
+open DotNetLightning.Serialization
 
 open NBitcoin
 open NBitcoin.Crypto

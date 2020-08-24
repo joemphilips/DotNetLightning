@@ -4,11 +4,11 @@ open ResultUtils
 open DotNetLightning.Utils
 open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Utils.OnionError
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Chain
 open DotNetLightning.Transactions
 
-open DotNetLightning.Serialize
+open DotNetLightning.Serialization
 
 open NBitcoin
 

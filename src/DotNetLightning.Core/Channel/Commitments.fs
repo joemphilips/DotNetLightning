@@ -6,7 +6,7 @@ open DotNetLightning.Utils.Aether
 open DotNetLightning.Utils.Aether.Operators
 open DotNetLightning.Crypto
 open DotNetLightning.Transactions
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 
 type LocalChanges = {
     Proposed: IUpdateMsg list

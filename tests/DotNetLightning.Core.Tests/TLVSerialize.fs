@@ -6,7 +6,7 @@ open System.Text.Json
 
 open Expecto
 
-open DotNetLightning.Serialize
+open DotNetLightning.Serialization
 
 [<Tests>]
 let bigSizeVarIntTests =

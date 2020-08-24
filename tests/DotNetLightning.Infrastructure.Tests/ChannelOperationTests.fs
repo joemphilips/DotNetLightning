@@ -15,7 +15,7 @@ open DotNetLightning.Chain
 open DotNetLightning.Infrastructure.ActorManagers
 open DotNetLightning.Infrastructure.Actors
 open DotNetLightning.Infrastructure.Interfaces
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Utils
 open Expecto
 open Foq

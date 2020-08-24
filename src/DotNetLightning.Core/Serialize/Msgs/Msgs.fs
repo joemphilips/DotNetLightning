@@ -1,4 +1,4 @@
-namespace rec DotNetLightning.Serialize.Msgs
+namespace rec DotNetLightning.Serialization.Msgs
 
 open System
 open System.IO
@@ -12,7 +12,7 @@ open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils.OnionError
 open DotNetLightning.Core.Utils.Extensions
 
-open DotNetLightning.Serialize
+open DotNetLightning.Serialization
 
 // #region serialization
 type P2PDecodeError =

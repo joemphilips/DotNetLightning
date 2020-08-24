@@ -1,7 +1,7 @@
 module KeyRepositoryTests
 
 open ResultUtils
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Chain
 open DotNetLightning.Channel
 open DotNetLightning.Tests.Utils

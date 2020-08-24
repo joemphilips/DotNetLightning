@@ -7,7 +7,7 @@ open DotNetLightning.Chain
 open DotNetLightning.Crypto
 open DotNetLightning.Utils
 open DotNetLightning.Utils.NBitcoinExtensions
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Transactions
 
 exception ChannelException of ChannelError

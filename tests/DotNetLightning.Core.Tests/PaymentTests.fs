@@ -5,7 +5,7 @@ open System
 open DotNetLightning.Payment
 open DotNetLightning.Utils
 
-open DotNetLightning.Serialize
+open DotNetLightning.Serialization
 open ResultUtils
 open Expecto
 open NBitcoin

@@ -11,7 +11,7 @@ open CustomEventAggregator
 
 open DotNetLightning.Utils
 open DotNetLightning.Chain
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Peer
 
 open DotNetLightning.Infrastructure

@@ -8,7 +8,7 @@ open DotNetLightning.Utils
 open DotNetLightning.Transactions
 open DotNetLightning.Crypto
 open DotNetLightning.Chain
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 
 [<RequireQualifiedAccess; CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module internal Commitments =

@@ -5,10 +5,10 @@ open System
 open ResultUtils
 
 open DotNetLightning.Utils
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Channel
 
-open DotNetLightning.Serialize
+open DotNetLightning.Serialization
 open System.Collections.Generic
 open DotNetLightning.Transactions
 open DotNetLightning.Transactions

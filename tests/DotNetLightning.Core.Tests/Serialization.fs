@@ -3,9 +3,9 @@ module Serialization
 open ResultUtils
 open DotNetLightning.Utils
 open DotNetLightning.Core.Utils.Extensions
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 
-open DotNetLightning.Serialize
+open DotNetLightning.Serialization
 open Expecto
 open NBitcoin
 open System

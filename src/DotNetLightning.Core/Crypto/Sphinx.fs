@@ -1,12 +1,13 @@
 namespace DotNetLightning.Crypto
+
 open System
 open NBitcoin
 
 open ResultUtils
 
 open DotNetLightning.Utils
-open DotNetLightning.Serialize
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization
+open DotNetLightning.Serialization.Msgs
 
 module Sphinx =
     open NBitcoin.Crypto

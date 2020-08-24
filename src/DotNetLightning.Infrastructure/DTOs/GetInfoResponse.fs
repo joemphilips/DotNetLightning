@@ -1,6 +1,6 @@
 namespace DotNetLightning.Infrastructure.DTOs
 
-open DotNetLightning.Serialize
+open DotNetLightning.Serialization
 open DotNetLightning.Utils.Primitives
 
 

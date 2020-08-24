@@ -1,7 +1,7 @@
 module MsgGenerators
 
-open DotNetLightning.Serialize.Msgs
-open DotNetLightning.Serialize
+open DotNetLightning.Serialization.Msgs
+open DotNetLightning.Serialization
 open DotNetLightning.Utils.OnionError
 open PrimitiveGenerators
 open FsCheck
