@@ -20,7 +20,7 @@ type GetInfoResponse = {
     SyncedToGraph: bool
     NodeId: string
     ChainSynchronizationProgress: float
-    Features: FeatureBit
+    Features: FeatureBits
     Version: string
     Uris: string []
     BlockHash: string

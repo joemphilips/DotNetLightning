@@ -79,7 +79,7 @@ type LocalParams = {
     MaxAcceptedHTLCs: uint16
     IsFunder: bool
     DefaultFinalScriptPubKey: Script
-    Features: FeatureBit
+    Features: FeatureBits
 }
 
 type RemoteParams = {
@@ -95,7 +95,7 @@ type RemoteParams = {
     RevocationBasePoint: PubKey
     DelayedPaymentBasePoint: PubKey
     HTLCBasePoint: PubKey
-    Features: FeatureBit
+    Features: FeatureBits
     MinimumDepth: BlockHeightOffset32
 }
     with

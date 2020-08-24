@@ -380,7 +380,7 @@ type OnionErrorPacket = {
 [<CLIMutable>]
 type InitMsg =
     {
-        mutable Features: FeatureBit
+        mutable Features: FeatureBits
         mutable TLVStream: InitTLV array
     }
     with
@@ -407,7 +407,7 @@ type InitMsg =
                                 0uy
                         oredFeatures.[len - 1 - index] <- globalFeaturesByte ||| localFeaturesByte
                     oredFeatures
-                this.Features <- oredFeatures |> FeatureBit.CreateUnsafe
+                this.Features <- oredFeatures |> FeatureBits.CreateUnsafe
                 this.TLVStream <- ls.ReadTLVStream() |> Array.map(InitTLV.FromGenericTLV)
 
             member this.Serialize(ls) =
@@ -433,7 +433,7 @@ type InitMsg =
                         false
                     localFeatures.ToByteArray()
                 let globalFeatures =
-                    let globalFeatures = FeatureBit.Zero
+                    let globalFeatures = FeatureBits.Zero
                     let mandatory =
                         this.Features.HasFeature(
                             Feature.VariableLengthOnion,
@@ -1002,7 +1002,7 @@ and UnknownNetAddr = byte
 /// The unsigned part of node_anouncement
 [<CLIMutable>]
 type UnsignedNodeAnnouncementMsg = {
-    mutable Features: FeatureBit
+    mutable Features: FeatureBits
     mutable Timestamp: uint32
     mutable NodeId: NodeId
     mutable RGB: RGB
@@ -1014,7 +1014,7 @@ type UnsignedNodeAnnouncementMsg = {
 with
     interface ILightningSerializable<UnsignedNodeAnnouncementMsg> with
         member this.Deserialize(ls) =
-            this.Features <- ls.ReadWithLen() |> FeatureBit.CreateUnsafe
+            this.Features <- ls.ReadWithLen() |> FeatureBits.CreateUnsafe
             this.Timestamp <- ls.ReadUInt32(false)
             this.NodeId <- ls.ReadPubKey() |> NodeId
             this.RGB <- ls.ReadRGB()
@@ -1097,7 +1097,7 @@ with
 
 [<StructuralComparison;StructuralEquality;CLIMutable>]
 type UnsignedChannelAnnouncementMsg = {
-    mutable Features: FeatureBit
+    mutable Features: FeatureBits
     mutable ChainHash: uint256
     mutable ShortChannelId: ShortChannelId
     mutable NodeId1: NodeId
@@ -1110,7 +1110,7 @@ with
     interface ILightningSerializable<UnsignedChannelAnnouncementMsg> with
         member this.Deserialize(ls) =
             this.Features <-
-                ls.ReadWithLen() |> FeatureBit.CreateUnsafe
+                ls.ReadWithLen() |> FeatureBits.CreateUnsafe
             this.ChainHash <- ls.ReadUInt256(true)
             this.ShortChannelId <- ls.ReadUInt64(false) |> ShortChannelId.FromUInt64
             this.NodeId1 <- ls.ReadPubKey() |> NodeId

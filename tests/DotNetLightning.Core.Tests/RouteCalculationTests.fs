@@ -31,7 +31,7 @@ let makeChannelAnnCore(shortChannelId: ShortChannelId, nodeIdA, nodeIdB) =
       BitcoinKey1 = ((new Key()).PubKey |> ComparablePubKey)
       BitcoinKey2 = ((new Key()).PubKey |> ComparablePubKey)
       ChainHash = Network.RegTest.GenesisHash
-      Features = FeatureBit.Zero
+      Features = FeatureBits.Zero
       ExcessData = [||]}
 let makeChannelAnn(shortChannelId: uint64, nodeIdA: NodeId, nodeIdB: NodeId) =
     makeChannelAnnCore(ShortChannelId.FromUInt64(shortChannelId), nodeIdA, nodeIdB)

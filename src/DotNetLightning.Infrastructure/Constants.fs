@@ -17,4 +17,4 @@ module Constants =
     let defaultFeatureBits =
         (1L <<< Feature.ChannelRangeQueries.OptionalBitPosition &&&
          1L <<< Feature.OptionDataLossProtect.MandatoryBitPosition)
-        |> FeatureBit.CreateUnsafe
+        |> FeatureBits.CreateUnsafe

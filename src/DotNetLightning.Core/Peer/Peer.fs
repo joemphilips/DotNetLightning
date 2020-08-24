@@ -32,7 +32,7 @@ type Peer = {
     ChannelEncryptor: PeerChannelEncryptor
     IsOutBound : bool
     TheirNodeId: NodeId option
-    TheirFeatures: FeatureBit option
+    TheirFeatures: FeatureBits option
     SyncStatus: InitSyncTracker
 }
     with
