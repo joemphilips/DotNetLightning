@@ -59,6 +59,8 @@
     <Compile Include="Crypto/ShaChain.fs" />
     <Compile Include="Crypto/Sphinx.fs" />
     <Compile Include="Crypto/Generators.fs" />
+    <Compile Include="Crypto\AEZ.fs" />
+    <Compile Include="Crypto\Aezeed.fs" />
     <Compile Include="Chain/ChainInterface.fs" />
     <Compile Include="Chain/KeysInterface.fs" />
     <Compile Include="Transactions\TransactionError.fs" />
