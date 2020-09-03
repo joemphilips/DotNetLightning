@@ -1,16 +1,60 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using static AEZ.AEZConstants;
 
 namespace AEZ
 {
-    internal ref struct EState
+    internal unsafe ref struct EState
     {
         private static byte[] zero = new byte[BlockSize];
-        byte[][] I;
-        byte[][] J;
-        byte[][] L;
+        
+        private fixed byte _i0[16];
+        private fixed byte _i1[16];
+        
+        private fixed byte _j0[16];
+        private fixed byte _j1[16];
+        private fixed byte _j2[16];
+        
+        private fixed byte _l0[16];
+        private fixed byte _l1[16];
+        private fixed byte _l2[16];
+        private fixed byte _l3[16];
+        private fixed byte _l4[16];
+        private fixed byte _l5[16];
+        private fixed byte _l6[16];
+        private fixed byte _l7[16];
+        
+        private Span<byte> I0 => new Span<byte>(Unsafe.AsPointer(ref _i0[0]), 16);
+        private Span<byte> I1 => new Span<byte>(Unsafe.AsPointer(ref _i1[0]), 16);
+        
+        private Span<byte> J0 => new Span<byte>(Unsafe.AsPointer(ref _j0[0]), 16);
+        private Span<byte> J1 => new Span<byte>(Unsafe.AsPointer(ref _j1[0]), 16);
+        private Span<byte> J2 => new Span<byte>(Unsafe.AsPointer(ref _j2[0]), 16);
+        
+        private Span<byte> L0 => new Span<byte>(Unsafe.AsPointer(ref _l0[0]), 16);
+        private Span<byte> L1 => new Span<byte>(Unsafe.AsPointer(ref _l1[0]), 16);
+        private Span<byte> L2 => new Span<byte>(Unsafe.AsPointer(ref _l2[0]), 16);
+        private Span<byte> L3 => new Span<byte>(Unsafe.AsPointer(ref _l3[0]), 16);
+        private Span<byte> L4 => new Span<byte>(Unsafe.AsPointer(ref _l4[0]), 16);
+        private Span<byte> L5 => new Span<byte>(Unsafe.AsPointer(ref _l5[0]), 16);
+        private Span<byte> L6 => new Span<byte>(Unsafe.AsPointer(ref _l6[0]), 16);
+        private Span<byte> L7 => new Span<byte>(Unsafe.AsPointer(ref _l7[0]), 16);
+
+        private Span<byte> GetL(int index) =>
+            index == 0 ? L0 :
+            index == 1 ? L1 :
+            index == 2 ? L2 :
+            index == 3 ? L3 :
+            index == 4 ? L4 :
+            index == 5 ? L5 :
+            index == 6 ? L6 :
+            index == 7 ? L7 :
+            throw new ArgumentOutOfRangeException(nameof(index));
+        
+        
         IAES aes;
         
         internal static void DoubleBlock(Span<byte> p)
@@ -48,53 +92,48 @@ namespace AEZ
             r.CopyTo(dst);
         }
 
-        public EState(ReadOnlySpan<byte> k)
+        public EState(ReadOnlySpan<byte> k) : this()
         {
-            this.I = new [] {new byte[16], new byte[16]};
-            this.J = new [] {new byte[16], new byte[16], new byte[16]};
-            this.L = new []
-            {
-                new byte[16], new byte[16], new byte[16], new byte[16],
-                new byte[16], new byte[16], new byte[16], new byte[16]
-            };
-            
             byte[] extractedKey = new byte[ExtractedKeySize];
             AEZ.Extract(k, extractedKey);
-            extractedKey.AsSpan().Slice(0, 16).CopyTo(this.I[0]); // 1I
-            MultBlock(2, this.I[0], this.I[1]); // 2I
+            extractedKey.AsSpan().Slice(0, 16).CopyTo(this.I0); // 1I
+            MultBlock(2, this.I0, this.I1); // 2I
             
-            extractedKey.AsSpan().Slice(16, 16).CopyTo(this.J[0]);
-            MultBlock(2, this.J[0], this.J[1]); // 2J
-            MultBlock(2, this.J[1], this.J[2]); // 4J
+            extractedKey.AsSpan().Slice(16, 16).CopyTo(this.J0);
+            MultBlock(2, this.J0, this.J1); // 2J
+            MultBlock(2, this.J1, this.J2); // 4J
             
             // The upstream `aesni` code only stores L1, L2, and L4, but 
             
             // MultBlock(0, e.L, e.L[0])                            // L0 (all `0x00`s)
-            extractedKey.AsSpan().Slice(32, 16).CopyTo(this.L[1]); // L1
-            MultBlock(2, this.L[1], this.L[2]);              // L2 = L1*2;
-            Utils.XORBytes1x16(this.L[2], this.L[1], this.L[3]);      // L3 = L2 + L1;
-            MultBlock(2, this.L[2], this.L[4]);
-            Utils.XORBytes1x16(this.L[4], this.L[1], this.L[5]);
-            MultBlock(2, this.L[3], this.L[6]);
-            Utils.XORBytes1x16(this.L[6], this.L[1], this.L[7]);
+            extractedKey.AsSpan().Slice(32, 16).CopyTo(this.L1); // L1
+            MultBlock(2, this.L1, this.L2);              // L2 = L1*2;
+            Utils.XORBytes1x16(this.L2, this.L1, this.L3);      // L3 = L2 + L1;
+            MultBlock(2, this.L2, this.L4);
+            Utils.XORBytes1x16(this.L4, this.L1, this.L5);
+            MultBlock(2, this.L3, this.L6);
+            Utils.XORBytes1x16(this.L6, this.L1, this.L7);
             this.aes = new CustomAES(extractedKey);
         }
 
         private void Reset()
         {
-            foreach (var i in this.I)
-            {
-                i.AsSpan().Clear();
-            }
-
-            foreach (var l in this.L)
-            {
-                l.AsSpan().Clear();
-            }
-            foreach (var j in this.J)
-            {
-                j.AsSpan().Clear();
-            }
+            this.I0.Clear();
+            this.I1.Clear();
+            
+            this.J0.Clear();
+            this.J1.Clear();
+            this.J2.Clear();
+                
+            this.L0.Clear();
+            this.L1.Clear();
+            this.L2.Clear();
+            this.L3.Clear();
+            this.L4.Clear();
+            this.L5.Clear();
+            this.L6.Clear();
+            this.L7.Clear();
+            
             this.aes.Reset();
         }
 
@@ -110,17 +149,17 @@ namespace AEZ
             Span<byte> J = stackalloc byte[BlockSize];
             
             Utils.SetBytesBigEndian((uint)tau, buf.Slice(12, 4));
-            Utils.XORBytes1x16(this.J[0], this.J[1], J); // J ^ J2
-            this.aes.AES4(J, this.I[1], this.L[1], buf, sum);    // E (3,1)
+            Utils.XORBytes1x16(this.J0, this.J1, J); // J ^ J2
+            this.aes.AES4(J, this.I1, this.L1, buf, sum);    // E (3,1)
 
             // Hash nonce, accumulate into sum
             var isEmpty = nonce.Length == 0;
             var n = nonce;
             var nBytes = nonce.Length;
-            this.I[1].CopyTo(I);
+            this.I1.CopyTo(I);
             for (int i = 1; nBytes >= BlockSize; (i, nBytes) = (i + 1, nBytes - BlockSize))
             {
-                this.aes.AES4(this.J[2], I, this.L[i % 8], n.Slice(0, BlockSize), buf); // E(4,i)
+                this.aes.AES4(this.J2, I, this.GetL(i % 8), n.Slice(0, BlockSize), buf); // E(4,i)
                 Utils.XORBytes1x16(sum, buf, sum);
                 n = n.Slice(BlockSize);
                 if (i % 8 == 0)
@@ -134,7 +173,7 @@ namespace AEZ
                 buf.Clear();
                 n.CopyTo(buf);
                 buf[nBytes] = 0x80;
-                this.aes.AES4(this.J[2], this.I[0], this.L[0], buf, buf);
+                this.aes.AES4(this.J2, this.I0, this.L0, buf, buf);
                 Utils.XORBytes1x16(sum, buf, sum);
             }
 
@@ -142,12 +181,12 @@ namespace AEZ
             {
                 isEmpty = p.Length == 0;
                 var bytes = p.Length;
-                this.I[1].CopyTo(I);
-                MultBlock((uint)(5 + k), this.J[0], J);
+                this.I1.CopyTo(I);
+                MultBlock((uint)(5 + k), this.J0, J);
                 var pSpan = p.AsSpan();
                 for (int i = 1; bytes >= BlockSize; (i, bytes) = (i + 1, bytes - BlockSize))
                 {
-                    this.aes.AES4(J, I, this.L[i%8], pSpan.Slice(0, BlockSize), buf);
+                    this.aes.AES4(J, I, this.GetL(i%8), pSpan.Slice(0, BlockSize), buf);
                     Utils.XORBytes1x16(sum, buf, sum);
                     pSpan = pSpan.Slice(BlockSize);
                     if (i % 8 == 0)
@@ -161,7 +200,7 @@ namespace AEZ
                     buf.Clear();
                     pSpan.SafeCopyTo(buf);
                     buf[bytes] = 0x80;
-                    this.aes.AES4(J, this.I[0], this.L[0], buf, buf);
+                    this.aes.AES4(J, this.I0, this.L0, buf, buf);
                     Utils.XORBytes1x16(sum, buf, sum);
                 }
             }
@@ -180,7 +219,7 @@ namespace AEZ
             while (tau >= BlockSize)
             {
                 Utils.XORBytes1x16(delta, ctr, buf);
-                this.aes.AES10(this.L[3], buf, buf);
+                this.aes.AES10(this.L3, buf, buf);
                 buf.CopyTo(result.Slice(off));
                 var i = 15;
                 while (true)
@@ -200,7 +239,7 @@ namespace AEZ
             if (tau > 0)
             {
                 Utils.XORBytes1x16(delta, ctr, buf);
-                this.aes.AES10(this.L[3], buf, buf);
+                this.aes.AES10(this.L3, buf, buf);
                 buf.SafeCopyTo(result.Slice(off));
             }
         }
@@ -210,14 +249,14 @@ namespace AEZ
             Debug.Assert(X.Length == BlockSize);
             Span<byte> tmp = stackalloc byte[BlockSize];
             Span<byte> I = stackalloc byte[BlockSize];
-            this.I[1].CopyTo(I);
+            this.I1.CopyTo(I);
 
             for (var (i, inBytes) = (1, input.Length); inBytes >= 64; i++, inBytes -= 32)
             {
-                this.aes.AES4(J[0], I, this.L[i % 8], input.Slice(BlockSize, BlockSize), tmp);
+                this.aes.AES4(this.J0, I, this.GetL(i % 8), input.Slice(BlockSize, BlockSize), tmp);
                 Utils.XORBytes1x16(input, tmp, output.Slice(0,BlockSize));
                 
-                aes.AES4(zero, this.I[0], this.L[0], output.Slice(0, BlockSize), tmp);
+                aes.AES4(zero, this.I0, this.L0, output.Slice(0, BlockSize), tmp);
                 Utils.XORBytes1x16(input.Slice(BlockSize), tmp, output.Slice(BlockSize, BlockSize));
                 Utils.XORBytes1x16(output.Slice(BlockSize), X, X);
                 input = input.Slice(32);
@@ -246,18 +285,18 @@ namespace AEZ
         {
             Span<byte> tmp = stackalloc byte[BlockSize];
             Span<byte> I = stackalloc byte[BlockSize];
-            this.I[1].CopyTo(I);
+            this.I1.CopyTo(I);
             for (var (i, inBytes) = (1, input.Length); inBytes >= 64; i++, inBytes -= 32)
             {
-                aes.AES4(this.J[1], I, this.L[i % 8], S, tmp);
+                aes.AES4(this.J1, I, this.GetL(i % 8), S, tmp);
                 Utils.XORBytes1x16(output, tmp, output.Slice(0, BlockSize));
                 Utils.XORBytes1x16(output.Slice(BlockSize), tmp, output.Slice(BlockSize, BlockSize));
                 Utils.XORBytes1x16(output, Y, Y);
                 
-                aes.AES4(zero, this.I[0], this.L[0], output.Slice(BlockSize, BlockSize), tmp);
+                aes.AES4(zero, this.I0, this.L0, output.Slice(BlockSize, BlockSize), tmp);
                 Utils.XORBytes1x16(output, tmp, output.Slice(0, BlockSize));
                 
-                aes.AES4(this.J[0], I, this.L[i % 8], output.Slice(0, BlockSize), tmp);
+                aes.AES4(this.J0, I, this.GetL(i % 8), output.Slice(0, BlockSize), tmp);
                 Utils.XORBytes1x16(output.Slice(BlockSize), tmp, output.Slice(BlockSize, BlockSize));
 
                 SwapBlocks(tmp, output);
@@ -320,16 +359,16 @@ namespace AEZ
             input = input.Slice(initialBytes);
             if (fragBytes >= BlockSize)
             {
-                aes.AES4(zero, this.I[1], this.L[4], input.Slice(0, BlockSize), tmp);
+                aes.AES4(zero, this.I1, this.L4, input.Slice(0, BlockSize), tmp);
                 Utils.XORBytes1x16(X, tmp, X);
                 OneZeroPad(input.Slice(BlockSize), fragBytes - BlockSize, tmp);
-                aes.AES4(zero, this.I[1], this.L[5], tmp, tmp);
+                aes.AES4(zero, this.I1, this.L5, tmp, tmp);
                 Utils.XORBytes1x16(X, tmp, X);
             }
             else if (fragBytes > 0)
             {
                 OneZeroPad(input, fragBytes, tmp);
-                aes.AES4(zero, this.I[1], this.L[4], tmp, tmp);
+                aes.AES4(zero, this.I1, this.L4, tmp, tmp);
                 Utils.XORBytes1x16(X, tmp, X);
             }
             
@@ -337,9 +376,9 @@ namespace AEZ
             output = outputOrigin.Slice(inputOrigin.Length - 32);
             input = inputOrigin.Slice(inputOrigin.Length - 32);
             
-            aes.AES4(zero, this.I[1], this.L[(1+d) % 8], input.Slice(BlockSize, BlockSize), tmp);
+            aes.AES4(zero, this.I1, this.GetL((1+(int)d) % 8), input.Slice(BlockSize, BlockSize), tmp);
             Utils.XOrBytes4x16(X, input, delta, tmp, output.Slice(0, BlockSize));
-            aes.AES10(this.L[(1+d) % 8], output.Slice(0, BlockSize), tmp);
+            aes.AES10(this.GetL((1+(int)d) % 8), output.Slice(0, BlockSize), tmp);
             Utils.XORBytes1x16(input.Slice(BlockSize), tmp, output.Slice(BlockSize, BlockSize));
             Utils.XORBytes1x16(output, output.Slice(BlockSize), S);
             
@@ -354,38 +393,38 @@ namespace AEZ
             input = input.Slice(initialBytes);
             if (fragBytes >= BlockSize)
             {
-                aes.AES10(this.L[4], S, tmp); // E(-1, 4)
+                aes.AES10(this.L4, S, tmp); // E(-1, 4)
                 Utils.XORBytes1x16(input, tmp, output.Slice(0, BlockSize));
-                aes.AES4(zero, this.I[1], this.L[4], output.Slice(0, BlockSize), tmp);
+                aes.AES4(zero, this.I1, this.L4, output.Slice(0, BlockSize), tmp);
                 Utils.XORBytes1x16(Y, tmp, Y);
 
                 output = output.Slice(BlockSize);
                 input = input.Slice(BlockSize);
                 fragBytes -= BlockSize;
                 
-                aes.AES10(this.L[5], S, tmp);
+                aes.AES10(this.L5, S, tmp);
                 Utils.XOrBytes(input, tmp, tmp.Slice(0, fragBytes));
                 tmp.Slice(0, fragBytes).CopyTo(output);
                 tmp.Slice(fragBytes).Clear();
                 tmp[fragBytes] = 0x80;
-                aes.AES4(zero, this.I[1], this.L[5], tmp, tmp);
+                aes.AES4(zero, this.I1, this.L5, tmp, tmp);
                 Utils.XORBytes1x16(Y, tmp, Y);
             }
             else if (fragBytes > 0)
             {
-                aes.AES10(this.L[4], S, tmp); // E(-1, 4)
+                aes.AES10(this.L4, S, tmp); // E(-1, 4)
                 Utils.XOrBytes(input, tmp, tmp.Slice(0, fragBytes));
                 tmp.Slice(0, fragBytes).CopyTo(output);
                 tmp.Slice(fragBytes).Clear();
                 tmp[fragBytes] = 0x80;
-                aes.AES4(zero, this.I[1], this.L[4], tmp, tmp);
+                aes.AES4(zero, this.I1, this.L4, tmp, tmp);
                 Utils.XORBytes1x16(Y, tmp, Y);
             }
 
             output = outputOrigin.Slice(inputOrigin.Length - 32);
-            aes.AES10(this.L[(2 - d)%8], output.Slice(BlockSize), tmp);
+            aes.AES10(this.GetL((2 - (int)d)%8), output.Slice(BlockSize), tmp);
             Utils.XORBytes1x16(output, tmp, output.Slice(0, BlockSize));
-            aes.AES4(zero, this.I[1], this.L[(2 - d) % 8], output.Slice(0, BlockSize), tmp);
+            aes.AES4(zero, this.I1, this.GetL((2 - (int)d) % 8), output.Slice(0, BlockSize), tmp);
             Utils.XOrBytes4x16(tmp, output.Slice(BlockSize), delta, Y, output.Slice(BlockSize));
             
             output.Slice(0, BlockSize).CopyTo(tmp);
@@ -452,7 +491,7 @@ namespace AEZ
                     input.CopyTo(buf);
                     buf[0] |= 0x80;
                     Utils.XORBytes1x16(delta, buf, buf.Slice(0, BlockSize));
-                    aes.AES4(zero, this.I[1], this.L[3], buf.Slice(0, BlockSize), tmp); // E(0, 3)
+                    aes.AES4(zero, this.I1, this.L3, buf.Slice(0, BlockSize), tmp); // E(0, 3)
                     L[0] ^= (byte)(tmp[0] & 0x80);
                 }
                 j = rounds - 1;
@@ -470,7 +509,7 @@ namespace AEZ
                 buf[inBytes / 2] = (byte) ((buf[inBytes / 2] & mask) | pad);
                 Utils.XORBytes1x16(buf, delta, buf.Slice(0, BlockSize));
                 buf[15] ^= (byte) j;
-                aes.AES4(zero, this.I[1], this.L[i], buf.Slice(0, BlockSize), tmp); // E(0, i)
+                aes.AES4(zero, this.I1, this.GetL((int)i), buf.Slice(0, BlockSize), tmp); // E(0, i)
                 Utils.XORBytes1x16(L, tmp, L.Slice(0, BlockSize));
                 
                 buf.Slice(0, BlockSize).Clear();
@@ -478,7 +517,7 @@ namespace AEZ
                 buf[inBytes / 2] = (byte)((buf[inBytes / 2] & mask) | pad);
                 Utils.XORBytes1x16(buf, delta, buf.Slice(0, BlockSize));
                 buf[15] ^= (byte)(j + step);
-                aes.AES4(zero, this.I[1], this.L[i] ,buf.Slice(0, BlockSize), tmp);
+                aes.AES4(zero, this.I1, this.GetL((int)i) ,buf.Slice(0, BlockSize), tmp);
                 Utils.XORBytes1x16(R, tmp, R.Slice(0, BlockSize));
             }
             R.Slice(0, inBytes / 2).CopyTo(buf);
@@ -498,7 +537,7 @@ namespace AEZ
                 buf.Slice(inBytes,BlockSize - inBytes).Clear();
                 buf[0] |= 0x80;
                 Utils.XORBytes1x16(delta, buf, buf.Slice(0, BlockSize));
-                aes.AES4(zero, this.I[1], this.L[3], buf.Slice(0, BlockSize), tmp);
+                aes.AES4(zero, this.I1, this.L3, buf.Slice(0, BlockSize), tmp);
                 output[0] ^= (byte)(tmp[0] & 0x80);
             }
         }

@@ -9,13 +9,6 @@ module private AEZ_Constants =
     [<Literal>]
     let BLOCK_SIZE = 16
     
-module AEZ =
-    
-    type IAES =
-        abstract member Reset: unit
-        abstract member AES4: 
-    
-
 module private AEZ_AEAD_Constants =
     [<Literal>]
     let AEAD_NONSE_SIZE = 16
