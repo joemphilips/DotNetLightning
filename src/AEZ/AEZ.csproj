@@ -6,12 +6,18 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Blake2Fast\Blake2Fast.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
             <_Parameter1>AEZ.Tests</_Parameter1>
         </AssemblyAttribute>
+    </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\NSec\Cryptography\NSec.Cryptography.csproj" PrivateAssets="all" />
+    <PackageReference Condition="'$(BouncyCastle)'=='true'" Include="Portable.BouncyCastle" Version="1.8.6.7" />
+  </ItemGroup>
+
+
+    <ItemGroup>
+      <PackageReference Include="System.Memory" Version="4.5.3" />
     </ItemGroup>
 </Project>

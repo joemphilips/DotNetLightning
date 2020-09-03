@@ -25,7 +25,12 @@ namespace AEZ
             }
         }
 
-        private static IBlake2B _blake2B = new Blake2FastBlake2B(ExtractedKeySize);
+        private static IBlake2B _blake2B =
+#if BouncyCastle
+            new BouncyCastleBlake2B(ExtractedKeySize);
+#else
+            new NSecBlake2B(ExtractedKeySize);
+#endif
         
         /// <summary>
         /// Encrypts and authenticates the plaintext, authenticates the additional data, and appends the result to ciphertext,
