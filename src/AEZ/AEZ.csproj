@@ -6,11 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="System.Memory" Version="4.5.3" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\NSec\Cryptography\NSec.Cryptography.csproj" />
+      <ProjectReference Include="..\Blake2Fast\Blake2Fast.csproj" />
     </ItemGroup>
 
     <ItemGroup>

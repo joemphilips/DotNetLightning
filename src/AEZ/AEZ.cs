@@ -25,7 +25,7 @@ namespace AEZ
             }
         }
 
-        private static IBlake2B _blake2B = new NSecBlake2B(ExtractedKeySize);
+        private static IBlake2B _blake2B = new Blake2FastBlake2B(ExtractedKeySize);
         
         /// <summary>
         /// Encrypts and authenticates the plaintext, authenticates the additional data, and appends the result to ciphertext,

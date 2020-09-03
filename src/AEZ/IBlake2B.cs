@@ -1,5 +1,4 @@
 using System;
-using NSec.Cryptography;
 
 namespace AEZ
 {
@@ -8,18 +7,18 @@ namespace AEZ
         void Hash(ReadOnlySpan<byte> input, Span<byte> output);
     }
 
-    public class NSecBlake2B : IBlake2B
+    public class Blake2FastBlake2B : IBlake2B
     {
         private readonly int _size;
-        private Blake2b _instanse;
-        public NSecBlake2B(int size)
+
+        public Blake2FastBlake2B(int size)
         {
             _size = size;
-            _instanse = new Blake2b(size);
         }
         public void Hash(ReadOnlySpan<byte> input, Span<byte> output)
         {
-            _instanse.Hash(input, output);
+            var d = Blake2Fast.Blake2b.ComputeHash(_size, input);
+            d.CopyTo(output);
         }
     }
 }
