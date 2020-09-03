@@ -22,6 +22,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\AEZ\AEZ.csproj" />
+      <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\..\src\NSec\Cryptography\NSec.Cryptography.csproj" />
     </ItemGroup>
 
 </Project>
