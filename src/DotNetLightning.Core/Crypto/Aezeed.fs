@@ -3,6 +3,9 @@ namespace DotNetLightning.Crypto
 
 
 module Constants =
+    /// CipherSeedVersion is the current version of the aezeed scheme as defined in this package.
+    /// This version indicates the following parameters for the deciphered cipher seed: a 1 byte version, 2 bytes
+    /// for the Bitcoin Days Genesis timestamp, and 16 bytes for entropy. It also governs how the cipher seed
     [<Literal>]
     let CIPHER_SEED_VERSION = 0
     
