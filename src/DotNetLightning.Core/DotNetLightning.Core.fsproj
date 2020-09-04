@@ -28,6 +28,7 @@
     <ProjectReference Include="..\ResultUtils\ResultUtils.fsproj" PrivateAssets="all" />
     <ProjectReference Include="..\InternalBech32Encoder\InternalBech32Encoder.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\Macaroons\Macaroons.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\AEZ\AEZ.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
@@ -46,6 +47,7 @@
     <Compile Include="Utils/PriorityQueue.fs" />
     <Compile Include="Serialization\GenericTLV.fs" />
     <Compile Include="Serialization\LightningStream.fs" />
+    <Compile Include="Serialization\BitReader.fs" />
     <Compile Include="Serialization\BitWriter.fs" />
     <Compile Include="Serialization\EncodedTypes.fs" />
     <Compile Include="Serialization\Encoding.fs" />
