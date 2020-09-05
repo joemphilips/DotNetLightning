@@ -6,7 +6,6 @@ namespace AEZ
 {
     internal unsafe class CustomAES : IAES
     {
-        private readonly Memory<byte> _key;
         private Memory<uint> _aes10Key;
         private Memory<uint> _aes4Key;
 
