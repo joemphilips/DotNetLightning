@@ -5,7 +5,6 @@ open System
 open System.Text.Json
 open DotNetLightning.Crypto
 open DotNetLightning.Serialization.Msgs
-open DotNetLightning.Tests.Utils
 open DotNetLightning.Transactions
 open DotNetLightning.Transactions.Transactions
 open DotNetLightning.Utils
@@ -17,7 +16,6 @@ open NBitcoin
 let newSecp256k1 = DotNetLightning.Crypto.CryptoUtils.impl.newSecp256k1
 
 // let logger = Log.create "bolt3-transaction tests"
-let logger = TestLogger.Create("bolt3-transaction tests")
 let log =
     // uncomment this if you want to see the debug message for this test
     // logger.LogSimple
