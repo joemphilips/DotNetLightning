@@ -284,8 +284,7 @@ module BouncyCastle =
 
     type CryptoImpl() =
         interface ICryptoImpl with
-            member this.newSecp256k1() =
-                new BouncySecp256k1() :> ISecp256k1
+            member this.newSecp256k1() = new BouncySecp256k1() :> ISecp256k1
             member this.encryptWithAD(n: uint64, key: uint256, ad: ReadOnlySpan<byte>, plainText: ReadOnlySpan<byte>) =
                 let key = key.ToBytes()
                 let nonce = Array.concat [| Array.zeroCreate 4; BitConverter.GetBytes n |]
