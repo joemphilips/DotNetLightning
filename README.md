@@ -1,36 +1,88 @@
-## Overview
+## DotNetLightning: The utility for working with the Bitcoin Lightning Network (LN) in C#, F#
 
-This repository contains one solution which contains four main projects.
+the main entry point is `DotNetLightning.Core`.
 
-1. `DotNetLightning.Core` to perform LN specific logic and low level primitives.
-2. `DotNetLightning.Infrastructure` to support data persistency, altcoins, channel/peer management etc.
-3. `DotNetLightning.Server` to run as a server.
-4. `DotNetLightning.Client` to interact with the server.
+## Installation
 
-## How to configure
+The package is compiled and published with two variants
 
-Configuration will follow an usual semantics for ASP.NET Core web app.
-That is, it will read in following order.
+* [`DotNetLightning`](https://www.nuget.org/packages/DotNetLightning/)
+  * This does not use native bindings for cryptographic operation.
+  * This is the one you want to use if you run your code everywhere, but possibly slower then below.
+* [`DotNetLightning.Core`](https://www.nuget.org/packages/DotNetLightning.Core/)
+  * This uses pre-compiled `libsodium` for cryptographic operation.
+  * It only supports `windows`, `mac` and `linux` environment.
+  * This is what you want if you need performance and above are the only environments you are planning to support.
+  
+run `dotnet add package` with the one you want.
+Currently it is in alpha, so you probably want to install a latest version by specifying it with `--version`.
+The version is prefixed with git commit hash and date. Please take a look on nuget page.
 
-* Read `appsettings.json`
+## Features
 
-## Supported platforms
+### Features in `DotNetLightning.*` sub-namespaces.
 
-The project `DotNetLightning.Core` is published to nuget as two different styles.
+#### `DotNetLightning.Utils`
 
-* By default, the solution is built with dependencies on Secp256k1.Net and NSec (which have native dependencies that need to be built for every platform, and we right now only provide Linux/MacOS binaries). This version is published as `DotNetLightning.Core` on Nuget.
-* For a more portable version (but possibly less performant) you can compile with BouncyCastle support, passing /p:BouncyCastle=True to your build. This version is published as `DotNetLightning` on Nuget.
+Contains a low-level primitives for LN.
+Mostly it is for internal usage but some are useful for consumes point of view.
+(e.g. LNMoney to represent milli-satoshis value)
 
-## Developer notes
+#### `DotNetLightning.Serialization`
 
-![Alt text](images/Package_Dependency_Graph.png?raw=true "Package dependency graph")
+Contains items for wire-protocol. FeaturesBits, TLV, and P2P messages.
 
-Purple background indicates that the package is included in this repository.
-Important point here is that we should have the least external dependencies as possible to reduce number of possible
-attack vectors. (especially for DotNetLightning.Core)
+#### `DotNetLightning.Crypto`
 
-![Alt text](images/Architecture01.png?raw=true "Infrastructure Architecture in one image")
+Contains modules and types for working with Cryptographic operation.
+For example LN-onion network encoding, [aezeed](https://github.com/lightningnetwork/lnd/tree/master/aezeed) for seed
+backup
 
-## Footnotes
+#### `DotNetLightning.Chain`
 
-[Slide used for creating images](https://docs.google.com/presentation/d/1GKByCIPef3wwM_RMGQFcdsme2dVyQWHL_kp6t67eFRw/edit?usp=sharing)
+Interface to inject I/O (e.g. Signing key and Blockchain-interaction)
+
+#### `DotNetLightning.Transactions`
+
+This is a module for creating LN-specific Transactions. Mostly for internal usage.
+
+#### `DotNetLightning.Peer`
+
+Handles handshake and encryption against other peers
+
+####  `DotNetLightning.Channel`
+
+Handles channel state.
+This module is pretty much WIP. not sure if we can finish. (This is the most complex part in the LN protocol.)
+
+#### `DotNetLightning.Payment`
+
+Contains primitives for Payment-related operation. The most important class is `PaymentRequest`,
+a.k.a bolt11-invoice, LN-invoice.
+
+It also contains primitives for [LSAT](https://github.com/lightninglabs/LSATI), the LN based http authentication mechanism.
+See [here](https://github.com/joemphilips/LSATAuthentication) for PoC of AspNetCore middleware for LSAT.
+
+#### `DotNetLightning.Routing`
+
+Module for calculating payment route. This is still much WIP.
+
+### Other features
+
+Some sibling packages comes together when you install `DotNetLightning` or `DotNetLightning.Core`
+These are mostly for internal usages but some might be useful for you.
+
+#### `AEZ`
+
+which contains managed code for aez cipher scheme.
+
+It may be useful if you want to secure your data before saving it to disk.
+See official page for the detail: https://www.cs.ucdavis.edu/~rogaway/aez/index.html
+
+#### `Macaroon`
+
+Which contains macaroon authentication token.
+
+The api is mostly the same with [libmacaroon](https://github.com/rescrv/libmacaroons) See libmacaroon's readme for the
+usage.
+
