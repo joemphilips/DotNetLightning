@@ -1,4 +1,4 @@
-namespace DotNetLightning.Serialize
+namespace DotNetLightning.Serialization
 
 open System
 open System.Collections

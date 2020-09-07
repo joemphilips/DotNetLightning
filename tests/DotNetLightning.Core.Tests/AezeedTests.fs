@@ -6,7 +6,6 @@ open NBitcoin
 open ResultUtils
 open DotNetLightning.Crypto
 open System.Text
-open System.Text
 open Expecto
 open FsCheck
 open PrimitiveGenerators
@@ -37,9 +36,9 @@ let tests =
         FsCheckConfig.defaultConfig
             with
                 arbitrary = [typeof<CipherSeedGenerator>;]
-                maxTest = 300;
+                maxTest = 15;
     }
-    ftestList "aezeed unit test ported from lnd" [
+    testList "aezeed unit test ported from lnd" [
         let testEntropy =
             [|
                 0x81; 0xb6; 0x37; 0xd8;
@@ -129,7 +128,7 @@ let tests =
         testCase "should reject invalid passphrase" <| fun _ ->
             let pass = Encoding.UTF8.GetBytes("test")
             let cipherSeed = CipherSeed.Create(0uy, Some testEntropy, DateTimeOffset.Now)
-            let mnemonic = cipherSeed.ToMnemonic()
+            let mnemonic = cipherSeed.ToMnemonic(pass)
             let wrongPass = Encoding.UTF8.GetBytes "kek"
             let e = mnemonic.ToCipherSeed(wrongPass)
             match e with
@@ -140,15 +139,13 @@ let tests =
             let pass = Encoding.UTF8.GetBytes("test")
             let cipherSeed = { CipherSeed.Create(0uy, Some testEntropy, BITCOIN_GENESIS_DATE) with Salt = testSalt}
             let cipherText = cipherSeed.Encipher(pass)
-            printfn "cipherText: %A" cipherText
             let mnemonic =
                 AezeedHelpers.cipherTextToMnemonic(cipherText, None)
                 |> (Seq.fold(fun word acc -> word + " " + acc) "")
-                |> fun x -> printfn "mnemonic: %A" x; x
                 |> Mnemonic
             let plainSeedBytes = mnemonic.Decipher(Some pass, None) |> Result.deref
             let newSeed = CipherSeed.FromBytes(plainSeedBytes)
-            Expect.equal cipherSeed newSeed ""
+            Expect.equal newSeed cipherSeed ""
             
         testCase "test invalid external version" <| fun _ ->
             let cipherSeed = CipherSeed.Create(0uy, testEntropy, DateTimeOffset.Now)
@@ -165,7 +162,7 @@ let tests =
         testCase "test changing passphrase" <| fun _ ->
             let pass = Encoding.UTF8.GetBytes("test")
             let cipherSeed = CipherSeed.Create(0uy, testEntropy, DateTimeOffset.Now)
-            let mnemonic = cipherSeed.ToMnemonic()
+            let mnemonic = cipherSeed.ToMnemonic(pass)
             let newPass = Encoding.UTF8.GetBytes("strongerpassyeh!")
             let newMnemonic = mnemonic.ChangePass(pass, newPass) |> Result.deref
             let newCipherSeed = newMnemonic.ToCipherSeed(newPass) |> Result.deref
@@ -197,23 +194,7 @@ let tests =
             let newSeed = CipherSeed.FromBytes b
             
             Expect.equal cipherSeed newSeed ""
-            
-        testCase "test decipher unknown mnemonic word" <| fun ()  ->
-            let cipherSeed = CipherSeed.Create(0uy, testEntropy, DateTimeOffset.Now)
-            
-            let pass = Encoding.UTF8.GetBytes "test"
-            let mnemonicW = cipherSeed.ToMnemonicWords(pass)
-            let randIndex =
-                let r = Random()
-                r.Next(0, mnemonicW.Length - 1)
-            mnemonicW.[randIndex] <- "kek"
-            let mnemonic = 
-                mnemonicW |> Seq.fold(fun word acc -> word + " " + acc) "" |> Mnemonic
-            let r = mnemonic.ToCipherSeed(pass)
-            match r with
-            | Error(AezeedError.IncorrectMnemonic _)  -> ()
-            | x -> failwithf "%A" x
-            ()
+            Expect.equal (cipherSeed.GetHashCode()) (newSeed.GetHashCode()) ""
             
         testCase "test Decipher incorrect mnemonic" <| fun _ ->
             let cipherSeed = CipherSeed.Create(0uy, testEntropy, DateTimeOffset.Now)

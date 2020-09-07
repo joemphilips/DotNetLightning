@@ -29,7 +29,6 @@
     <ProjectReference Include="..\InternalBech32Encoder\InternalBech32Encoder.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\Macaroons\Macaroons.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\AEZ\AEZ.csproj" />
-    <ProjectReference Include="..\Scrypt\Scrypt.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />

@@ -9,9 +9,10 @@ open System.Runtime.CompilerServices
 open NBitcoin
 
 open System.Runtime.InteropServices
+open System.Security.Cryptography
 open System.Text
 open DotNetLightning.Core.Utils.Extensions
-open DotNetLightning.Serialize
+open DotNetLightning.Serialization
 open DotNetLightning.Utils
 
 type O = OptionalArgumentAttribute
@@ -82,7 +83,8 @@ module internal AEZConstants =
         NBitcoin.Crypto.SCrypt.ComputeDerivedKey(pass, salt, V0_SCRYPT_N, V0_SCRYPT_R, V0_SCRYPT_P, Nullable(), KEY_LEN)
 type AezeedError =
     | UnsupportedVersion of uint8
-    | InvalidPass of byte[]
+    | InvalidPass of CryptographicException
+    /// Returns when the checksum does not match.
     | IncorrectMnemonic of expectedCheckSum: uint32 * actualChecksum: uint32
     
 [<AutoOpen>]
@@ -91,11 +93,11 @@ module internal AezeedHelpers =
         let ad = Array.zeroCreate AD_SIZE
         ad.[0] <- encipheredSeed.[0]
         let a = encipheredSeed.[SALT_OFFSET..CHECKSUM_OFFSET - 1]
-        a.AsSpan().CopyTo(ad.[1..].AsSpan())
+        Array.blit a 0 ad 1 (AD_SIZE - 1)
         ad
         
     let decipherCipherSeed(cipherSeedBytes: byte[], password: byte[]) =
-        Debug.Assert(cipherSeedBytes.Length = DECIPHERED_CIPHER_SEED_SIZE)
+        Debug.Assert(cipherSeedBytes.Length = ENCIPHERED_CIPHER_SEED_SIZE)
         if cipherSeedBytes.[0] <> CIPHER_SEED_VERSION then Error(AezeedError.UnsupportedVersion cipherSeedBytes.[0]) else
         let salt = cipherSeedBytes.[SALT_OFFSET..SALT_OFFSET + SALT_SIZE - 1]
         let cipherSeed = cipherSeedBytes.[1..SALT_OFFSET - 1]
@@ -105,8 +107,12 @@ module internal AezeedHelpers =
         if (freshChecksum <> checkSum) then Error(AezeedError.IncorrectMnemonic(freshChecksum, checkSum)) else
         let key = getScryptKey(password, salt)
         let ad = extractAD(cipherSeedBytes)
-        let r = (AEZ.AEZ.Decrypt(ReadOnlySpan(key), ReadOnlySpan.Empty ,[|ad|], CIPHER_TEXT_EXPANSION, ReadOnlySpan(cipherSeed), Span.Empty))
-        Ok(r.ToArray())
+        try 
+            let r = (AEZ.AEZ.Decrypt(ReadOnlySpan(key), ReadOnlySpan.Empty ,[|ad|], CIPHER_TEXT_EXPANSION, ReadOnlySpan(cipherSeed), Span.Empty))
+            Ok(r.ToArray())
+        with
+            | :? CryptographicException as e ->
+                Error(AezeedError.InvalidPass e)
         
     let mnemonicToCipherText(mnemonic: string[], lang: Wordlist option) =
         let lang = Option.defaultValue NBitcoin.Wordlist.English lang
@@ -124,7 +130,7 @@ module internal AezeedHelpers =
         let wordInt = writer.ToIntegers()
         wordInt |> lang.GetWords
         
-[<Struct>]
+[<Struct;CustomEquality;NoComparison>]
 type CipherSeed = internal {
     InternalVersion: uint8
     _Birthday: uint16
@@ -132,6 +138,17 @@ type CipherSeed = internal {
     Salt: byte[]
 }
     with
+    override this.GetHashCode() =
+        int (AEZ.Crc32.Crc32CAlgorithm.Compute(this.ToBytes()))
+    override this.Equals(o: obj) =
+        match o with
+        | :? CipherSeed as other -> (this :> IEquatable<CipherSeed>).Equals(other)
+        | _ -> false
+    interface IEquatable<CipherSeed> with
+        member this.Equals(o: CipherSeed) =
+            this.InternalVersion = o.InternalVersion &&
+            this._Birthday = o._Birthday &&
+            this.Entropy.ToHexString() = o.Entropy.ToHexString()
     static member Create(internalVersion: uint8) =
         CipherSeed.Create(internalVersion, DateTimeOffset.Now)
     static member Create(internalVersion: uint8, now: DateTimeOffset) =
@@ -201,16 +218,17 @@ type CipherSeed = internal {
         
         let seedBytes = this.ToBytes()
         let ad = this.GetADBytes()
-        let cipherText = AEZ.AEZ.Encrypt(ReadOnlySpan(key), ReadOnlySpan.Empty, [| ad |], CIPHER_TEXT_EXPANSION, ReadOnlySpan(seedBytes), Span.Empty)
+        let cipherText = (AEZ.AEZ.Encrypt(ReadOnlySpan(key), ReadOnlySpan.Empty, [| ad |], CIPHER_TEXT_EXPANSION, ReadOnlySpan(seedBytes), Span.Empty)).ToArray()
         
         let result = Array.zeroCreate ENCIPHERED_CIPHER_SEED_SIZE
         result.[0] <- byte CIPHER_SEED_VERSION
-        cipherText.CopyTo(result.AsSpan().Slice(1, SALT_OFFSET))
-        this.Salt.CopyTo(result.AsSpan().Slice(SALT_OFFSET))
+        Array.blit cipherText 0 result 1 (SALT_OFFSET - 1)
+        Array.blit this.Salt 0 result SALT_OFFSET SALT_SIZE
         
         let checkSum =
             AEZ.Crc32.Crc32CAlgorithm.Compute(result.[0..CHECKSUM_OFFSET - 1])
-        checkSum.GetBytesBigEndian().CopyTo(result.AsSpan().Slice(CHECKSUM_OFFSET))
+            |> fun ch -> ch.GetBytesBigEndian()
+        Array.blit checkSum 0 result CHECKSUM_OFFSET CHECKSUM_SIZE
         result
         
     member this.ToMnemonicWords(password: byte[] option, lang: Wordlist option) =
@@ -270,10 +288,6 @@ type MnemonicExtensions =
         
     [<Extension>]
     static member ChangePass(this: Mnemonic, oldPass: byte[], newPass: byte[], [<O;D(null)>]lang: Wordlist) =
-        let lang = if isNull lang then None else Some(lang)
-        this.ChangePass(oldPass, newPass, lang)
-        
-    [<Extension>]
-    static member ChangePass(this: Mnemonic, oldPass: byte[], newPass: byte[], lang: Wordlist option) =
-        this.ToCipherSeed(Some oldPass, lang)
+        this.ToCipherSeed(oldPass, lang)
         |> Result.map(fun x -> x.ToMnemonic newPass)
+        
