@@ -9,7 +9,7 @@ open FSharp.Control.Reactive
 open DotNetLightning.Utils
 open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Utils.Primitives
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Chain
 open DotNetLightning.Peer
 open DotNetLightning.Channel

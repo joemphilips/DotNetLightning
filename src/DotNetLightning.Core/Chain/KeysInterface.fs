@@ -47,6 +47,15 @@ type SpendableOutputDescriptor =
     | DynamicOutputP2WSH of DynamicOutputP2WSH
     | DynamicOutputP2WPKH of DynamicOutputP2WPKH
 
+/// In usual operation we should not hold secrets on memory. So only hold pubkey
+type ChannelPubKeys = {
+    FundingPubKey: PubKey
+    RevocationBasePubKey: PubKey
+    PaymentBasePubKey: PubKey
+    DelayedPaymentBasePubKey: PubKey
+    HTLCBasePubKey: PubKey
+}
+
 /// Set of lightning keys needed to operate a channel as describe in BOLT 3
 type ChannelKeys = {
     FundingKey: Key
@@ -66,15 +75,6 @@ type ChannelKeys = {
                 DelayedPaymentBasePubKey = this.DelayedPaymentBaseKey.PubKey
                 HTLCBasePubKey = this.HTLCBaseKey.PubKey
             }
-
-/// In usual operation we should not hold secrets on memory. So only hold pubkey
-and ChannelPubKeys =  {
-    FundingPubKey: PubKey
-    RevocationBasePubKey: PubKey
-    PaymentBasePubKey: PubKey
-    DelayedPaymentBasePubKey: PubKey
-    HTLCBasePubKey: PubKey
-}
 
 
 /// Interface to describe an object which can get user secrets and key material.

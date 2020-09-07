@@ -4,7 +4,7 @@ open ResultUtils
 open System
 open System.Text.Json
 open DotNetLightning.Crypto
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Tests.Utils
 open DotNetLightning.Transactions
 open DotNetLightning.Transactions.Transactions

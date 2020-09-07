@@ -6,7 +6,7 @@ open DotNetLightning.Utils.Aether
 open DotNetLightning.Utils.Aether.Operators
 open DotNetLightning.Crypto
 open DotNetLightning.Transactions
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 
 type LocalChanges = {
     Proposed: IUpdateMsg list
@@ -28,7 +28,7 @@ type LocalChanges = {
             (fun lc -> lc.ACKed),
             (fun v lc -> { lc with ACKed = v })
 
-        member this.All =
+        member this.All() =
             this.Proposed @ this.Signed @ this.ACKed
 
 type RemoteChanges = { 
@@ -110,7 +110,7 @@ type RemoteNextCommitInfo =
             (fun commitmentPubKey remoteNextCommitInfo ->
                 match remoteNextCommitInfo with
                 | Waiting _ -> remoteNextCommitInfo
-                | Revoked commitmentPubKecommitmentPubKey -> Revoked commitmentPubKey)
+                | Revoked _ -> Revoked commitmentPubKey)
 
 type Commitments = {
     LocalParams: LocalParams
@@ -148,8 +148,8 @@ type Commitments = {
             let lens = Commitments.RemoteChanges_ >-> RemoteChanges.Proposed_
             Optic.map lens (fun proposalList -> proposal :: proposalList) this
 
-        member this.IncrLocalHTLCId = { this with LocalNextHTLCId = this.LocalNextHTLCId + 1UL }
-        member this.IncrRemoteHTLCId = { this with RemoteNextHTLCId = this.RemoteNextHTLCId + 1UL }
+        member this.IncrLocalHTLCId() = { this with LocalNextHTLCId = this.LocalNextHTLCId + 1UL }
+        member this.IncrRemoteHTLCId() = { this with RemoteNextHTLCId = this.RemoteNextHTLCId + 1UL }
 
         member this.LocalHasChanges() =
             (not this.RemoteChanges.ACKed.IsEmpty) || (not this.LocalChanges.Proposed.IsEmpty)
@@ -169,7 +169,7 @@ type Commitments = {
         member internal this.GetHTLCCrossSigned(directionRelativeToLocal: Direction, htlcId: HTLCId): UpdateAddHTLCMsg option =
             let remoteSigned =
                 this.LocalCommit.Spec.HTLCs
-                |> Map.tryPick (fun k v -> if v.Direction = directionRelativeToLocal && v.Add.HTLCId = htlcId then Some v else None)
+                |> Map.tryPick (fun _k v -> if v.Direction = directionRelativeToLocal && v.Add.HTLCId = htlcId then Some v else None)
 
             let localSigned =
                 let lens =
@@ -179,7 +179,7 @@ type Commitments = {
                 match Optic.get lens this with
                 | Some v -> v
                 | None -> this.RemoteCommit
-                |> fun v -> v.Spec.HTLCs |> Map.tryPick(fun k v -> if v.Direction = directionRelativeToLocal.Opposite && v.Add.HTLCId = htlcId then Some v else None)
+                |> fun v -> v.Spec.HTLCs |> Map.tryPick(fun _k v -> if v.Direction = directionRelativeToLocal.Opposite && v.Add.HTLCId = htlcId then Some v else None)
             match remoteSigned, localSigned with
             | Some _, Some htlcIn -> htlcIn.Add |> Some
             | _ -> None

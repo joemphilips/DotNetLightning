@@ -8,7 +8,7 @@ open DotNetLightning.Utils.Aether
 open DotNetLightning.Chain
 open DotNetLightning.Crypto
 open DotNetLightning.Transactions
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open NBitcoin
 open System
 
@@ -95,7 +95,7 @@ module Channel =
             [ MutualClosePerformed (closingTx, nextData) ]
             |> Ok
 
-        let claimCurrentLocalCommitTxOutputs (keyRepo: IKeysRepository, channelPubKeys: ChannelPubKeys, commitments: Commitments, commitTx: CommitTx) =
+        let claimCurrentLocalCommitTxOutputs (keyRepo: IKeysRepository, _channelPubKeys: ChannelPubKeys, commitments: Commitments, commitTx: CommitTx) =
             result {
                 let chanPrivateKeys = keyRepo.GetChannelKeys commitments.LocalParams.IsFunder
                 let commitmentSeed = chanPrivateKeys.CommitmentSeed
@@ -116,9 +116,9 @@ module Channel =
             {
                 ChannelId = data.ChannelId
                 NextCommitmentNumber =
-                    commitments.RemotePerCommitmentSecrets.NextCommitmentNumber.NextCommitment
+                    (commitments.RemotePerCommitmentSecrets.NextCommitmentNumber().NextCommitment())
                 NextRevocationNumber =
-                    commitments.RemotePerCommitmentSecrets.NextCommitmentNumber
+                    commitments.RemotePerCommitmentSecrets.NextCommitmentNumber()
                 DataLossProtect = OptionalField.Some <| {
                     YourLastPerCommitmentSecret =
                         commitments.RemotePerCommitmentSecrets.LastRevocationKey()
@@ -354,7 +354,7 @@ module Channel =
             else
                 let chanPrivateKeys = cs.KeysRepository.GetChannelKeys state.Commitments.LocalParams.IsFunder
                 let nextPerCommitmentPoint =
-                    chanPrivateKeys.CommitmentSeed.DeriveCommitmentPubKey CommitmentNumber.FirstCommitment.NextCommitment
+                    chanPrivateKeys.CommitmentSeed.DeriveCommitmentPubKey (CommitmentNumber.FirstCommitment.NextCommitment())
                 let msgToSend: FundingLockedMsg = { ChannelId = state.Commitments.ChannelId; NextPerCommitmentPoint = nextPerCommitmentPoint }
 
                 // This is temporary channel id that we will use in our channel_update message, the goal is to be able to use our channel
@@ -514,7 +514,7 @@ module Channel =
                                                  RemoteCommit = theirNextCommit
                                                  RemoteNextCommitInfo = RemoteNextCommitInfo.Revoked msg.NextPerCommitmentPoint
                                                  RemotePerCommitmentSecrets = remotePerCommitmentSecrets }
-                    let result = Ok [ WeAcceptedRevokeAndACK(commitments1) ]
+                    let _result = Ok [ WeAcceptedRevokeAndACK commitments1 ]
                     failwith "needs update"
 
         | ChannelState.Normal state, ChannelCommand.Close cmd ->
@@ -566,14 +566,14 @@ module Channel =
                         | RemoteNextCommitInfo.Revoked _ ->
                             return [ ChannelStateRequestedSignCommitment; AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs(msg, cm) ]
                 else
-                    let (localShutdown, sendList) = match state.LocalShutdown with
-                                                    | Some localShutdown -> (localShutdown, [])
-                                                    | None ->
-                                                        let localShutdown: ShutdownMsg = {
-                                                            ChannelId = state.ChannelId
-                                                            ScriptPubKey = cm.LocalParams.DefaultFinalScriptPubKey
-                                                        }
-                                                        (localShutdown, [ localShutdown ])
+                    let (localShutdown, _sendList) = match state.LocalShutdown with
+                                                     | Some localShutdown -> (localShutdown, [])
+                                                     | None ->
+                                                         let localShutdown: ShutdownMsg = {
+                                                             ChannelId = state.ChannelId
+                                                             ScriptPubKey = cm.LocalParams.DefaultFinalScriptPubKey
+                                                         }
+                                                         (localShutdown, [ localShutdown ])
                     if (cm.HasNoPendingHTLCs()) then
                         // we have to send first closing_signed msg iif we are the funder
                         if (cm.LocalParams.IsFunder) then
@@ -699,8 +699,8 @@ module Channel =
             // got valid payment preimage, recalculating txs to redeem the corresponding htlc on-chain
             result {
                 let cm = state.Commitments
-                let! (msgToSend, newCommitments) = cm |> Commitments.sendFulfill op
-                let localCommitPublished =
+                let! (_msgToSend, newCommitments) = cm |> Commitments.sendFulfill op
+                let _localCommitPublished =
                     state.LocalCommitPublished
                     |> Option.map (fun localCommitPublished -> Closing.claimCurrentLocalCommitTxOutputs (cs.KeysRepository, newCommitments.LocalParams.ChannelPubKeys, newCommitments, localCommitPublished.CommitTx))
                 return failwith "Not Implemented yet"

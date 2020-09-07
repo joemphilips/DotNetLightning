@@ -5,7 +5,7 @@ open System
 open NBitcoin
 open ResultUtils
 open DotNetLightning.Utils
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open Graph
 
 [<AutoOpen>]

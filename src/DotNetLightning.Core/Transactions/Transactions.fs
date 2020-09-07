@@ -11,7 +11,7 @@ open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils
 open DotNetLightning.Core.Utils.Extensions
 open DotNetLightning.Utils.Aether
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 
 /// We define all possible txs here.
 /// internal representation is psbt. But this is just for convenience since
@@ -715,7 +715,7 @@ module Transactions =
                     .AddCoins(coin)
             psbt |> MainPenaltyTx |> Ok
             
-    let makeHTLCPenaltyTx (commitTx: Transaction) (localDustLimit: Money): HTLCPenaltyTx =
+    let makeHTLCPenaltyTx (_commitTx: Transaction) (_localDustLimit: Money): HTLCPenaltyTx =
         raise <| NotImplementedException()
 
     let makeClosingTx (commitTxInput: ScriptCoin)

@@ -1,4 +1,4 @@
-namespace DotNetLightning.Serialize
+namespace DotNetLightning.Serialization
 
 open System.Collections
 
@@ -176,7 +176,7 @@ module internal Feature =
         
         
 [<StructuredFormatDisplay("{PrettyPrint}")>]
-type FeatureBit private (bitArray) =
+type FeatureBits private (bitArray) =
     member val BitArray: BitArray = bitArray with get, set
     member this.ByteArray
         with get() =
@@ -192,21 +192,21 @@ type FeatureBit private (bitArray) =
                     |> FeatureError.UnknownRequiredFeature
                     |> Error
             else
-                return (FeatureBit(ba))
+                return FeatureBits ba
         }
     static member Zero =
         let b: bool array = [||]
-        b |> BitArray |> FeatureBit
+        b |> BitArray |> FeatureBits
     static member TryCreate(bytes: byte[]) =
-        FeatureBit.TryCreate(BitArray.FromBytes(bytes))
+        FeatureBits.TryCreate(BitArray.FromBytes bytes)
 
     static member TryCreate(v: int64) =
-        BitArray.FromInt64(v) |> FeatureBit.TryCreate
+        BitArray.FromInt64 v |> FeatureBits.TryCreate
         
     static member CreateUnsafe(v: int64) =
-        BitArray.FromInt64(v) |> FeatureBit.CreateUnsafe
+        BitArray.FromInt64 v |> FeatureBits.CreateUnsafe
         
-    static member private Unwrap(r: Result<FeatureBit, _>) =
+    static member private Unwrap(r: Result<FeatureBits, _>) =
         match r with
         | Error(FeatureError.UnknownRequiredFeature(e))
         | Error(FeatureError.BogusFeatureDependency(e)) -> raise <| FormatException(e)
@@ -215,14 +215,14 @@ type FeatureBit private (bitArray) =
     /// TODO: ugliness of this method is caused by binary serialization throws error instead of returning Result
     /// We should refactor serialization altogether at some point
     static member CreateUnsafe(bytes: byte[]) =
-        FeatureBit.TryCreate bytes |> FeatureBit.Unwrap
+        FeatureBits.TryCreate bytes |> FeatureBits.Unwrap
         
     static member CreateUnsafe(ba: BitArray) =
-        FeatureBit.TryCreate ba |> FeatureBit.Unwrap
+        FeatureBits.TryCreate ba |> FeatureBits.Unwrap
     static member TryParse(str: string) =
         result {
             let! ba = BitArray.TryParse str
-            return! ba |> FeatureBit.TryCreate |> Result.mapError(fun fe -> fe.ToString())
+            return! ba |> FeatureBits.TryCreate |> Result.mapError(fun fe -> fe.ToString())
         }
         
     override this.ToString() =
@@ -267,14 +267,16 @@ type FeatureBit private (bitArray) =
     member this.ToByteArray() = this.ByteArray
         
     // --- equality and comparison members ----
-    member this.Equals(o: FeatureBit) =
+    member this.Equals(o: FeatureBits) =
         this.ByteArray = o.ByteArray
 
-    interface IEquatable<FeatureBit> with
-        member this.Equals(o: FeatureBit) = this.Equals(o)
+    interface IEquatable<FeatureBits> with
+        member this.Equals(o: FeatureBits) =
+            this.Equals o
+
     override this.Equals(other: obj) =
         match other with
-        | :? FeatureBit as o -> this.Equals(o)
+        | :? FeatureBits as o -> this.Equals o
         | _ -> false
         
     override this.GetHashCode() =
@@ -283,7 +285,7 @@ type FeatureBit private (bitArray) =
             num <- -1640531527 + i.GetHashCode() + ((num <<< 6) + (num >>> 2))
         num
         
-    member this.CompareTo(o: FeatureBit) =
+    member this.CompareTo(o: FeatureBits) =
         if (this.BitArray.Length > o.BitArray.Length) then -1 else
         if (this.BitArray.Length < o.BitArray.Length) then 1 else
         let mutable result = 0
@@ -296,6 +298,6 @@ type FeatureBit private (bitArray) =
     interface IComparable with
         member this.CompareTo(o) =
             match o with
-            | :? FeatureBit as fb -> this.CompareTo(fb)
-            | _ -> -1
+            | :? FeatureBits as fb -> this.CompareTo fb
+            | _ -> raise <| ArgumentException ("Comparison should be done against same type (FeatureBits)", "o")
     // --------

@@ -1,6 +1,6 @@
 module PeerManagerTests
 
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Chain
 open DotNetLightning.Infrastructure
 open DotNetLightning.Utils

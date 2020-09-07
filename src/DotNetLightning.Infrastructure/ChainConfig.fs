@@ -5,10 +5,10 @@ open System
 open ResultUtils
 
 open DotNetLightning.Utils
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Channel
 
-open DotNetLightning.Serialize
+open DotNetLightning.Serialization
 open System.Collections.Generic
 open DotNetLightning.Transactions
 open DotNetLightning.Transactions
@@ -47,7 +47,7 @@ type ChainConfig() =
     member val PublicAddresses: System.Net.IPEndPoint list = [] with get, set
 
     // ---- channel parameters ---
-    member val Features: FeatureBit = defaultFeatureBits with get, set
+    member val Features: FeatureBits = defaultFeatureBits with get, set
     
     /// `dust_limit_satoshis` we are going to send.
     member val DustLimitSatoshis: Money = Money.Satoshis(546L) with get, set

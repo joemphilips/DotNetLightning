@@ -1,8 +1,9 @@
 namespace DotNetLightning.Channel
+
 open DotNetLightning.Utils
 open DotNetLightning.Utils.Aether
 open DotNetLightning.DomainUtils.Types
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Transactions
 open NBitcoin
 

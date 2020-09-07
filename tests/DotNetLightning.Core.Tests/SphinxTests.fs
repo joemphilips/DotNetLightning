@@ -7,7 +7,7 @@ open Expecto.Logging.Message
 open NBitcoin
 open DotNetLightning.Utils
 open DotNetLightning.Utils.OnionError
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Crypto
 open DotNetLightning.Crypto.Sphinx
 

@@ -1,7 +1,7 @@
 namespace DotNetLightning.Peer
 
 open DotNetLightning.Utils
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open NBitcoin
 
 type PeerEvent =

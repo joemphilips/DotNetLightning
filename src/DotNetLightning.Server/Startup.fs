@@ -30,7 +30,7 @@ open DotNetLightning.Infrastructure.ActorManagers
 open DotNetLightning.Infrastructure.Interfaces
 open DotNetLightning.Infrastructure.Services
 open DotNetLightning.Utils
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open Microsoft.Extensions.Options
 
 

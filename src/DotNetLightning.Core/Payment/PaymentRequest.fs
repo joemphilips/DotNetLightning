@@ -10,7 +10,7 @@ open ResultUtils
 
 open DotNetLightning.Utils
 open DotNetLightning.Core.Utils.Extensions
-open DotNetLightning.Serialize
+open DotNetLightning.Serialization
 
 open NBitcoin
 open NBitcoin.Crypto
@@ -220,7 +220,7 @@ type TaggedField =
     | RoutingInfoTaggedField of ExtraHop list
     | ExpiryTaggedField of DateTimeOffset
     | MinFinalCltvExpiryTaggedField of BlockHeightOffset32
-    | FeaturesTaggedField of FeatureBit
+    | FeaturesTaggedField of FeatureBits
     with
     member this.Type =
         match this with
@@ -305,7 +305,7 @@ type TaggedFields = {
     member this.ExplicitNodeId =
         this.Fields |> Seq.choose(function NodeIdTaggedField x -> Some x | _ -> None) |> Seq.tryExactlyOne
         
-    member this.FeatureBit =
+    member this.FeatureBits =
         this.Fields |> Seq.choose(function FeaturesTaggedField fb -> Some fb | _ -> None) |> Seq.tryExactlyOne
         
     member this.CheckSanity() =
@@ -314,13 +314,13 @@ type TaggedFields = {
         if (pHashes.Length < 1) then "no payment hash" |> Error else
         let secrets = this.Fields |> List.choose(function PaymentSecretTaggedField x -> Some (x) | _ -> None)
         if (secrets.Length > 1) then "duplicate 's' field" |> Error else
-        if (secrets.Length = 1 && this.FeatureBit.IsNone) then
+        if secrets.Length = 1 && this.FeatureBits.IsNone then
             sprintf "secret (%A) is set but there were no feature bits" secrets.[0] |> Error
-        else if (secrets.Length = 1 && not <| this.FeatureBit.Value.HasFeature(Feature.PaymentSecret)) then
-            let fb = this.FeatureBit.Value
+        elif secrets.Length = 1 && not <| this.FeatureBits.Value.HasFeature Feature.PaymentSecret then
+            let fb = this.FeatureBits.Value
             sprintf "secret (%A) is set but feature bit (%s) is not set (%A)" (secrets.[0]) (fb.ToString()) (fb)
             |> Error else
-        if (secrets.Length = 0 && this.FeatureBit.IsSome && (this.FeatureBit.Value.HasFeature(Feature.PaymentSecret, Mandatory))) then
+        if secrets.Length = 0 && this.FeatureBits.IsSome && this.FeatureBits.Value.HasFeature(Feature.PaymentSecret, Mandatory) then
             Error "feature bit for payment secret is set but payment secret is not set" else
         let descriptions = this.Fields |> List.choose(function DescriptionTaggedField d -> Some d | _ -> None)
         if (descriptions.Length > 1) then Error("duplicate 'd' field") else
@@ -330,6 +330,7 @@ type TaggedFields = {
         if (descriptions.Length <> 1 && dHashes.Length <> 1) then Error("must have either description hash or description") else
         () |> Ok
         |> Result.mapError(fun s -> "Invalid BOLT11! " + s)
+
 type private Bolt11Data = {
     Timestamp: DateTimeOffset
     TaggedFields: TaggedFields
@@ -463,7 +464,7 @@ type private Bolt11Data = {
                                 let bits = r.ReadBits(size)
                                 let! fb =
                                     bits
-                                    |> FeatureBit.TryCreate
+                                    |> FeatureBits.TryCreate
                                     |> Result.mapError(fun x ->
                                         "Invalid BOLT11! Feature field is bogus " + x.ToString())
                                 let features = fb |> FeaturesTaggedField

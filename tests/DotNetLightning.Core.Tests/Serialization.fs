@@ -3,9 +3,9 @@ module Serialization
 open ResultUtils
 open DotNetLightning.Utils
 open DotNetLightning.Core.Utils.Extensions
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 
-open DotNetLightning.Serialize
+open DotNetLightning.Serialization
 open Expecto
 open NBitcoin
 open System
@@ -48,7 +48,7 @@ module SerializationTest =
                 let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
                 let msg = { NodeAnnouncementMsg.Signature = sig1
                             Contents = { UnsignedNodeAnnouncementMsg.NodeId = NodeId(PubKey("03f3c15dbc4d425a4f4c36162a9159bb83511fa920dba1cc2785c434ecaf094015"))
-                                         Features = FeatureBit.CreateUnsafe([|0uy|])
+                                         Features = FeatureBits.CreateUnsafe [|0uy|]
                                          Timestamp = 1u
                                          RGB = { Red = 217uy; Green = 228uy; Blue = 166uy }
                                          Alias = uint256.Zero
@@ -120,7 +120,7 @@ module SerializationTest =
                     let sig2 = signMessageWith privKey2 "01010101010101010101010101010101"
                     let sig3 = signMessageWith privKey3 "01010101010101010101010101010101"
                     let sig4 = signMessageWith privKey4 "01010101010101010101010101010101"
-                    let mutable features = FeatureBit.CreateUnsafe([||])
+                    let mutable features = FeatureBits.CreateUnsafe [||]
 
                     let unsignedChannelAnnoucement = {
                         Features = features
@@ -162,7 +162,7 @@ module SerializationTest =
             testCase "node_announcement" <| fun _ ->
                 let nodeAnnouncementTestCore(ipv4: bool, ipv6: bool, onionv2: bool, onionv3: bool, excessAddressData: bool, excessData: bool) =
                     let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
-                    let mutable features = FeatureBit.CreateUnsafe [||]
+                    let mutable features = FeatureBits.CreateUnsafe [||]
                     let mutable addresses = List.Empty
                     if ipv4 then
                         addresses <- addresses @ [NetAddress.IPv4 ({ IPv4Or6Data.Addr = [|255uy;254uy; 253uy; 252uy; |]
@@ -689,7 +689,7 @@ module SerializationTest =
                         |> function Ok ba -> ba | Error e -> failwith e
 
                     let initMsg = {
-                        Features = [| globalFeatures; localFeatures |] |> BitArray.Concat |> FeatureBit.CreateUnsafe
+                        Features = [| globalFeatures; localFeatures |] |> BitArray.Concat |> FeatureBits.CreateUnsafe
                         TLVStream = [||]
                     }
                     let mutable expected = [||]
@@ -757,8 +757,8 @@ module SerializationTest =
                 Array.Copy(backAndForth, 0, finalArray, ba.Get.Length - backAndForth.Length, backAndForth.Length)
                 Expect.equal ba.Get finalArray "BitArray.ToByteArray does not invert and trim BitArray.FromBytes"
 
-            testCase "FeatureBit to/from byte array preserves byte order, bit order and trims zero bytes" <| fun _ ->
-                let features = FeatureBit.Zero
+            testCase "FeatureBits to/from byte array preserves byte order, bit order and trims zero bytes" <| fun _ ->
+                let features = FeatureBits.Zero
                 features.ByteArray <- [| 0b00000000uy; 0b00100000uy; 0b10000010uy |]
                 Expect.equal
                     features.ByteArray

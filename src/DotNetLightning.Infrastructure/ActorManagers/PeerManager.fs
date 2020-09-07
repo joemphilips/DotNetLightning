@@ -15,7 +15,7 @@ open DotNetLightning.Utils
 open DotNetLightning.Chain
 open DotNetLightning.Peer
 open DotNetLightning.Channel
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Utils.Aether
 open DotNetLightning.Utils.Aether.Operators
 
@@ -24,7 +24,7 @@ open DotNetLightning.Infrastructure.Interfaces
 open DotNetLightning.Infrastructure.Actors
 
 
-open DotNetLightning.Serialize
+open DotNetLightning.Serialization
 open NBitcoin
 open Microsoft.Extensions.Logging
 

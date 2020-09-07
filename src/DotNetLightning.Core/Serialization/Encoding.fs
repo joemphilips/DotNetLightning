@@ -1,4 +1,4 @@
-namespace DotNetLightning.Serialize
+namespace DotNetLightning.Serialization
 (*
     Encoder-Decoder for TLV serialization
 *)
