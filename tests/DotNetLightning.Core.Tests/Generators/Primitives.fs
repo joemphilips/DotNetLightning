@@ -4,6 +4,7 @@ open NBitcoin
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils
 open System
+open DotNetLightning.Crypto
 
 let byteGen = byte <!> Gen.choose(0, 127)
 let bytesGen = Gen.listOf(byteGen) |> Gen.map(List.toArray)
@@ -51,3 +52,17 @@ let pushOnlyOpcodeGen = bytesOfNGen(4) |> Gen.map(Op.GetPushOp)
 let pushOnlyOpcodesGen = Gen.listOf pushOnlyOpcodeGen
 
 let pushScriptGen = Gen.nonEmptyListOf pushOnlyOpcodeGen |> Gen.map(fun ops -> Script(ops))
+
+let cipherSeedGen = gen {
+    let! v = Arb.generate<uint8>
+    let! now = Arb.generate<uint16>
+    let! entropy = bytesOfNGen 16
+    let! salt = bytesOfNGen 5
+    return {
+        CipherSeed.InternalVersion = v
+        _Birthday = now
+        Entropy = entropy
+        Salt = salt
+    }
+}
+

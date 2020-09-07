@@ -8,6 +8,8 @@ open System.Runtime.CompilerServices
 
 open NBitcoin
 
+open System.Runtime.InteropServices
+open System.Text
 open DotNetLightning.Core.Utils.Extensions
 open DotNetLightning.Serialize
 open DotNetLightning.Utils
@@ -16,7 +18,7 @@ type O = OptionalArgumentAttribute
 type D = System.Runtime.InteropServices.DefaultParameterValueAttribute
 
 [<AutoOpen>]
-module private Constants =
+module internal AEZConstants =
     /// CipherSeedVersion is the current version of the aezeed scheme as defined in this package.
     /// This version indicates the following parameters for the deciphered cipher seed: a 1 byte version, 2 bytes
     /// for the Bitcoin Days Genesis timestamp, and 16 bytes for entropy. It also governs how the cipher seed
@@ -59,8 +61,8 @@ module private Constants =
     
     let ENCIPHERED_SEED_SIZE = DECIPHERED_CIPHER_SEED_SIZE + CIPHER_TEXT_EXPANSION
     
-    [<Literal>]
-    let V0_SCRYPT_N = 32768
+    /// We have to change this value in the test, thus we make it mutable.
+    let mutable V0_SCRYPT_N = 32768
     
     [<Literal>]
     let V0_SCRYPT_R = 8
@@ -69,31 +71,22 @@ module private Constants =
     let V0_SCRYPT_P = 1
     
     let DEFAULT_PASPHRASE =
-        let ascii = NBitcoin.DataEncoders.ASCIIEncoder()
-        "aezeed" |> ascii.DecodeData
+        UTF8Encoding.UTF8.GetBytes("aezeed")
     
     let BITCOIN_GENESIS_DATE = NBitcoin.Network.Main.GetGenesis().Header.BlockTime
-    
-    let crc = AEZ.Crc32()
     
     let convertBits(data, fromBits, toBits, pad: bool) =
         InternalBech32Encoder.Instance.ConvertBits(data, fromBits, toBits, pad)
         
-#if BouncyCastle
-    let getScryptKey(passphrase, salt) =
-        Org.BouncyCastle.Crypto.Generators.SCrypt.Generate(passphrase, salt, V0_SCRYPT_N, V0_SCRYPT_R, V0_SCRYPT_P, KEY_LEN)
-#else
-    let scrypt = NSec.Experimental.PasswordBased.Scrypt(int64 V0_SCRYPT_N, V0_SCRYPT_R, V0_SCRYPT_P)
-    let getScryptKey(passphrase, salt) =
-        scrypt.DeriveBytes(passphrase.AsSpan().ToString(), ReadOnlySpan(salt), KEY_LEN)
-#endif
+    let getScryptKey(pass: byte[], salt: byte[]) =
+        NBitcoin.Crypto.SCrypt.ComputeDerivedKey(pass, salt, V0_SCRYPT_N, V0_SCRYPT_R, V0_SCRYPT_P, Nullable(), KEY_LEN)
 type AezeedError =
     | UnsupportedVersion of uint8
     | InvalidPass of byte[]
     | IncorrectMnemonic of expectedCheckSum: uint32 * actualChecksum: uint32
     
 [<AutoOpen>]
-module private Helpers = 
+module internal AezeedHelpers = 
     let private extractAD(encipheredSeed: byte[]) =
         let ad = Array.zeroCreate AD_SIZE
         ad.[0] <- encipheredSeed.[0]
@@ -107,7 +100,8 @@ module private Helpers =
         let salt = cipherSeedBytes.[SALT_OFFSET..SALT_OFFSET + SALT_SIZE - 1]
         let cipherSeed = cipherSeedBytes.[1..SALT_OFFSET - 1]
         let checkSum = cipherSeedBytes.[CHECKSUM_OFFSET..] |> UInt32.FromBytesBigEndian
-        let freshChecksum = crc.Get(cipherSeedBytes.[..CHECKSUM_OFFSET - 1])
+        let freshChecksum =
+            AEZ.Crc32.Crc32CAlgorithm.Compute(cipherSeedBytes.[..CHECKSUM_OFFSET - 1])
         if (freshChecksum <> checkSum) then Error(AezeedError.IncorrectMnemonic(freshChecksum, checkSum)) else
         let key = getScryptKey(password, salt)
         let ad = extractAD(cipherSeedBytes)
@@ -119,21 +113,16 @@ module private Helpers =
         let indices = lang.ToIndices mnemonic
         let cipherBits = BitWriter()
         for i in indices do
-            let b = (uint32 i).GetBytesBigEndian()
-            cipherBits.Write(b, BITS_PER_WORD)
+            cipherBits.Write(uint32 i, BITS_PER_WORD)
         cipherBits.ToBytes()
         
-    let cipherTextToMnemonic(cipherText: byte[], lang: Wordlist option) =
+    let internal cipherTextToMnemonic(cipherText: byte[], lang: Wordlist option) =
         Debug.Assert(cipherText.Length = ENCIPHERED_CIPHER_SEED_SIZE)
         let lang = Option.defaultValue NBitcoin.Wordlist.English lang
-        let words = Array.zeroCreate NUM_MNEMONIC_WORDS
-        let reader = BitReader(BitArray(cipherText), ENCIPHERED_CIPHER_SEED_SIZE * 8)
-        for i in 0..(NUM_MNEMONIC_WORDS) do
-            let index = (reader.ReadBits(BITS_PER_WORD)).ToByteArray() |> UInt32.FromBytesBigEndian
-            words.[i] <- lang.GetWordAtIndex(int index)
-        words
-
-
+        let writer = BitWriter()
+        writer.Write(cipherText)
+        let wordInt = writer.ToIntegers()
+        wordInt |> lang.GetWords
         
 [<Struct>]
 type CipherSeed = internal {
@@ -143,9 +132,16 @@ type CipherSeed = internal {
     Salt: byte[]
 }
     with
+    static member Create(internalVersion: uint8) =
+        CipherSeed.Create(internalVersion, DateTimeOffset.Now)
+    static member Create(internalVersion: uint8, now: DateTimeOffset) =
+        CipherSeed.Create(internalVersion, None, now)
+    static member Create(internalVersion: uint8, entropy: byte[], now: DateTimeOffset) =
+        CipherSeed.Create(internalVersion, Some entropy, now)
     static member Create(internalVersion: uint8, entropy: byte[] option, now: DateTimeOffset) =
         let entropy = Option.defaultWith (fun _ -> RandomUtils.GetBytes(ENTROPY_SIZE)) entropy
-        if entropy.Length < ENTROPY_SIZE then raise <| ArgumentException(sprintf "entropy size must be at least %d! it was %d" ENTROPY_SIZE entropy.Length)
+        if entropy.Length < ENTROPY_SIZE then raise <| ArgumentException(sprintf "entropy size must be at least %d! it was %d" ENTROPY_SIZE entropy.Length) else
+        if (now < BITCOIN_GENESIS_DATE) then raise <| ArgumentOutOfRangeException(sprintf "You shall not create CipherSeed older than BitcoinGenesis!") else
         let seed = Array.zeroCreate ENTROPY_SIZE
         Array.blit entropy 0 seed 0 ENTROPY_SIZE
         
@@ -178,7 +174,7 @@ type CipherSeed = internal {
     member private this.GetADBytes() =
         let res = Array.zeroCreate (SALT_SIZE + 1)
         res.[0] <- byte CIPHER_SEED_VERSION
-        Array.blit res 1 this.Salt 0 this.Salt.Length
+        Array.blit this.Salt 0 res 1 this.Salt.Length
         res
         
     static member FromBytes(b: byte[]) =
@@ -188,24 +184,32 @@ type CipherSeed = internal {
 
     member this.Encipher() = this.Encipher(None)
         
+    member this.Encipher([<O;D(null)>]password: byte[]): byte[] =
+        let pass = if isNull password then None else Some(password)
+        this.Encipher(pass)
     /// Takes a fully populated cipherseed instance, and enciphers the
     /// encoded seed, then appends a randomly generated seed used to stretch th
     /// passphrase out into an appropriate key, then computes a checksum over the
     /// preceding. Returns 33 bytes enciphered cipherseed
     member this.Encipher(password: byte[] option): byte[] =
-        let result = Array.zeroCreate ENCIPHERED_CIPHER_SEED_SIZE
-        let passphrase = Option.defaultValue DEFAULT_PASPHRASE password
-        
+        let passphrase =
+            match password with
+            | Some p when p.Length = 0 -> DEFAULT_PASPHRASE
+            | Some p -> p
+            | None -> DEFAULT_PASPHRASE
         let key = getScryptKey(passphrase, this.Salt)
         
         let seedBytes = this.ToBytes()
         let ad = this.GetADBytes()
         let cipherText = AEZ.AEZ.Encrypt(ReadOnlySpan(key), ReadOnlySpan.Empty, [| ad |], CIPHER_TEXT_EXPANSION, ReadOnlySpan(seedBytes), Span.Empty)
+        
+        let result = Array.zeroCreate ENCIPHERED_CIPHER_SEED_SIZE
         result.[0] <- byte CIPHER_SEED_VERSION
         cipherText.CopyTo(result.AsSpan().Slice(1, SALT_OFFSET))
         this.Salt.CopyTo(result.AsSpan().Slice(SALT_OFFSET))
         
-        let checkSum = crc.Get(result)
+        let checkSum =
+            AEZ.Crc32.Crc32CAlgorithm.Compute(result.[0..CHECKSUM_OFFSET - 1])
         checkSum.GetBytesBigEndian().CopyTo(result.AsSpan().Slice(CHECKSUM_OFFSET))
         result
         
@@ -226,13 +230,24 @@ type CipherSeed = internal {
         let lang = if isNull lang then None else Some(lang)
         this.ToMnemonic(pass, lang)
         
-    member this.BirthDay =
+    member this.GetBirthdayTime() =
         let offset = TimeSpan.FromDays(float this._Birthday)
         BITCOIN_GENESIS_DATE + offset
+        
+    member this.BirthDay = this._Birthday
         
 [<Extension;Sealed;AbstractClass>]
 type MnemonicExtensions =
 
+    [<Extension>]
+    /// Attempts to map the mnemonic to the original cipher text byte slice.
+    /// Then It will attempt to decrypt the ciphertext using aez with the passed passphrase,
+    /// using the last 5 bytes of the ciphertext as a salt for the KDF.
+    static member ToCipherSeed(this: Mnemonic, [<O;D(null)>]password: byte[], [<O;D(null)>]lang: Wordlist) =
+        let pass = if isNull password then None else Some(password)
+        let lang = if isNull lang then None else Some(lang)
+        MnemonicExtensions.ToCipherSeed(this, pass, lang)
+        
     [<Extension>]
     /// Attempts to map the mnemonic to the original cipher text byte slice.
     /// Then It will attempt to decrypt the ciphertext using aez with the passed passphrase,
@@ -243,10 +258,20 @@ type MnemonicExtensions =
         
     [<Extension>]
         
-    static member private Decipher(this: Mnemonic, password: byte[] option, lang: Wordlist option) =
-        let pass = Option.defaultValue DEFAULT_PASPHRASE password
-        let  cipherText = mnemonicToCipherText (this.Words, lang)
+    static member internal Decipher(this: Mnemonic, password: byte[] option, lang: Wordlist option) =
+        let pass =
+            match password with
+            | Some p when p.Length = 0 -> DEFAULT_PASPHRASE
+            | Some p -> p
+            | None -> DEFAULT_PASPHRASE
+            
+        let cipherText = mnemonicToCipherText (this.Words, lang)
         decipherCipherSeed(cipherText, pass)
+        
+    [<Extension>]
+    static member ChangePass(this: Mnemonic, oldPass: byte[], newPass: byte[], [<O;D(null)>]lang: Wordlist) =
+        let lang = if isNull lang then None else Some(lang)
+        this.ChangePass(oldPass, newPass, lang)
         
     [<Extension>]
     static member ChangePass(this: Mnemonic, oldPass: byte[], newPass: byte[], lang: Wordlist option) =

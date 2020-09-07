@@ -26,18 +26,38 @@ type BitWriter() =
         for i in 0..(output.Length - 1) do
             let mutable newByte = 0uy
             for ib in 0..7 do
-                newByte <- newByte + byte ((bytes.[i] >>> ib) &&& 1uy) <<< (7 - ib)
+                newByte <- newByte + byte (((bytes.[i] >>> ib) &&& 1uy) <<< (7 - ib))
             output.[i] <- newByte
         output
         
     member this.Write(bytes: byte[], bitCount: int) =
         let bytes = BitWriter.SwapEndianBytes(bytes)
-        let ba = BitArray(bytes) |> Seq.cast<bool>
-        values.InsertRange(this.Position, ba.Take(bitCount))
+        let array = BitArray(bytes)
+        values.InsertRange(this.Position, array.OfType<bool>().Take(bitCount))
         this.Position <- this.Position + bitCount
+        
+    member this.Write(value: uint32, bitCount: int) =
+        let mutable v = value
+        let mutable count = bitCount
+        v <- v <<< (32 - bitCount)
+        while (count > 0) do
+            this.Write((v >>> (32 - 1) = 1u))
+            v <- v <<< 1
+            count <- count - 1
 
+    static member private ToByteArray(bits: BitArray) =
+        let mutable arrayLength = bits.Length / 8
+        if (bits.Length % 8 <> 0) then
+            arrayLength <- arrayLength + 1
+        let array = Array.zeroCreate arrayLength
+        for i in 0..bits.Length - 1 do
+            let b = i /8
+            let offset = i % 8
+            array.[b] <- array.[b] ||| if (bits.Get i) then byte(1 <<< offset) else 0uy
+        array
     member this.ToBytes(): byte[] =
-        this.ToBitArray().ToByteArray()
+        this.ToBitArray()
+        |> BitWriter.ToByteArray
         |> BitWriter.SwapEndianBytes
         
     member this.ToBitArray(): BitArray =
