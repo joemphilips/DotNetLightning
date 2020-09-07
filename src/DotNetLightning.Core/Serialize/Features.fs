@@ -299,5 +299,5 @@ type FeatureBits private (bitArray) =
         member this.CompareTo(o) =
             match o with
             | :? FeatureBits as fb -> this.CompareTo fb
-            | _ -> -1
+            | _ -> raise <| ArgumentException ("Comparison should be done against same type (FeatureBits)", "o")
     // --------
