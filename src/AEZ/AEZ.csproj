@@ -11,21 +11,12 @@
         </AssemblyAttribute>
     </ItemGroup>
 
-  <Choose>
-    <When Condition="'$(BouncyCastle)'=='true'">
-      <PropertyGroup>
-        <OtherFlags>$(OtherFlags) -d:BouncyCastle</OtherFlags>
-        <DefineConstants>$(DefineConstants);BouncyCastle</DefineConstants>
-      </PropertyGroup>
-    </When>
-  </Choose>
-
   <ItemGroup>
     <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\NSec\Cryptography\NSec.Cryptography.csproj" PrivateAssets="all" />
-    <PackageReference Condition="'$(BouncyCastle)'=='true'" Include="Portable.BouncyCastle" Version="1.8.6.7" PrivateAssets="all" />
   </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="System.Memory" Version="4.5.3" />
+      <PackageReference Condition="'$(BouncyCastle)'=='true'" Include="Portable.BouncyCastle" Version="1.8.6.7" PrivateAssets="all" />
     </ItemGroup>
 </Project>

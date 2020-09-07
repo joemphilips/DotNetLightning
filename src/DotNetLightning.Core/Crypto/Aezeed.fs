@@ -1,14 +1,12 @@
 namespace DotNetLightning.Crypto
 
 open System
-open System.Collections
 open System.Diagnostics
 open System.IO
 open System.Runtime.CompilerServices
 
 open NBitcoin
 
-open System.Runtime.InteropServices
 open System.Security.Cryptography
 open System.Text
 open DotNetLightning.Core.Utils.Extensions

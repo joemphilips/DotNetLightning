@@ -5,15 +5,9 @@
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
   
-  <!-->Since NBitcoin.Secp256k1 does not support netstandard 2.0, we will fallback to BouncyCastle build<-->
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <BouncyCastle>True</BouncyCastle>
-  </PropertyGroup>
-
   <Choose>
     <When Condition="'$(BouncyCastle)'=='true'">
       <PropertyGroup>
-        <OtherFlags>$(OtherFlags) -d:BouncyCastle</OtherFlags>
         <PackageId>DotNetLightning</PackageId>
       </PropertyGroup>
     </When>
@@ -23,6 +17,7 @@
       </PropertyGroup>
     </Otherwise>
   </Choose>
+
   <ItemGroup>
     <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\NSec\Experimental\NSec.Experimental.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\ResultUtils\ResultUtils.fsproj" PrivateAssets="all" />
@@ -101,9 +96,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="4.7.0" />
-    <PackageReference Include="NBitcoin" Version="5.0.53" />
     <PackageReference Condition="'$(BouncyCastle)' != 'true'" Include="NBitcoin.Secp256k1" Version="1.0.3" />
-    <PackageReference Condition="'$(BouncyCastle)'=='true'" Include="Portable.BouncyCastle" Version="1.8.6.7" />
     <PackageReference Include="System.Memory" Version="4.5.3" />
   </ItemGroup>
 
