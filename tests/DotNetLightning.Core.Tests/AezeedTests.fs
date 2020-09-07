@@ -95,7 +95,7 @@ let tests =
                     with Salt = testSalt // salt is usually generated randomly, so we will overwrite it here
                     }
                 
-                Expect.equal (cipherSeed.BirthDay) v.ExpectedBirthday "unmatched birthday"
+                Expect.equal (cipherSeed.Birthday) v.ExpectedBirthday "unmatched birthday"
                 v.MaybeExpectedCipherText
                 |> Option.iter(fun expectedC ->
                     let actualC = cipherSeed.Encipher(Some v.Password)

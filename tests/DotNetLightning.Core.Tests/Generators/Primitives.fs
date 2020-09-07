@@ -60,7 +60,7 @@ let cipherSeedGen = gen {
     let! salt = bytesOfNGen 5
     return {
         CipherSeed.InternalVersion = v
-        _Birthday = now
+        Birthday = now
         Entropy = entropy
         Salt = salt
     }

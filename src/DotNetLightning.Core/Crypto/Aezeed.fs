@@ -128,10 +128,15 @@ module internal AezeedHelpers =
         let wordInt = writer.ToIntegers()
         wordInt |> lang.GetWords
         
+/// CipherSeed is a fully decoded instance of the aezeed scheme. At a high level, the encoded cipherseed is the
+/// enciphering off
+/// 1. 1 byte version byte
+/// 2. 2 bytes timestamp
+/// 3. 
 [<Struct;CustomEquality;NoComparison>]
-type CipherSeed = internal {
+type CipherSeed = {
     InternalVersion: uint8
-    _Birthday: uint16
+    Birthday: uint16
     Entropy: byte[]
     Salt: byte[]
 }
@@ -145,7 +150,7 @@ type CipherSeed = internal {
     interface IEquatable<CipherSeed> with
         member this.Equals(o: CipherSeed) =
             this.InternalVersion = o.InternalVersion &&
-            this._Birthday = o._Birthday &&
+            this.Birthday = o.Birthday &&
             this.Entropy.ToHexString() = o.Entropy.ToHexString()
     static member Create(internalVersion: uint8) =
         CipherSeed.Create(internalVersion, DateTimeOffset.Now)
@@ -163,14 +168,14 @@ type CipherSeed = internal {
         let birthDate = uint16((now - BITCOIN_GENESIS_DATE).Days)
         {
             CipherSeed.InternalVersion = internalVersion
-            _Birthday = birthDate
+            Birthday = birthDate
             Entropy = seed
             Salt = RandomUtils.GetBytes SALT_SIZE
         }
         
     member this.Serialize(ls: LightningWriterStream) =
         ls.Write(this.InternalVersion)
-        ls.Write(this._Birthday, false)
+        ls.Write(this.Birthday, false)
         ls.Write(this.Entropy)
     member this.ToBytes() =
         use ms = new MemoryStream()
@@ -181,7 +186,7 @@ type CipherSeed = internal {
     static member Deserialize(ls: LightningReaderStream) =
         {
             InternalVersion = ls.ReadByte()
-            _Birthday = ls.ReadUInt16(false)
+            Birthday = ls.ReadUInt16(false)
             Entropy = ls.ReadBytes(ENTROPY_SIZE)
             Salt = Array.zeroCreate SALT_SIZE
         }
@@ -247,10 +252,8 @@ type CipherSeed = internal {
         this.ToMnemonic(pass, lang)
         
     member this.GetBirthdayTime() =
-        let offset = TimeSpan.FromDays(float this._Birthday)
+        let offset = TimeSpan.FromDays(float this.Birthday)
         BITCOIN_GENESIS_DATE + offset
-        
-    member this.BirthDay = this._Birthday
         
 [<Extension;Sealed;AbstractClass>]
 type MnemonicExtensions =
