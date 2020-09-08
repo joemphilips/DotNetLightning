@@ -38,8 +38,8 @@ jobs:
     - uses: actions/checkout@v2
     - name: Build
       run: |
-        DEBIAN_FRONTEND=noninteractive sudo apt install -y msbuild fsharp nuget
+        DEBIAN_FRONTEND=noninteractive sudo apt install -y msbuild fsharp
 
-        nuget restore DotNetLightning.sln
+        dotnet restore -p:BouncyCastle=True DotNetLightning.sln
         msbuild src/DotNetLightning.Core/DotNetLightning.Core.fsproj -p:BouncyCastle=True -p:TargetFramework=netstandard2.0
 

@@ -5,15 +5,9 @@
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
   
-  <!-->Since NBitcoin.Secp256k1 does not support netstandard 2.0, we will fallback to BouncyCastle build<-->
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <BouncyCastle>True</BouncyCastle>
-  </PropertyGroup>
-
   <Choose>
     <When Condition="'$(BouncyCastle)'=='true'">
       <PropertyGroup>
-        <OtherFlags>$(OtherFlags) -d:BouncyCastle</OtherFlags>
         <PackageId>DotNetLightning</PackageId>
       </PropertyGroup>
     </When>
@@ -23,11 +17,13 @@
       </PropertyGroup>
     </Otherwise>
   </Choose>
+
   <ItemGroup>
     <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\NSec\Experimental\NSec.Experimental.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\ResultUtils\ResultUtils.fsproj" PrivateAssets="all" />
     <ProjectReference Include="..\InternalBech32Encoder\InternalBech32Encoder.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\Macaroons\Macaroons.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\AEZ\AEZ.csproj" PrivateAssets="all"/>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
@@ -46,6 +42,7 @@
     <Compile Include="Utils/PriorityQueue.fs" />
     <Compile Include="Serialization\GenericTLV.fs" />
     <Compile Include="Serialization\LightningStream.fs" />
+    <Compile Include="Serialization\BitReader.fs" />
     <Compile Include="Serialization\BitWriter.fs" />
     <Compile Include="Serialization\EncodedTypes.fs" />
     <Compile Include="Serialization\Encoding.fs" />
@@ -59,6 +56,7 @@
     <Compile Include="Crypto/ShaChain.fs" />
     <Compile Include="Crypto/Sphinx.fs" />
     <Compile Include="Crypto/Generators.fs" />
+    <Compile Include="Crypto\Aezeed.fs" />
     <Compile Include="Chain/ChainInterface.fs" />
     <Compile Include="Chain/KeysInterface.fs" />
     <Compile Include="Transactions\TransactionError.fs" />
@@ -98,9 +96,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="4.7.0" />
-    <PackageReference Include="NBitcoin" Version="5.0.53" />
     <PackageReference Condition="'$(BouncyCastle)' != 'true'" Include="NBitcoin.Secp256k1" Version="1.0.3" />
-    <PackageReference Condition="'$(BouncyCastle)'=='true'" Include="Portable.BouncyCastle" Version="1.8.5.2" />
     <PackageReference Include="System.Memory" Version="4.5.3" />
   </ItemGroup>
 
