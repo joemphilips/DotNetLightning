@@ -152,6 +152,8 @@ type CipherSeed = {
             this.InternalVersion = o.InternalVersion &&
             this.Birthday = o.Birthday &&
             this.Entropy.ToHexString() = o.Entropy.ToHexString()
+    static member Create() =
+        CipherSeed.Create(CIPHER_SEED_VERSION)
     static member Create(internalVersion: uint8) =
         CipherSeed.Create(internalVersion, DateTimeOffset.Now)
     static member Create(internalVersion: uint8, now: DateTimeOffset) =
