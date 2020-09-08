@@ -1,126 +1,55 @@
 using System;
-using System.Collections.Generic;
-using NBitcoin.DataEncoders;
-using System.IO;
-using System.Linq;
-using Newtonsoft.Json.Linq;
+using System.Security.Cryptography;
+using System.Text;
+using NBitcoin;
 using Xunit;
-using static AEZ.AEZConstants;
-
 namespace AEZ.Tests
 {
-    public class AEZTests
+    public class UnitTest1
     {
-        private HexEncoder _hex = new HexEncoder();
-        private JArray ReadJson(string file)
-        {
-            return JArray.Parse(File.ReadAllText($"data/{file}"));
-        }
 
         [Fact]
-        public void TestExtract()
+        public void TestInvalidEncoding()
         {
-            var extractVectors = (ReadJson("extract.json"));
-            Assert.NotEmpty(extractVectors);
-            foreach (var token in extractVectors)
+            // testcase found in aezeed.
+            var salt = new byte[] {0, 0, 0, 1, 98};
+            var ad = new byte[]{0, 0, 0, 0, 1, 98};
+            var cipherText = new byte[]
             {
-                var a = ((JObject) token).GetValue("a").ToString();
-                var extractedKey = new byte[ExtractedKeySize];
-                var vecA = _hex.DecodeData(a);
-                var b = ((JObject) token).GetValue("b").ToString();
-                var vecB = _hex.DecodeData(b);
-                AEZ.Extract(vecA, extractedKey);
-                Assert.Equal(_hex.EncodeData(vecB), _hex.EncodeData(extractedKey));
-            }
-        }
-
-        [Fact]
-        public void TestAEZHash()
-        {
-            var hashVectors = ReadJson("hash.json");
-            foreach (var token in hashVectors)
-            {
-                var jobj = (JObject) token;
-                var vecK = _hex.DecodeData(jobj.GetValue("k").ToString());
-                var data = new List<byte[]>();
-                var jdata = (JArray)jobj.GetValue("data");
-                foreach (var v in jdata)
-                {
-                    var d = _hex.DecodeData(v.ToString());
-                    data.Add(d);
-                }
-
-                var vecV = _hex.DecodeData(jobj.GetValue("v").ToString());
-                byte[] nonce = data[0];
-                byte[][] ad = {};
-                if (data.Count > 1)
-                {
-                    ad = data.Skip(1).ToArray();
-                }
-
-                var result = new byte[BlockSize];
-                var e = new EState(vecK);
-                e.AEZHash(nonce, ad, ((int)jobj.GetValue("tau")), result);
-                Assert.Equal(_hex.EncodeData(vecV), _hex.EncodeData(result));
-            }
-        }
-
-        [Fact]
-        public void TestPRF()
-        {
-            var prfVectors = ReadJson("prf.json");
-            foreach (var token in prfVectors)
-            {
-                var jobj = (JObject) token;
-                var vecK = _hex.DecodeData(jobj.GetValue("k").ToString());
-                var vecDelta = _hex.DecodeData(jobj.GetValue("delta").ToString());
-                var vecR = _hex.DecodeData(jobj.GetValue("r").ToString());
-
-                Span<byte> vDelta = new byte[BlockSize];
-                vecDelta.CopyTo(vDelta);
-
-                var result = new byte[vecR.Length];
-                var e = new EState(vecK);
-                e.AEZ_PRF(vDelta, jobj.Value<int>("tau"), result);
-                Assert.Equal(_hex.EncodeData(vecR), _hex.EncodeData(result));
-            }
-        }
-
-        private void AssertEncrypt(JArray jarray)
-        {
-            foreach (var token in jarray)
-            {
-                var jobj = (JObject) token;
-                var vecK = _hex.DecodeData(jobj.GetValue("k").ToString());
-                var vecNonce = _hex.DecodeData(jobj.GetValue("nonce").ToString());
-                
-                var data = new List<byte[]>();
-                var jdata = (JArray)jobj.GetValue("data");
-                foreach (var v in jdata)
-                {
-                    var d = _hex.DecodeData(v.ToString());
-                    data.Add(d);
-                }
-                var vecM = _hex.DecodeData(jobj.GetValue("m").ToString());
-                var vecC = _hex.DecodeData(jobj.GetValue("c").ToString());
-
-                var vecTau = jobj.Value<int>("tau");
-                var dst = Span<byte>.Empty;
-                var c = AEZ.Encrypt(vecK, vecNonce, data.ToArray(), vecTau, vecM, dst);
-                Assert.Equal(_hex.EncodeData(vecC), _hex.EncodeData(c));
-                
-                var m = AEZ.Decrypt(vecK, vecNonce, data.ToArray(), vecTau, vecC, dst);
-                Assert.Equal(_hex.EncodeData(vecM), _hex.EncodeData(m));
-            }
-        }
-
-        [Fact]
-        public void TestEncrypt()
-        {
-            AssertEncrypt(ReadJson("encrypt.json"));
-            AssertEncrypt(ReadJson("encrypt_16_byte_key.json"));
-            AssertEncrypt(ReadJson("encrypt_33_byte_ad.json"));
-            AssertEncrypt(ReadJson("encrypt_no_ad.json"));
+                159,
+                217,
+                93,
+                187,
+                7,
+                127,
+                101,
+                132,
+                202,
+                38,
+                118,
+                248,
+                146,
+                251,
+                87,
+                3,
+                48,
+                10,
+                44,
+                82,
+                129,
+                249,
+                179,
+            };
+            var pass = Encoding.UTF8.GetBytes("test");
+            var wrongPass = Encoding.UTF8.GetBytes("kek");
+            var scryptKey = 
+                // b301317b8a1f874e2d2ad563ade52a268d0c4b7fec528110158bdcab94704d26
+                NBitcoin.Crypto.SCrypt.ComputeDerivedKey(pass, salt, 16, 8, 1, null, 32);
+            var wrongScryptKey = 
+                // 4d0d138242993176ab9ccc56463773f265168f21f21a6f6146622fa8c06bc034
+                NBitcoin.Crypto.SCrypt.ComputeDerivedKey(wrongPass, salt, 16, 8, 1, null, 32);
+            Assert.Equal(0, AEZ.Decrypt(scryptKey, ReadOnlySpan<byte>.Empty,new [] {ad}, 4, cipherText, Span<byte>.Empty)[0]);
+            Assert.Throws<CryptographicException>(()  => AEZ.Decrypt(wrongScryptKey, ReadOnlySpan<byte>.Empty,new [] {ad}, 4, cipherText, Span<byte>.Empty));
         }
     }
 }

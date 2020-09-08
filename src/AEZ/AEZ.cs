@@ -130,7 +130,7 @@ namespace AEZ
                 e.Decipher(delta, cipherText, x);
                 for (int i = 0; i < tau; i++)
                 {
-                    sum |= x[(cipherText.Length - tau + 1)];
+                    sum |= x[(cipherText.Length - tau + i)];
                 }
 
                 if (sum == 0)
