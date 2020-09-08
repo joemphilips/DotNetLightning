@@ -23,7 +23,7 @@
     <ProjectReference Include="..\ResultUtils\ResultUtils.fsproj" PrivateAssets="all" />
     <ProjectReference Include="..\InternalBech32Encoder\InternalBech32Encoder.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\Macaroons\Macaroons.csproj" PrivateAssets="all" />
-    <ProjectReference Include="..\AEZ\AEZ.csproj" />
+    <ProjectReference Include="..\AEZ\AEZ.csproj" PrivateAssets="all"/>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
