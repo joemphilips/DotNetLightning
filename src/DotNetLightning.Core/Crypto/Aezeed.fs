@@ -175,17 +175,17 @@ type CipherSeed = {
             Salt = RandomUtils.GetBytes SALT_SIZE
         }
         
-    member this.Serialize(ls: LightningWriterStream) =
+    member private this.Serialize(ls: LightningWriterStream) =
         ls.Write(this.InternalVersion)
         ls.Write(this.Birthday, false)
         ls.Write(this.Entropy)
-    member this.ToBytes() =
+    member internal this.ToBytes() =
         use ms = new MemoryStream()
         use ls = new LightningWriterStream(ms)
         this.Serialize ls
         ms.ToArray()
         
-    static member Deserialize(ls: LightningReaderStream) =
+    static member private Deserialize(ls: LightningReaderStream) =
         {
             InternalVersion = ls.ReadByte()
             Birthday = ls.ReadUInt16(false)
@@ -199,7 +199,7 @@ type CipherSeed = {
         Array.blit this.Salt 0 res 1 this.Salt.Length
         res
         
-    static member FromBytes(b: byte[]) =
+    static member internal FromBytes(b: byte[]) =
         use ms = new MemoryStream(b)
         use ls = new LightningReaderStream(ms)
         CipherSeed.Deserialize ls
