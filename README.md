@@ -1,22 +1,22 @@
 ## DotNetLightning: The utility for working with the Bitcoin Lightning Network (LN) in C#, F#
 
-the main entry point is `DotNetLightning.Core`.
+The main entry point is `DotNetLightning.Core`.
 
 ## Installation
 
 The package is compiled and published with two variants
 
 * [`DotNetLightning`](https://www.nuget.org/packages/DotNetLightning/)
-  * This does not use native bindings for cryptographic operation.
-  * This is the one you want to use if you run your code everywhere, but possibly slower then below.
+  * This does not use native bindings for cryptographic operations.
+  * This is the one you want to use if you run your code everywhere, but possibly slower than below.
 * [`DotNetLightning.Core`](https://www.nuget.org/packages/DotNetLightning.Core/)
-  * This uses pre-compiled `libsodium` for cryptographic operation.
-  * It only supports `windows`, `mac` and `linux` environment.
-  * This is what you want if you need performance and above are the only environments you are planning to support.
+  * This uses a pre-compiled `libsodium` for cryptographic operations.
+  * It only supports `windows`, `mac` and `linux` environments.
+  * This is what you want if you need performance and the environments above are the only ones you are planning to support.
   
 run `dotnet add package` with the one you want.
 Currently it is in alpha, so you probably want to install a latest version by specifying it with `--version`.
-The version is prefixed with git commit hash and date. Please take a look on nuget page.
+The version is prefixed with git commit hash and date. Please take a look at the nuget page.
 
 ## Features
 
@@ -25,18 +25,18 @@ The version is prefixed with git commit hash and date. Please take a look on nug
 #### `DotNetLightning.Utils`
 
 Contains a low-level primitives for LN.
-Mostly it is for internal usage but some are useful for consumes point of view.
+Mostly it is for internal usage but some are useful for consumer's point of view.
 (e.g. LNMoney to represent milli-satoshis value)
 
 #### `DotNetLightning.Serialization`
 
-Contains items for wire-protocol. FeaturesBits, TLV, and P2P messages.
+Contains items for wire-protocol. FeatureBits, TLV, and P2P messages.
 
 #### `DotNetLightning.Crypto`
 
-Contains modules and types for working with Cryptographic operation.
+Contains modules and types for working with Cryptographic operations.
 For example LN-onion network encoding, [aezeed](https://github.com/lightningnetwork/lnd/tree/master/aezeed) for seed
-backup
+backups
 
 #### `DotNetLightning.Chain`
 
@@ -69,7 +69,7 @@ Module for calculating payment route. This is still much WIP.
 
 ### Other features
 
-Some sibling packages comes together when you install `DotNetLightning` or `DotNetLightning.Core`
+Some sibling packages come together when you install `DotNetLightning` or `DotNetLightning.Core`
 These are mostly for internal usages but some might be useful for you.
 
 #### `AEZ`
