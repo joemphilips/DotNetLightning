@@ -260,6 +260,19 @@ type CipherSeed = {
 [<Extension;Sealed;AbstractClass>]
 type MnemonicExtensions =
 
+    /// Attempts to map the mnemonic to the original cipher text byte slice.
+    /// Then It will attempt to decrypt the ciphertext using aez with the passed passphrase,
+    /// using the last 5 bytes of the ciphertext as a salt for the KDF.
+    static member ToCipherSeed(this: Mnemonic, [<O;D(null)>]password: string) =
+        password
+        |> fun x -> if isNull x then [||] else Encoding.UTF8.GetBytes(password)
+        |> fun b -> this.ToCipherSeed(b, null)
+        
+    /// Attempts to map the mnemonic to the original cipher text byte slice.
+    /// Then It will attempt to decrypt the ciphertext using aez with the passed passphrase,
+    /// using the last 5 bytes of the ciphertext as a salt for the KDF.
+    static member ToCipherSeed(this: Mnemonic, [<O;D(null)>]password: byte[]) =
+        this.ToCipherSeed(password, null)
     [<Extension>]
     /// Attempts to map the mnemonic to the original cipher text byte slice.
     /// Then It will attempt to decrypt the ciphertext using aez with the passed passphrase,
