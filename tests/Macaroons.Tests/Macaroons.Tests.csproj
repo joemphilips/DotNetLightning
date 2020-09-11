@@ -17,6 +17,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\Macaroons\Macaroons.csproj" />
+      <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\..\src\NSec\Experimental\NSec.Experimental.csproj" />
     </ItemGroup>
 
 </Project>

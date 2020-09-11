@@ -12,7 +12,12 @@ namespace Macaroons
     public class Macaroon
     {
         
-        public static CryptoAlgorithm Crypto = new DummyCryptoAlgorithm();
+        /// <summary>
+        /// Cryptographic algorithm used for 3rd party caveats Encryption/Decryption.
+        /// You can use any library you want as long as it converts bidirectionally and its cryptographically secure.
+        /// But you should not change it while macaroons created with old algorithm are still in active.
+        /// </summary>
+        public static CryptoAlgorithm Crypto = new ChaCha20Poly1305CryptoAlgorithm();
 
         public const int MACAROON_HASH_BYTES = 32;
         public const int MACAROON_MAX_STRLEN = 32768;
