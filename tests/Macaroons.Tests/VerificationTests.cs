@@ -219,7 +219,6 @@ namespace Macaroons.Tests
             Assert.Equal(1, verified2.Messages.Count);
             Assert.Equal("Caveat 'other: 1234' failed", verified2.Messages[0]);
         }
-        #if !BouncyCastle
         [Fact]
         public void CanVerifyWithMultipleDischargeMacaroons()
         {
@@ -383,6 +382,5 @@ namespace Macaroons.Tests
             Assert.Equal(2, result.Messages.Count);
             Assert.Contains("circular", result.Messages[0]);
         }
-        #endif
     }
 }

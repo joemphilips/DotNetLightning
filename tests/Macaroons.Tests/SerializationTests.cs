@@ -79,7 +79,6 @@ namespace Macaroons.Tests
             Assert.Throws<InvalidDataException>(() => Macaroon.Deserialize(s));
         }
         
-        #if !BouncyCastle
         [Fact]
         public void CanSerializeAndDeserializeThirdPartyCaveats()
         {
@@ -107,7 +106,6 @@ namespace Macaroons.Tests
             Assert.Equal(m1.Caveats[1].CId, m2.Caveats[1].CId);
             Assert.Equal(m1.Caveats[1].VId, m2.Caveats[1].VId);
         }
-        #endif
 
     }
 }

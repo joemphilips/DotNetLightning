@@ -5,21 +5,61 @@ using NBitcoin;
 namespace Macaroons
 {
     #if BouncyCastle
-    public class SecretBoxCryptoAlgorithm: CryptoAlgorithm
+    public class ChaCha20Poly1305CryptoAlgorithm : CryptoAlgorithm
     {
-        public SecretBoxCryptoAlgorithm(bool _ = true) {}
-        
         public override byte[] Encrypt(byte[] key, byte[] plainText)
         {
-            throw new NotSupportedException("Use non-bouncycastle build for third party caveat. Or set your own CryptoAlgorithm to `Macaroon.Crypto`");
+            throw new NotImplementedException();
         }
 
         public override byte[] Decrypt(byte[] key, byte[] nonceAndMacAndCipherText)
         {
-            throw new NotSupportedException("Use non-bouncycastle build for third party caveat Or set your own CryptoAlgorithm to `Macaroon.Crypto`");
+            throw new NotImplementedException();
         }
     }
+    
     #else
+    public class ChaCha20Poly1305CryptoAlgorithm: CryptoAlgorithm
+    {
+        private const int SECRET_BOX_NONCE_BYTES = 12;
+        private static NSec.Cryptography.ChaCha20Poly1305 _secretBox = new NSec.Cryptography.ChaCha20Poly1305();
+
+        private byte[] GetNonce() =>
+            RandomUtils.GetBytes(SECRET_BOX_NONCE_BYTES);
+
+        public override byte[] Encrypt(byte[] key, byte[] plainText)
+        {
+            var n = GetNonce();
+            var nonce = new NSec.Cryptography.Nonce(n, 0);
+            using var encryptionKey = NSec.Cryptography.Key.Import(_secretBox, key,
+                NSec.Cryptography.KeyBlobFormat.RawSymmetricKey);
+            var macAndCipherText = _secretBox.Encrypt(encryptionKey, nonce, Span<byte>.Empty, plainText);
+            var result = new byte[n.Length + macAndCipherText.Length];
+            n.CopyTo(result, 0);
+            macAndCipherText.AsSpan().CopyTo(result.AsSpan(n.Length, macAndCipherText.Length));
+            return result;
+        }
+
+        public override unsafe byte[] Decrypt(byte[] key, byte[] nonceAndMacAndCipherText)
+        {
+            Span<byte> nonceBytes = stackalloc byte[SECRET_BOX_NONCE_BYTES];
+            nonceAndMacAndCipherText.AsSpan().Slice(0, nonceBytes.Length).CopyTo(nonceBytes);
+            var nonce = new NSec.Cryptography.Nonce(nonceBytes, 0);
+            Span<byte> macAndCipherText = stackalloc byte[nonceAndMacAndCipherText.Length - nonceBytes.Length];
+            nonceAndMacAndCipherText.AsSpan().Slice(nonceBytes.Length).CopyTo(macAndCipherText);
+            var keySpan = key.AsSpan();
+            var blobF = NSec.Cryptography.KeyBlobFormat.RawSymmetricKey;
+            using var encryptionKey = NSec.Cryptography.Key.Import(_secretBox, keySpan, blobF);
+            if (_secretBox.Decrypt(encryptionKey, nonce,Span<byte>.Empty, macAndCipherText, out var plaintext))
+                return plaintext;
+            
+            throw new CryptographicException("Failed to decrypt data");
+        }
+    }
+    
+    /// <summary>
+    /// For testing reference implementation test vector.
+    /// </summary>
     public class SecretBoxCryptoAlgorithm: CryptoAlgorithm
     {
         private readonly bool _useRandomNonce;
