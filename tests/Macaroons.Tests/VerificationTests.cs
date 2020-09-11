@@ -160,170 +160,7 @@ namespace Macaroons.Tests
         }
 
 
-        [Fact(Skip = "Skip third party caveat tests")]
-        public void CanVerifyWithMultipleDischargeMacaroons()
-        {
-            // Arrange
-
-            // - Create primary macaroon
-            Macaroon m = new Macaroon(Location, Secret, Identifier);
-            m.AddFirstPartyCaveat("account = 3735928559");
-
-            // - Add third party caveat (1)
-            string caveat_key1 = "4; guaranteed random by a fair toss of the dice";
-            string identifier1 = "this was how we remind auth of key/pred";
-            m.AddThirdPartyCaveat("http://auth.mybank/", caveat_key1, identifier1);
-
-            // - Add third party caveat (2)
-            string caveat_key2 = "random key 2";
-            string identifier2 = "identifier 2";
-            m.AddThirdPartyCaveat("http://auth.government/", caveat_key2, identifier2);
-
-            // - Create discharge macaroon (1)
-            Macaroon d1 = new Macaroon("http://auth.mybank/", caveat_key1, identifier1);
-            d1.AddFirstPartyCaveat("time < 2115-01-01T00:00");
-            Macaroon dp1 = m.PrepareForRequest(d1);
-
-            // - Create discharge macaroon (2)
-            Macaroon d2 = new Macaroon("http://auth.mybank/", caveat_key2, identifier2);
-            Macaroon dp2 = m.PrepareForRequest(d2);
-
-            // Create verifier with suitable predicates
-            Verifier v = new Verifier();
-            v.SatisfyExact("account = 3735928559");
-            v.SatisfyGeneral(TimeVerifier);
-
-            // Act
-            VerificationResult result = m.Verify(v, Secret, new List<Macaroon> {dp1, dp2});
-
-            // Assert
-            Assert.True(result.Success);
-        }
-
-
-        [Fact(Skip = "Skip third party caveat tests")]
-        public void VerificationFailsWhenDischargeMacaroonIsMissing()
-        {
-            // Arrange
-
-            // - Create primary macaroon
-            Macaroon m = new Macaroon(Location, Secret, Identifier);
-            m.AddFirstPartyCaveat("account = 3735928559");
-
-            // - Add third party caveat (1)
-            string caveat_key1 = "4; guaranteed random by a fair toss of the dice";
-            string identifier1 = "this was how we remind auth of key/pred";
-            m.AddThirdPartyCaveat("http://auth.mybank/", caveat_key1, identifier1);
-
-            // - Add third party caveat (2)
-            string caveat_key2 = "random key 2";
-            string identifier2 = "identifier 2";
-            m.AddThirdPartyCaveat("http://auth.government/", caveat_key2, identifier2);
-
-            // - Create discharge macaroon (1)
-            Macaroon d1 = new Macaroon("http://auth.mybank/", caveat_key1, identifier1);
-            d1.AddFirstPartyCaveat("time < 2115-01-01T00:00");
-            Macaroon dp1 = m.PrepareForRequest(d1);
-
-            // - Create discharge macaroon (2)
-            Macaroon d2 = new Macaroon("http://auth.mybank/", caveat_key2, identifier2);
-            Macaroon dp2 = m.PrepareForRequest(d2);
-
-            // Create verifier with suitable predicates
-            Verifier v = new Verifier();
-            v.SatisfyExact("account = 3735928559");
-            v.SatisfyGeneral(TimeVerifier);
-
-            // Act
-            VerificationResult result1 = m.Verify(v, Secret, new List<Macaroon> {dp1});
-            VerificationResult result2 = m.Verify(v, Secret, new List<Macaroon> {dp2});
-
-            // Assert
-            Assert.False(result1.Success);
-            Assert.False(result2.Success);
-        }
-
-
-        [Fact(Skip = "Skip third party caveat tests")]
-        public void VerificationFailsWhenPredicatesForThirdPartyCaveatIsMissing()
-        {
-            // Arrange
-
-            // - Create primary macaroon
-            Macaroon m = new Macaroon(Location, Secret, Identifier);
-            m.AddFirstPartyCaveat("account = 3735928559");
-
-            // - Add third party caveat (1)
-            string caveat_key1 = "4; guaranteed random by a fair toss of the dice";
-            string identifier1 = "this was how we remind auth of key/pred";
-            m.AddThirdPartyCaveat("http://auth.mybank/", caveat_key1, identifier1);
-
-            // - Add third party caveat (2)
-            string caveat_key2 = "random key 2";
-            string identifier2 = "identifier 2";
-            m.AddThirdPartyCaveat("http://auth.government/", caveat_key2, identifier2);
-
-            // - Create discharge macaroon (1)
-            Macaroon d1 = new Macaroon("http://auth.mybank/", caveat_key1, identifier1);
-            d1.AddFirstPartyCaveat("time < 2115-01-01T00:00");
-            Macaroon dp1 = m.PrepareForRequest(d1);
-
-            // - Create discharge macaroon (2)
-            Macaroon d2 = new Macaroon("http://auth.mybank/", caveat_key2, identifier2);
-            Macaroon dp2 = m.PrepareForRequest(d2);
-
-            // Create verifier with suitable predicates
-            Verifier v = new Verifier();
-            v.SatisfyExact("account = 3735928559");
-            // - exclude time verifier
-
-            // Act
-            VerificationResult result = m.Verify(v, Secret, new List<Macaroon> {dp1, dp2});
-
-            // Assert
-            Assert.False(result.Success);
-        }
-
-
-        [Fact(Skip = "Skip third party caveat tests")]
-        public void VerificationFailsWhenHavingCircularMacaroonReferences()
-        {
-            // Arrange
-
-            // - Create primary macaroon
-            Macaroon m = new Macaroon(Location, Secret, Identifier);
-
-            // - Add third party caveat (1)
-            string caveat_key1 = "4; guaranteed random by a fair toss of the dice";
-            string identifier1 = "this was how we remind auth of key/pred";
-            m.AddThirdPartyCaveat("http://auth.mybank/", caveat_key1, identifier1);
-
-            // - Add third party caveat (2)
-            string caveat_key2 = "random key 2";
-            string identifier2 = "identifier 2";
-            m.AddThirdPartyCaveat("http://auth.government/", caveat_key2, identifier2);
-
-            // - Create discharge macaroon (1) with reference to (2)
-            Macaroon d1 = new Macaroon("http://auth.mybank/", caveat_key1, identifier1);
-            d1.AddThirdPartyCaveat("http://auth.government/", caveat_key2, identifier2);
-            Macaroon dp1 = m.PrepareForRequest(d1);
-
-            // - Create discharge macaroon (2) with reference to (1)
-            Macaroon d2 = new Macaroon("http://auth.mybank/", caveat_key2, identifier2);
-            d2.AddThirdPartyCaveat("http://auth.government/", caveat_key1, identifier1);
-            Macaroon dp2 = m.PrepareForRequest(d2);
-
-            Verifier v = new Verifier();
-
-            // Act
-            VerificationResult result = m.Verify(v, Secret, new List<Macaroon> {dp1, dp2});
-
-            // Assert
-            Assert.False(result.Success);
-            Assert.Equal(2, result.Messages.Count);
-            Assert.Contains("circular", result.Messages[0]);
-        }
-
+        
 
         [Fact]
         public void FailedVerificationAddsVerifierReason()
@@ -382,5 +219,170 @@ namespace Macaroons.Tests
             Assert.Equal(1, verified2.Messages.Count);
             Assert.Equal("Caveat 'other: 1234' failed", verified2.Messages[0]);
         }
+        #if !BouncyCastle
+        [Fact]
+        public void CanVerifyWithMultipleDischargeMacaroons()
+        {
+            // Arrange
+
+            // - Create primary macaroon
+            Macaroon m = new Macaroon(Location, Secret, Identifier);
+            m.AddFirstPartyCaveat("account = 3735928559");
+
+            // - Add third party caveat (1)
+            string caveat_key1 = "4; guaranteed random by a fair toss of the dice";
+            string identifier1 = "this was how we remind auth of key/pred";
+            m.AddThirdPartyCaveat("http://auth.mybank/", caveat_key1, identifier1);
+
+            // - Add third party caveat (2)
+            string caveat_key2 = "random key 2";
+            string identifier2 = "identifier 2";
+            m.AddThirdPartyCaveat("http://auth.government/", caveat_key2, identifier2);
+
+            // - Create discharge macaroon (1)
+            Macaroon d1 = new Macaroon("http://auth.mybank/", caveat_key1, identifier1);
+            d1.AddFirstPartyCaveat("time < 2115-01-01T00:00");
+            Macaroon dp1 = m.PrepareForRequest(d1);
+
+            // - Create discharge macaroon (2)
+            Macaroon d2 = new Macaroon("http://auth.mybank/", caveat_key2, identifier2);
+            Macaroon dp2 = m.PrepareForRequest(d2);
+
+            // Create verifier with suitable predicates
+            Verifier v = new Verifier();
+            v.SatisfyExact("account = 3735928559");
+            v.SatisfyGeneral(TimeVerifier);
+
+            // Act
+            VerificationResult result = m.Verify(v, Secret, new List<Macaroon> {dp1, dp2});
+
+            // Assert
+            Assert.True(result.Success);
+        }
+
+
+        [Fact]
+        public void VerificationFailsWhenDischargeMacaroonIsMissing()
+        {
+            // Arrange
+
+            // - Create primary macaroon
+            Macaroon m = new Macaroon(Location, Secret, Identifier);
+            m.AddFirstPartyCaveat("account = 3735928559");
+
+            // - Add third party caveat (1)
+            string caveat_key1 = "4; guaranteed random by a fair toss of the dice";
+            string identifier1 = "this was how we remind auth of key/pred";
+            m.AddThirdPartyCaveat("http://auth.mybank/", caveat_key1, identifier1);
+
+            // - Add third party caveat (2)
+            string caveat_key2 = "random key 2";
+            string identifier2 = "identifier 2";
+            m.AddThirdPartyCaveat("http://auth.government/", caveat_key2, identifier2);
+
+            // - Create discharge macaroon (1)
+            Macaroon d1 = new Macaroon("http://auth.mybank/", caveat_key1, identifier1);
+            d1.AddFirstPartyCaveat("time < 2115-01-01T00:00");
+            Macaroon dp1 = m.PrepareForRequest(d1);
+
+            // - Create discharge macaroon (2)
+            Macaroon d2 = new Macaroon("http://auth.mybank/", caveat_key2, identifier2);
+            Macaroon dp2 = m.PrepareForRequest(d2);
+
+            // Create verifier with suitable predicates
+            Verifier v = new Verifier();
+            v.SatisfyExact("account = 3735928559");
+            v.SatisfyGeneral(TimeVerifier);
+
+            // Act
+            VerificationResult result1 = m.Verify(v, Secret, new List<Macaroon> {dp1});
+            VerificationResult result2 = m.Verify(v, Secret, new List<Macaroon> {dp2});
+
+            // Assert
+            Assert.False(result1.Success);
+            Assert.False(result2.Success);
+        }
+
+
+        [Fact]
+        public void VerificationFailsWhenPredicatesForThirdPartyCaveatIsMissing()
+        {
+            // Arrange
+
+            // - Create primary macaroon
+            Macaroon m = new Macaroon(Location, Secret, Identifier);
+            m.AddFirstPartyCaveat("account = 3735928559");
+
+            // - Add third party caveat (1)
+            string caveat_key1 = "4; guaranteed random by a fair toss of the dice";
+            string identifier1 = "this was how we remind auth of key/pred";
+            m.AddThirdPartyCaveat("http://auth.mybank/", caveat_key1, identifier1);
+
+            // - Add third party caveat (2)
+            string caveat_key2 = "random key 2";
+            string identifier2 = "identifier 2";
+            m.AddThirdPartyCaveat("http://auth.government/", caveat_key2, identifier2);
+
+            // - Create discharge macaroon (1)
+            Macaroon d1 = new Macaroon("http://auth.mybank/", caveat_key1, identifier1);
+            d1.AddFirstPartyCaveat("time < 2115-01-01T00:00");
+            Macaroon dp1 = m.PrepareForRequest(d1);
+
+            // - Create discharge macaroon (2)
+            Macaroon d2 = new Macaroon("http://auth.mybank/", caveat_key2, identifier2);
+            Macaroon dp2 = m.PrepareForRequest(d2);
+
+            // Create verifier with suitable predicates
+            Verifier v = new Verifier();
+            v.SatisfyExact("account = 3735928559");
+            // - exclude time verifier
+
+            // Act
+            VerificationResult result = m.Verify(v, Secret, new List<Macaroon> {dp1, dp2});
+
+            // Assert
+            Assert.False(result.Success);
+        }
+
+
+        [Fact]
+        public void VerificationFailsWhenHavingCircularMacaroonReferences()
+        {
+            // Arrange
+
+            // - Create primary macaroon
+            Macaroon m = new Macaroon(Location, Secret, Identifier);
+
+            // - Add third party caveat (1)
+            string caveat_key1 = "4; guaranteed random by a fair toss of the dice";
+            string identifier1 = "this was how we remind auth of key/pred";
+            m.AddThirdPartyCaveat("http://auth.mybank/", caveat_key1, identifier1);
+
+            // - Add third party caveat (2)
+            string caveat_key2 = "random key 2";
+            string identifier2 = "identifier 2";
+            m.AddThirdPartyCaveat("http://auth.government/", caveat_key2, identifier2);
+
+            // - Create discharge macaroon (1) with reference to (2)
+            Macaroon d1 = new Macaroon("http://auth.mybank/", caveat_key1, identifier1);
+            d1.AddThirdPartyCaveat("http://auth.government/", caveat_key2, identifier2);
+            Macaroon dp1 = m.PrepareForRequest(d1);
+
+            // - Create discharge macaroon (2) with reference to (1)
+            Macaroon d2 = new Macaroon("http://auth.mybank/", caveat_key2, identifier2);
+            d2.AddThirdPartyCaveat("http://auth.government/", caveat_key1, identifier1);
+            Macaroon dp2 = m.PrepareForRequest(d2);
+
+            Verifier v = new Verifier();
+
+            // Act
+            VerificationResult result = m.Verify(v, Secret, new List<Macaroon> {dp1, dp2});
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.Equal(2, result.Messages.Count);
+            Assert.Contains("circular", result.Messages[0]);
+        }
+        #endif
     }
 }

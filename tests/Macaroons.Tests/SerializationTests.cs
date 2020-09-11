@@ -69,7 +69,18 @@ namespace Macaroons.Tests
         }
 
 
-        [Fact(Skip = "Skip third party caveat tests")]
+        [Fact]
+        public void WhenDeserializingBadPacketItThrowsInvalidDataException()
+        {
+            // Arrange
+            // - This data would make the deserializer run around in circles in earlier versions.
+            string s =
+                "MDAyNWxvY2F0aW9uIGNTZWFyY2g6ZG9jdW1lbnQ6MTQ5MzY0CjAwMjJpZGVudGlmaWVyIGRvY3VtZW50SWQ6IDE0OTM2NAowMDFiY2lkIGRvY3VtZW50SWQ6IDE0OTM2NAowMDIzY2lkIHRpbWUgPCAyMDE2LTAxLTA0VDEyOjQzOjU2CjAwMmZzaWduyXR1cmUgQbpcMXKEUSc4AE1xANE2V4b1BbKAGSbrEO2oAOqZYhkK";
+            Assert.Throws<InvalidDataException>(() => Macaroon.Deserialize(s));
+        }
+        
+        #if !BouncyCastle
+        [Fact]
         public void CanSerializeAndDeserializeThirdPartyCaveats()
         {
             // Arrange
@@ -96,16 +107,7 @@ namespace Macaroons.Tests
             Assert.Equal(m1.Caveats[1].CId, m2.Caveats[1].CId);
             Assert.Equal(m1.Caveats[1].VId, m2.Caveats[1].VId);
         }
+        #endif
 
-
-        [Fact]
-        public void WhenDeserializingBadPacketItThrowsInvalidDataException()
-        {
-            // Arrange
-            // - This data would make the deserializer run around in circles in earlier versions.
-            string s =
-                "MDAyNWxvY2F0aW9uIGNTZWFyY2g6ZG9jdW1lbnQ6MTQ5MzY0CjAwMjJpZGVudGlmaWVyIGRvY3VtZW50SWQ6IDE0OTM2NAowMDFiY2lkIGRvY3VtZW50SWQ6IDE0OTM2NAowMDIzY2lkIHRpbWUgPCAyMDE2LTAxLTA0VDEyOjQzOjU2CjAwMmZzaWduyXR1cmUgQbpcMXKEUSc4AE1xANE2V4b1BbKAGSbrEO2oAOqZYhkK";
-            Assert.Throws<InvalidDataException>(() => Macaroon.Deserialize(s));
-        }
     }
 }

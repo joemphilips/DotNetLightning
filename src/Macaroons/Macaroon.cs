@@ -12,7 +12,7 @@ namespace Macaroons
     public class Macaroon
     {
         
-        public static CryptoAlgorithm Crypto = new DummyCryptoAlgorithm();
+        public static CryptoAlgorithm Crypto = new SecretBoxCryptoAlgorithm(true);
 
         public const int MACAROON_HASH_BYTES = 32;
         public const int MACAROON_MAX_STRLEN = 32768;
