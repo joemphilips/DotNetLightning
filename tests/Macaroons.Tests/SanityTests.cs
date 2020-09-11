@@ -73,32 +73,5 @@ Signature = 882e6d59496ed5245edb7ab5b8839ecd63e5d504e54839804f164070d8eed952
     }
 
 
-
-    [Fact]
-    public void CanVerifyWithDischargeMacaroon()
-    {
-      // Arrange
-      Macaroon m = new Macaroon(Location2, Secret2, Identifier2);
-      m.AddFirstPartyCaveat("account = 3735928559");
-
-      string caveat_key = "4; guaranteed random by a fair toss of the dice";
-      string identifier = "this was how we remind auth of key/pred";
-      m.AddThirdPartyCaveat("http://auth.mybank/", caveat_key, identifier);
-
-      Macaroon d = new Macaroon("http://auth.mybank/", caveat_key, identifier);
-      d.AddFirstPartyCaveat("time < 2115-01-01T00:00");
-
-      Macaroon dp = m.PrepareForRequest(d);
-
-      Verifier v = new Verifier();
-      v.SatisfyExact("account = 3735928559");
-      v.SatisfyGeneral(TimeVerifier);
-
-      // Act
-      VerificationResult result = m.Verify(v, Secret2, new List<Macaroon> {dp});
-
-      // Assert
-      Assert.True(result.Success);
-    }
   }
 }
