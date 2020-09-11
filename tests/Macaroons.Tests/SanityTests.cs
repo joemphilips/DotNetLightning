@@ -7,11 +7,6 @@ namespace Macaroons.Tests
 
   public class SanityTests : TestBase
   {
-    const string Secret2 = "this is a different super-secret key; never use the same secret twice";
-    const string Identifier2 = "we used our other secret key";
-    const string Location2 = "http://mybank/";
-
-
 
     [Fact]
     public void CanCreateEmptyMacaroonWithSignature()

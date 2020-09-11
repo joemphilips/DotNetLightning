@@ -83,6 +83,10 @@ namespace Macaroons
 
         public override byte[] Decrypt(byte[] key, byte[] nonceAndMacAndCipherText)
         {
+            if (nonceAndMacAndCipherText.Length <= SECRET_BOX_NONCE_BYTES + 16)
+            {
+                throw new CryptographicException("bogus cipherText! too short cipherText");
+            }
             var nonce = nonceAndMacAndCipherText.AsSpan().Slice(0, SECRET_BOX_NONCE_BYTES).ToArray();
             var cipherText = nonceAndMacAndCipherText.AsSpan().Slice(nonce.Length, nonceAndMacAndCipherText.Length - 16 - nonce.Length).ToArray();
             var mac = nonceAndMacAndCipherText.AsSpan().Slice(nonceAndMacAndCipherText.Length - 16, 16).ToArray();
@@ -123,6 +127,10 @@ namespace Macaroons
 
         public override unsafe byte[] Decrypt(byte[] key, byte[] nonceAndMacAndCipherText)
         {
+            if (nonceAndMacAndCipherText.Length <= SECRET_BOX_NONCE_BYTES + 16)
+            {
+                throw new CryptographicException("bogus cipherText! too short cipherText");
+            }
             Span<byte> nonceBytes = stackalloc byte[SECRET_BOX_NONCE_BYTES];
             nonceAndMacAndCipherText.AsSpan().Slice(0, nonceBytes.Length).CopyTo(nonceBytes);
             var nonce = new NSec.Cryptography.Nonce(nonceBytes, 0);
