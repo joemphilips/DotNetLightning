@@ -11,12 +11,12 @@ namespace Macaroons
         
         public override byte[] Encrypt(byte[] key, byte[] plainText)
         {
-            throw new NotImplementedException("Use non-bouncycastle build for third party caveat. Or set your own CryptoAlgorithm to `Macaroon.Crypto`");
+            throw new NotSupportedException("Use non-bouncycastle build for third party caveat. Or set your own CryptoAlgorithm to `Macaroon.Crypto`");
         }
 
         public override byte[] Decrypt(byte[] key, byte[] nonceAndMacAndCipherText)
         {
-            throw new NotImplementedException("Use non-bouncycastle build for third party caveat Or set your own CryptoAlgorithm to `Macaroon.Crypto`");
+            throw new NotSupportedException("Use non-bouncycastle build for third party caveat Or set your own CryptoAlgorithm to `Macaroon.Crypto`");
         }
     }
     #else
