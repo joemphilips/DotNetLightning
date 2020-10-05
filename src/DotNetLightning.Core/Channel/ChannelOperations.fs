@@ -90,16 +90,19 @@ type RemoteParams = {
     HTLCMinimumMSat: LNMoney
     ToSelfDelay: BlockHeightOffset16
     MaxAcceptedHTLCs: uint16
-    PaymentBasePoint: PubKey
-    FundingPubKey: PubKey
-    RevocationBasePoint: PubKey
-    DelayedPaymentBasePoint: PubKey
-    HTLCBasePoint: PubKey
+    ChannelPubKeys: ChannelPubKeys
     Features: FeatureBits
     MinimumDepth: BlockHeightOffset32
 }
     with
         static member FromAcceptChannel nodeId (remoteInit: InitMsg) (msg: AcceptChannelMsg) =
+            let channelPubKeys = {
+                FundingPubKey = msg.FundingPubKey
+                RevocationBasePubKey = msg.RevocationBasepoint
+                PaymentBasePubKey = msg.PaymentBasepoint
+                DelayedPaymentBasePubKey = msg.DelayedPaymentBasepoint
+                HTLCBasePubKey = msg.HTLCBasepoint
+            }
             {
                 NodeId = nodeId
                 DustLimitSatoshis = msg.DustLimitSatoshis
@@ -108,16 +111,19 @@ type RemoteParams = {
                 HTLCMinimumMSat = msg.HTLCMinimumMSat
                 ToSelfDelay = msg.ToSelfDelay
                 MaxAcceptedHTLCs = msg.MaxAcceptedHTLCs
-                PaymentBasePoint = msg.PaymentBasepoint
-                FundingPubKey = msg.FundingPubKey
-                RevocationBasePoint = msg.RevocationBasepoint
-                DelayedPaymentBasePoint = msg.DelayedPaymentBasepoint
-                HTLCBasePoint = msg.HTLCBasepoint
+                ChannelPubKeys = channelPubKeys
                 Features = remoteInit.Features
                 MinimumDepth = msg.MinimumDepth
             }
 
         static member FromOpenChannel (nodeId) (remoteInit: InitMsg) (msg: OpenChannelMsg) (channelHandshakeConfig: ChannelHandshakeConfig) =
+            let channelPubKeys = {
+                FundingPubKey = msg.FundingPubKey
+                RevocationBasePubKey = msg.RevocationBasepoint
+                PaymentBasePubKey = msg.PaymentBasepoint
+                DelayedPaymentBasePubKey = msg.DelayedPaymentBasepoint
+                HTLCBasePubKey = msg.HTLCBasepoint
+            }
             {
                 NodeId = nodeId
                 DustLimitSatoshis = msg.DustLimitSatoshis
@@ -126,11 +132,7 @@ type RemoteParams = {
                 HTLCMinimumMSat = msg.HTLCMinimumMsat
                 ToSelfDelay = msg.ToSelfDelay
                 MaxAcceptedHTLCs = msg.MaxAcceptedHTLCs
-                PaymentBasePoint = msg.PaymentBasepoint
-                FundingPubKey = msg.FundingPubKey
-                RevocationBasePoint = msg.RevocationBasepoint
-                DelayedPaymentBasePoint = msg.DelayedPaymentBasepoint
-                HTLCBasePoint = msg.HTLCBasepoint
+                ChannelPubKeys = channelPubKeys
                 Features = remoteInit.Features
                 MinimumDepth = channelHandshakeConfig.MinimumDepth
             }

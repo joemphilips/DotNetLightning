@@ -29,18 +29,19 @@ module internal Commitments =
             (commitmentInput: ScriptCoin)
             (remotePerCommitmentPoint: CommitmentPubKey)
             (spec) (n) =
-            let channelKeys = localParams.ChannelPubKeys
+            let localChannelKeys = localParams.ChannelPubKeys
+            let remoteChannelKeys = remoteParams.ChannelPubKeys
             let pkGen = Generators.derivePubKey ctx remotePerCommitmentPoint.PubKey
-            let localPaymentPK = pkGen channelKeys.PaymentBasePubKey
-            let localHTLCPK = pkGen channelKeys.HTLCBasePubKey
-            let remoteDelayedPaymentPK = pkGen remoteParams.DelayedPaymentBasePoint
-            let remoteHTLCPK = pkGen remoteParams.HTLCBasePoint
-            let remoteRevocationPK = pkGen channelKeys.RevocationBasePubKey
+            let localPaymentPK = pkGen localChannelKeys.PaymentBasePubKey
+            let localHTLCPK = pkGen localChannelKeys.HTLCBasePubKey
+            let remoteDelayedPaymentPK = pkGen remoteChannelKeys.DelayedPaymentBasePubKey
+            let remoteHTLCPK = pkGen remoteChannelKeys.HTLCBasePubKey
+            let remoteRevocationPK = pkGen localChannelKeys.RevocationBasePubKey
             let commitTx =
                 Transactions.makeCommitTx commitmentInput 
                                           commitTxNumber
-                                          remoteParams.PaymentBasePoint
-                                          channelKeys.PaymentBasePubKey
+                                          remoteChannelKeys.PaymentBasePubKey
+                                          localChannelKeys.PaymentBasePubKey
                                           (not localParams.IsFunder)
                                           (remoteParams.DustLimitSatoshis)
                                           (remoteRevocationPK)
@@ -74,18 +75,19 @@ module internal Commitments =
             (localPerCommitmentPoint: CommitmentPubKey)
             (spec: CommitmentSpec)
             n: Result<(CommitTx * HTLCTimeoutTx list * HTLCSuccessTx list), _> =
-            let channelKeys = localParams.ChannelPubKeys
+            let localChannelKeys = localParams.ChannelPubKeys
+            let remoteChannelKeys = remoteParams.ChannelPubKeys
             let pkGen = Generators.derivePubKey ctx localPerCommitmentPoint.PubKey
-            let localDelayedPaymentPK = pkGen channelKeys.DelayedPaymentBasePubKey
-            let localHTLCPK = pkGen channelKeys.HTLCBasePubKey
-            let remotePaymentPK = pkGen remoteParams.PaymentBasePoint
-            let remoteHTLCPK = pkGen remoteParams.HTLCBasePoint
-            let localRevocationPK = pkGen remoteParams.RevocationBasePoint
+            let localDelayedPaymentPK = pkGen localChannelKeys.DelayedPaymentBasePubKey
+            let localHTLCPK = pkGen localChannelKeys.HTLCBasePubKey
+            let remotePaymentPK = pkGen remoteChannelKeys.PaymentBasePubKey
+            let remoteHTLCPK = pkGen remoteChannelKeys.HTLCBasePubKey
+            let localRevocationPK = pkGen remoteChannelKeys.RevocationBasePubKey
             let commitTx =
                 Transactions.makeCommitTx commitmentInput
                                           commitTxNumber
-                                          channelKeys.PaymentBasePubKey
-                                          remoteParams.PaymentBasePoint
+                                          localChannelKeys.PaymentBasePubKey
+                                          remoteChannelKeys.PaymentBasePubKey
                                           localParams.IsFunder
                                           localParams.DustLimitSatoshis
                                           localRevocationPK
@@ -328,7 +330,8 @@ module internal Commitments =
         else
             let chanPrivateKeys = keyRepo.GetChannelKeys cm.LocalParams.IsFunder
             let commitmentSeed = chanPrivateKeys.CommitmentSeed
-            let chanKeys = cm.LocalParams.ChannelPubKeys
+            let localChannelKeys = cm.LocalParams.ChannelPubKeys
+            let remoteChannelKeys = cm.RemoteParams.ChannelPubKeys
             let nextI = cm.LocalCommit.Index.NextCommitment()
             result {
                 let! spec = cm.LocalCommit.Spec.Reduce(cm.LocalChanges.ACKed, cm.RemoteChanges.Proposed) |> expectTransactionError
@@ -336,11 +339,11 @@ module internal Commitments =
                 let! (localCommitTx, htlcTimeoutTxs, htlcSuccessTxs) =
                     Helpers.makeLocalTXs (ctx) (nextI) (cm.LocalParams) (cm.RemoteParams) (cm.FundingScriptCoin) (localPerCommitmentPoint) spec n
                     |> expectTransactionErrors
-                let signature, signedCommitTx = keyRepo.GetSignatureFor (localCommitTx.Value, chanKeys.FundingPubKey)
+                let signature, signedCommitTx = keyRepo.GetSignatureFor (localCommitTx.Value, localChannelKeys.FundingPubKey)
 
                 let sigPair =
-                    let localSigPair = seq [(chanKeys.FundingPubKey, signature)]
-                    let remoteSigPair = seq[ (cm.RemoteParams.FundingPubKey, TransactionSignature(msg.Signature.Value, SigHash.All)) ]
+                    let localSigPair = seq [(localChannelKeys.FundingPubKey, signature)]
+                    let remoteSigPair = seq[ (remoteChannelKeys.FundingPubKey, TransactionSignature(msg.Signature.Value, SigHash.All)) ]
                     Seq.append localSigPair remoteSigPair
                 let tmp = 
                     Transactions.checkTxFinalized signedCommitTx localCommitTx.WhichInput sigPair
@@ -356,7 +359,7 @@ module internal Commitments =
                         )
                     localHtlcSigsAndHTLCTxs |> List.map(fst), localHtlcSigsAndHTLCTxs |> List.map(snd) |> Seq.cast<IHTLCTx> |> List.ofSeq
 
-                let remoteHTLCPubKey = Generators.derivePubKey ctx (cm.RemoteParams.HTLCBasePoint) localPerCommitmentPoint.PubKey
+                let remoteHTLCPubKey = Generators.derivePubKey ctx (remoteChannelKeys.HTLCBasePubKey) localPerCommitmentPoint.PubKey
 
                 let checkHTLCSig (htlc: IHTLCTx, remoteECDSASig: LNECDSASignature): Result<_, _> =
                     let remoteS = TransactionSignature(remoteECDSASig.Value, SigHash.All)
