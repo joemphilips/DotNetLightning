@@ -54,32 +54,32 @@ module Generators =
         | false -> failwith "Not implemented: Generators::multiplyPublicKey"
 
 
-    /// Compute `baseSecret + Sha256(perCommitmentPoint || basePoint) * G`
+    /// Compute `baseSecret + Sha256(perCommitmentPoint || basepoint) * G`
     let derivePrivKey (ctx: ISecp256k1) (baseSecret: Key)  (perCommitmentPoint: PubKey) =
         Array.append (perCommitmentPoint.ToBytes()) (baseSecret.PubKey.ToBytes())
         |> Hashes.SHA256
         |> combinePrivKey ctx (baseSecret.ToBytes())
         |> fun h -> new Key(h)
 
-    let derivePubKey (ctx: ISecp256k1) (basePoint: PubKey) (perCommitmentPoint: PubKey) =
-        let basePointBytes = basePoint.ToBytes()
-        Array.append (perCommitmentPoint.ToBytes())(basePointBytes)
+    let derivePubKey (ctx: ISecp256k1) (basepoint: PubKey) (perCommitmentPoint: PubKey) =
+        let basepointBytes = basepoint.ToBytes()
+        Array.append (perCommitmentPoint.ToBytes())(basepointBytes)
         |> Hashes.SHA256
         |> derivePubKeyFromPrivKey ctx
-        |> combinePubKey ctx (basePointBytes)
+        |> combinePubKey ctx (basepointBytes)
         |> compressePubKey ctx
         |> PubKey
 
-    let revocationPubKey (ctx: ISecp256k1) (basePoint: PubKey) (perCommitmentPoint: PubKey) =
+    let revocationPubKey (ctx: ISecp256k1) (basepoint: PubKey) (perCommitmentPoint: PubKey) =
         let perCommitmentPointB = perCommitmentPoint.ToBytes()
-        let basePointB = basePoint.ToBytes()
-        let a = Array.append (basePointB) (perCommitmentPointB)
+        let basepointB = basepoint.ToBytes()
+        let a = Array.append (basepointB) (perCommitmentPointB)
                 |> Hashes.SHA256
-        let b = Array.append (perCommitmentPoint.ToBytes()) (basePoint.ToBytes())
+        let b = Array.append (perCommitmentPoint.ToBytes()) (basepoint.ToBytes())
                 |> Hashes.SHA256
         // below is just doing this
-        // basePoint.Multiply(a).Add(perCommitmentPoint.Multiply(b))
-        (expandPubKey ctx basePointB, expandPubKey ctx perCommitmentPointB)
+        // basepoint.Multiply(a).Add(perCommitmentPoint.Multiply(b))
+        (expandPubKey ctx basepointB, expandPubKey ctx perCommitmentPointB)
         |> fun (baseP, perCommitP) ->
             (multiplyPublicKey ctx a baseP, multiplyPublicKey ctx b perCommitP)
         ||> combinePubKey ctx

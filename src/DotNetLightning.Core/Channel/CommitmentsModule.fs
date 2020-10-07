@@ -290,7 +290,7 @@ module internal Commitments =
                 let htlcSigs =
                     sortedHTLCTXs
                     |> List.map(
-                            (fun htlc -> keyRepo.GenerateKeyFromBasePointAndSign(htlc.Value, cm.LocalParams.ChannelPubKeys.HTLCBasePubKey, remoteNextPerCommitmentPoint.RawPubKey()))
+                            (fun htlc -> keyRepo.GenerateKeyFromBasepointAndSign(htlc.Value, cm.LocalParams.ChannelPubKeys.HTLCBasePubKey, remoteNextPerCommitmentPoint.RawPubKey()))
                             >> fst
                             >> (fun txSig -> txSig.Signature)
                             )
@@ -355,7 +355,7 @@ module internal Commitments =
                 let _localHTLCSigs, sortedHTLCTXs =
                     let localHtlcSigsAndHTLCTxs =
                         sortedHTLCTXs |> List.map(fun htlc ->
-                            keyRepo.GenerateKeyFromBasePointAndSign(htlc.Value, cm.LocalParams.ChannelPubKeys.HTLCBasePubKey, localPerCommitmentPoint.RawPubKey())
+                            keyRepo.GenerateKeyFromBasepointAndSign(htlc.Value, cm.LocalParams.ChannelPubKeys.HTLCBasePubKey, localPerCommitmentPoint.RawPubKey())
                         )
                     localHtlcSigsAndHTLCTxs |> List.map(fst), localHtlcSigsAndHTLCTxs |> List.map(snd) |> Seq.cast<IHTLCTx> |> List.ofSeq
 

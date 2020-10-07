@@ -90,7 +90,7 @@ type IKeysRepository =
     /// Must add signature to the PSBT *And* return the signature
     abstract member GetSignatureFor: psbt: PSBT * pubKey: PubKey -> TransactionSignature * PSBT
     /// Must add signature to the PSBT *And* return the signature
-    abstract member GenerateKeyFromBasePointAndSign: psbt: PSBT * pubkey: PubKey * basePoint: PubKey -> TransactionSignature * PSBT
+    abstract member GenerateKeyFromBasepointAndSign: psbt: PSBT * pubkey: PubKey * basepoint: PubKey -> TransactionSignature * PSBT
     /// Must add signature to the PSBT *And* return the signature
     abstract member GenerateKeyFromRemoteSecretAndSign: psbt: PSBT * pubKey: PubKey * remoteSecret : Key -> TransactionSignature * PSBT
 
@@ -176,17 +176,17 @@ type DefaultKeyRepository(nodeSecret: ExtKey, channelIndex: int) =
             | Some signature -> (signature, psbt)
             | None -> failwithf "Failed to get signature for %A. by pubkey(%A). This should never happen" psbt pubkey
 
-        member this.GenerateKeyFromBasePointAndSign(psbt, pubkey, basePoint) =
+        member this.GenerateKeyFromBasepointAndSign(psbt, pubkey, basepoint) =
             use ctx = CryptoUtils.impl.newSecp256k1()
             let basepointSecret: Key = this.BasepointToSecretMap.TryGet pubkey
-            let priv2 = Generators.derivePrivKey ctx (basepointSecret)  basePoint 
+            let priv2 = Generators.derivePrivKey ctx (basepointSecret)  basepoint 
             psbt.SignWithKeys(priv2) |> ignore
             match psbt.GetMatchingSig(priv2.PubKey) with
             | Some signature -> (signature, psbt)
             | None ->
                 failwithf
                     "failed to get signature for %A . \n input pubkey was: (%A).\n and basepoint was(%A)"
-                    psbt pubkey basePoint
+                    psbt pubkey basepoint
 
         member this.GenerateKeyFromRemoteSecretAndSign(_psbt, _pubkey, _remoteSecret) =
             failwith "Not implemented: DefaultKeyRepository::GenerateKeyFromRemoteSecretAndSign"
