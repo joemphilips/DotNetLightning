@@ -1,6 +1,7 @@
 namespace DotNetLightning.Transactions
 
 open System
+open System.IO
 open System.Linq
 
 open NBitcoin
@@ -735,19 +736,26 @@ module Transactions =
                 else
                     spec.ToLocal.ToMoney(), spec.ToRemote.ToMoney() - closingFee
 
-            let maybeToLocalOutput = if (toLocalAmount >= dustLimit) then Some(toLocalAmount, localDestination) else None
-            let maybeToRemoteOutput = if (toRemoteAmount >= dustLimit) then Some(toRemoteAmount, remoteDestination) else None
-            let outputs = seq [maybeToLocalOutput; maybeToRemoteOutput] |> Seq.choose id
+            let outputs =
+                seq {
+                    if toLocalAmount >= dustLimit then
+                        yield TxOut(toLocalAmount, localDestination)
+                    if toRemoteAmount >= dustLimit then
+                        yield TxOut(toRemoteAmount, remoteDestination)
+                }
+                |> Seq.sortBy (fun txOut ->
+                    use memoryStream = new MemoryStream()
+                    let stream = NBitcoin.BitcoinStream(memoryStream, true)
+                    txOut.ReadWrite stream
+                    memoryStream.ToArray()
+                )
             let psbt = 
-                let txb = n.CreateTransactionBuilder()
-                           .AddCoins(commitTxInput)
-                           .SendFees(closingFee)
-                           .SetLockTime(!> 0u)
-                for (money, dest) in outputs do
-                    txb.Send(dest, money) |> ignore
-                let tx =  txb.BuildTransaction(false)
+                let tx = Transaction.Create n
                 tx.Version <- 2u
-                tx.Inputs.[0].Sequence <- !> 0xffffffffu
+                tx.LockTime <- !> 0u
+                tx.Inputs.Add <| TxIn(Sequence = !> UInt32.MaxValue, PrevOut = commitTxInput.Outpoint)
+                for txOut in outputs do
+                    tx.Outputs.Add txOut
                 PSBT.FromTransaction(tx, n)
                     .AddCoins(commitTxInput)
             psbt |> ClosingTx |> Ok
