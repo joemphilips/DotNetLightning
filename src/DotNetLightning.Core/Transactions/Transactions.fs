@@ -1,6 +1,7 @@
 namespace DotNetLightning.Transactions
 
 open System
+open System.IO
 open System.Linq
 
 open NBitcoin
@@ -297,6 +298,13 @@ module Transactions =
         [<Literal>]
         let OFFERED_HTLC_SCRIPT_WEIGHT = 133uy
 
+    let private createTransactionBuilder (network: Network) =
+        let txb = network.CreateTransactionBuilder()
+        txb.ShuffleOutputs <- false
+        txb.ShuffleInputs <- false
+        txb
+
+    let UINT32_MAX = 0xffffffffu
 
     let private trimOfferedHTLCs (dustLimit: Money) (spec: CommitmentSpec): DirectedHTLC list =
         let htlcTimeoutFee = spec.FeeRatePerKw.CalculateFeeFromWeight(HTLC_TIMEOUT_WEIGHT)
@@ -356,7 +364,8 @@ module Transactions =
                      (localHTLCPubKey: PubKey)
                      (remoteHTLCPubkey: PubKey)
                      (spec: CommitmentSpec)
-                     (n: Network)=
+                     (network: Network)
+                         =
         let commitFee = commitTxFee localDustLimit spec
         let (toLocalAmount, toRemoteAmount) =
             if (localIsFunder) then
@@ -392,7 +401,7 @@ module Transactions =
         let lockTime = obscuredCommitmentNumber.LockTime
 
         let tx =
-            let tx = n.CreateTransaction()
+            let tx = network.CreateTransaction()
             tx.Version <- 2u
             let txin = TxIn(inputInfo.Outpoint)
             txin.Sequence <- sequence
@@ -405,7 +414,7 @@ module Transactions =
             tx.LockTime <- lockTime
             tx
         let psbt =
-            let p = PSBT.FromTransaction(tx, n)
+            let p = PSBT.FromTransaction(tx, network)
             p.AddCoins(inputInfo)
         { CommitTx.Value = psbt; WhichInput = 0 }
 
@@ -496,7 +505,8 @@ module Transactions =
                           (remoteHTLCPubKey: PubKey)
                           (feeratePerKw: FeeRatePerKw)
                           (htlc: UpdateAddHTLCMsg)
-                          (n: Network) =
+                          (network: Network)
+                              =
         let fee = feeratePerKw.CalculateFeeFromWeight(HTLC_TIMEOUT_WEIGHT)
         let redeem = Scripts.htlcOffered(localHTLCPubKey) (remoteHTLCPubKey) (localRevocationPubKey) (htlc.PaymentHash)
         let spk = redeem.WitHash.ScriptPubKey
@@ -506,7 +516,7 @@ module Transactions =
             AmountBelowDustLimit amount |> Error
         else
             let psbt = 
-                let txb = n.CreateTransactionBuilder()
+                let txb = createTransactionBuilder network
                 let indexedTxOut = commitTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex)
                 let scriptCoin = ScriptCoin(indexedTxOut, redeem)
                 let dest = Scripts.toLocalDelayed localRevocationPubKey toLocalDelay localDelayedPaymentPubKey
@@ -522,8 +532,8 @@ module Transactions =
                 /// We must set 0 to sequence for HTLC-success/timeout (defined in bolt3)
                 for i in tx.Inputs do
                     i.Sequence <- Sequence(0)
-                    
-                PSBT.FromTransaction(tx, n)
+
+                PSBT.FromTransaction(tx, network)
                     .AddCoins scriptCoin
             let whichInput = psbt.Inputs |> Seq.findIndex(fun i -> not (isNull i.WitnessScript))
             { HTLCTimeoutTx.Value = psbt; WhichInput = whichInput } |> Ok
@@ -537,7 +547,8 @@ module Transactions =
                           (remoteHTLCPubKey: PubKey)
                           (feeratePerKw: FeeRatePerKw)
                           (htlc: UpdateAddHTLCMsg)
-                          (n: Network)=
+                          (network: Network)
+                              =
         let fee = feeratePerKw.CalculateFeeFromWeight(HTLC_SUCCESS_WEIGHT)
         let redeem = Scripts.htlcReceived (localHTLCPubKey) (remoteHTLCPubKey) (localRevocationPubKey) (htlc.PaymentHash) (htlc.CLTVExpiry.Value)
         let spk = redeem.WitHash.ScriptPubKey
@@ -547,7 +558,7 @@ module Transactions =
             AmountBelowDustLimit amount |> Error
         else
             let psbt = 
-                let txb = n.CreateTransactionBuilder()
+                let txb = createTransactionBuilder network
                 let scriptCoin =
                     let coin = commitTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex)
                     ScriptCoin(coin, redeem)
@@ -564,8 +575,8 @@ module Transactions =
                 /// We must set 0 to sequence for HTLC-success/timeout (defined in bolt3)
                 for i in tx.Inputs do
                     i.Sequence <- Sequence(0)
-                
-                PSBT.FromTransaction(tx, n)
+
+                PSBT.FromTransaction(tx, network)
                     .AddCoins scriptCoin
             let whichInput = psbt.Inputs |> Seq.findIndex(fun i -> not (isNull i.WitnessScript))
             { HTLCSuccessTx.Value = psbt; WhichInput = whichInput; PaymentHash = htlc.PaymentHash } |> Ok
@@ -578,13 +589,34 @@ module Transactions =
                     (localHTLCPubKey)
                     (remoteHTLCPubKey)
                     (spec: CommitmentSpec)
-                    (n): Result<(HTLCTimeoutTx list) * (HTLCSuccessTx list), TransactionError list> =
+                    (network: Network)
+                        : Result<(HTLCTimeoutTx list) * (HTLCSuccessTx list), TransactionError list> =
         let htlcTimeoutTxs = (trimOfferedHTLCs localDustLimit spec)
-                             |> List.map(fun htlc -> makeHTLCTimeoutTx (commitTx) (localDustLimit) (localRevocationPubKey) (toLocalDelay) (toLocalDelayedPaymentPubKey) (localHTLCPubKey) (remoteHTLCPubKey) (spec.FeeRatePerKw) (htlc.Add) n)
+                             |> List.map(fun htlc -> makeHTLCTimeoutTx commitTx
+                                                                       localDustLimit
+                                                                       localRevocationPubKey
+                                                                       toLocalDelay
+                                                                       toLocalDelayedPaymentPubKey
+                                                                       localHTLCPubKey
+                                                                       remoteHTLCPubKey
+                                                                       spec.FeeRatePerKw
+                                                                       htlc.Add
+                                                                       network
+                                        )
                              |> List.sequenceResultA
         
         let htlcSuccessTxs = (trimReceivedHTLCs localDustLimit spec)
-                             |> List.map(fun htlc -> makeHTLCSuccessTx (commitTx) (localDustLimit) (localRevocationPubKey) (toLocalDelay) (toLocalDelayedPaymentPubKey) (localHTLCPubKey) (remoteHTLCPubKey) (spec.FeeRatePerKw) (htlc.Add) n)
+                             |> List.map(fun htlc -> makeHTLCSuccessTx commitTx
+                                                                       localDustLimit
+                                                                       localRevocationPubKey
+                                                                       toLocalDelay
+                                                                       toLocalDelayedPaymentPubKey
+                                                                       localHTLCPubKey
+                                                                       remoteHTLCPubKey
+                                                                       spec.FeeRatePerKw
+                                                                       htlc.Add
+                                                                       network
+                                        )
                              |> List.sequenceResultA
         (fun a b -> (a, b)) <!> htlcTimeoutTxs <*> htlcSuccessTxs
 
@@ -596,7 +628,8 @@ module Transactions =
                                (localFinalScriptPubKey: Script)
                                (htlc: UpdateAddHTLCMsg)
                                (feeRatePerKw: FeeRatePerKw)
-                               (n: Network): Result<ClaimHTLCSuccessTx, TransactionError> =
+                               (network: Network)
+                                   : Result<ClaimHTLCSuccessTx, TransactionError> =
         let fee = feeRatePerKw.CalculateFeeFromWeight(CLAIM_HTLC_SUCCESS_WEIGHT)
         let redeem = Scripts.htlcOffered(remoteHTLCPubKey) (localHTLCPubKey) (remoteRevocationPubKey) (htlc.PaymentHash)
         let spk = redeem.WitHash.ScriptPubKey
@@ -606,7 +639,7 @@ module Transactions =
             AmountBelowDustLimit amount |> Error
         else
             let psbt = 
-                let txb = n.CreateTransactionBuilder()
+                let txb = createTransactionBuilder network
                 let coin = Coin(commitTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex))
                 let tx = txb.AddCoins(coin)
                             .Send(localFinalScriptPubKey, amount)
@@ -614,8 +647,8 @@ module Transactions =
                             .SetLockTime(!> 0u)
                             .BuildTransaction(false)
                 tx.Version <- 2u
-                tx.Inputs.[0].Sequence <- !> 0xffffffffu
-                PSBT.FromTransaction(tx, n)
+                tx.Inputs.[0].Sequence <- !> UINT32_MAX
+                PSBT.FromTransaction(tx, network)
                     .AddCoins(coin)
             psbt |> ClaimHTLCSuccessTx |> Ok
 
@@ -627,7 +660,8 @@ module Transactions =
                                (localFinalScriptPubKey: Script)
                                (htlc: UpdateAddHTLCMsg)
                                (feeRatePerKw: FeeRatePerKw)
-                               (n: Network): Result<_, _> =
+                               (network: Network)
+                                   : Result<_, _> =
         let fee = feeRatePerKw.CalculateFeeFromWeight(CLAIM_HTLC_TIMEOUT_WEIGHT)
         let redeem = Scripts.htlcReceived remoteHTLCPubKey localHTLCPubKey remoteRevocationPubKey htlc.PaymentHash htlc.CLTVExpiry.Value
         let spk = redeem.WitHash.ScriptPubKey
@@ -638,15 +672,15 @@ module Transactions =
         else
             let psbt = 
                 let coin = Coin(commitTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex))
-                let tx = n.CreateTransactionBuilder()
+                let tx = (createTransactionBuilder network)
                           .AddCoins(coin)
                           .Send(localFinalScriptPubKey, amount)
                           .SendFees(fee)
                           .SetLockTime(!> 0u)
                           .BuildTransaction(false)
                 tx.Version <- 2u
-                tx.Inputs.[0].Sequence <- !> 0xffffffffu
-                PSBT.FromTransaction(tx, n)
+                tx.Inputs.[0].Sequence <- !> UINT32_MAX
+                PSBT.FromTransaction(tx, network)
                     .AddCoins(coin)
             psbt |> ClaimHTLCTimeoutTx |> Ok
 
@@ -655,7 +689,8 @@ module Transactions =
                                 (localPaymentPubKey: PubKey)
                                 (localFinalDestination: IDestination)
                                 (feeRatePerKw: FeeRatePerKw)
-                                (n: Network): Result<ClaimP2WPKHOutputTx, _> =
+                                (network: Network)
+                                    : Result<ClaimP2WPKHOutputTx, _> =
         let fee = feeRatePerKw.CalculateFeeFromWeight(CLAIM_P2WPKH_OUTPUT_WEIGHT)
         let spk = localPaymentPubKey.WitHash.ScriptPubKey
         let spkIndex = findScriptPubKeyIndex delayedOutputTx spk
@@ -666,7 +701,7 @@ module Transactions =
         else
             let psbt = 
                 let coin = Coin(outPut)
-                let txb = n.CreateTransactionBuilder()
+                let txb = createTransactionBuilder network
                 // we have already done dust limit check above
                 txb.DustPrevention <- false
                 let tx = txb
@@ -676,8 +711,8 @@ module Transactions =
                           .SetLockTime(!> 0u)
                           .BuildTransaction(false)
                 tx.Version <- 2u
-                tx.Inputs.[0].Sequence <- !> 0xffffffffu
-                PSBT.FromTransaction(tx, n)
+                tx.Inputs.[0].Sequence <- !> UINT32_MAX
+                PSBT.FromTransaction(tx, network)
                     .AddCoins(coin)
             psbt |> ClaimP2WPKHOutputTx|> Ok
 
@@ -688,7 +723,8 @@ module Transactions =
                           (toRemoteDelay: BlockHeightOffset16)
                           (remoteDelayedPaymentPubKey: PubKey)
                           (feeRatePerKw: FeeRatePerKw)
-                          (n: Network): Result<MainPenaltyTx, _>  =
+                          (network: Network)
+                              : Result<MainPenaltyTx, _>  =
         let fee = feeRatePerKw.CalculateFeeFromWeight(MAIN_PENALTY_WEIGHT)
         let redeem = Scripts.toLocalDelayed remoteRevocationKey toRemoteDelay remoteDelayedPaymentPubKey
         let spk = redeem.WitHash.ScriptPubKey
@@ -700,7 +736,7 @@ module Transactions =
         else
             let psbt = 
                 let coin = Coin(outPut)
-                let txb = n.CreateTransactionBuilder()
+                let txb = createTransactionBuilder network
                 // we have already done dust limit check above
                 txb.DustPrevention <- false
                 let tx = txb
@@ -710,8 +746,8 @@ module Transactions =
                           .SetLockTime(!> 0u)
                           .BuildTransaction(false)
                 tx.Version <- 2u
-                tx.Inputs.[0].Sequence <- !> 0xffffffffu
-                PSBT.FromTransaction(tx, n)
+                tx.Inputs.[0].Sequence <- !> UINT32_MAX
+                PSBT.FromTransaction(tx, network)
                     .AddCoins(coin)
             psbt |> MainPenaltyTx |> Ok
             
@@ -725,7 +761,8 @@ module Transactions =
                       (dustLimit: Money)
                       (closingFee: Money)
                       (spec: CommitmentSpec)
-                      (n: Network): Result<ClosingTx, _> =
+                      (network: Network)
+                          : Result<ClosingTx, _> =
         if (not spec.HTLCs.IsEmpty) then
             HTLCNotClean (spec.HTLCs |> Map.toList |> List.map(fst)) |> Error
         else
@@ -735,11 +772,16 @@ module Transactions =
                 else
                     spec.ToLocal.ToMoney(), spec.ToRemote.ToMoney() - closingFee
 
-            let maybeToLocalOutput = if (toLocalAmount >= dustLimit) then Some(toLocalAmount, localDestination) else None
-            let maybeToRemoteOutput = if (toRemoteAmount >= dustLimit) then Some(toRemoteAmount, remoteDestination) else None
-            let outputs = seq [maybeToLocalOutput; maybeToRemoteOutput] |> Seq.choose id
+            let outputs =
+                seq {
+                    if toLocalAmount >= dustLimit then
+                        yield (toLocalAmount, localDestination)
+                    if toRemoteAmount >= dustLimit then
+                        yield (toRemoteAmount, remoteDestination)
+                }
+                |> Seq.sortBy (fun (money, dest) -> TxOut(money, dest).ToBytes())
             let psbt = 
-                let txb = n.CreateTransactionBuilder()
+                let txb = (createTransactionBuilder network)
                            .AddCoins(commitTxInput)
                            .SendFees(closingFee)
                            .SetLockTime(!> 0u)
@@ -747,8 +789,8 @@ module Transactions =
                     txb.Send(dest, money) |> ignore
                 let tx =  txb.BuildTransaction(false)
                 tx.Version <- 2u
-                tx.Inputs.[0].Sequence <- !> 0xffffffffu
-                PSBT.FromTransaction(tx, n)
+                tx.Inputs.[0].Sequence <- !> UINT32_MAX
+                PSBT.FromTransaction(tx, network)
                     .AddCoins(commitTxInput)
             psbt |> ClosingTx |> Ok
 
