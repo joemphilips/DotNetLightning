@@ -302,6 +302,7 @@ module Transactions =
         let txb = network.CreateTransactionBuilder()
         txb.ShuffleOutputs <- false
         txb.ShuffleInputs <- false
+        txb.OptInRBF <- true
         txb
 
     let UINT32_MAX = 0xffffffffu
@@ -412,6 +413,8 @@ module Transactions =
                 @ htlcReceivedOutputsWithMetadata
             tx.Outputs.AddRange(txOuts |> sortTxOut)
             tx.LockTime <- lockTime
+            if not tx.RBF then
+                failwith "Assertion failed: LN transactions should always be marked as RBF"
             tx
         let psbt =
             let p = PSBT.FromTransaction(tx, network)
@@ -533,6 +536,9 @@ module Transactions =
                 for i in tx.Inputs do
                     i.Sequence <- Sequence(0)
 
+                if not tx.RBF then
+                    failwith "Assertion failed: LN transactions should always be marked as RBF"
+
                 PSBT.FromTransaction(tx, network)
                     .AddCoins scriptCoin
             let whichInput = psbt.Inputs |> Seq.findIndex(fun i -> not (isNull i.WitnessScript))
@@ -575,6 +581,9 @@ module Transactions =
                 /// We must set 0 to sequence for HTLC-success/timeout (defined in bolt3)
                 for i in tx.Inputs do
                     i.Sequence <- Sequence(0)
+
+                if not tx.RBF then
+                    failwith "Assertion failed: LN transactions should always be marked as RBF"
 
                 PSBT.FromTransaction(tx, network)
                     .AddCoins scriptCoin
@@ -648,6 +657,8 @@ module Transactions =
                             .BuildTransaction(false)
                 tx.Version <- 2u
                 tx.Inputs.[0].Sequence <- !> UINT32_MAX
+                if not tx.RBF then
+                    failwith "Assertion failed: LN transactions should always be marked as RBF"
                 PSBT.FromTransaction(tx, network)
                     .AddCoins(coin)
             psbt |> ClaimHTLCSuccessTx |> Ok
@@ -680,6 +691,8 @@ module Transactions =
                           .BuildTransaction(false)
                 tx.Version <- 2u
                 tx.Inputs.[0].Sequence <- !> UINT32_MAX
+                if not tx.RBF then
+                    failwith "Assertion failed: LN transactions should always be marked as RBF"
                 PSBT.FromTransaction(tx, network)
                     .AddCoins(coin)
             psbt |> ClaimHTLCTimeoutTx |> Ok
@@ -712,6 +725,8 @@ module Transactions =
                           .BuildTransaction(false)
                 tx.Version <- 2u
                 tx.Inputs.[0].Sequence <- !> UINT32_MAX
+                if not tx.RBF then
+                    failwith "Assertion failed: LN transactions should always be marked as RBF"
                 PSBT.FromTransaction(tx, network)
                     .AddCoins(coin)
             psbt |> ClaimP2WPKHOutputTx|> Ok
@@ -747,6 +762,8 @@ module Transactions =
                           .BuildTransaction(false)
                 tx.Version <- 2u
                 tx.Inputs.[0].Sequence <- !> UINT32_MAX
+                if not tx.RBF then
+                    failwith "Assertion failed: LN transactions should always be marked as RBF"
                 PSBT.FromTransaction(tx, network)
                     .AddCoins(coin)
             psbt |> MainPenaltyTx |> Ok
@@ -790,6 +807,8 @@ module Transactions =
                 let tx =  txb.BuildTransaction(false)
                 tx.Version <- 2u
                 tx.Inputs.[0].Sequence <- !> UINT32_MAX
+                if not tx.RBF then
+                    failwith "Assertion failed: LN transactions should always be marked as RBF"
                 PSBT.FromTransaction(tx, network)
                     .AddCoins(commitTxInput)
             psbt |> ClosingTx |> Ok
