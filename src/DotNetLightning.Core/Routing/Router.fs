@@ -4,7 +4,7 @@ open ResultUtils
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils
 
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 
 open System
 open DotNetLightning.Payment

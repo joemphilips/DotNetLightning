@@ -6,7 +6,7 @@ open System.Text.Json
 
 open Expecto
 
-open DotNetLightning.Serialize
+open DotNetLightning.Serialization
 
 [<Tests>]
 let bigSizeVarIntTests =
@@ -36,7 +36,7 @@ let bigSizeVarIntTests =
                 
         let failureTestCases =
             testData1.RootElement.EnumerateArray()
-            |> Seq.choose(fun x -> match x.TryGetProperty("exp_error") with true, errorMsg -> Some(x) | false, _ -> None)
+            |> Seq.choose(fun x -> match x.TryGetProperty("exp_error") with true, _ -> Some(x) | false, _ -> None)
             
         for v in failureTestCases do
             yield testCase (v.GetProperty("name").GetString()) <| fun _ ->
@@ -67,9 +67,8 @@ let bigSizeVarIntTests =
     ]
     
 let bolt4Tests2 =
-    let hex = NBitcoin.DataEncoders.HexEncoder()
-    let dataPath1 = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "../../..", ("Data/bolt04/onion-test-multi-frame.json"))
-    let testData1 = dataPath1 |> File.ReadAllText |> JsonDocument.Parse
+    // let dataPath1 = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "../../..", ("Data/bolt04/onion-test-multi-frame.json"))
+    // let testData1 = dataPath1 |> File.ReadAllText |> JsonDocument.Parse
     testList "bolt04 test vectors" [
         testCase "" <| fun  _ ->
             ()

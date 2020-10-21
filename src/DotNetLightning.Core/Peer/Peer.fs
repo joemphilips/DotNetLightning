@@ -4,10 +4,10 @@ open NBitcoin
 
 open ResultUtils
 
-open DotNetLightning.Serialize
+open DotNetLightning.Serialization
 open System.Collections
 open DotNetLightning.Utils
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Utils.Aether
 
 type PeerHandleError = {
@@ -32,7 +32,7 @@ type Peer = {
     ChannelEncryptor: PeerChannelEncryptor
     IsOutBound : bool
     TheirNodeId: NodeId option
-    TheirFeatures: FeatureBit option
+    TheirFeatures: FeatureBits option
     SyncStatus: InitSyncTracker
 }
     with
@@ -115,7 +115,7 @@ module Peer =
         | NoiseComplete, EncodeMsg (msg) ->
             state.ChannelEncryptor |> PeerChannelEncryptor.encryptMessage (msg.ToBytes())
             |> (MsgEncoded >> List.singleton >> Ok)
-        | s, cmd ->
+        | _, cmd ->
             failwithf "Peer does not know how to handle %A while in noise step %A" cmd noiseStep
         
     let applyEvent (state: Peer) (event: PeerEvent): Peer =

@@ -1,7 +1,7 @@
 namespace DotNetLightning.Channel
 open NBitcoin
 open DotNetLightning.Utils
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Utils.OnionError
 
 type PendingForwardHTLCInfo = {

@@ -199,7 +199,6 @@ module Sodium =
 type internal Op = Mul | Add
 
 type internal BouncySecp256k1() =
-    let hex = NBitcoin.DataEncoders.HexEncoder()
     let parameters: Org.BouncyCastle.Asn1.X9.X9ECParameters = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName "secp256k1"
     let ecParams = ECDomainParameters(parameters.Curve, parameters.G, parameters.N, parameters.H)
     let bcBigint (x: byte[]) = Org.BouncyCastle.Math.BigInteger(1, x)
@@ -285,7 +284,7 @@ module BouncyCastle =
 
     type CryptoImpl() =
         interface ICryptoImpl with
-            member this.newSecp256k1() = BouncySecp256k1() :> ISecp256k1
+            member this.newSecp256k1() = new BouncySecp256k1() :> ISecp256k1
             member this.encryptWithAD(n: uint64, key: uint256, ad: ReadOnlySpan<byte>, plainText: ReadOnlySpan<byte>) =
                 let key = key.ToBytes()
                 let nonce = Array.concat [| Array.zeroCreate 4; BitConverter.GetBytes n |]

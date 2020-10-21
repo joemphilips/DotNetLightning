@@ -1,4 +1,4 @@
-name: Build DotNetLightning and deploy to NuGet
+name: Build and deploy
 on: [push, pull_request]
 jobs:
   build_and_test:
@@ -31,3 +31,15 @@ jobs:
     - name: Run other tests
       run: |
         dotnet test
+
+  build_with_fsharp_from_mono:
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build
+      run: |
+        DEBIAN_FRONTEND=noninteractive sudo apt install -y msbuild fsharp
+
+        dotnet restore -p:BouncyCastle=True DotNetLightning.sln
+        msbuild src/DotNetLightning.Core/DotNetLightning.Core.fsproj -p:BouncyCastle=True -p:TargetFramework=netstandard2.0
+

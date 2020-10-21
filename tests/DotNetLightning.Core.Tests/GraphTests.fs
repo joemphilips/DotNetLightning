@@ -4,7 +4,7 @@ module GraphTests
 open DotNetLightning.Utils
 open DotNetLightning.Routing
 open DotNetLightning.Routing.Graph
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open NBitcoin
 open Expecto
 open NBitcoin.DataEncoders

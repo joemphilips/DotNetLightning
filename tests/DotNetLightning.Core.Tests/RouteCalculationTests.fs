@@ -6,12 +6,12 @@ open Expecto
 open ResultUtils
 
 open DotNetLightning.Utils
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Routing
 open DotNetLightning.Routing.Graph
 
 open DotNetLightning.Payment
-open DotNetLightning.Serialize
+open DotNetLightning.Serialization
 open Generators
 open GraphTests
 open GraphTests.Constants
@@ -31,7 +31,7 @@ let makeChannelAnnCore(shortChannelId: ShortChannelId, nodeIdA, nodeIdB) =
       BitcoinKey1 = ((new Key()).PubKey |> ComparablePubKey)
       BitcoinKey2 = ((new Key()).PubKey |> ComparablePubKey)
       ChainHash = Network.RegTest.GenesisHash
-      Features = FeatureBit.Zero
+      Features = FeatureBits.Zero
       ExcessData = [||]}
 let makeChannelAnn(shortChannelId: uint64, nodeIdA: NodeId, nodeIdB: NodeId) =
     makeChannelAnnCore(ShortChannelId.FromUInt64(shortChannelId), nodeIdA, nodeIdB)

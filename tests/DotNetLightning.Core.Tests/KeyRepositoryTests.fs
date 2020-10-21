@@ -1,10 +1,9 @@
 module KeyRepositoryTests
 
 open ResultUtils
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Chain
 open DotNetLightning.Channel
-open DotNetLightning.Tests.Utils
 open DotNetLightning.Transactions
 open DotNetLightning.Utils
 open NBitcoin
@@ -12,9 +11,6 @@ open Expecto
 
 let hex = NBitcoin.DataEncoders.HexEncoder()
 let n = Network.RegTest
-
-let logger = TestLogger.Create("KeyRepository tests")
-let log = logger.LogSimple
 
 /// same with bolt 3
 let paymentPreImages =

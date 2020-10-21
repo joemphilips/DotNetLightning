@@ -10,7 +10,6 @@
     <Content Include="Data\bolt3-tx.json" />
     <Content Include="Data\bolt1-bigsize.json" />
     <Compile Include="Utils/Utils.fs" />
-    <Compile Include="Utils/FromRustLightning.fs" />
     <Compile Include="Generators/Primitives.fs" />
     <Compile Include="Generators/Msgs.fs" />
     <Compile Include="Generators\Payments.fs" />
@@ -18,6 +17,7 @@
     <Compile Include="Serialization.fs" />
     <Compile Include="TLVSerialize.fs" />
     <Compile Include="SerializationPropertyTests.fs" />
+    <Compile Include="AezeedTests.fs" />
     <Compile Include="FunctionalTests.fs" />
     <Compile Include="SphinxTests.fs" />
     <Compile Include="GeneratorsTests.fs" />
@@ -40,7 +40,7 @@
     <PackageReference Include="Expecto.FsCheck" Version="8.10.1" />
     <PackageReference Update="FSharp.Core" Version="4.7.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="2.2.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.*" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\DotNetLightning.Core\DotNetLightning.Core.fsproj" />

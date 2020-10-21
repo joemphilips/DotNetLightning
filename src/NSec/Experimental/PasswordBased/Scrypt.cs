@@ -51,7 +51,7 @@ namespace NSec.Experimental.PasswordBased
         {
         }
 
-        internal /*public*/ unsafe Scrypt(long n, int r, int p) : base(
+        public unsafe Scrypt(long n, int r, int p) : base(
             saltSize: crypto_pwhash_scryptsalsa208sha256_SALTBYTES,
             maxCount: int.MaxValue)
         {

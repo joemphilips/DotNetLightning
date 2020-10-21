@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Diagnostics;
 
@@ -21,7 +22,7 @@ namespace Macaroons
         /// </summary>
         public Packet? Cl { get; protected set; }
         
-        public Caveat(string cid, string cl = null)
+        public Caveat(string cid, string? cl = null)
         {
             if (cid == null) throw new ArgumentNullException(nameof(cid));
             CId = new Packet(cid);
@@ -56,6 +57,7 @@ namespace Macaroons
                 (Cl != null ? $"{Environment.NewLine}  Cl = {Cl}": "");
         }
 
-        public override string ToString() => CId.ToString();
+        public override string ToString() => CId?.ToString() ?? "";
     }
 }
+#nullable disable

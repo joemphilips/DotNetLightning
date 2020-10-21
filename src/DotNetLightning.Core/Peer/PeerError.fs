@@ -1,7 +1,7 @@
 namespace DotNetLightning.Peer
 
 open DotNetLightning.Crypto
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 
 /// Consumer of the api is probably not interested in the detail of CryptoError
 /// and P2PMessageDecodeError, So we should make it simpler by e.g. just having error message

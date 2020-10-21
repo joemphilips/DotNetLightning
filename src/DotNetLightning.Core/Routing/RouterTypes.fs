@@ -6,7 +6,7 @@ open DotNetLightning.Routing.Graph
 open System
 open System.Collections.Generic
 open DotNetLightning.Utils
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open NBitcoin
 open ResultUtils
 

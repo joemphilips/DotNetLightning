@@ -6,6 +6,26 @@
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
   </PropertyGroup>
 
+  <!-->Since NBitcoin.Secp256k1 does not support netstandard 2.0, we will fallback to BouncyCastle build<-->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <BouncyCastle>True</BouncyCastle>
+  </PropertyGroup>
+
+
+  <Choose>
+    <When Condition="'$(BouncyCastle)'=='true'">
+      <PropertyGroup>
+        <OtherFlags>$(OtherFlags) -d:BouncyCastle</OtherFlags>
+        <DefineConstants>$(DefineConstants);BouncyCastle</DefineConstants>
+      </PropertyGroup>
+    </When>
+  </Choose>
+
+  <ItemGroup>
+    <PackageReference Include="NBitcoin" Version="5.0.54" />
+    <PackageReference Condition="'$(BouncyCastle)'=='true'" Include="Portable.BouncyCastle" Version="1.8.6.7" />
+  </ItemGroup>
+
   <PropertyGroup>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
   </PropertyGroup>

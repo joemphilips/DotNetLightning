@@ -3,9 +3,9 @@ module Serialization
 open ResultUtils
 open DotNetLightning.Utils
 open DotNetLightning.Core.Utils.Extensions
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 
-open DotNetLightning.Serialize
+open DotNetLightning.Serialization
 open Expecto
 open NBitcoin
 open System
@@ -48,7 +48,7 @@ module SerializationTest =
                 let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
                 let msg = { NodeAnnouncementMsg.Signature = sig1
                             Contents = { UnsignedNodeAnnouncementMsg.NodeId = NodeId(PubKey("03f3c15dbc4d425a4f4c36162a9159bb83511fa920dba1cc2785c434ecaf094015"))
-                                         Features = FeatureBit.CreateUnsafe([|0uy|])
+                                         Features = FeatureBits.CreateUnsafe [|0uy|]
                                          Timestamp = 1u
                                          RGB = { Red = 217uy; Green = 228uy; Blue = 166uy }
                                          Alias = uint256.Zero
@@ -120,11 +120,11 @@ module SerializationTest =
                     let sig2 = signMessageWith privKey2 "01010101010101010101010101010101"
                     let sig3 = signMessageWith privKey3 "01010101010101010101010101010101"
                     let sig4 = signMessageWith privKey4 "01010101010101010101010101010101"
-                    let mutable features = FeatureBit.CreateUnsafe([||])
+                    let mutable features = FeatureBits.CreateUnsafe [||]
 
                     let unsignedChannelAnnoucement = {
                         Features = features
-                        ChainHash = if (not nonbitcoinChainHash) then uint256(hex.DecodeData("6fe28c0ab6f1b372c1a6a246ae63f74f931e8365e15a089c68d6190000000000")) else uint256(hex.DecodeData("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"))
+                        ChainHash = if (not nonbitcoinChainHash) then uint256(hex.DecodeData("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")) else uint256(hex.DecodeData("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"))
                         ShortChannelId = ShortChannelId.FromUInt64(2316138423780173UL)
                         NodeId1 = NodeId(privKey1.PubKey)
                         NodeId2 = NodeId(privKey2.PubKey)
@@ -143,7 +143,7 @@ module SerializationTest =
                     let mutable expected = hex.DecodeData("d977cb9b53d93a6ff64bb5f1e158b4094b66e798fb12911168a3ccdf80a83096340a6a95da0ae8d9f776528eecdbb747eb6b545495a4319ed5378e35b21e073a1735b6a427e80d5fe7cd90a2f4ee08dc9c27cda7c35a4172e5d85b12c49d4232537e98f9b1f3c5e6989a8b9644e90e8918127680dbd0d4043510840fc0f1e11a216c280b5395a2546e7e4b2663e04f811622f15a4f91e83aa2e92ba2a573c139142c54ae63072a1ec1ee7dc0c04bde5c847806172aa05c92c22ae8e308d1d2692b12cc195ce0a2d1bda6a88befa19fa07f51caa75ce83837f28965600b8aacab0855ffb0e741ec5f7c41421e9829a9d48611c8c831f71be5ea73e66594977ffd")
                     expected <- Array.append expected (hex.DecodeData("0000"))
                     if nonbitcoinChainHash then
-                        expected <- Array.append expected (hex.DecodeData("43497fd7f826957108f4a30fd9cec3aeba79972084e90ead01ea330900000000"))
+                        expected <- Array.append expected (hex.DecodeData("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"))
                     else
                         expected <- Array.append expected (hex.DecodeData("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"))
                     expected <- Array.append expected (hex.DecodeData("00083a840000034d031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f024d4b6cd1361032ca9bd2aeb9d900aa4d45d9ead80ac9423374c451a7254d076602531fe6068134503d2723133227c867ac8fa6c83c537e9a44c3c5bdbdcb1fe33703462779ad4aad39514614751a71085f2f10e1c7a593e4e030efb5b8721ce55b0b"))
@@ -162,7 +162,7 @@ module SerializationTest =
             testCase "node_announcement" <| fun _ ->
                 let nodeAnnouncementTestCore(ipv4: bool, ipv6: bool, onionv2: bool, onionv3: bool, excessAddressData: bool, excessData: bool) =
                     let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
-                    let mutable features = FeatureBit.CreateUnsafe [||]
+                    let mutable features = FeatureBits.CreateUnsafe [||]
                     let mutable addresses = List.Empty
                     if ipv4 then
                         addresses <- addresses @ [NetAddress.IPv4 ({ IPv4Or6Data.Addr = [|255uy;254uy; 253uy; 252uy; |]
@@ -417,7 +417,7 @@ module SerializationTest =
                 let channelUpdateTestCore (nonBitcoinChainHash: bool, direction: bool, disable: bool, htlcMaximumMSat: bool) =
                     let sig1 = signMessageWith privKey1 "01010101010101010101010101010101"
                     let unsignedChannelUpdateMsg = {
-                        UnsignedChannelUpdateMsg.ChainHash = if (not nonBitcoinChainHash) then uint256(hex.DecodeData("6fe28c0ab6f1b372c1a6a246ae63f74f931e8365e15a089c68d6190000000000")) else uint256(hex.DecodeData("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"))
+                        UnsignedChannelUpdateMsg.ChainHash = if (not nonBitcoinChainHash) then uint256(hex.DecodeData("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")) else uint256(hex.DecodeData("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"))
                         ShortChannelId = ShortChannelId.FromUInt64(2316138423780173UL)
                         Timestamp = 20190119u
                         MessageFlags = (if htlcMaximumMSat then 1uy else 0uy)
@@ -442,7 +442,7 @@ module SerializationTest =
                     let actual = channelUpdateMsg.ToBytes()
                     let mutable expected = hex.DecodeData("d977cb9b53d93a6ff64bb5f1e158b4094b66e798fb12911168a3ccdf80a83096340a6a95da0ae8d9f776528eecdbb747eb6b545495a4319ed5378e35b21e073a")
                     if nonBitcoinChainHash then
-                        expected <- Array.append expected (hex.DecodeData("43497fd7f826957108f4a30fd9cec3aeba79972084e90ead01ea330900000000"))
+                        expected <- Array.append expected (hex.DecodeData("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"))
                     else
                         expected <- Array.append expected (hex.DecodeData("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"))
                     expected <- Array.append expected (hex.DecodeData("00083a840000034d013413a7"))
@@ -469,7 +469,7 @@ module SerializationTest =
             testCase "open_channel" <| fun _ ->
                 let openChannelTestCore(nonBitcoinChainHash: bool, randomBit: bool, shutdown: bool) =
                     let openChannelMsg = {
-                        Chainhash = if (not nonBitcoinChainHash) then uint256(hex.DecodeData("6fe28c0ab6f1b372c1a6a246ae63f74f931e8365e15a089c68d6190000000000")) else uint256(hex.DecodeData("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"))
+                        Chainhash = if (not nonBitcoinChainHash) then uint256(hex.DecodeData("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")) else uint256(hex.DecodeData("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"))
                         TemporaryChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
                         FundingSatoshis = Money.Satoshis(1311768467284833366UL)
                         PushMSat = LNMoney.MilliSatoshis(2536655962884945560L)
@@ -492,7 +492,7 @@ module SerializationTest =
                     let actual = openChannelMsg.ToBytes()
                     let mutable expected = [||]
                     if nonBitcoinChainHash then
-                        expected <- Array.append expected (hex.DecodeData("43497fd7f826957108f4a30fd9cec3aeba79972084e90ead01ea330900000000"))
+                        expected <- Array.append expected (hex.DecodeData("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"))
                     else
                         expected <- Array.append expected (hex.DecodeData("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"))
                     expected <- Array.append expected (hex.DecodeData("02020202020202020202020202020202020202020202020202020202020202021234567890123456233403289122369832144668701144767633030896203198784335490624111800083a840000034d000c89d4c0bcc0bc031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f024d4b6cd1361032ca9bd2aeb9d900aa4d45d9ead80ac9423374c451a7254d076602531fe6068134503d2723133227c867ac8fa6c83c537e9a44c3c5bdbdcb1fe33703462779ad4aad39514614751a71085f2f10e1c7a593e4e030efb5b8721ce55b0b0362c0a046dacce86ddd0343c6d3c7c79c2208ba0d9c9cf24a6d046d21d21f90f703f006a18d5653c4edf5391ff23a61f03ff83d237e880ee61187fa9f379a028e0a"))
@@ -689,7 +689,7 @@ module SerializationTest =
                         |> function Ok ba -> ba | Error e -> failwith e
 
                     let initMsg = {
-                        Features = [| globalFeatures; localFeatures |] |> BitArray.Concat |> FeatureBit.CreateUnsafe
+                        Features = [| globalFeatures; localFeatures |] |> BitArray.Concat |> FeatureBits.CreateUnsafe
                         TLVStream = [||]
                     }
                     let mutable expected = [||]
@@ -757,8 +757,8 @@ module SerializationTest =
                 Array.Copy(backAndForth, 0, finalArray, ba.Get.Length - backAndForth.Length, backAndForth.Length)
                 Expect.equal ba.Get finalArray "BitArray.ToByteArray does not invert and trim BitArray.FromBytes"
 
-            testCase "FeatureBit to/from byte array preserves byte order, bit order and trims zero bytes" <| fun _ ->
-                let features = FeatureBit.Zero
+            testCase "FeatureBits to/from byte array preserves byte order, bit order and trims zero bytes" <| fun _ ->
+                let features = FeatureBits.Zero
                 features.ByteArray <- [| 0b00000000uy; 0b00100000uy; 0b10000010uy |]
                 Expect.equal
                     features.ByteArray

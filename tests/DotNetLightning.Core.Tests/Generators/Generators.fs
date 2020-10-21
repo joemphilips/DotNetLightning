@@ -3,7 +3,7 @@ module Generators
 open DotNetLightning.Payment.LSAT
 open NBitcoin
 open DotNetLightning.Utils
-open DotNetLightning.Serialize.Msgs
+open DotNetLightning.Serialization.Msgs
 open FsCheck
 open PrimitiveGenerators
 open MsgGenerators
@@ -20,6 +20,7 @@ type PrimitiveGenerators =
     static member PubKey() = Arb.fromGen(pubKeyGen)
     
     static member NodeId() = Arb.fromGen(NodeId <!> pubKeyGen)
+    
     
 type P2PMsgGenerators =
     static member Init() : Arbitrary<InitMsg> =
