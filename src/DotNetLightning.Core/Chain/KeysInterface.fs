@@ -60,7 +60,7 @@ type IKeysRepository =
     /// Must add funding pub key signature for to the PSBT *And* return the signature
     abstract member SignWithFundingPrivKey: psbt: PSBT -> TransactionSignature * PSBT
     /// Must add signature to the PSBT *And* return the signature
-    abstract member GenerateKeyFromBasepointAndSign: psbt: PSBT -> pubkey: PubKey -> perCommitmentPoint: PerCommitmentPoint -> TransactionSignature * PSBT
+    abstract member SignHtlcTx: psbt: PSBT -> perCommitmentPoint: PerCommitmentPoint -> TransactionSignature * PSBT
     /// Must add signature to the PSBT *And* return the signature
     abstract member GenerateKeyFromRemoteSecretAndSign: psbt: PSBT * pubKey: PubKey * remoteSecret : Key -> TransactionSignature * PSBT
 
@@ -150,18 +150,18 @@ type DefaultKeyRepository(nodeSecret: ExtKey, channelIndex: int) =
             | Some signature -> (signature, psbt)
             | None -> failwithf "Failed to get signature for %A. by funding pub key (%A). This should never happen" psbt this.FundingPubKey
 
-        member this.GenerateKeyFromBasepointAndSign (psbt: PSBT)
-                                                    (pubkey: PubKey)
-                                                    (perCommitmentPoint: PerCommitmentPoint) =
-            let basepointSecret: Key = this.BasepointToSecretMap.TryGet pubkey
-            let priv2 = perCommitmentPoint.DerivePrivKey basepointSecret
-            psbt.SignWithKeys(priv2) |> ignore
-            match psbt.GetMatchingSig(priv2.PubKey) with
+        member this.SignHtlcTx (psbt: PSBT)
+                               (perCommitmentPoint: PerCommitmentPoint)
+                                   : TransactionSignature * PSBT =
+            let htlcPrivKey = perCommitmentPoint.DeriveHtlcPrivKey this.HtlcBasepointSecret
+            let htlcPubKey = htlcPrivKey.HtlcPubKey()
+            psbt.SignWithKeys(htlcPrivKey.RawKey()) |> ignore
+            match psbt.GetMatchingSig(htlcPubKey.RawPubKey()) with
             | Some signature -> (signature, psbt)
             | None ->
                 failwithf
-                    "failed to get signature for %A . \n input pubkey was: (%A).\n and perCommitmentPoint was (%A)"
-                    psbt pubkey perCommitmentPoint
+                    "failed to get htlc signature for %A.\n htlc pubkey was: (%A).\n and perCommitmentPoint was (%A)"
+                    psbt htlcPubKey perCommitmentPoint
 
         member this.GenerateKeyFromRemoteSecretAndSign(_psbt, _pubkey, _remoteSecret) =
             failwith "Not implemented: DefaultKeyRepository::GenerateKeyFromRemoteSecretAndSign"
