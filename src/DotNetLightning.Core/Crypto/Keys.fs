@@ -239,6 +239,27 @@ type ChannelPrivKeys = {
             HtlcBasepoint = this.HtlcBasepointSecret.HtlcBasepoint()
         }
 
+    member this.SignWithFundingPrivKey (psbt: PSBT)
+                                           : TransactionSignature * PSBT =
+        let fundingPubKey = this.FundingPrivKey.FundingPubKey()
+        psbt.SignWithKeys(this.FundingPrivKey.RawKey()) |> ignore
+        match psbt.GetMatchingSig(fundingPubKey.RawPubKey()) with
+        | Some signature -> (signature, psbt)
+        | None -> failwithf "Failed to get signature for %A with funding pub key (%A). This should never happen" psbt fundingPubKey
+
+    member this.SignHtlcTx (psbt: PSBT)
+                           (perCommitmentPoint: PerCommitmentPoint)
+                               : TransactionSignature * PSBT =
+        let htlcPrivKey = perCommitmentPoint.DeriveHtlcPrivKey this.HtlcBasepointSecret
+        let htlcPubKey = htlcPrivKey.HtlcPubKey()
+        psbt.SignWithKeys(htlcPrivKey.RawKey()) |> ignore
+        match psbt.GetMatchingSig(htlcPubKey.RawPubKey()) with
+        | Some signature -> (signature, psbt)
+        | None ->
+            failwithf
+                "failed to get htlc signature for %A. with htlc pubkey (%A) and perCommitmentPoint (%A)"
+                psbt htlcPubKey perCommitmentPoint
+
 /// In usual operation we should not hold secrets on memory. So only hold pubkey
 and ChannelPubKeys = {
     FundingPubKey: FundingPubKey

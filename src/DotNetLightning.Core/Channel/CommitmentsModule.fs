@@ -262,7 +262,7 @@ module internal Commitments =
                         [ WeAcceptedUpdateFee msg ]
             }
 
-    let sendCommit (keyRepo: IKeysRepository) (n: Network) (cm: Commitments) =
+    let sendCommit (channelPrivKeys: ChannelPrivKeys) (n: Network) (cm: Commitments) =
         match cm.RemoteNextCommitInfo with
         | RemoteNextCommitInfo.Revoked remoteNextPerCommitmentPoint ->
             result {
@@ -275,12 +275,12 @@ module internal Commitments =
                                           (cm.FundingScriptCoin)
                                           (remoteNextPerCommitmentPoint)
                                           (spec) n |> expectTransactionErrors
-                let signature,_ = keyRepo.SignWithFundingPrivKey remoteCommitTx.Value
+                let signature,_ = channelPrivKeys.SignWithFundingPrivKey remoteCommitTx.Value
                 let sortedHTLCTXs = Helpers.sortBothHTLCs htlcTimeoutTxs htlcSuccessTxs
                 let htlcSigs =
                     sortedHTLCTXs
                     |> List.map(
-                            (fun htlc -> keyRepo.SignHtlcTx htlc.Value remoteNextPerCommitmentPoint)
+                            (fun htlc -> channelPrivKeys.SignHtlcTx htlc.Value remoteNextPerCommitmentPoint)
                             >> fst
                             >> (fun txSig -> txSig.Signature)
                             )
@@ -314,12 +314,11 @@ module internal Commitments =
             signatureCountMismatch (sortedHTLCTXs.Length, msg.HTLCSignatures.Length)
         else
             Ok()
-    let receiveCommit (keyRepo: IKeysRepository) (msg: CommitmentSignedMsg) (n: Network) (cm: Commitments): Result<ChannelEvent list, ChannelError> =
+    let receiveCommit (channelPrivKeys: ChannelPrivKeys) (msg: CommitmentSignedMsg) (n: Network) (cm: Commitments): Result<ChannelEvent list, ChannelError> =
         if cm.RemoteHasChanges() |> not then
             ReceivedCommitmentSignedWhenWeHaveNoPendingChanges |> Error
         else
-            let chanPrivateKeys = keyRepo.GetChannelPrivKeys cm.LocalParams.IsFunder
-            let commitmentSeed = chanPrivateKeys.CommitmentSeed
+            let commitmentSeed = channelPrivKeys.CommitmentSeed
             let localChannelKeys = cm.LocalParams.ChannelPubKeys
             let remoteChannelKeys = cm.RemoteParams.ChannelPubKeys
             let nextI = cm.LocalCommit.Index.NextCommitment()
@@ -329,7 +328,7 @@ module internal Commitments =
                 let! (localCommitTx, htlcTimeoutTxs, htlcSuccessTxs) =
                     Helpers.makeLocalTXs (nextI) (cm.LocalParams) (cm.RemoteParams) (cm.FundingScriptCoin) (localPerCommitmentPoint) spec n
                     |> expectTransactionErrors
-                let signature, signedCommitTx = keyRepo.SignWithFundingPrivKey localCommitTx.Value
+                let signature, signedCommitTx = channelPrivKeys.SignWithFundingPrivKey localCommitTx.Value
 
                 let sigPair =
                     let localSigPair = seq [(localChannelKeys.FundingPubKey.RawPubKey(), signature)]
@@ -345,7 +344,7 @@ module internal Commitments =
                 let _localHTLCSigs, sortedHTLCTXs =
                     let localHtlcSigsAndHTLCTxs =
                         sortedHTLCTXs |> List.map(fun htlc ->
-                            keyRepo.SignHtlcTx htlc.Value localPerCommitmentPoint
+                            channelPrivKeys.SignHtlcTx htlc.Value localPerCommitmentPoint
                         )
                     localHtlcSigsAndHTLCTxs |> List.map(fst), localHtlcSigsAndHTLCTxs |> List.map(snd) |> Seq.cast<IHTLCTx> |> List.ofSeq
 
@@ -381,10 +380,10 @@ module internal Commitments =
                         | _ -> None
                     )
                 let localPerCommitmentSecret =
-                    chanPrivateKeys.CommitmentSeed.DerivePerCommitmentSecret cm.LocalCommit.Index
+                    channelPrivKeys.CommitmentSeed.DerivePerCommitmentSecret cm.LocalCommit.Index
                 let localNextPerCommitmentPoint =
                     let perCommitmentSecret =
-                        chanPrivateKeys.CommitmentSeed.DerivePerCommitmentSecret
+                        channelPrivKeys.CommitmentSeed.DerivePerCommitmentSecret
                             (cm.LocalCommit.Index.NextCommitment().NextCommitment())
                     perCommitmentSecret.PerCommitmentPoint()
 
