@@ -74,13 +74,13 @@ let tests =
             let localNodeSecret = ExtKey("00000000000000000000000000000000")
             let localChannelIndex = 0
             let localRepo = DefaultKeyRepository(localNodeSecret, localChannelIndex) :> IKeysRepository
-            let localKeys = localRepo.GetChannelKeys(true)
+            let localKeys = localRepo.GetChannelPrivKeys(true)
             let localPubKeys = localKeys.ToChannelPubKeys()
             
             let remoteNodeSecret = ExtKey("88888888888888888888888888888888")
             let remoteChannelIndex = 1
             let remoteRepo = DefaultKeyRepository(remoteNodeSecret, remoteChannelIndex) :> IKeysRepository
-            let remoteKeys = remoteRepo.GetChannelKeys(false)
+            let remoteKeys = remoteRepo.GetChannelPrivKeys(false)
             let remotePubKeys = remoteKeys.ToChannelPubKeys()
 
             let fundingScriptCoin =

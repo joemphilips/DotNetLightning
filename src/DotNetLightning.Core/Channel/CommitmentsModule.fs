@@ -318,7 +318,7 @@ module internal Commitments =
         if cm.RemoteHasChanges() |> not then
             ReceivedCommitmentSignedWhenWeHaveNoPendingChanges |> Error
         else
-            let chanPrivateKeys = keyRepo.GetChannelKeys cm.LocalParams.IsFunder
+            let chanPrivateKeys = keyRepo.GetChannelPrivKeys cm.LocalParams.IsFunder
             let commitmentSeed = chanPrivateKeys.CommitmentSeed
             let localChannelKeys = cm.LocalParams.ChannelPubKeys
             let remoteChannelKeys = cm.RemoteParams.ChannelPubKeys

@@ -222,7 +222,7 @@ type [<Struct>] HtlcPrivKey(key: Key) =
         HtlcPubKey <| this.RawKey().PubKey
 
 /// Set of lightning keys needed to operate a channel as describe in BOLT 3
-type ChannelKeys = {
+type ChannelPrivKeys = {
     FundingPrivKey: FundingPrivKey
     RevocationBasepointSecret: RevocationBasepointSecret
     PaymentBasepointSecret: PaymentBasepointSecret

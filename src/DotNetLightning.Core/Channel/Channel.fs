@@ -95,7 +95,7 @@ module Channel =
 
         let claimCurrentLocalCommitTxOutputs (keyRepo: IKeysRepository, _channelPubKeys: ChannelPubKeys, commitments: Commitments, commitTx: CommitTx) =
             result {
-                let chanPrivateKeys = keyRepo.GetChannelKeys commitments.LocalParams.IsFunder
+                let chanPrivateKeys = keyRepo.GetChannelPrivKeys commitments.LocalParams.IsFunder
                 let commitmentSeed = chanPrivateKeys.CommitmentSeed
                 do! check (commitments.LocalCommit.PublishableTxs.CommitTx.Value.GetTxId()) (=) (commitTx.Value.GetTxId()) "txid mismatch. provided txid (%A) does not match current local commit tx (%A)"
                 let _localPerCommitmentPoint =
@@ -107,7 +107,7 @@ module Channel =
                                (data: Data.IHasCommitments)
                                    : Result<ChannelEvent list, ChannelError> =
         let commitments = data.Commitments
-        let chanPrivateKeys = keyRepo.GetChannelKeys commitments.LocalParams.IsFunder
+        let chanPrivateKeys = keyRepo.GetChannelPrivKeys commitments.LocalParams.IsFunder
         let commitmentSeed = chanPrivateKeys.CommitmentSeed
         let ourChannelReestablish =
             {
@@ -142,12 +142,12 @@ module Channel =
                 FeeRatePerKw = inputInitFunder.InitFeeRatePerKw
                 ToSelfDelay = inputInitFunder.LocalParams.ToSelfDelay
                 MaxAcceptedHTLCs = inputInitFunder.LocalParams.MaxAcceptedHTLCs
-                FundingPubKey = inputInitFunder.ChannelKeys.FundingPrivKey.FundingPubKey()
-                RevocationBasepoint = inputInitFunder.ChannelKeys.RevocationBasepointSecret.RevocationBasepoint()
-                PaymentBasepoint = inputInitFunder.ChannelKeys.PaymentBasepointSecret.PaymentBasepoint()
-                DelayedPaymentBasepoint = inputInitFunder.ChannelKeys.DelayedPaymentBasepointSecret.DelayedPaymentBasepoint()
-                HTLCBasepoint = inputInitFunder.ChannelKeys.HtlcBasepointSecret.HtlcBasepoint()
-                FirstPerCommitmentPoint = inputInitFunder.ChannelKeys.CommitmentSeed.DerivePerCommitmentPoint CommitmentNumber.FirstCommitment
+                FundingPubKey = inputInitFunder.ChannelPrivKeys.FundingPrivKey.FundingPubKey()
+                RevocationBasepoint = inputInitFunder.ChannelPrivKeys.RevocationBasepointSecret.RevocationBasepoint()
+                PaymentBasepoint = inputInitFunder.ChannelPrivKeys.PaymentBasepointSecret.PaymentBasepoint()
+                DelayedPaymentBasepoint = inputInitFunder.ChannelPrivKeys.DelayedPaymentBasepointSecret.DelayedPaymentBasepoint()
+                HTLCBasepoint = inputInitFunder.ChannelPrivKeys.HtlcBasepointSecret.HtlcBasepoint()
+                FirstPerCommitmentPoint = inputInitFunder.ChannelPrivKeys.CommitmentSeed.DerivePerCommitmentPoint CommitmentNumber.FirstCommitment
                 ChannelFlags = inputInitFunder.ChannelFlags
                 ShutdownScriptPubKey = cs.Config.ChannelOptions.ShutdownScriptPubKey
             }
@@ -166,7 +166,7 @@ module Channel =
                 do! Validation.checkAcceptChannelMsgAcceptable (cs.Config) state msg
                 let redeem =
                     Scripts.funding
-                        (state.InputInitFunder.ChannelKeys.ToChannelPubKeys().FundingPubKey)
+                        (state.InputInitFunder.ChannelPrivKeys.ToChannelPubKeys().FundingPubKey)
                         msg.FundingPubKey
                 let! fundingTx, outIndex =
                     cs.FundingTxProvider (redeem.WitHash :> IDestination, state.InputInitFunder.FundingSatoshis, state.InputInitFunder.FundingTxFeeRatePerKw)
@@ -175,7 +175,7 @@ module Channel =
                 let localParams = state.InputInitFunder.LocalParams
                 assert (state.LastSent.FundingPubKey = localParams.ChannelPubKeys.FundingPubKey)
                 let commitmentSpec = state.InputInitFunder.DeriveCommitmentSpec()
-                let commitmentSeed = state.InputInitFunder.ChannelKeys.CommitmentSeed
+                let commitmentSeed = state.InputInitFunder.ChannelPrivKeys.CommitmentSeed
                 let fundingTxId = fundingTx.Value.GetTxId()
                 let! (_localSpec, localCommitTx, remoteSpec, remoteCommitTx) =
                     ChannelHelpers.makeFirstCommitTxs localParams
@@ -266,7 +266,7 @@ module Channel =
             result {
                 do! Validation.checkOpenChannelMsgAcceptable (cs.FeeEstimator) (cs.Config) msg
                 let localParams = state.InitFundee.LocalParams
-                let channelKeys = state.InitFundee.ChannelKeys
+                let channelKeys = state.InitFundee.ChannelPrivKeys
                 let localCommitmentPubKey = channelKeys.CommitmentSeed.DerivePerCommitmentPoint CommitmentNumber.FirstCommitment
                 let acceptChannelMsg: AcceptChannelMsg = {
                     TemporaryChannelId = msg.TemporaryChannelId
@@ -359,7 +359,7 @@ module Channel =
             if state.Commitments.RemoteParams.MinimumDepth > depth then
                 [] |> Ok
             else
-                let chanPrivateKeys = cs.KeysRepository.GetChannelKeys state.Commitments.LocalParams.IsFunder
+                let chanPrivateKeys = cs.KeysRepository.GetChannelPrivKeys state.Commitments.LocalParams.IsFunder
                 let nextPerCommitmentPoint =
                     chanPrivateKeys.CommitmentSeed.DerivePerCommitmentPoint (CommitmentNumber.FirstCommitment.NextCommitment())
                 let msgToSend: FundingLockedMsg = { ChannelId = state.Commitments.ChannelId; NextPerCommitmentPoint = nextPerCommitmentPoint }
