@@ -98,14 +98,6 @@ type DefaultKeyRepository(nodeSecret: ExtKey, channelIndex: int) =
         channelMasterKey.Derive(8, true).PrivateKey |> HtlcBasepointSecret
     let htlcBasepoint = htlcBasepointSecret.HtlcBasepoint()
 
-    let basepointToSecretMap = ConcurrentDictionary<PubKey, Key>()
-    do
-        basepointToSecretMap.TryAdd(fundingPubKey.RawPubKey(), fundingPrivKey.RawKey()) |> ignore
-        basepointToSecretMap.TryAdd(revocationBasepoint.RawPubKey(), revocationBasepointSecret.RawKey()) |> ignore
-        basepointToSecretMap.TryAdd(paymentBasepoint.RawPubKey(), paymentBasepointSecret.RawKey()) |> ignore
-        basepointToSecretMap.TryAdd(delayedPaymentBasepoint.RawPubKey(), delayedPaymentBasepointSecret.RawKey()) |> ignore
-        basepointToSecretMap.TryAdd(htlcBasepoint.RawPubKey(), htlcBasepointSecret.RawKey()) |> ignore
-
     member this.NodeSecret = nodeSecret
     member this.DestinationScript = destinationKey.PubKey.WitHash.ScriptPubKey
     member this.ShutDownKey = shutdownKey
@@ -121,8 +113,6 @@ type DefaultKeyRepository(nodeSecret: ExtKey, channelIndex: int) =
     member this.DelayedPaymentBasepoint = delayedPaymentBasepoint
     member this.HtlcBasepointSecret = htlcBasepointSecret
     member this.HtlcBasepoint = htlcBasepoint
-
-    member val BasepointToSecretMap = basepointToSecretMap
 
     member this.GetChannelKeys(): ChannelKeys =
         {
