@@ -23,12 +23,10 @@ type Channel = {
     LocalNodeSecret: Key
     State: ChannelState
     Network: Network
-    Secp256k1Context: ISecp256k1
  }
         with
         static member Create(config, keysRepo, feeEstimator, localNodeSecret, fundingTxProvider, n, remoteNodeId) =
             {
-                Secp256k1Context = CryptoUtils.impl.newSecp256k1()
                 Config = config
                 KeysRepository = keysRepo
                 FeeEstimator = feeEstimator
@@ -189,7 +187,6 @@ module Channel =
                                                fundingTxId
                                                (commitmentSeed.DerivePerCommitmentPoint CommitmentNumber.FirstCommitment)
                                                msg.FirstPerCommitmentPoint
-                                               cs.Secp256k1Context
                                                cs.Network
                 let localSigOfRemoteCommit, _ = (cs.KeysRepository.GetSignatureFor(remoteCommitTx.Value, state.LastSent.FundingPubKey.RawPubKey()))
                 let nextMsg: FundingCreatedMsg = {
@@ -309,7 +306,6 @@ module Channel =
                         msg.FundingTxId
                         state.LastSent.FirstPerCommitmentPoint
                         state.RemoteFirstPerCommitmentPoint
-                        cs.Secp256k1Context
                         cs.Network
                 assert (localCommitTx.Value.IsReadyToSign())
                 let _s, signedLocalCommitTx =
@@ -494,14 +490,14 @@ module Channel =
                     // Ignore SignCommitment Command (nothing to sign)
                     return []
                 | RemoteNextCommitInfo.Revoked _ ->
-                    return! cm |> Commitments.sendCommit (cs.Secp256k1Context) (cs.KeysRepository) (cs.Network)
+                    return! cm |> Commitments.sendCommit (cs.KeysRepository) (cs.Network)
                 | RemoteNextCommitInfo.Waiting _ ->
                     // Already in the process of signing
                     return []
             }
 
         | ChannelState.Normal state, ApplyCommitmentSigned msg ->
-            state.Commitments |> Commitments.receiveCommit (cs.Secp256k1Context) cs.KeysRepository msg cs.Network
+            state.Commitments |> Commitments.receiveCommit cs.KeysRepository msg cs.Network
 
         | ChannelState.Normal state, ApplyRevokeAndACK msg ->
             let cm = state.Commitments
@@ -644,12 +640,12 @@ module Channel =
                 // nothing to sign
                 [] |> Ok
             | RemoteNextCommitInfo.Revoked _ ->
-                cm |> Commitments.sendCommit (cs.Secp256k1Context) (cs.KeysRepository) (cs.Network)
+                cm |> Commitments.sendCommit (cs.KeysRepository) (cs.Network)
             | RemoteNextCommitInfo.Waiting _waitForRevocation ->
                 // Already in the process of signing.
                 [] |> Ok
         | Shutdown state, ApplyCommitmentSigned msg ->
-            state.Commitments |> Commitments.receiveCommit (cs.Secp256k1Context) (cs.KeysRepository) msg cs.Network
+            state.Commitments |> Commitments.receiveCommit (cs.KeysRepository) msg cs.Network
         | Shutdown _state, ApplyRevokeAndACK _msg ->
             failwith "not implemented"
 

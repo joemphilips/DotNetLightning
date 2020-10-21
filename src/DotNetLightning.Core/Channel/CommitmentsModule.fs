@@ -22,7 +22,6 @@ module internal Commitments =
                                     | _ -> false)
 
         let makeRemoteTxs
-            (ctx: ISecp256k1)
             (commitTxNumber: CommitmentNumber)
             (localParams: LocalParams)
             (remoteParams: RemoteParams)
@@ -66,7 +65,6 @@ module internal Commitments =
             }
 
         let makeLocalTXs
-            (ctx: ISecp256k1)
             (commitTxNumber: CommitmentNumber)
             (localParams: LocalParams)
             (remoteParams: RemoteParams)
@@ -270,15 +268,14 @@ module internal Commitments =
                         [ WeAcceptedUpdateFee msg ]
             }
 
-    let sendCommit (ctx: ISecp256k1) (keyRepo: IKeysRepository) (n: Network) (cm: Commitments) =
+    let sendCommit (keyRepo: IKeysRepository) (n: Network) (cm: Commitments) =
         match cm.RemoteNextCommitInfo with
         | RemoteNextCommitInfo.Revoked remoteNextPerCommitmentPoint ->
             result {
                 // remote commitment will include all local changes + remote acked changes
                 let! spec = cm.RemoteCommit.Spec.Reduce(cm.RemoteChanges.ACKed, cm.LocalChanges.Proposed) |> expectTransactionError
                 let! (remoteCommitTx, htlcTimeoutTxs, htlcSuccessTxs) =
-                    Helpers.makeRemoteTxs (ctx)
-                                          (cm.RemoteCommit.Index.NextCommitment())
+                    Helpers.makeRemoteTxs (cm.RemoteCommit.Index.NextCommitment())
                                           (cm.LocalParams)
                                           (cm.RemoteParams)
                                           (cm.FundingScriptCoin)
@@ -323,7 +320,7 @@ module internal Commitments =
             signatureCountMismatch (sortedHTLCTXs.Length, msg.HTLCSignatures.Length)
         else
             Ok()
-    let receiveCommit (ctx) (keyRepo: IKeysRepository) (msg: CommitmentSignedMsg) (n: Network) (cm: Commitments): Result<ChannelEvent list, ChannelError> =
+    let receiveCommit (keyRepo: IKeysRepository) (msg: CommitmentSignedMsg) (n: Network) (cm: Commitments): Result<ChannelEvent list, ChannelError> =
         if cm.RemoteHasChanges() |> not then
             ReceivedCommitmentSignedWhenWeHaveNoPendingChanges |> Error
         else
@@ -336,7 +333,7 @@ module internal Commitments =
                 let! spec = cm.LocalCommit.Spec.Reduce(cm.LocalChanges.ACKed, cm.RemoteChanges.Proposed) |> expectTransactionError
                 let localPerCommitmentPoint = commitmentSeed.DerivePerCommitmentPoint nextI
                 let! (localCommitTx, htlcTimeoutTxs, htlcSuccessTxs) =
-                    Helpers.makeLocalTXs (ctx) (nextI) (cm.LocalParams) (cm.RemoteParams) (cm.FundingScriptCoin) (localPerCommitmentPoint) spec n
+                    Helpers.makeLocalTXs (nextI) (cm.LocalParams) (cm.RemoteParams) (cm.FundingScriptCoin) (localPerCommitmentPoint) spec n
                     |> expectTransactionErrors
                 let signature, signedCommitTx = keyRepo.GetSignatureFor (localCommitTx.Value, localChannelKeys.FundingPubKey.RawPubKey())
 

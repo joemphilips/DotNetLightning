@@ -154,7 +154,6 @@ type DefaultKeyRepository(nodeSecret: ExtKey, channelIndex: int) =
         member this.GenerateKeyFromBasepointAndSign (psbt: PSBT)
                                                     (pubkey: PubKey)
                                                     (perCommitmentPoint: PerCommitmentPoint) =
-            use ctx = CryptoUtils.impl.newSecp256k1()
             let basepointSecret: Key = this.BasepointToSecretMap.TryGet pubkey
             let priv2 = perCommitmentPoint.DerivePrivKey basepointSecret
             psbt.SignWithKeys(priv2) |> ignore

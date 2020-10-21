@@ -13,8 +13,6 @@ open Expecto
 open GeneratorsTests
 open NBitcoin
 
-let newSecp256k1 = DotNetLightning.Crypto.CryptoUtils.impl.newSecp256k1
-
 // let logger = Log.create "bolt3-transaction tests"
 let log =
     // uncomment this if you want to see the debug message for this test
@@ -28,7 +26,6 @@ let data1 = dataPath1 |> File.ReadAllText |> JsonDocument.Parse
 
 let localPerCommitmentPoint = PerCommitmentPoint <| PubKey("025f7117a78150fe2ef97db7cfc83bd57b2e2c0d0dd25eaf467a4a1c2a45ce1486")
 type LocalConfig = {
-    Ctx: ISecp256k1
     CommitTxNumber: CommitmentNumber
     ToSelfDelay: BlockHeightOffset16
     DustLimit: Money
@@ -45,7 +42,6 @@ type LocalConfig = {
     FundingPrivKey: FundingPrivKey
 }
 let getLocal(): LocalConfig =
-    let ctx = newSecp256k1()
     let paymentBasepointSecret =
         "1111111111111111111111111111111111111111111111111111111111111111"
         |> hex.DecodeData
@@ -68,7 +64,6 @@ let getLocal(): LocalConfig =
         |> fun h -> new Key(h)
         |> FundingPrivKey
     {
-      Ctx = ctx
       CommitTxNumber = CommitmentNumber(UInt48.MaxValue - (UInt48.FromUInt64 42UL))
       ToSelfDelay = 144us |> BlockHeightOffset16
       DustLimit = Money.Satoshis(546L)
@@ -86,7 +81,6 @@ let getLocal(): LocalConfig =
     }
 
 type RemoteConfig = {
-    Ctx: ISecp256k1
     CommitTxNumber: CommitmentNumber
     ToSelfDelay: BlockHeightOffset16
     DustLimit: Money
@@ -99,7 +93,6 @@ type RemoteConfig = {
     PerCommitmentPoint: PerCommitmentPoint
 }
 let getRemote(): RemoteConfig =
-    let ctx = newSecp256k1()
     let paymentBasepointSecret =
         "4444444444444444444444444444444444444444444444444444444444444444"
         |> hex.DecodeData
@@ -120,7 +113,6 @@ let getRemote(): RemoteConfig =
     let perCommitmentPoint =
         PerCommitmentPoint <| PubKey("022c76692fd70814a8d1ed9dedc833318afaaed8188db4d14727e2e99bc619d325")
     {
-      Ctx = ctx
       CommitTxNumber = CommitmentNumber(UInt48.MaxValue - (UInt48.FromUInt64 42UL))
       ToSelfDelay = 144us |> BlockHeightOffset16
       DustLimit = Money.Satoshis(546L)

@@ -72,7 +72,6 @@ module internal ChannelHelpers =
                           (fundingTxId: TxId)
                           (localPerCommitmentPoint: PerCommitmentPoint)
                           (remotePerCommitmentPoint: PerCommitmentPoint)
-                          (secpContext: ISecp256k1)
                           (n: Network): Result<CommitmentSpec * CommitTx * CommitmentSpec * CommitTx, ChannelError> =
         let toLocal = if (localParams.IsFunder) then fundingSatoshis.ToLNMoney() - pushMSat else pushMSat
         let toRemote = if (localParams.IsFunder) then pushMSat else fundingSatoshis.ToLNMoney() - pushMSat
