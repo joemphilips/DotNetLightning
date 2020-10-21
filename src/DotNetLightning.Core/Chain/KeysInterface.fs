@@ -57,8 +57,8 @@ type IKeysRepository =
     /// restarted with some stale data.
     abstract member GetChannelKeys: inbound:bool -> ChannelKeys
 
-    /// Must add signature to the PSBT *And* return the signature
-    abstract member GetSignatureFor: psbt: PSBT * pubKey: PubKey -> TransactionSignature * PSBT
+    /// Must add funding pub key signature for to the PSBT *And* return the signature
+    abstract member SignWithFundingPrivKey: psbt: PSBT -> TransactionSignature * PSBT
     /// Must add signature to the PSBT *And* return the signature
     abstract member GenerateKeyFromBasepointAndSign: psbt: PSBT -> pubkey: PubKey -> perCommitmentPoint: PerCommitmentPoint -> TransactionSignature * PSBT
     /// Must add signature to the PSBT *And* return the signature
@@ -144,12 +144,11 @@ type DefaultKeyRepository(nodeSecret: ExtKey, channelIndex: int) =
         member this.GetNodeSecret() =
             this.NodeSecret.PrivateKey
 
-        member this.GetSignatureFor(psbt, pubkey) =
-            let priv = this.BasepointToSecretMap.TryGet pubkey
-            psbt.SignWithKeys(priv) |> ignore
-            match psbt.GetMatchingSig(pubkey) with
+        member this.SignWithFundingPrivKey (psbt: PSBT) =
+            psbt.SignWithKeys(this.FundingPrivKey.RawKey()) |> ignore
+            match psbt.GetMatchingSig(this.FundingPubKey.RawPubKey()) with
             | Some signature -> (signature, psbt)
-            | None -> failwithf "Failed to get signature for %A. by pubkey(%A). This should never happen" psbt pubkey
+            | None -> failwithf "Failed to get signature for %A. by funding pub key (%A). This should never happen" psbt this.FundingPubKey
 
         member this.GenerateKeyFromBasepointAndSign (psbt: PSBT)
                                                     (pubkey: PubKey)

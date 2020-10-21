@@ -110,8 +110,8 @@ let tests =
                                           (HtlcPubKey <| remotePubKeys.HtlcBasepoint.RawPubKey())
                                           specBase
                                           n
-            let _remoteSigForLocalCommit, commitTx2 = remoteRepo.GetSignatureFor(commitTx.Value, remotePubKeys.FundingPubKey.RawPubKey())
-            let _localSigForLocalCommit, commitTx3 = localRepo.GetSignatureFor(commitTx2, localPubKeys.FundingPubKey.RawPubKey())
+            let _remoteSigForLocalCommit, commitTx2 = remoteRepo.SignWithFundingPrivKey commitTx.Value
+            let _localSigForLocalCommit, commitTx3 = localRepo.SignWithFundingPrivKey commitTx2
             commitTx3.Finalize() |> ignore
             Expect.isTrue (commitTx3.CanExtractTransaction()) (sprintf "failed to finalize commitTx %A" commitTx3)
             
@@ -133,8 +133,8 @@ let tests =
                                           specBase
                                           n
             
-            let _remoteSigForRemoteCommit, remoteCommitTx2 = remoteRepo.GetSignatureFor(remoteCommitTx.Value, remotePubKeys.FundingPubKey.RawPubKey())
-            let localSigForRemoteCommit, commitTx3 = localRepo.GetSignatureFor(remoteCommitTx2, localPubKeys.FundingPubKey.RawPubKey())
+            let _remoteSigForRemoteCommit, remoteCommitTx2 = remoteRepo.SignWithFundingPrivKey remoteCommitTx.Value
+            let localSigForRemoteCommit, commitTx3 = localRepo.SignWithFundingPrivKey remoteCommitTx2
             
             let localSigs = seq [(localPubKeys.FundingPubKey.RawPubKey(), TransactionSignature(localSigForRemoteCommit.Signature, SigHash.All))]
             let finalizedTx = Transactions.checkTxFinalized remoteCommitTx2 0 localSigs |> Result.deref
