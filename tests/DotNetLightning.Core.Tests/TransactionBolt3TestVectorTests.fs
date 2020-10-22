@@ -35,11 +35,11 @@ type LocalConfig = {
     PaymentBasePointSecret: Key
     PaymentBasePoint: PubKey
     RevocationBasePointSecret: uint256
-    DelayedPaymentBasePointSecret: Key
-    delayedPaymentBasePoint: PubKey
+    DelayedPaymentBasepointSecret: DelayedPaymentBasepointSecret
+    DelayedPaymentBasepoint: DelayedPaymentBasepoint
     PerCommitmentPoint: PerCommitmentPoint
     PaymentPrivKey: Key
-    DelayedPaymentPrivKey: Key
+    DelayedPaymentPrivKey: DelayedPaymentPrivKey
     RevocationPubKey: PubKey
     FeeRatePerKw: FeeRatePerKw
     FundingPrivKey: Key
@@ -48,7 +48,11 @@ let getLocal(): LocalConfig =
     let ctx = newSecp256k1()
     let paymentBasePointSecret = "1111111111111111111111111111111111111111111111111111111111111111" |> hex.DecodeData |> fun h -> new Key(h)
     let paymentBasePoint = paymentBasePointSecret.PubKey
-    let delayedPaymentBasePointSecret = "3333333333333333333333333333333333333333333333333333333333333333" |> hex.DecodeData |> fun h -> new Key(h)
+    let delayedPaymentBasepointSecret =
+        "3333333333333333333333333333333333333333333333333333333333333333"
+        |> hex.DecodeData
+        |> fun h -> new Key(h)
+        |> DelayedPaymentBasepointSecret
     {
       Ctx = ctx
       CommitTxNumber = CommitmentNumber(UInt48.MaxValue - (UInt48.FromUInt64 42UL))
@@ -57,12 +61,12 @@ let getLocal(): LocalConfig =
       PaymentBasePointSecret = paymentBasePointSecret
       PaymentBasePoint = paymentBasePoint
       RevocationBasePointSecret = uint256.Parse("2222222222222222222222222222222222222222222222222222222222222222")
-      DelayedPaymentBasePointSecret = delayedPaymentBasePointSecret
-      delayedPaymentBasePoint = delayedPaymentBasePointSecret.PubKey
+      DelayedPaymentBasepointSecret = delayedPaymentBasepointSecret
+      DelayedPaymentBasepoint = delayedPaymentBasepointSecret.DelayedPaymentBasepoint()
       FundingPrivKey = "30ff4956bbdd3222d44cc5e8a1261dab1e07957bdac5ae88fe3261ef321f3749" |> hex.DecodeData |> fun h -> new Key(h)
       PerCommitmentPoint = localPerCommitmentPoint
       PaymentPrivKey = Generators.derivePrivKey(ctx) (paymentBasePointSecret) (localPerCommitmentPoint.RawPubKey())
-      DelayedPaymentPrivKey = Generators.derivePrivKey(ctx) (delayedPaymentBasePointSecret) (localPerCommitmentPoint.RawPubKey())
+      DelayedPaymentPrivKey = DelayedPaymentPrivKey <| Generators.derivePrivKey(ctx) (delayedPaymentBasepointSecret.RawKey()) (localPerCommitmentPoint.RawPubKey())
       RevocationPubKey = PubKey("0212a140cd0c6539d07cd08dfe09984dec3251ea808b892efeac3ede9402bf2b19")
       FeeRatePerKw = 15000u |> FeeRatePerKw
     }
@@ -136,7 +140,7 @@ sprintf "remote_funding_pubkey: %A" remote.FundingPrivKey.PubKey |> log
 sprintf "local_secretkey: %A" local.PaymentPrivKey |> log
 sprintf "localkey: %A" local.PaymentPrivKey.PubKey|> log
 sprintf "remotekey: %A" remote.PaymentPrivKey |> log
-sprintf "local_delayedkey: %A" local.DelayedPaymentPrivKey.PubKey |> log
+sprintf "local_delayedkey: %A" (local.DelayedPaymentPrivKey.DelayedPaymentPubKey()) |> log
 sprintf "local_revocation_key: %A" local.RevocationPubKey|> log
 sprintf "# funding wscript = %A" fundingRedeem |> log
 assert(fundingRedeem = Script.FromBytesUnsafe(hex.DecodeData "5221023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb21030e9f7b623d2ccc7c9bd44d66d5ce21ce504c0acf6385a132cec6d3c39fa711c152ae"))
@@ -222,7 +226,7 @@ let run (spec: CommitmentSpec): (Transaction * _) =
                          (local.DustLimit)
                          (local.RevocationPubKey)
                          (local.ToSelfDelay)
-                         (local.DelayedPaymentPrivKey.PubKey)
+                         (local.DelayedPaymentPrivKey.DelayedPaymentPubKey())
                          (remote.PaymentPrivKey.PubKey)
                          (local.PaymentPrivKey.PubKey)
                          (remote.PaymentPrivKey.PubKey)
@@ -252,7 +256,7 @@ let run (spec: CommitmentSpec): (Transaction * _) =
                                                txOut.Value
                                                (Scripts.toLocalDelayed(local.RevocationPubKey)
                                                                       (local.ToSelfDelay)
-                                                                      (local.DelayedPaymentPrivKey.PubKey)))
+                                                                      (local.DelayedPaymentPrivKey.DelayedPaymentPubKey())))
                                           |> log
                                       | Some i ->
                                           (sprintf "to-local amount %A \n to-local wscript (%A)" txOut.Value htlcScripts.[i])
@@ -274,7 +278,7 @@ let run (spec: CommitmentSpec): (Transaction * _) =
                                  local.DustLimit
                                  local.RevocationPubKey
                                  local.ToSelfDelay
-                                 local.DelayedPaymentPrivKey.PubKey
+                                 (local.DelayedPaymentPrivKey.DelayedPaymentPubKey())
                                  local.PaymentPrivKey.PubKey
                                  remote.PaymentPrivKey.PubKey
                                  spec

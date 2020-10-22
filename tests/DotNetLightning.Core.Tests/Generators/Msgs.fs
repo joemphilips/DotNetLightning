@@ -94,7 +94,7 @@ let openChannelGen =
         <*> pubKeyGen
         <*> pubKeyGen
         <*> pubKeyGen
-        <*> pubKeyGen
+        <*> delayedPaymentBasepointGen
         <*> pubKeyGen
         <*> perCommitmentPointGen
         <*> Arb.generate<uint8>
@@ -132,7 +132,7 @@ let acceptChannelGen =
         <*> pubKeyGen
         <*> pubKeyGen
         <*> pubKeyGen
-        <*> pubKeyGen
+        <*> delayedPaymentBasepointGen
         <*> pubKeyGen
         <*> perCommitmentPointGen
         <*> (Gen.optionOf pushScriptGen)

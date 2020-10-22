@@ -87,8 +87,9 @@ type DefaultKeyRepository(nodeSecret: ExtKey, channelIndex: int) =
     let paymentBaseKey = channelMasterKey.Derive(6, true).PrivateKey
     let paymentBasePubKey = paymentBaseKey.PubKey
 
-    let delayedPaymentBaseKey = channelMasterKey.Derive(7, true).PrivateKey
-    let delayedPaymentBasePubKey = delayedPaymentBaseKey.PubKey
+    let delayedPaymentBasepointSecret =
+        channelMasterKey.Derive(7, true).PrivateKey |> DelayedPaymentBasepointSecret
+    let delayedPaymentBasepoint = delayedPaymentBasepointSecret.DelayedPaymentBasepoint()
 
     let htlcBaseKey = channelMasterKey.Derive(8, true).PrivateKey
     let htlcBasePubKey = htlcBaseKey.PubKey
@@ -98,7 +99,7 @@ type DefaultKeyRepository(nodeSecret: ExtKey, channelIndex: int) =
         basepointToSecretMap.TryAdd(fundingPubKey, fundingKey) |> ignore
         basepointToSecretMap.TryAdd(revocationBasePubKey, revocationBaseKey) |> ignore
         basepointToSecretMap.TryAdd(paymentBasePubKey, paymentBaseKey) |> ignore
-        basepointToSecretMap.TryAdd(delayedPaymentBasePubKey, delayedPaymentBaseKey) |> ignore
+        basepointToSecretMap.TryAdd(delayedPaymentBasepoint.RawPubKey(), delayedPaymentBasepointSecret.RawKey()) |> ignore
         basepointToSecretMap.TryAdd(htlcBasePubKey, htlcBaseKey) |> ignore
 
     member this.NodeSecret = nodeSecret
@@ -112,8 +113,8 @@ type DefaultKeyRepository(nodeSecret: ExtKey, channelIndex: int) =
     member this.RevocationBasePubKey = revocationBasePubKey
     member this.PaymentBaseKey = paymentBaseKey
     member this.PaymentBasePubKey = paymentBasePubKey
-    member this.DelayedPaymentBaseKey = delayedPaymentBaseKey
-    member this.DelayedPaymentBasePubKey = delayedPaymentBasePubKey
+    member this.DelayedPaymentBasepointSecret = delayedPaymentBasepointSecret
+    member this.DelayedPaymentBasepoint = delayedPaymentBasepoint
     member this.HtlcBaseKey = htlcBaseKey
     member this.HtlcBasePubKey = htlcBasePubKey
 
@@ -124,7 +125,7 @@ type DefaultKeyRepository(nodeSecret: ExtKey, channelIndex: int) =
             FundingKey = this.FundingKey
             RevocationBaseKey = this.RevocationBaseKey
             PaymentBaseKey = this.PaymentBaseKey
-            DelayedPaymentBaseKey = this.DelayedPaymentBaseKey
+            DelayedPaymentBasepointSecret = this.DelayedPaymentBasepointSecret
             HTLCBaseKey = this.HtlcBaseKey
             CommitmentSeed = this.CommitmentSeed
         }

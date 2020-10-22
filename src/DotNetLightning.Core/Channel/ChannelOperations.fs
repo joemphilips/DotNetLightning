@@ -101,7 +101,7 @@ type RemoteParams = {
                 FundingPubKey = msg.FundingPubKey
                 RevocationBasePubKey = msg.RevocationBasepoint
                 PaymentBasePubKey = msg.PaymentBasepoint
-                DelayedPaymentBasePubKey = msg.DelayedPaymentBasepoint
+                DelayedPaymentBasepoint = msg.DelayedPaymentBasepoint
                 HTLCBasePubKey = msg.HTLCBasepoint
             }
             {
@@ -122,7 +122,7 @@ type RemoteParams = {
                 FundingPubKey = msg.FundingPubKey
                 RevocationBasePubKey = msg.RevocationBasepoint
                 PaymentBasePubKey = msg.PaymentBasepoint
-                DelayedPaymentBasePubKey = msg.DelayedPaymentBasepoint
+                DelayedPaymentBasepoint = msg.DelayedPaymentBasepoint
                 HTLCBasePubKey = msg.HTLCBasepoint
             }
             {

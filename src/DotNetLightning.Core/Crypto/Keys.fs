@@ -8,12 +8,46 @@ open DotNetLightning.Utils
 
 // FIXME: Should the [<Struct>]-annotated types here be changed to records or single-constructor discriminated unions? 
     
+type [<Struct>] DelayedPaymentBasepoint(pubKey: PubKey) =
+    member this.RawPubKey(): PubKey =
+        pubKey
+
+    member this.ToBytes(): array<byte> =
+        this.RawPubKey().ToBytes()
+
+    override self.ToString() =
+        pubKey.ToString()
+
+type [<Struct>] DelayedPaymentBasepointSecret(key: Key) =
+    member this.RawKey(): Key =
+        key
+
+    member this.DelayedPaymentBasepoint(): DelayedPaymentBasepoint =
+        DelayedPaymentBasepoint(this.RawKey().PubKey)
+
+type [<Struct>] DelayedPaymentPubKey(pubKey: PubKey) =
+    member this.RawPubKey(): PubKey =
+        pubKey
+
+    member this.ToBytes(): array<byte> =
+        this.RawPubKey().ToBytes()
+
+    override self.ToString() =
+        pubKey.ToString()
+
+type [<Struct>] DelayedPaymentPrivKey(key: Key) =
+    member this.RawKey(): Key =
+        key
+
+    member this.DelayedPaymentPubKey(): DelayedPaymentPubKey =
+        DelayedPaymentPubKey <| this.RawKey().PubKey
+
 /// Set of lightning keys needed to operate a channel as describe in BOLT 3
 type ChannelKeys = {
     FundingKey: Key
     RevocationBaseKey: Key
     PaymentBaseKey: Key
-    DelayedPaymentBaseKey: Key
+    DelayedPaymentBasepointSecret: DelayedPaymentBasepointSecret
     HTLCBaseKey: Key
     CommitmentSeed: CommitmentSeed
 } with
@@ -22,7 +56,7 @@ type ChannelKeys = {
             FundingPubKey = this.FundingKey.PubKey
             RevocationBasePubKey = this.RevocationBaseKey.PubKey
             PaymentBasePubKey = this.PaymentBaseKey.PubKey
-            DelayedPaymentBasePubKey = this.DelayedPaymentBaseKey.PubKey
+            DelayedPaymentBasepoint = this.DelayedPaymentBasepointSecret.DelayedPaymentBasepoint()
             HTLCBasePubKey = this.HTLCBaseKey.PubKey
         }
 
@@ -31,7 +65,7 @@ and ChannelPubKeys = {
     FundingPubKey: PubKey
     RevocationBasePubKey: PubKey
     PaymentBasePubKey: PubKey
-    DelayedPaymentBasePubKey: PubKey
+    DelayedPaymentBasepoint: DelayedPaymentBasepoint
     HTLCBasePubKey: PubKey
 }
 

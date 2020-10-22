@@ -4,6 +4,7 @@ open DotNetLightning.DomainUtils.Types
 open NBitcoin
 open NBitcoin.Crypto
 open DotNetLightning.Utils
+open DotNetLightning.Crypto
 
 
 module Scripts =
@@ -14,7 +15,10 @@ module Scripts =
     let multiSigOfM_2 (sort) (pks) =
         PayToMultiSigTemplate.Instance.GenerateScriptPubKey(2, sort, pks)
 
-    let toLocalDelayed  (revocationPubKey: PubKey) (BlockHeightOffset16 toSelfDelay) (localDelayedPaymentPubkey: PubKey): Script =
+    let toLocalDelayed (revocationPubKey: PubKey)
+                       (BlockHeightOffset16 toSelfDelay)
+                       (localDelayedPaymentPubKey: DelayedPaymentPubKey)
+                           : Script =
         let opList = ResizeArray<Op>()
         opList.Add(!> OpcodeType.OP_IF)
         opList.Add(Op.GetPushOp(revocationPubKey.ToBytes()))
@@ -22,7 +26,7 @@ module Scripts =
         opList.Add(Op.GetPushOp(int64 toSelfDelay))
         opList.Add(!> OpcodeType.OP_CHECKSEQUENCEVERIFY)
         opList.Add(!> OpcodeType.OP_DROP)
-        opList.Add(Op.GetPushOp(localDelayedPaymentPubkey.ToBytes()))
+        opList.Add(Op.GetPushOp(localDelayedPaymentPubKey.ToBytes()))
         opList.Add(!> OpcodeType.OP_ENDIF)
         opList.Add(!> OpcodeType.OP_CHECKSIG)
         Script(opList)

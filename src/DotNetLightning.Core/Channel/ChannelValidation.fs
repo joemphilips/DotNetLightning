@@ -98,7 +98,7 @@ module internal ChannelHelpers =
                                                   fundingOutputIndex
                                                   fundingSatoshis
             let revPubKeyForLocal = Generators.revocationPubKey secpContext remoteChannelKeys.RevocationBasePubKey (localPerCommitmentPoint.RawPubKey())
-            let delayedPubKeyForLocal = Generators.derivePubKey secpContext localChannelKeys.DelayedPaymentBasePubKey (localPerCommitmentPoint.RawPubKey())
+            let delayedPubKeyForLocal = DelayedPaymentPubKey <| Generators.derivePubKey secpContext (localChannelKeys.DelayedPaymentBasepoint.RawPubKey()) (localPerCommitmentPoint.RawPubKey())
             let paymentPubKeyForLocal = Generators.derivePubKey secpContext remoteChannelKeys.PaymentBasePubKey (localPerCommitmentPoint.RawPubKey())
             let localCommitTx =
                 Transactions.makeCommitTx scriptCoin
@@ -116,7 +116,7 @@ module internal ChannelHelpers =
                                           localSpec
                                           n
             let revPubKeyForRemote = Generators.revocationPubKey secpContext localChannelKeys.RevocationBasePubKey (remotePerCommitmentPoint.RawPubKey())
-            let delayedPubKeyForRemote = Generators.derivePubKey secpContext remoteChannelKeys.DelayedPaymentBasePubKey (remotePerCommitmentPoint.RawPubKey())
+            let delayedPubKeyForRemote = DelayedPaymentPubKey <| Generators.derivePubKey secpContext (remoteChannelKeys.DelayedPaymentBasepoint.RawPubKey()) (remotePerCommitmentPoint.RawPubKey())
             let paymentPubKeyForRemote = Generators.derivePubKey secpContext localChannelKeys.PaymentBasePubKey (remotePerCommitmentPoint.RawPubKey())
             let remoteCommitTx =
                 Transactions.makeCommitTx scriptCoin

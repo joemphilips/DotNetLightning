@@ -36,6 +36,11 @@ let perCommitmentPointGen = gen {
     return PerCommitmentPoint pubKey
 }
 
+let delayedPaymentBasepointGen = gen {
+    let! pubKey = pubKeyGen
+    return DelayedPaymentBasepoint pubKey
+}
+
 let commitmentNumberGen = gen {
     let! n = uint48Gen
     return CommitmentNumber n

@@ -342,6 +342,9 @@ type LightningReaderStream(inner: Stream) =
     member this.ReadPerCommitmentPoint() =
         PerCommitmentPoint <| this.ReadPubKey()
 
+    member this.ReadDelayedPaymentBasepoint(): DelayedPaymentBasepoint =
+        DelayedPaymentBasepoint <| this.ReadPubKey()
+
     member this.ReadCommitmentNumber() =
         let n = this.ReadUInt64 false
         CommitmentNumber <| (UInt48.MaxValue - (UInt48.FromUInt64 n))

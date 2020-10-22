@@ -6,6 +6,7 @@ open DotNetLightning.Chain
 open DotNetLightning.Channel
 open DotNetLightning.Transactions
 open DotNetLightning.Utils
+open DotNetLightning.Crypto
 open NBitcoin
 open Expecto
 
@@ -101,7 +102,7 @@ let tests =
                                           localDustLimit
                                           (localPubKeys.RevocationBasePubKey)
                                           toLocalDelay
-                                          localPubKeys.DelayedPaymentBasePubKey
+                                          (DelayedPaymentPubKey <| localPubKeys.DelayedPaymentBasepoint.RawPubKey())    // FIXME: basepoint being used as pubkey here?
                                           remotePubKeys.PaymentBasePubKey
                                           localPubKeys.HTLCBasePubKey
                                           remotePubKeys.HTLCBasePubKey
@@ -123,7 +124,7 @@ let tests =
                                           remoteDustLimit
                                           remotePubKeys.RevocationBasePubKey
                                           remoteDelay
-                                          remotePubKeys.DelayedPaymentBasePubKey
+                                          (DelayedPaymentPubKey <| remotePubKeys.DelayedPaymentBasepoint.RawPubKey())   // FIXME: basepoint being used as pubkey here?
                                           localPubKeys.PaymentBasePubKey
                                           remotePubKeys.HTLCBasePubKey
                                           localPubKeys.HTLCBasePubKey
