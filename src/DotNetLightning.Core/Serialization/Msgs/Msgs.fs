@@ -504,7 +504,7 @@ type OpenChannelMsg = {
     mutable FeeRatePerKw: FeeRatePerKw
     mutable ToSelfDelay: BlockHeightOffset16
     mutable MaxAcceptedHTLCs: uint16
-    mutable FundingPubKey: PubKey
+    mutable FundingPubKey: FundingPubKey
     mutable RevocationBasepoint: RevocationBasepoint
     mutable PaymentBasepoint: PaymentBasepoint
     mutable DelayedPaymentBasepoint: DelayedPaymentBasepoint
@@ -528,7 +528,7 @@ with
             this.FeeRatePerKw <- FeeRatePerKw(ls.ReadUInt32(false))
             this.ToSelfDelay <- BlockHeightOffset16(ls.ReadUInt16(false))
             this.MaxAcceptedHTLCs <- ls.ReadUInt16(false)
-            this.FundingPubKey <- ls.ReadPubKey()
+            this.FundingPubKey <- ls.ReadFundingPubKey()
             this.RevocationBasepoint <- ls.ReadRevocationBasepoint()
             this.PaymentBasepoint <- ls.ReadPaymentBasepoint()
             this.DelayedPaymentBasepoint <- ls.ReadDelayedPaymentBasepoint()
@@ -569,7 +569,7 @@ type AcceptChannelMsg = {
     mutable MinimumDepth: BlockHeightOffset32
     mutable ToSelfDelay: BlockHeightOffset16
     mutable MaxAcceptedHTLCs: uint16
-    mutable FundingPubKey: PubKey
+    mutable FundingPubKey: FundingPubKey
     mutable RevocationBasepoint: RevocationBasepoint
     mutable PaymentBasepoint: PaymentBasepoint
     mutable DelayedPaymentBasepoint: DelayedPaymentBasepoint
@@ -589,7 +589,7 @@ with
             this.MinimumDepth <- ls.ReadUInt32(false) |> BlockHeightOffset32
             this.ToSelfDelay <- ls.ReadUInt16(false) |> BlockHeightOffset16
             this.MaxAcceptedHTLCs <- ls.ReadUInt16(false)
-            this.FundingPubKey <- ls.ReadPubKey()
+            this.FundingPubKey <- ls.ReadFundingPubKey()
             this.RevocationBasepoint <- ls.ReadRevocationBasepoint()
             this.PaymentBasepoint <- ls.ReadPaymentBasepoint()
             this.DelayedPaymentBasepoint <- ls.ReadDelayedPaymentBasepoint()

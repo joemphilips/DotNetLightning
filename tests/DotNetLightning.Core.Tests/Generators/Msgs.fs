@@ -91,7 +91,7 @@ let openChannelGen =
         <*> (FeeRatePerKw <!> Arb.generate<uint32>)
         <*> (BlockHeightOffset16 <!> Arb.generate<uint16>)
         <*> Arb.generate<uint16>
-        <*> pubKeyGen
+        <*> fundingPubKeyGen
         <*> revocationBasepointGen
         <*> paymentBasepointGen
         <*> delayedPaymentBasepointGen
@@ -129,7 +129,7 @@ let acceptChannelGen =
         <*> (Arb.generate<uint32> |> Gen.map(BlockHeightOffset32))
         <*> (BlockHeightOffset16 <!> Arb.generate<uint16>)
         <*> Arb.generate<uint16>
-        <*> pubKeyGen
+        <*> fundingPubKeyGen
         <*> revocationBasepointGen
         <*> paymentBasepointGen
         <*> delayedPaymentBasepointGen

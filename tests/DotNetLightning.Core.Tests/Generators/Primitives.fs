@@ -36,6 +36,11 @@ let perCommitmentPointGen = gen {
     return PerCommitmentPoint pubKey
 }
 
+let fundingPubKeyGen = gen {
+    let! pubKey = pubKeyGen
+    return FundingPubKey pubKey
+}
+
 let paymentBasepointGen = gen {
     let! pubKey = pubKeyGen
     return PaymentBasepoint pubKey

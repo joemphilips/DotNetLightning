@@ -42,7 +42,7 @@ type LocalConfig = {
     DelayedPaymentPrivKey: DelayedPaymentPrivKey
     RevocationPubKey: RevocationPubKey
     FeeRatePerKw: FeeRatePerKw
-    FundingPrivKey: Key
+    FundingPrivKey: FundingPrivKey
 }
 let getLocal(): LocalConfig =
     let ctx = newSecp256k1()
@@ -62,6 +62,11 @@ let getLocal(): LocalConfig =
         |> hex.DecodeData
         |> fun h -> new Key(h)
         |> RevocationBasepointSecret
+    let fundingPrivKey =
+      "30ff4956bbdd3222d44cc5e8a1261dab1e07957bdac5ae88fe3261ef321f3749"
+        |> hex.DecodeData
+        |> fun h -> new Key(h)
+        |> FundingPrivKey
     {
       Ctx = ctx
       CommitTxNumber = CommitmentNumber(UInt48.MaxValue - (UInt48.FromUInt64 42UL))
@@ -72,7 +77,7 @@ let getLocal(): LocalConfig =
       RevocationBasepointSecret = revocationBasepointSecret
       DelayedPaymentBasepointSecret = delayedPaymentBasepointSecret
       DelayedPaymentBasepoint = delayedPaymentBasepointSecret.DelayedPaymentBasepoint()
-      FundingPrivKey = "30ff4956bbdd3222d44cc5e8a1261dab1e07957bdac5ae88fe3261ef321f3749" |> hex.DecodeData |> fun h -> new Key(h)
+      FundingPrivKey = fundingPrivKey
       PerCommitmentPoint = localPerCommitmentPoint
       PaymentPrivKey = PaymentPrivKey <| Generators.derivePrivKey(ctx) (paymentBasepointSecret.RawKey()) (localPerCommitmentPoint.RawPubKey())
       DelayedPaymentPrivKey = DelayedPaymentPrivKey <| Generators.derivePrivKey(ctx) (delayedPaymentBasepointSecret.RawKey()) (localPerCommitmentPoint.RawPubKey())
@@ -89,7 +94,7 @@ type RemoteConfig = {
     PaymentBasepoint: PaymentBasepoint
     RevocationBasepointSecret: RevocationBasepointSecret
     RevocationBasepoint: RevocationBasepoint
-    FundingPrivKey: Key
+    FundingPrivKey: FundingPrivKey
     PaymentPrivKey: PaymentPrivKey
     PerCommitmentPoint: PerCommitmentPoint
 }
@@ -107,6 +112,11 @@ let getRemote(): RemoteConfig =
         |> fun h -> new Key(h)
         |> RevocationBasepointSecret
     let revocationBasepoint = revocationBasepointSecret.RevocationBasepoint()
+    let fundingPrivKey =
+        "1552dfba4f6cf29a62a0af13c8d6981d36d0ef8d61ba10fb0fe90da7634d7e13"
+        |> hex.DecodeData
+        |> fun h -> new Key(h)
+        |> FundingPrivKey
     let perCommitmentPoint =
         PerCommitmentPoint <| PubKey("022c76692fd70814a8d1ed9dedc833318afaaed8188db4d14727e2e99bc619d325")
     {
@@ -118,7 +128,7 @@ let getRemote(): RemoteConfig =
       PaymentBasepoint = paymentBasepoint
       RevocationBasepointSecret = revocationBasepointSecret
       RevocationBasepoint = revocationBasepoint
-      FundingPrivKey = "1552dfba4f6cf29a62a0af13c8d6981d36d0ef8d61ba10fb0fe90da7634d7e13" |> hex.DecodeData |> fun h -> new Key(h)
+      FundingPrivKey = fundingPrivKey
       PaymentPrivKey = PaymentPrivKey <| Generators.derivePrivKey(ctx) (paymentBasepointSecret.RawKey()) (localPerCommitmentPoint.RawPubKey())
       PerCommitmentPoint = perCommitmentPoint
     }
@@ -133,8 +143,8 @@ log(sprintf "# funding-tx: %A" fundingTx)
 let local = getLocal()
 let remote = getRemote()
 let fundingRedeem =
-    let fundingPks = [| local.FundingPrivKey.PubKey
-                        remote.FundingPrivKey.PubKey |]
+    let fundingPks = [| local.FundingPrivKey.FundingPubKey().RawPubKey()
+                        remote.FundingPrivKey.FundingPubKey().RawPubKey() |]
     Scripts.multiSigOfM_2(true) (fundingPks)
 
 let commitmentInputScriptCoin =
@@ -151,9 +161,9 @@ Expect.equal obscuredTxNumber (0x2bb038521914UL ^^^ 42UL |> UInt48.FromUInt64 |>
 sprintf "local_payment_basepoint: %A " local.PaymentBasepoint |> log
 sprintf "remote_payment_basepoint: %A" remote.PaymentBasepoint |> log
 sprintf "local_funding_privkey: %A" local.FundingPrivKey |> log
-sprintf "local_funding_pubkey: %A" local.FundingPrivKey.PubKey |> log
+sprintf "local_funding_pubkey: %A" (local.FundingPrivKey.FundingPubKey()) |> log
 sprintf "remote_funding_privkey: %A" remote.FundingPrivKey |> log
-sprintf "remote_funding_pubkey: %A" remote.FundingPrivKey.PubKey |> log
+sprintf "remote_funding_pubkey: %A" (remote.FundingPrivKey.FundingPubKey()) |> log
 sprintf "local_secretkey: %A" local.PaymentPrivKey |> log
 sprintf "localkey: %A" (local.PaymentPrivKey.PaymentPubKey()) |> log
 sprintf "remotekey: %A" remote.PaymentPrivKey |> log
@@ -253,11 +263,11 @@ let run (spec: CommitmentSpec): (Transaction * _) =
                          (spec)
                          (n)
         // test vectors requires us to use RFC6974
-        let localSig, tx2 = Transactions.signCore(commitTx, local.FundingPrivKey, false)
-        let remoteSig, tx3 = Transactions.signCore(tx2, remote.FundingPrivKey, false)
-        Transactions.checkSigAndAdd (tx3) (localSig) (local.FundingPrivKey.PubKey)
+        let localSig, tx2 = Transactions.signCore(commitTx, local.FundingPrivKey.RawKey(), false)
+        let remoteSig, tx3 = Transactions.signCore(tx2, remote.FundingPrivKey.RawKey(), false)
+        Transactions.checkSigAndAdd (tx3) (localSig) (local.FundingPrivKey.FundingPubKey().RawPubKey())
         >>= fun tx4 ->
-            Transactions.checkSigAndAdd (tx4) (remoteSig) (remote.FundingPrivKey.PubKey)
+            Transactions.checkSigAndAdd (tx4) (remoteSig) (remote.FundingPrivKey.FundingPubKey().RawPubKey())
         |> function Ok e -> e | Error e -> failwithf "%A" e
     let baseFee = Transactions.commitTxFee(local.DustLimit)(spec)
     log (sprintf "base commitment transaction fee is %A" baseFee)

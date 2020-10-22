@@ -342,6 +342,9 @@ type LightningReaderStream(inner: Stream) =
     member this.ReadPerCommitmentPoint() =
         PerCommitmentPoint <| this.ReadPubKey()
 
+    member this.ReadFundingPubKey(): FundingPubKey =
+        FundingPubKey <| this.ReadPubKey()
+
     member this.ReadRevocationBasepoint(): RevocationBasepoint =
         RevocationBasepoint <| this.ReadPubKey()
 

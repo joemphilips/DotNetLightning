@@ -14,7 +14,7 @@ exception ChannelException of ChannelError
 module internal ChannelHelpers =
 
     let getFundingRedeemScript (ck: ChannelPubKeys) (theirFundingPubKey: PubKey): Script =
-        let ourFundingKey = ck.FundingPubKey
+        let ourFundingKey = ck.FundingPubKey.RawPubKey()
         let pks = if ourFundingKey.ToBytes() < theirFundingPubKey.ToBytes() then
                       [| ourFundingKey; theirFundingPubKey |]
                   else
@@ -93,7 +93,7 @@ module internal ChannelHelpers =
                 Ok()
         let makeFirstCommitTxCore() =
             let scriptCoin = getFundingScriptCoin localChannelKeys
-                                                  remoteChannelKeys.FundingPubKey
+                                                  (remoteChannelKeys.FundingPubKey.RawPubKey())
                                                   fundingTxId
                                                   fundingOutputIndex
                                                   fundingSatoshis

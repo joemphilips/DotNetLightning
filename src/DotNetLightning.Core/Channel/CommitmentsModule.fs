@@ -285,7 +285,7 @@ module internal Commitments =
                                           (cm.FundingScriptCoin)
                                           (remoteNextPerCommitmentPoint)
                                           (spec) n |> expectTransactionErrors
-                let signature,_ = keyRepo.GetSignatureFor(remoteCommitTx.Value, cm.LocalParams.ChannelPubKeys.FundingPubKey)
+                let signature,_ = keyRepo.GetSignatureFor(remoteCommitTx.Value, cm.LocalParams.ChannelPubKeys.FundingPubKey.RawPubKey())
                 let sortedHTLCTXs = Helpers.sortBothHTLCs htlcTimeoutTxs htlcSuccessTxs
                 let htlcSigs =
                     sortedHTLCTXs
@@ -339,11 +339,11 @@ module internal Commitments =
                 let! (localCommitTx, htlcTimeoutTxs, htlcSuccessTxs) =
                     Helpers.makeLocalTXs (ctx) (nextI) (cm.LocalParams) (cm.RemoteParams) (cm.FundingScriptCoin) (localPerCommitmentPoint) spec n
                     |> expectTransactionErrors
-                let signature, signedCommitTx = keyRepo.GetSignatureFor (localCommitTx.Value, localChannelKeys.FundingPubKey)
+                let signature, signedCommitTx = keyRepo.GetSignatureFor (localCommitTx.Value, localChannelKeys.FundingPubKey.RawPubKey())
 
                 let sigPair =
-                    let localSigPair = seq [(localChannelKeys.FundingPubKey, signature)]
-                    let remoteSigPair = seq[ (remoteChannelKeys.FundingPubKey, TransactionSignature(msg.Signature.Value, SigHash.All)) ]
+                    let localSigPair = seq [(localChannelKeys.FundingPubKey.RawPubKey(), signature)]
+                    let remoteSigPair = seq[ (remoteChannelKeys.FundingPubKey.RawPubKey(), TransactionSignature(msg.Signature.Value, SigHash.All)) ]
                     Seq.append localSigPair remoteSigPair
                 let tmp = 
                     Transactions.checkTxFinalized signedCommitTx localCommitTx.WhichInput sigPair

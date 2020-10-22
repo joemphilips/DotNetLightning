@@ -9,6 +9,23 @@ open DotNetLightning.Core.Utils.Extensions
 
 // FIXME: Should the [<Struct>]-annotated types here be changed to records or single-constructor discriminated unions? 
     
+type [<Struct>] FundingPubKey(pubKey: PubKey) =
+    member this.RawPubKey(): PubKey =
+        pubKey
+
+    member this.ToBytes(): array<byte> =
+        pubKey.ToBytes()
+
+    override self.ToString() =
+        pubKey.ToString()
+
+type [<Struct>] FundingPrivKey(key: Key) =
+    member this.RawKey(): Key =
+        key
+
+    member this.FundingPubKey(): FundingPubKey =
+        FundingPubKey(key.PubKey)
+
 type [<Struct>] RevocationBasepoint(pubKey: PubKey) =
     member this.RawPubKey(): PubKey =
         pubKey
@@ -150,7 +167,7 @@ type [<Struct>] HtlcPrivKey(key: Key) =
 
 /// Set of lightning keys needed to operate a channel as describe in BOLT 3
 type ChannelKeys = {
-    FundingKey: Key
+    FundingPrivKey: FundingPrivKey
     RevocationBasepointSecret: RevocationBasepointSecret
     PaymentBasepointSecret: PaymentBasepointSecret
     DelayedPaymentBasepointSecret: DelayedPaymentBasepointSecret
@@ -159,7 +176,7 @@ type ChannelKeys = {
 } with
     member this.ToChannelPubKeys(): ChannelPubKeys =
         {
-            FundingPubKey = this.FundingKey.PubKey
+            FundingPubKey = this.FundingPrivKey.FundingPubKey()
             RevocationBasepoint = this.RevocationBasepointSecret.RevocationBasepoint()
             PaymentBasepoint = this.PaymentBasepointSecret.PaymentBasepoint()
             DelayedPaymentBasepoint = this.DelayedPaymentBasepointSecret.DelayedPaymentBasepoint()
@@ -168,7 +185,7 @@ type ChannelKeys = {
 
 /// In usual operation we should not hold secrets on memory. So only hold pubkey
 and ChannelPubKeys = {
-    FundingPubKey: PubKey
+    FundingPubKey: FundingPubKey
     RevocationBasepoint: RevocationBasepoint
     PaymentBasepoint: PaymentBasepoint
     DelayedPaymentBasepoint: DelayedPaymentBasepoint
