@@ -485,7 +485,7 @@ module SerializationTest =
                         RevocationBasepoint = pubkey2
                         PaymentBasepoint = PaymentBasepoint pubkey3
                         DelayedPaymentBasepoint = DelayedPaymentBasepoint pubkey4
-                        HTLCBasepoint = pubkey5
+                        HTLCBasepoint = HtlcBasepoint pubkey5
                         FirstPerCommitmentPoint = PerCommitmentPoint pubkey6
                         ChannelFlags = if randomBit then 1uy <<< 5 else 0uy
                         ShutdownScriptPubKey = if shutdown then Some (pubkey1.Hash.ScriptPubKey) else None
@@ -525,7 +525,7 @@ module SerializationTest =
                         RevocationBasepoint = pubkey2
                         PaymentBasepoint = PaymentBasepoint pubkey3
                         DelayedPaymentBasepoint = DelayedPaymentBasepoint pubkey4
-                        HTLCBasepoint = pubkey5
+                        HTLCBasepoint = HtlcBasepoint pubkey5
                         FirstPerCommitmentPoint = PerCommitmentPoint pubkey6
                         ShutdownScriptPubKey = if shutdown then Some(pubkey1.Hash.ScriptPubKey) else None
                     }

@@ -149,7 +149,7 @@ module Channel =
                 RevocationBasepoint = inputInitFunder.ChannelKeys.RevocationBaseKey.PubKey
                 PaymentBasepoint = inputInitFunder.ChannelKeys.PaymentBasepointSecret.PaymentBasepoint()
                 DelayedPaymentBasepoint = inputInitFunder.ChannelKeys.DelayedPaymentBasepointSecret.DelayedPaymentBasepoint()
-                HTLCBasepoint = inputInitFunder.ChannelKeys.HTLCBaseKey.PubKey
+                HTLCBasepoint = inputInitFunder.ChannelKeys.HtlcBasepointSecret.HtlcBasepoint()
                 FirstPerCommitmentPoint = inputInitFunder.ChannelKeys.CommitmentSeed.DerivePerCommitmentPoint CommitmentNumber.FirstCommitment
                 ChannelFlags = inputInitFunder.ChannelFlags
                 ShutdownScriptPubKey = cs.Config.ChannelOptions.ShutdownScriptPubKey
@@ -281,7 +281,7 @@ module Channel =
                     RevocationBasepoint = channelKeys.RevocationBaseKey.PubKey
                     PaymentBasepoint = channelKeys.PaymentBasepointSecret.PaymentBasepoint()
                     DelayedPaymentBasepoint = channelKeys.DelayedPaymentBasepointSecret.DelayedPaymentBasepoint()
-                    HTLCBasepoint = channelKeys.HTLCBaseKey.PubKey
+                    HTLCBasepoint = channelKeys.HtlcBasepointSecret.HtlcBasepoint()
                     FirstPerCommitmentPoint = localCommitmentPubKey
                     ShutdownScriptPubKey = cs.Config.ChannelOptions.ShutdownScriptPubKey
                 }

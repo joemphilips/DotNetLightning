@@ -104,8 +104,8 @@ let tests =
                                           toLocalDelay
                                           (DelayedPaymentPubKey <| localPubKeys.DelayedPaymentBasepoint.RawPubKey())    // FIXME: basepoint being used as pubkey here?
                                           (PaymentPubKey <| remotePubKeys.PaymentBasepoint.RawPubKey())                 // FIXME: basepoint being used as pubkey here?
-                                          localPubKeys.HTLCBasePubKey
-                                          remotePubKeys.HTLCBasePubKey
+                                          (HtlcPubKey <| localPubKeys.HtlcBasepoint.RawPubKey())
+                                          (HtlcPubKey <| remotePubKeys.HtlcBasepoint.RawPubKey())
                                           specBase
                                           n
             let _remoteSigForLocalCommit, commitTx2 = remoteRepo.GetSignatureFor(commitTx.Value, remotePubKeys.FundingPubKey)
@@ -126,8 +126,8 @@ let tests =
                                           remoteDelay
                                           (DelayedPaymentPubKey <| remotePubKeys.DelayedPaymentBasepoint.RawPubKey())   // FIXME: basepoint being used as pubkey here?
                                           (PaymentPubKey <| localPubKeys.PaymentBasepoint.RawPubKey())                  // FIXME: basepoint being used as pubkey here?
-                                          remotePubKeys.HTLCBasePubKey
-                                          localPubKeys.HTLCBasePubKey
+                                          (HtlcPubKey <| remotePubKeys.HtlcBasepoint.RawPubKey())
+                                          (HtlcPubKey <| localPubKeys.HtlcBasepoint.RawPubKey())
                                           specBase
                                           n
             

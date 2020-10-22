@@ -102,7 +102,7 @@ type RemoteParams = {
                 RevocationBasePubKey = msg.RevocationBasepoint
                 PaymentBasepoint = msg.PaymentBasepoint
                 DelayedPaymentBasepoint = msg.DelayedPaymentBasepoint
-                HTLCBasePubKey = msg.HTLCBasepoint
+                HtlcBasepoint = msg.HTLCBasepoint
             }
             {
                 NodeId = nodeId
@@ -123,7 +123,7 @@ type RemoteParams = {
                 RevocationBasePubKey = msg.RevocationBasepoint
                 PaymentBasepoint = msg.PaymentBasepoint
                 DelayedPaymentBasepoint = msg.DelayedPaymentBasepoint
-                HTLCBasePubKey = msg.HTLCBasepoint
+                HtlcBasepoint = msg.HTLCBasepoint
             }
             {
                 NodeId = nodeId

@@ -77,13 +77,47 @@ type [<Struct>] DelayedPaymentPrivKey(key: Key) =
     member this.DelayedPaymentPubKey(): DelayedPaymentPubKey =
         DelayedPaymentPubKey <| this.RawKey().PubKey
 
+type [<Struct>] HtlcBasepoint(pubKey: PubKey) =
+    member this.RawPubKey(): PubKey =
+        pubKey
+
+    member this.ToBytes(): array<byte> =
+        this.RawPubKey().ToBytes()
+
+    override self.ToString() =
+        pubKey.ToString()
+
+type [<Struct>] HtlcBasepointSecret(key: Key) =
+    member this.RawKey(): Key =
+        key
+
+    member this.HtlcBasepoint(): HtlcBasepoint =
+        HtlcBasepoint(this.RawKey().PubKey)
+
+type [<Struct>] HtlcPubKey(pubKey: PubKey) =
+    member this.RawPubKey(): PubKey =
+        pubKey
+
+    member this.ToBytes(): array<byte> =
+        this.RawPubKey().ToBytes()
+
+    override self.ToString() =
+        pubKey.ToString()
+
+type [<Struct>] HtlcPrivKey(key: Key) =
+    member this.RawKey(): Key =
+        key
+
+    member this.HtlcPubKey(): HtlcPubKey =
+        HtlcPubKey <| this.RawKey().PubKey
+
 /// Set of lightning keys needed to operate a channel as describe in BOLT 3
 type ChannelKeys = {
     FundingKey: Key
     RevocationBaseKey: Key
     PaymentBasepointSecret: PaymentBasepointSecret
     DelayedPaymentBasepointSecret: DelayedPaymentBasepointSecret
-    HTLCBaseKey: Key
+    HtlcBasepointSecret: HtlcBasepointSecret
     CommitmentSeed: CommitmentSeed
 } with
     member this.ToChannelPubKeys(): ChannelPubKeys =
@@ -92,7 +126,7 @@ type ChannelKeys = {
             RevocationBasePubKey = this.RevocationBaseKey.PubKey
             PaymentBasepoint = this.PaymentBasepointSecret.PaymentBasepoint()
             DelayedPaymentBasepoint = this.DelayedPaymentBasepointSecret.DelayedPaymentBasepoint()
-            HTLCBasePubKey = this.HTLCBaseKey.PubKey
+            HtlcBasepoint = this.HtlcBasepointSecret.HtlcBasepoint()
         }
 
 /// In usual operation we should not hold secrets on memory. So only hold pubkey
@@ -101,7 +135,7 @@ and ChannelPubKeys = {
     RevocationBasePubKey: PubKey
     PaymentBasepoint: PaymentBasepoint
     DelayedPaymentBasepoint: DelayedPaymentBasepoint
-    HTLCBasePubKey: PubKey
+    HtlcBasepoint: HtlcBasepoint
 }
 
 and [<Struct>] CommitmentNumber(index: UInt48) =

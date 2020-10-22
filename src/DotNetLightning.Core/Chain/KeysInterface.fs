@@ -92,8 +92,9 @@ type DefaultKeyRepository(nodeSecret: ExtKey, channelIndex: int) =
         channelMasterKey.Derive(7, true).PrivateKey |> DelayedPaymentBasepointSecret
     let delayedPaymentBasepoint = delayedPaymentBasepointSecret.DelayedPaymentBasepoint()
 
-    let htlcBaseKey = channelMasterKey.Derive(8, true).PrivateKey
-    let htlcBasePubKey = htlcBaseKey.PubKey
+    let htlcBasepointSecret =
+        channelMasterKey.Derive(8, true).PrivateKey |> HtlcBasepointSecret
+    let htlcBasepoint = htlcBasepointSecret.HtlcBasepoint()
 
     let basepointToSecretMap = ConcurrentDictionary<PubKey, Key>()
     do
@@ -101,7 +102,7 @@ type DefaultKeyRepository(nodeSecret: ExtKey, channelIndex: int) =
         basepointToSecretMap.TryAdd(revocationBasePubKey, revocationBaseKey) |> ignore
         basepointToSecretMap.TryAdd(paymentBasepoint.RawPubKey(), paymentBasepointSecret.RawKey()) |> ignore
         basepointToSecretMap.TryAdd(delayedPaymentBasepoint.RawPubKey(), delayedPaymentBasepointSecret.RawKey()) |> ignore
-        basepointToSecretMap.TryAdd(htlcBasePubKey, htlcBaseKey) |> ignore
+        basepointToSecretMap.TryAdd(htlcBasepoint.RawPubKey(), htlcBasepointSecret.RawKey()) |> ignore
 
     member this.NodeSecret = nodeSecret
     member this.DestinationScript = destinationKey.PubKey.WitHash.ScriptPubKey
@@ -116,8 +117,8 @@ type DefaultKeyRepository(nodeSecret: ExtKey, channelIndex: int) =
     member this.PaymentBasepoint = paymentBasepoint
     member this.DelayedPaymentBasepointSecret = delayedPaymentBasepointSecret
     member this.DelayedPaymentBasepoint = delayedPaymentBasepoint
-    member this.HtlcBaseKey = htlcBaseKey
-    member this.HtlcBasePubKey = htlcBasePubKey
+    member this.HtlcBasepointSecret = htlcBasepointSecret
+    member this.HtlcBasepoint = htlcBasepoint
 
     member val BasepointToSecretMap = basepointToSecretMap
 
@@ -127,7 +128,7 @@ type DefaultKeyRepository(nodeSecret: ExtKey, channelIndex: int) =
             RevocationBaseKey = this.RevocationBaseKey
             PaymentBasepointSecret = this.PaymentBasepointSecret
             DelayedPaymentBasepointSecret = this.DelayedPaymentBasepointSecret
-            HTLCBaseKey = this.HtlcBaseKey
+            HtlcBasepointSecret = this.HtlcBasepointSecret
             CommitmentSeed = this.CommitmentSeed
         }
     interface IKeysRepository with

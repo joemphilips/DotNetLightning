@@ -31,7 +31,11 @@ module Scripts =
         opList.Add(!> OpcodeType.OP_CHECKSIG)
         Script(opList)
 
-    let htlcOffered (localHtlcPubKey: PubKey) (remoteHtlcPubKey: PubKey) (revocationPubKey: PubKey) (ph: PaymentHash): Script =
+    let htlcOffered (localHtlcPubKey: HtlcPubKey)
+                    (remoteHtlcPubKey: HtlcPubKey)
+                    (revocationPubKey: PubKey)
+                    (ph: PaymentHash)
+                        : Script =
         let revocationPubKeyHash =
             let p = revocationPubKey.ToBytes()
             Hashes.Hash160(p, 0, p.Length)
@@ -65,7 +69,12 @@ module Scripts =
         opList.Add(!> OpcodeType.OP_ENDIF);    
         Script(opList);
 
-    let htlcReceived (localHTLCPubKey: PubKey) (remoteHTLCPubKey: PubKey) (revocationPubKey: PubKey) (ph: PaymentHash) (lockTime: uint32): Script =
+    let htlcReceived (localHTLCPubKey: HtlcPubKey)
+                     (remoteHTLCPubKey: HtlcPubKey)
+                     (revocationPubKey: PubKey)
+                     (ph: PaymentHash)
+                     (lockTime: uint32)
+                         : Script =
         let revocationPubKeyHash =
             let p = revocationPubKey.ToBytes()
             Hashes.Hash160(p, 0, p.Length)
