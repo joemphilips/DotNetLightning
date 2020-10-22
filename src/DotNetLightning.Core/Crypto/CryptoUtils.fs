@@ -196,13 +196,13 @@ module Sodium =
                 chacha20AD.Encrypt(chachaKey, &nonce, ad, plainText)
     
 #else
-type internal Op = Mul | Add
+type internal Operation = Mul | Add
 
 type internal BouncySecp256k1() =
     let parameters: Org.BouncyCastle.Asn1.X9.X9ECParameters = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByName "secp256k1"
     let ecParams = ECDomainParameters(parameters.Curve, parameters.G, parameters.N, parameters.H)
     let bcBigint (x: byte[]) = Org.BouncyCastle.Math.BigInteger(1, x)
-    let tweakKey (op: Op) (tweak: ReadOnlySpan<byte>) (keyToMutate: Span<byte>) =
+    let tweakKey (op: Operation) (tweak: ReadOnlySpan<byte>) (keyToMutate: Span<byte>) =
         let k = bcBigint <| keyToMutate.ToArray()
         let tweakInt = bcBigint <| tweak.ToArray()
         let tweaked = match op with
