@@ -8,8 +8,34 @@ open DotNetLightning.Utils
 
 // FIXME: Should the [<Struct>]-annotated types here be changed to records or single-constructor discriminated unions? 
     
-[<Struct>]
-type PerCommitmentSecret(key: Key) =
+/// Set of lightning keys needed to operate a channel as describe in BOLT 3
+type ChannelKeys = {
+    FundingKey: Key
+    RevocationBaseKey: Key
+    PaymentBaseKey: Key
+    DelayedPaymentBaseKey: Key
+    HTLCBaseKey: Key
+    CommitmentSeed: CommitmentSeed
+} with
+    member this.ToChannelPubKeys(): ChannelPubKeys =
+        {
+            FundingPubKey = this.FundingKey.PubKey
+            RevocationBasePubKey = this.RevocationBaseKey.PubKey
+            PaymentBasePubKey = this.PaymentBaseKey.PubKey
+            DelayedPaymentBasePubKey = this.DelayedPaymentBaseKey.PubKey
+            HTLCBasePubKey = this.HTLCBaseKey.PubKey
+        }
+
+/// In usual operation we should not hold secrets on memory. So only hold pubkey
+and ChannelPubKeys = {
+    FundingPubKey: PubKey
+    RevocationBasePubKey: PubKey
+    PaymentBasePubKey: PubKey
+    DelayedPaymentBasePubKey: PubKey
+    HTLCBasePubKey: PubKey
+}
+
+and [<Struct>] PerCommitmentSecret(key: Key) =
     member this.RawKey(): Key =
         key
 
@@ -53,8 +79,7 @@ and [<Struct>] PerCommitmentPoint(pubKey: PubKey) =
     member this.ToBytes(): array<byte> =
         this.RawPubKey().ToBytes()
 
-[<Struct>]
-type CommitmentSeed(lastPerCommitmentSecret: PerCommitmentSecret) =
+and [<Struct>] CommitmentSeed(lastPerCommitmentSecret: PerCommitmentSecret) =
     new(key: Key) =
         CommitmentSeed(PerCommitmentSecret key)
 

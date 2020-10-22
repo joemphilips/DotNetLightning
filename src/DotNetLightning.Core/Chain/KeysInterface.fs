@@ -47,36 +47,6 @@ type SpendableOutputDescriptor =
     | DynamicOutputP2WSH of DynamicOutputP2WSH
     | DynamicOutputP2WPKH of DynamicOutputP2WPKH
 
-/// In usual operation we should not hold secrets on memory. So only hold pubkey
-type ChannelPubKeys = {
-    FundingPubKey: PubKey
-    RevocationBasePubKey: PubKey
-    PaymentBasePubKey: PubKey
-    DelayedPaymentBasePubKey: PubKey
-    HTLCBasePubKey: PubKey
-}
-
-/// Set of lightning keys needed to operate a channel as describe in BOLT 3
-type ChannelKeys = {
-    FundingKey: Key
-    RevocationBaseKey: Key
-    PaymentBaseKey: Key
-    DelayedPaymentBaseKey: Key
-    HTLCBaseKey: Key
-    CommitmentSeed: CommitmentSeed
-}
-
-    with
-        member this.ToChannelPubKeys() =
-            {
-                FundingPubKey = this.FundingKey.PubKey
-                RevocationBasePubKey = this.RevocationBaseKey.PubKey
-                PaymentBasePubKey = this.PaymentBaseKey.PubKey
-                DelayedPaymentBasePubKey = this.DelayedPaymentBaseKey.PubKey
-                HTLCBasePubKey = this.HTLCBaseKey.PubKey
-            }
-
-
 /// Interface to describe an object which can get user secrets and key material.
 type IKeysRepository =
     /// Secret key for node_id a.k.a network_key
