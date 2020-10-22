@@ -36,7 +36,7 @@ module internal Commitments =
             let localHTLCPK = HtlcPubKey <| pkGen (localChannelKeys.HtlcBasepoint.RawPubKey())
             let remoteDelayedPaymentPK = DelayedPaymentPubKey <| pkGen (remoteChannelKeys.DelayedPaymentBasepoint.RawPubKey())
             let remoteHTLCPK = HtlcPubKey <| pkGen (remoteChannelKeys.HtlcBasepoint.RawPubKey())
-            let remoteRevocationPK = pkGen localChannelKeys.RevocationBasePubKey
+            let remoteRevocationPK = RevocationPubKey <| pkGen (localChannelKeys.RevocationBasepoint.RawPubKey())
             let commitTx =
                 Transactions.makeCommitTx commitmentInput 
                                           commitTxNumber
@@ -82,7 +82,7 @@ module internal Commitments =
             let localHTLCPK = HtlcPubKey <| pkGen (localChannelKeys.HtlcBasepoint.RawPubKey())
             let remotePaymentPK = PaymentPubKey <| pkGen (remoteChannelKeys.PaymentBasepoint.RawPubKey())
             let remoteHTLCPK = HtlcPubKey <| pkGen (remoteChannelKeys.HtlcBasepoint.RawPubKey())
-            let localRevocationPK = pkGen remoteChannelKeys.RevocationBasePubKey
+            let localRevocationPK = RevocationPubKey <| pkGen (remoteChannelKeys.RevocationBasepoint.RawPubKey())
             let commitTx =
                 Transactions.makeCommitTx commitmentInput
                                           commitTxNumber

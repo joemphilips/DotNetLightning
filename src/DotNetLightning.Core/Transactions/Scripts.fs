@@ -15,7 +15,7 @@ module Scripts =
     let multiSigOfM_2 (sort) (pks) =
         PayToMultiSigTemplate.Instance.GenerateScriptPubKey(2, sort, pks)
 
-    let toLocalDelayed (revocationPubKey: PubKey)
+    let toLocalDelayed (revocationPubKey: RevocationPubKey)
                        (BlockHeightOffset16 toSelfDelay)
                        (localDelayedPaymentPubKey: DelayedPaymentPubKey)
                            : Script =
@@ -33,7 +33,7 @@ module Scripts =
 
     let htlcOffered (localHtlcPubKey: HtlcPubKey)
                     (remoteHtlcPubKey: HtlcPubKey)
-                    (revocationPubKey: PubKey)
+                    (revocationPubKey: RevocationPubKey)
                     (ph: PaymentHash)
                         : Script =
         let revocationPubKeyHash =
@@ -71,7 +71,7 @@ module Scripts =
 
     let htlcReceived (localHTLCPubKey: HtlcPubKey)
                      (remoteHTLCPubKey: HtlcPubKey)
-                     (revocationPubKey: PubKey)
+                     (revocationPubKey: RevocationPubKey)
                      (ph: PaymentHash)
                      (lockTime: uint32)
                          : Script =

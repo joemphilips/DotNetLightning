@@ -41,6 +41,11 @@ let paymentBasepointGen = gen {
     return PaymentBasepoint pubKey
 }
 
+let revocationBasepointGen = gen {
+    let! pubKey = pubKeyGen
+    return RevocationBasepoint pubKey
+}
+
 let delayedPaymentBasepointGen = gen {
     let! pubKey = pubKeyGen
     return DelayedPaymentBasepoint pubKey

@@ -9,6 +9,43 @@ open DotNetLightning.Core.Utils.Extensions
 
 // FIXME: Should the [<Struct>]-annotated types here be changed to records or single-constructor discriminated unions? 
     
+type [<Struct>] RevocationBasepoint(pubKey: PubKey) =
+    member this.RawPubKey(): PubKey =
+        pubKey
+
+    member this.ToBytes(): array<byte> =
+        pubKey.ToBytes()
+
+    override self.ToString() =
+        pubKey.ToString()
+
+type [<Struct>] RevocationBasepointSecret(key: Key) =
+    member this.RawKey(): Key =
+        key
+
+    member this.RevocationBasepoint(): RevocationBasepoint =
+        RevocationBasepoint(this.RawKey().PubKey)
+
+    member this.ToBytes(): array<byte> =
+        this.RawKey().ToBytes()
+
+type [<Struct>] RevocationPubKey(pubKey: PubKey) =
+    member this.RawPubKey(): PubKey =
+        pubKey
+
+    member this.ToBytes(): array<byte> =
+        pubKey.ToBytes()
+
+    override self.ToString() =
+        pubKey.ToString()
+
+type [<Struct>] RevocationPrivKey(key: Key) =
+    member this.RawKey(): Key =
+        key
+
+    member this.ToBytes(): array<byte> =
+        key.ToBytes()
+
 type [<Struct>] PaymentBasepoint(pubKey: PubKey) =
     member this.RawPubKey(): PubKey =
         pubKey
@@ -114,7 +151,7 @@ type [<Struct>] HtlcPrivKey(key: Key) =
 /// Set of lightning keys needed to operate a channel as describe in BOLT 3
 type ChannelKeys = {
     FundingKey: Key
-    RevocationBaseKey: Key
+    RevocationBasepointSecret: RevocationBasepointSecret
     PaymentBasepointSecret: PaymentBasepointSecret
     DelayedPaymentBasepointSecret: DelayedPaymentBasepointSecret
     HtlcBasepointSecret: HtlcBasepointSecret
@@ -123,7 +160,7 @@ type ChannelKeys = {
     member this.ToChannelPubKeys(): ChannelPubKeys =
         {
             FundingPubKey = this.FundingKey.PubKey
-            RevocationBasePubKey = this.RevocationBaseKey.PubKey
+            RevocationBasepoint = this.RevocationBasepointSecret.RevocationBasepoint()
             PaymentBasepoint = this.PaymentBasepointSecret.PaymentBasepoint()
             DelayedPaymentBasepoint = this.DelayedPaymentBasepointSecret.DelayedPaymentBasepoint()
             HtlcBasepoint = this.HtlcBasepointSecret.HtlcBasepoint()
@@ -132,7 +169,7 @@ type ChannelKeys = {
 /// In usual operation we should not hold secrets on memory. So only hold pubkey
 and ChannelPubKeys = {
     FundingPubKey: PubKey
-    RevocationBasePubKey: PubKey
+    RevocationBasepoint: RevocationBasepoint
     PaymentBasepoint: PaymentBasepoint
     DelayedPaymentBasepoint: DelayedPaymentBasepoint
     HtlcBasepoint: HtlcBasepoint

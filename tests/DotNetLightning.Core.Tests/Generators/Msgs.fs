@@ -92,7 +92,7 @@ let openChannelGen =
         <*> (BlockHeightOffset16 <!> Arb.generate<uint16>)
         <*> Arb.generate<uint16>
         <*> pubKeyGen
-        <*> pubKeyGen
+        <*> revocationBasepointGen
         <*> paymentBasepointGen
         <*> delayedPaymentBasepointGen
         <*> htlcBasepointGen
@@ -130,7 +130,7 @@ let acceptChannelGen =
         <*> (BlockHeightOffset16 <!> Arb.generate<uint16>)
         <*> Arb.generate<uint16>
         <*> pubKeyGen
-        <*> pubKeyGen
+        <*> revocationBasepointGen
         <*> paymentBasepointGen
         <*> delayedPaymentBasepointGen
         <*> htlcBasepointGen

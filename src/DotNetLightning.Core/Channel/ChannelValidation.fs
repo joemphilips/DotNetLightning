@@ -97,7 +97,7 @@ module internal ChannelHelpers =
                                                   fundingTxId
                                                   fundingOutputIndex
                                                   fundingSatoshis
-            let revPubKeyForLocal = Generators.revocationPubKey secpContext remoteChannelKeys.RevocationBasePubKey (localPerCommitmentPoint.RawPubKey())
+            let revPubKeyForLocal = RevocationPubKey <| Generators.revocationPubKey secpContext (remoteChannelKeys.RevocationBasepoint.RawPubKey()) (localPerCommitmentPoint.RawPubKey())
             let delayedPubKeyForLocal = DelayedPaymentPubKey <| Generators.derivePubKey secpContext (localChannelKeys.DelayedPaymentBasepoint.RawPubKey()) (localPerCommitmentPoint.RawPubKey())
             let paymentPubKeyForLocal = PaymentPubKey <| Generators.derivePubKey secpContext (remoteChannelKeys.PaymentBasepoint.RawPubKey()) (localPerCommitmentPoint.RawPubKey())
             let localHtlcPubKeyForLocal = HtlcPubKey <| Generators.derivePubKey secpContext (localChannelKeys.HtlcBasepoint.RawPubKey()) (localPerCommitmentPoint.RawPubKey())
@@ -117,7 +117,7 @@ module internal ChannelHelpers =
                                           remoteHtlcPubKeyForLocal
                                           localSpec
                                           n
-            let revPubKeyForRemote = Generators.revocationPubKey secpContext localChannelKeys.RevocationBasePubKey (remotePerCommitmentPoint.RawPubKey())
+            let revPubKeyForRemote = RevocationPubKey <| Generators.revocationPubKey secpContext (localChannelKeys.RevocationBasepoint.RawPubKey()) (remotePerCommitmentPoint.RawPubKey())
             let delayedPubKeyForRemote = DelayedPaymentPubKey <| Generators.derivePubKey secpContext (remoteChannelKeys.DelayedPaymentBasepoint.RawPubKey()) (remotePerCommitmentPoint.RawPubKey())
             let paymentPubKeyForRemote = PaymentPubKey <| Generators.derivePubKey secpContext (localChannelKeys.PaymentBasepoint.RawPubKey()) (remotePerCommitmentPoint.RawPubKey())
             let localHtlcPubKeyForRemote = HtlcPubKey <| Generators.derivePubKey secpContext (localChannelKeys.HtlcBasepoint.RawPubKey()) (remotePerCommitmentPoint.RawPubKey())

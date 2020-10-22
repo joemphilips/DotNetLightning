@@ -34,13 +34,13 @@ type LocalConfig = {
     DustLimit: Money
     PaymentBasepointSecret: PaymentBasepointSecret
     PaymentBasepoint: PaymentBasepoint
-    RevocationBasePointSecret: uint256
+    RevocationBasepointSecret: RevocationBasepointSecret
     DelayedPaymentBasepointSecret: DelayedPaymentBasepointSecret
     DelayedPaymentBasepoint: DelayedPaymentBasepoint
     PerCommitmentPoint: PerCommitmentPoint
     PaymentPrivKey: PaymentPrivKey
     DelayedPaymentPrivKey: DelayedPaymentPrivKey
-    RevocationPubKey: PubKey
+    RevocationPubKey: RevocationPubKey
     FeeRatePerKw: FeeRatePerKw
     FundingPrivKey: Key
 }
@@ -57,6 +57,11 @@ let getLocal(): LocalConfig =
         |> hex.DecodeData
         |> fun h -> new Key(h)
         |> DelayedPaymentBasepointSecret
+    let revocationBasepointSecret =
+        "2222222222222222222222222222222222222222222222222222222222222222"
+        |> hex.DecodeData
+        |> fun h -> new Key(h)
+        |> RevocationBasepointSecret
     {
       Ctx = ctx
       CommitTxNumber = CommitmentNumber(UInt48.MaxValue - (UInt48.FromUInt64 42UL))
@@ -64,14 +69,14 @@ let getLocal(): LocalConfig =
       DustLimit = Money.Satoshis(546L)
       PaymentBasepointSecret = paymentBasepointSecret
       PaymentBasepoint = paymentBasepoint
-      RevocationBasePointSecret = uint256.Parse("2222222222222222222222222222222222222222222222222222222222222222")
+      RevocationBasepointSecret = revocationBasepointSecret
       DelayedPaymentBasepointSecret = delayedPaymentBasepointSecret
       DelayedPaymentBasepoint = delayedPaymentBasepointSecret.DelayedPaymentBasepoint()
       FundingPrivKey = "30ff4956bbdd3222d44cc5e8a1261dab1e07957bdac5ae88fe3261ef321f3749" |> hex.DecodeData |> fun h -> new Key(h)
       PerCommitmentPoint = localPerCommitmentPoint
       PaymentPrivKey = PaymentPrivKey <| Generators.derivePrivKey(ctx) (paymentBasepointSecret.RawKey()) (localPerCommitmentPoint.RawPubKey())
       DelayedPaymentPrivKey = DelayedPaymentPrivKey <| Generators.derivePrivKey(ctx) (delayedPaymentBasepointSecret.RawKey()) (localPerCommitmentPoint.RawPubKey())
-      RevocationPubKey = PubKey("0212a140cd0c6539d07cd08dfe09984dec3251ea808b892efeac3ede9402bf2b19")
+      RevocationPubKey = RevocationPubKey <| PubKey("0212a140cd0c6539d07cd08dfe09984dec3251ea808b892efeac3ede9402bf2b19")
       FeeRatePerKw = 15000u |> FeeRatePerKw
     }
 
@@ -82,8 +87,8 @@ type RemoteConfig = {
     DustLimit: Money
     PaymentBasepointSecret: PaymentBasepointSecret
     PaymentBasepoint: PaymentBasepoint
-    RevocationBasePointSecret: Key
-    RevocationBasePoint: PubKey
+    RevocationBasepointSecret: RevocationBasepointSecret
+    RevocationBasepoint: RevocationBasepoint
     FundingPrivKey: Key
     PaymentPrivKey: PaymentPrivKey
     PerCommitmentPoint: PerCommitmentPoint
@@ -96,8 +101,12 @@ let getRemote(): RemoteConfig =
         |> fun h -> new Key(h)
         |> PaymentBasepointSecret
     let paymentBasepoint = paymentBasepointSecret.PaymentBasepoint()
-    let revocationBasePointSecret = "2222222222222222222222222222222222222222222222222222222222222222" |> hex.DecodeData |> fun h -> new Key(h)
-    let revocationBasePoint = revocationBasePointSecret.PubKey
+    let revocationBasepointSecret =
+        "2222222222222222222222222222222222222222222222222222222222222222"
+        |> hex.DecodeData
+        |> fun h -> new Key(h)
+        |> RevocationBasepointSecret
+    let revocationBasepoint = revocationBasepointSecret.RevocationBasepoint()
     let perCommitmentPoint =
         PerCommitmentPoint <| PubKey("022c76692fd70814a8d1ed9dedc833318afaaed8188db4d14727e2e99bc619d325")
     {
@@ -107,8 +116,8 @@ let getRemote(): RemoteConfig =
       DustLimit = Money.Satoshis(546L)
       PaymentBasepointSecret = paymentBasepointSecret
       PaymentBasepoint = paymentBasepoint
-      RevocationBasePointSecret = revocationBasePointSecret
-      RevocationBasePoint = revocationBasePoint
+      RevocationBasepointSecret = revocationBasepointSecret
+      RevocationBasepoint = revocationBasepoint
       FundingPrivKey = "1552dfba4f6cf29a62a0af13c8d6981d36d0ef8d61ba10fb0fe90da7634d7e13" |> hex.DecodeData |> fun h -> new Key(h)
       PaymentPrivKey = PaymentPrivKey <| Generators.derivePrivKey(ctx) (paymentBasepointSecret.RawKey()) (localPerCommitmentPoint.RawPubKey())
       PerCommitmentPoint = perCommitmentPoint
@@ -149,7 +158,7 @@ sprintf "local_secretkey: %A" local.PaymentPrivKey |> log
 sprintf "localkey: %A" (local.PaymentPrivKey.PaymentPubKey()) |> log
 sprintf "remotekey: %A" remote.PaymentPrivKey |> log
 sprintf "local_delayedkey: %A" (local.DelayedPaymentPrivKey.DelayedPaymentPubKey()) |> log
-sprintf "local_revocation_key: %A" local.RevocationPubKey|> log
+sprintf "local_revocation_key: %A" local.RevocationPubKey |> log
 sprintf "# funding wscript = %A" fundingRedeem |> log
 assert(fundingRedeem = Script.FromBytesUnsafe(hex.DecodeData "5221023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb21030e9f7b623d2ccc7c9bd44d66d5ce21ce504c0acf6385a132cec6d3c39fa711c152ae"))
 
