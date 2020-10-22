@@ -101,7 +101,7 @@ module Channel =
                 let commitmentSeed = chanPrivateKeys.CommitmentSeed
                 do! check (commitments.LocalCommit.PublishableTxs.CommitTx.Value.GetTxId()) (=) (commitTx.Value.GetTxId()) "txid mismatch. provided txid (%A) does not match current local commit tx (%A)"
                 let _localPerCommitmentPoint =
-                    commitmentSeed.DeriveCommitmentPubKey commitments.LocalCommit.Index
+                    commitmentSeed.DerivePerCommitmentPoint commitments.LocalCommit.Index
                 let _localRevocationPubKey = Generators.revocationPubKey
                 failwith "TODO"
             }
@@ -121,9 +121,9 @@ module Channel =
                     commitments.RemotePerCommitmentSecrets.NextCommitmentNumber()
                 DataLossProtect = OptionalField.Some <| {
                     YourLastPerCommitmentSecret =
-                        commitments.RemotePerCommitmentSecrets.LastRevocationKey()
+                        commitments.RemotePerCommitmentSecrets.MostRecentPerCommitmentSecret()
                     MyCurrentPerCommitmentPoint =
-                        commitmentSeed.DeriveCommitmentPubKey commitments.RemoteCommit.Index
+                        commitmentSeed.DerivePerCommitmentPoint commitments.RemoteCommit.Index
                 }
             }
         [ WeSentChannelReestablish ourChannelReestablish ] |> Ok
@@ -150,7 +150,7 @@ module Channel =
                 PaymentBasepoint = inputInitFunder.ChannelKeys.PaymentBaseKey.PubKey
                 DelayedPaymentBasepoint = inputInitFunder.ChannelKeys.DelayedPaymentBaseKey.PubKey
                 HTLCBasepoint = inputInitFunder.ChannelKeys.HTLCBaseKey.PubKey
-                FirstPerCommitmentPoint = inputInitFunder.ChannelKeys.CommitmentSeed.DeriveCommitmentPubKey CommitmentNumber.FirstCommitment
+                FirstPerCommitmentPoint = inputInitFunder.ChannelKeys.CommitmentSeed.DerivePerCommitmentPoint CommitmentNumber.FirstCommitment
                 ChannelFlags = inputInitFunder.ChannelFlags
                 ShutdownScriptPubKey = cs.Config.ChannelOptions.ShutdownScriptPubKey
             }
@@ -185,7 +185,7 @@ module Channel =
                                                state.LastSent.FeeRatePerKw
                                                outIndex
                                                fundingTxId
-                                               (commitmentSeed.DeriveCommitmentPubKey CommitmentNumber.FirstCommitment)
+                                               (commitmentSeed.DerivePerCommitmentPoint CommitmentNumber.FirstCommitment)
                                                msg.FirstPerCommitmentPoint
                                                cs.Secp256k1Context
                                                cs.Network
@@ -243,8 +243,8 @@ module Channel =
                                     RemoteNextHTLCId = HTLCId.Zero
                                     OriginChannels = Map.empty
                                     // we will receive their next per-commitment point in the next msg, so we temporarily put a random byte array
-                                    RemoteNextCommitInfo = DataEncoders.HexEncoder().DecodeData("0101010101010101010101010101010101010101010101010101010101010101") |> fun h -> new Key(h) |> fun k -> k.PubKey |> CommitmentPubKey |> RemoteNextCommitInfo.Revoked
-                                    RemotePerCommitmentSecrets = RevocationSet()
+                                    RemoteNextCommitInfo = DataEncoders.HexEncoder().DecodeData("0101010101010101010101010101010101010101010101010101010101010101") |> fun h -> new Key(h) |> fun k -> k.PubKey |> PerCommitmentPoint |> RemoteNextCommitInfo.Revoked
+                                    RemotePerCommitmentSecrets = PerCommitmentSecretStore()
                                     ChannelId =
                                         msg.ChannelId }
                 let nextState = { WaitForFundingConfirmedData.Commitments = commitments
@@ -267,7 +267,7 @@ module Channel =
                 do! Validation.checkOpenChannelMsgAcceptable (cs.FeeEstimator) (cs.Config) msg
                 let localParams = state.InitFundee.LocalParams
                 let channelKeys = state.InitFundee.ChannelKeys
-                let localCommitmentPubKey = channelKeys.CommitmentSeed.DeriveCommitmentPubKey CommitmentNumber.FirstCommitment
+                let localCommitmentPubKey = channelKeys.CommitmentSeed.DerivePerCommitmentPoint CommitmentNumber.FirstCommitment
                 let acceptChannelMsg: AcceptChannelMsg = {
                     TemporaryChannelId = msg.TemporaryChannelId
                     DustLimitSatoshis = localParams.DustLimitSatoshis
@@ -338,8 +338,8 @@ module Channel =
                                     LocalNextHTLCId = HTLCId.Zero
                                     RemoteNextHTLCId = HTLCId.Zero
                                     OriginChannels = Map.empty
-                                    RemoteNextCommitInfo = DataEncoders.HexEncoder().DecodeData("0101010101010101010101010101010101010101010101010101010101010101") |> fun h -> new Key(h) |> fun k -> k.PubKey |> CommitmentPubKey |> RemoteNextCommitInfo.Revoked
-                                    RemotePerCommitmentSecrets = RevocationSet()
+                                    RemoteNextCommitInfo = DataEncoders.HexEncoder().DecodeData("0101010101010101010101010101010101010101010101010101010101010101") |> fun h -> new Key(h) |> fun k -> k.PubKey |> PerCommitmentPoint |> RemoteNextCommitInfo.Revoked
+                                    RemotePerCommitmentSecrets = PerCommitmentSecretStore()
                                     ChannelId = channelId }
                 let nextState = { WaitForFundingConfirmedData.Commitments = commitments
                                   Deferred = None
@@ -356,7 +356,7 @@ module Channel =
             else
                 let chanPrivateKeys = cs.KeysRepository.GetChannelKeys state.Commitments.LocalParams.IsFunder
                 let nextPerCommitmentPoint =
-                    chanPrivateKeys.CommitmentSeed.DeriveCommitmentPubKey (CommitmentNumber.FirstCommitment.NextCommitment())
+                    chanPrivateKeys.CommitmentSeed.DerivePerCommitmentPoint (CommitmentNumber.FirstCommitment.NextCommitment())
                 let msgToSend: FundingLockedMsg = { ChannelId = state.Commitments.ChannelId; NextPerCommitmentPoint = nextPerCommitmentPoint }
 
                 // This is temporary channel id that we will use in our channel_update message, the goal is to be able to use our channel
@@ -497,7 +497,7 @@ module Channel =
         | ChannelState.Normal state, ApplyRevokeAndACK msg ->
             let cm = state.Commitments
             match cm.RemoteNextCommitInfo with
-            | RemoteNextCommitInfo.Waiting _ when (msg.PerCommitmentSecret.CommitmentPubKey <> cm.RemoteCommit.RemotePerCommitmentPoint) ->
+            | RemoteNextCommitInfo.Waiting _ when (msg.PerCommitmentSecret.PerCommitmentPoint() <> cm.RemoteCommit.RemotePerCommitmentPoint) ->
                 let errorMsg = sprintf "Invalid revoke_and_ack %A; must be %A" msg.PerCommitmentSecret cm.RemoteCommit.RemotePerCommitmentPoint
                 invalidRevokeAndACK msg errorMsg
             | RemoteNextCommitInfo.Revoked _ ->
@@ -505,7 +505,7 @@ module Channel =
                 invalidRevokeAndACK msg errorMsg
             | RemoteNextCommitInfo.Waiting({ NextRemoteCommit = theirNextCommit }) ->
                 let remotePerCommitmentSecretsOpt =
-                    cm.RemotePerCommitmentSecrets.InsertRevocationKey
+                    cm.RemotePerCommitmentSecrets.InsertPerCommitmentSecret
                         cm.RemoteCommit.Index
                         msg.PerCommitmentSecret
                 match remotePerCommitmentSecretsOpt with

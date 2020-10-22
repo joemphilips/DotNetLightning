@@ -3,6 +3,7 @@ namespace DotNetLightning.Serialization
 open System
 open System.IO
 open DotNetLightning.Utils
+open DotNetLightning.Crypto
 open NBitcoin
 
 type Scope(openAction: Action, closeAction: Action) =
@@ -331,13 +332,13 @@ type LightningReaderStream(inner: Stream) =
         else
             raise (FormatException("Invalid Pubkey encoding"))
 
-    member this.ReadRevocationKey() =
-        let bytes = this.ReadBytes RevocationKey.BytesLength
-        RevocationKey.FromBytes bytes
+    member this.ReadPerCommitmentSecret() =
+        let bytes = this.ReadBytes PerCommitmentSecret.BytesLength
+        PerCommitmentSecret.FromBytes bytes
 
-    member this.ReadCommitmentPubKey() =
-        let bytes = this.ReadBytes CommitmentPubKey.BytesLength
-        CommitmentPubKey.FromBytes bytes
+    member this.ReadPerCommitmentPoint() =
+        let bytes = this.ReadBytes PerCommitmentPoint.BytesLength
+        PerCommitmentPoint.FromBytes bytes
 
     member this.ReadCommitmentNumber() =
         let n = this.ReadUInt64 false

@@ -96,7 +96,7 @@ let openChannelGen =
         <*> pubKeyGen
         <*> pubKeyGen
         <*> pubKeyGen
-        <*> commitmentPubKeyGen
+        <*> perCommitmentPointGen
         <*> Arb.generate<uint8>
         <*> (Gen.optionOf pushScriptGen)
 
@@ -134,7 +134,7 @@ let acceptChannelGen =
         <*> pubKeyGen
         <*> pubKeyGen
         <*> pubKeyGen
-        <*> commitmentPubKeyGen
+        <*> perCommitmentPointGen
         <*> (Gen.optionOf pushScriptGen)
 
 let fundingCreatedGen =
@@ -163,7 +163,7 @@ let fundingSignedGen = gen {
 
 let fundingLockedGen = gen {
     let! c = ChannelId <!> uint256Gen
-    let! pk = commitmentPubKeyGen
+    let! pk = perCommitmentPointGen
     return {ChannelId = c; NextPerCommitmentPoint = pk}
 }
 
@@ -251,11 +251,11 @@ let commitmentSignedGen = gen {
 
 let revokeAndACKGen = gen {
     let! c = ChannelId <!> uint256Gen
-    let! revocationKey = revocationKeyGen
-    let! pk = commitmentPubKeyGen 
+    let! perCommitmentSecret = perCommitmentSecretGen
+    let! pk = perCommitmentPointGen 
     return {
         ChannelId = c
-        PerCommitmentSecret = revocationKey
+        PerCommitmentSecret = perCommitmentSecret
         NextPerCommitmentPoint = pk
     }
 }
@@ -269,10 +269,10 @@ let updateFeeGen = gen {
 }
 
 let private dataLossProtectGen = gen {
-    let! revocationKey = revocationKeyGen
-    let! pk = commitmentPubKeyGen
+    let! perCommitmentSecret = perCommitmentSecretGen
+    let! pk = perCommitmentPointGen
     return {
-        YourLastPerCommitmentSecret = Some revocationKey
+        YourLastPerCommitmentSecret = Some perCommitmentSecret
         MyCurrentPerCommitmentPoint = pk
     }
 }
