@@ -5,6 +5,7 @@ open ResultUtils
 open DotNetLightning.Transactions
 open DotNetLightning.Transactions.Transactions
 open DotNetLightning.Utils
+open DotNetLightning.Crypto
 open Expecto
 open NBitcoin
 
@@ -37,7 +38,7 @@ let testList = [
             let claimP2WPKHOutputTx =
                 Transactions.makeClaimP2WPKHOutputTx(commitTx)
                                                     (localDustLimit)
-                                                    (localPaymentPriv.PubKey)
+                                                    (PaymentPubKey localPaymentPriv.PubKey)
                                                     (finalSpk)
                                                     (feeRatePerKw)
                                                     n |> Result.defaultWith (fun _  -> failwith "fail: precomputed tx weights")

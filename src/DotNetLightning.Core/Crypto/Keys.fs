@@ -9,6 +9,40 @@ open DotNetLightning.Core.Utils.Extensions
 
 // FIXME: Should the [<Struct>]-annotated types here be changed to records or single-constructor discriminated unions? 
     
+type [<Struct>] PaymentBasepoint(pubKey: PubKey) =
+    member this.RawPubKey(): PubKey =
+        pubKey
+
+    member this.ToBytes(): array<byte> =
+        pubKey.ToBytes()
+
+    override self.ToString() =
+        pubKey.ToString()
+
+type [<Struct>] PaymentBasepointSecret(key: Key) =
+    member this.RawKey(): Key =
+        key
+
+    member this.PaymentBasepoint(): PaymentBasepoint =
+        PaymentBasepoint(this.RawKey().PubKey)
+
+type [<Struct>] PaymentPubKey(pubKey: PubKey) =
+    member this.RawPubKey(): PubKey =
+        pubKey
+
+    member this.ToBytes(): array<byte> =
+        this.RawPubKey().ToBytes()
+
+    override self.ToString() =
+        pubKey.ToString()
+
+type [<Struct>] PaymentPrivKey(key: Key) =
+    member this.RawKey(): Key =
+        key
+
+    member this.PaymentPubKey(): PaymentPubKey =
+        PaymentPubKey <| this.RawKey().PubKey
+
 type [<Struct>] DelayedPaymentBasepoint(pubKey: PubKey) =
     member this.RawPubKey(): PubKey =
         pubKey
@@ -47,7 +81,7 @@ type [<Struct>] DelayedPaymentPrivKey(key: Key) =
 type ChannelKeys = {
     FundingKey: Key
     RevocationBaseKey: Key
-    PaymentBaseKey: Key
+    PaymentBasepointSecret: PaymentBasepointSecret
     DelayedPaymentBasepointSecret: DelayedPaymentBasepointSecret
     HTLCBaseKey: Key
     CommitmentSeed: CommitmentSeed
@@ -56,7 +90,7 @@ type ChannelKeys = {
         {
             FundingPubKey = this.FundingKey.PubKey
             RevocationBasePubKey = this.RevocationBaseKey.PubKey
-            PaymentBasePubKey = this.PaymentBaseKey.PubKey
+            PaymentBasepoint = this.PaymentBasepointSecret.PaymentBasepoint()
             DelayedPaymentBasepoint = this.DelayedPaymentBasepointSecret.DelayedPaymentBasepoint()
             HTLCBasePubKey = this.HTLCBaseKey.PubKey
         }
@@ -65,7 +99,7 @@ type ChannelKeys = {
 and ChannelPubKeys = {
     FundingPubKey: PubKey
     RevocationBasePubKey: PubKey
-    PaymentBasePubKey: PubKey
+    PaymentBasepoint: PaymentBasepoint
     DelayedPaymentBasepoint: DelayedPaymentBasepoint
     HTLCBasePubKey: PubKey
 }
@@ -83,8 +117,8 @@ and [<Struct>] CommitmentNumber(index: UInt48) =
         CommitmentNumber UInt48.MaxValue
 
     static member ObscureFactor (isFunder: bool)
-                                (localPaymentBasepoint: PubKey)
-                                (remotePaymentBasepoint: PubKey)
+                                (localPaymentBasepoint: PaymentBasepoint)
+                                (remotePaymentBasepoint: PaymentBasepoint)
                                     : UInt48 =
         let pubKeysHash =
             if isFunder then
@@ -118,8 +152,8 @@ and [<Struct>] CommitmentNumber(index: UInt48) =
             Some <| CommitmentNumber(UInt48.FromUInt64 prev)
 
     member this.Obscure (isFunder: bool)
-                        (localPaymentBasepoint: PubKey)
-                        (remotePaymentBasepoint: PubKey)
+                        (localPaymentBasepoint: PaymentBasepoint)
+                        (remotePaymentBasepoint: PaymentBasepoint)
                             : ObscuredCommitmentNumber =
         let obscureFactor =
             CommitmentNumber.ObscureFactor
@@ -158,8 +192,8 @@ and [<Struct>] ObscuredCommitmentNumber(obscuredIndex: UInt48) =
             |> Some
 
     member this.Unobscure (isFunder: bool)
-                          (localPaymentBasepoint: PubKey)
-                          (remotePaymentBasepoint: PubKey)
+                          (localPaymentBasepoint: PaymentBasepoint)
+                          (remotePaymentBasepoint: PaymentBasepoint)
                               : CommitmentNumber =
         let obscureFactor =
             CommitmentNumber.ObscureFactor

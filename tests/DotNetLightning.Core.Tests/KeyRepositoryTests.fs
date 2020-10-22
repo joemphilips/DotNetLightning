@@ -96,14 +96,14 @@ let tests =
             let commitTx =
                 Transactions.makeCommitTx fundingScriptCoin
                                           CommitmentNumber.FirstCommitment
-                                          (localPubKeys.PaymentBasePubKey)
-                                          (remotePubKeys.PaymentBasePubKey)
+                                          localPubKeys.PaymentBasepoint
+                                          remotePubKeys.PaymentBasepoint
                                           (true)
                                           localDustLimit
                                           (localPubKeys.RevocationBasePubKey)
                                           toLocalDelay
                                           (DelayedPaymentPubKey <| localPubKeys.DelayedPaymentBasepoint.RawPubKey())    // FIXME: basepoint being used as pubkey here?
-                                          remotePubKeys.PaymentBasePubKey
+                                          (PaymentPubKey <| remotePubKeys.PaymentBasepoint.RawPubKey())                 // FIXME: basepoint being used as pubkey here?
                                           localPubKeys.HTLCBasePubKey
                                           remotePubKeys.HTLCBasePubKey
                                           specBase
@@ -118,14 +118,14 @@ let tests =
             let remoteCommitTx =
                 Transactions.makeCommitTx fundingScriptCoin
                                           CommitmentNumber.FirstCommitment
-                                          remotePubKeys.PaymentBasePubKey
-                                          localPubKeys.PaymentBasePubKey
+                                          remotePubKeys.PaymentBasepoint
+                                          localPubKeys.PaymentBasepoint
                                           false
                                           remoteDustLimit
                                           remotePubKeys.RevocationBasePubKey
                                           remoteDelay
                                           (DelayedPaymentPubKey <| remotePubKeys.DelayedPaymentBasepoint.RawPubKey())   // FIXME: basepoint being used as pubkey here?
-                                          localPubKeys.PaymentBasePubKey
+                                          (PaymentPubKey <| localPubKeys.PaymentBasepoint.RawPubKey())                  // FIXME: basepoint being used as pubkey here?
                                           remotePubKeys.HTLCBasePubKey
                                           localPubKeys.HTLCBasePubKey
                                           specBase

@@ -342,6 +342,9 @@ type LightningReaderStream(inner: Stream) =
     member this.ReadPerCommitmentPoint() =
         PerCommitmentPoint <| this.ReadPubKey()
 
+    member this.ReadPaymentBasepoint(): PaymentBasepoint =
+        PaymentBasepoint <| this.ReadPubKey()
+
     member this.ReadDelayedPaymentBasepoint(): DelayedPaymentBasepoint =
         DelayedPaymentBasepoint <| this.ReadPubKey()
 

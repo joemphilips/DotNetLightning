@@ -99,12 +99,12 @@ module internal ChannelHelpers =
                                                   fundingSatoshis
             let revPubKeyForLocal = Generators.revocationPubKey secpContext remoteChannelKeys.RevocationBasePubKey (localPerCommitmentPoint.RawPubKey())
             let delayedPubKeyForLocal = DelayedPaymentPubKey <| Generators.derivePubKey secpContext (localChannelKeys.DelayedPaymentBasepoint.RawPubKey()) (localPerCommitmentPoint.RawPubKey())
-            let paymentPubKeyForLocal = Generators.derivePubKey secpContext remoteChannelKeys.PaymentBasePubKey (localPerCommitmentPoint.RawPubKey())
+            let paymentPubKeyForLocal = PaymentPubKey <| Generators.derivePubKey secpContext (remoteChannelKeys.PaymentBasepoint.RawPubKey()) (localPerCommitmentPoint.RawPubKey())
             let localCommitTx =
                 Transactions.makeCommitTx scriptCoin
                                           CommitmentNumber.FirstCommitment
-                                          localChannelKeys.PaymentBasePubKey
-                                          remoteChannelKeys.PaymentBasePubKey
+                                          localChannelKeys.PaymentBasepoint
+                                          remoteChannelKeys.PaymentBasepoint
                                           localParams.IsFunder
                                           localParams.DustLimitSatoshis
                                           revPubKeyForLocal
@@ -117,12 +117,12 @@ module internal ChannelHelpers =
                                           n
             let revPubKeyForRemote = Generators.revocationPubKey secpContext localChannelKeys.RevocationBasePubKey (remotePerCommitmentPoint.RawPubKey())
             let delayedPubKeyForRemote = DelayedPaymentPubKey <| Generators.derivePubKey secpContext (remoteChannelKeys.DelayedPaymentBasepoint.RawPubKey()) (remotePerCommitmentPoint.RawPubKey())
-            let paymentPubKeyForRemote = Generators.derivePubKey secpContext localChannelKeys.PaymentBasePubKey (remotePerCommitmentPoint.RawPubKey())
+            let paymentPubKeyForRemote = PaymentPubKey <| Generators.derivePubKey secpContext (localChannelKeys.PaymentBasepoint.RawPubKey()) (remotePerCommitmentPoint.RawPubKey())
             let remoteCommitTx =
                 Transactions.makeCommitTx scriptCoin
                                           CommitmentNumber.FirstCommitment
-                                          remoteChannelKeys.PaymentBasePubKey
-                                          localChannelKeys.PaymentBasePubKey
+                                          remoteChannelKeys.PaymentBasepoint
+                                          localChannelKeys.PaymentBasepoint
                                           (not localParams.IsFunder)
                                           (remoteParams.DustLimitSatoshis)
                                           revPubKeyForRemote

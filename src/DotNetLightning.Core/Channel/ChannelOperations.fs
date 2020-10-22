@@ -100,7 +100,7 @@ type RemoteParams = {
             let channelPubKeys = {
                 FundingPubKey = msg.FundingPubKey
                 RevocationBasePubKey = msg.RevocationBasepoint
-                PaymentBasePubKey = msg.PaymentBasepoint
+                PaymentBasepoint = msg.PaymentBasepoint
                 DelayedPaymentBasepoint = msg.DelayedPaymentBasepoint
                 HTLCBasePubKey = msg.HTLCBasepoint
             }
@@ -121,7 +121,7 @@ type RemoteParams = {
             let channelPubKeys = {
                 FundingPubKey = msg.FundingPubKey
                 RevocationBasePubKey = msg.RevocationBasepoint
-                PaymentBasePubKey = msg.PaymentBasepoint
+                PaymentBasepoint = msg.PaymentBasepoint
                 DelayedPaymentBasepoint = msg.DelayedPaymentBasepoint
                 HTLCBasePubKey = msg.HTLCBasepoint
             }

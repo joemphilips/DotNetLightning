@@ -506,7 +506,7 @@ type OpenChannelMsg = {
     mutable MaxAcceptedHTLCs: uint16
     mutable FundingPubKey: PubKey
     mutable RevocationBasepoint: PubKey
-    mutable PaymentBasepoint: PubKey
+    mutable PaymentBasepoint: PaymentBasepoint
     mutable DelayedPaymentBasepoint: DelayedPaymentBasepoint
     mutable HTLCBasepoint: PubKey
     mutable FirstPerCommitmentPoint: PerCommitmentPoint
@@ -530,7 +530,7 @@ with
             this.MaxAcceptedHTLCs <- ls.ReadUInt16(false)
             this.FundingPubKey <- ls.ReadPubKey()
             this.RevocationBasepoint <- ls.ReadPubKey()
-            this.PaymentBasepoint <- ls.ReadPubKey()
+            this.PaymentBasepoint <- ls.ReadPaymentBasepoint()
             this.DelayedPaymentBasepoint <- ls.ReadDelayedPaymentBasepoint()
             this.HTLCBasepoint <- ls.ReadPubKey()
             this.FirstPerCommitmentPoint <- ls.ReadPerCommitmentPoint()
@@ -571,7 +571,7 @@ type AcceptChannelMsg = {
     mutable MaxAcceptedHTLCs: uint16
     mutable FundingPubKey: PubKey
     mutable RevocationBasepoint: PubKey
-    mutable PaymentBasepoint: PubKey
+    mutable PaymentBasepoint: PaymentBasepoint
     mutable DelayedPaymentBasepoint: DelayedPaymentBasepoint
     mutable HTLCBasepoint: PubKey
     mutable FirstPerCommitmentPoint: PerCommitmentPoint
@@ -591,7 +591,7 @@ with
             this.MaxAcceptedHTLCs <- ls.ReadUInt16(false)
             this.FundingPubKey <- ls.ReadPubKey()
             this.RevocationBasepoint <- ls.ReadPubKey()
-            this.PaymentBasepoint <- ls.ReadPubKey()
+            this.PaymentBasepoint <- ls.ReadPaymentBasepoint()
             this.DelayedPaymentBasepoint <- ls.ReadDelayedPaymentBasepoint()
             this.HTLCBasepoint <- ls.ReadPubKey()
             this.FirstPerCommitmentPoint <- ls.ReadPerCommitmentPoint()

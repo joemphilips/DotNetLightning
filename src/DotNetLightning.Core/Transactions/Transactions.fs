@@ -331,8 +331,8 @@ module Transactions =
 
     let getCommitTxNumber (commitTx: Transaction)
                           (isFunder: bool)
-                          (localPaymentBasepoint: PubKey)
-                          (remotePaymentBasepoint: PubKey)
+                          (localPaymentBasepoint: PaymentBasepoint)
+                          (remotePaymentBasepoint: PaymentBasepoint)
                               : Option<CommitmentNumber> =
         let obscuredCommitmentNumberOpt =
             ObscuredCommitmentNumber.TryFromLockTimeAndSequence
@@ -354,14 +354,14 @@ module Transactions =
 
     let makeCommitTx (inputInfo: ScriptCoin)
                      (commitmentNumber: CommitmentNumber)
-                     (localPaymentBasepoint: PubKey)
-                     (remotePaymentBasepoint: PubKey)
+                     (localPaymentBasepoint: PaymentBasepoint)
+                     (remotePaymentBasepoint: PaymentBasepoint)
                      (localIsFunder: bool)
                      (localDustLimit: Money)
                      (localRevocationPubKey: PubKey)
                      (toLocalDelay: BlockHeightOffset16)
                      (localDelayedPaymentPubKey: DelayedPaymentPubKey)
-                     (remotePaymentPubkey: PubKey)
+                     (remotePaymentPubkey: PaymentPubKey)
                      (localHTLCPubKey: PubKey)
                      (remoteHTLCPubkey: PubKey)
                      (spec: CommitmentSpec)
@@ -381,7 +381,7 @@ module Transactions =
                 None
         let toRemoteOutput_opt =
             if (toRemoteAmount >= localDustLimit) then 
-                Some(TxOut(toRemoteAmount, (remotePaymentPubkey.WitHash.ScriptPubKey)))
+                Some(TxOut(toRemoteAmount, (remotePaymentPubkey.RawPubKey().WitHash.ScriptPubKey)))
             else
                 None
 
@@ -687,13 +687,13 @@ module Transactions =
 
     let makeClaimP2WPKHOutputTx (delayedOutputTx: Transaction)
                                 (localDustLimit: Money)
-                                (localPaymentPubKey: PubKey)
+                                (localPaymentPubKey: PaymentPubKey)
                                 (localFinalDestination: IDestination)
                                 (feeRatePerKw: FeeRatePerKw)
                                 (network: Network)
                                     : Result<ClaimP2WPKHOutputTx, _> =
         let fee = feeRatePerKw.CalculateFeeFromWeight(CLAIM_P2WPKH_OUTPUT_WEIGHT)
-        let spk = localPaymentPubKey.WitHash.ScriptPubKey
+        let spk = localPaymentPubKey.RawPubKey().WitHash.ScriptPubKey
         let spkIndex = findScriptPubKeyIndex delayedOutputTx spk
         let outPut = delayedOutputTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex)
         let amount = (outPut).TxOut.Value - fee
