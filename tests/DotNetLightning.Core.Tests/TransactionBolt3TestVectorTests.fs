@@ -26,7 +26,7 @@ let log =
 let dataPath1 = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "../../..", ("Data/bolt3-tx.json"))
 let data1 = dataPath1 |> File.ReadAllText |> JsonDocument.Parse
 
-let localPerCommitmentPoint = PubKey("025f7117a78150fe2ef97db7cfc83bd57b2e2c0d0dd25eaf467a4a1c2a45ce1486")
+let localPerCommitmentPoint = PerCommitmentPoint <| PubKey("025f7117a78150fe2ef97db7cfc83bd57b2e2c0d0dd25eaf467a4a1c2a45ce1486")
 type LocalConfig = {
     Ctx: ISecp256k1
     CommitTxNumber: CommitmentNumber
@@ -37,7 +37,7 @@ type LocalConfig = {
     RevocationBasePointSecret: uint256
     DelayedPaymentBasePointSecret: Key
     delayedPaymentBasePoint: PubKey
-    PerCommitmentPoint: PubKey
+    PerCommitmentPoint: PerCommitmentPoint
     PaymentPrivKey: Key
     DelayedPaymentPrivKey: Key
     RevocationPubKey: PubKey
@@ -61,8 +61,8 @@ let getLocal(): LocalConfig =
       delayedPaymentBasePoint = delayedPaymentBasePointSecret.PubKey
       FundingPrivKey = "30ff4956bbdd3222d44cc5e8a1261dab1e07957bdac5ae88fe3261ef321f3749" |> hex.DecodeData |> fun h -> new Key(h)
       PerCommitmentPoint = localPerCommitmentPoint
-      PaymentPrivKey = Generators.derivePrivKey(ctx) (paymentBasePointSecret) (localPerCommitmentPoint)
-      DelayedPaymentPrivKey = Generators.derivePrivKey(ctx) (delayedPaymentBasePointSecret) (localPerCommitmentPoint)
+      PaymentPrivKey = Generators.derivePrivKey(ctx) (paymentBasePointSecret) (localPerCommitmentPoint.RawPubKey())
+      DelayedPaymentPrivKey = Generators.derivePrivKey(ctx) (delayedPaymentBasePointSecret) (localPerCommitmentPoint.RawPubKey())
       RevocationPubKey = PubKey("0212a140cd0c6539d07cd08dfe09984dec3251ea808b892efeac3ede9402bf2b19")
       FeeRatePerKw = 15000u |> FeeRatePerKw
     }
@@ -78,7 +78,7 @@ type RemoteConfig = {
     RevocationBasePoint: PubKey
     FundingPrivKey: Key
     PaymentPrivKey: Key
-    PerCommitmentPoint: PubKey
+    PerCommitmentPoint: PerCommitmentPoint
 }
 let getRemote(): RemoteConfig =
     let ctx = newSecp256k1()
@@ -86,6 +86,8 @@ let getRemote(): RemoteConfig =
     let paymentBasePoint = paymentBasePointSecret.PubKey
     let revocationBasePointSecret = "2222222222222222222222222222222222222222222222222222222222222222" |> hex.DecodeData |> fun h -> new Key(h)
     let revocationBasePoint = revocationBasePointSecret.PubKey
+    let perCommitmentPoint =
+        PerCommitmentPoint <| PubKey("022c76692fd70814a8d1ed9dedc833318afaaed8188db4d14727e2e99bc619d325")
     {
       Ctx = ctx
       CommitTxNumber = CommitmentNumber(UInt48.MaxValue - (UInt48.FromUInt64 42UL))
@@ -96,8 +98,8 @@ let getRemote(): RemoteConfig =
       RevocationBasePointSecret = revocationBasePointSecret
       RevocationBasePoint = revocationBasePoint
       FundingPrivKey = "1552dfba4f6cf29a62a0af13c8d6981d36d0ef8d61ba10fb0fe90da7634d7e13" |> hex.DecodeData |> fun h -> new Key(h)
-      PaymentPrivKey = Generators.derivePrivKey (ctx) (paymentBasePointSecret) localPerCommitmentPoint
-      PerCommitmentPoint = "022c76692fd70814a8d1ed9dedc833318afaaed8188db4d14727e2e99bc619d325" |> PubKey
+      PaymentPrivKey = Generators.derivePrivKey (ctx) (paymentBasePointSecret) (localPerCommitmentPoint.RawPubKey())
+      PerCommitmentPoint = perCommitmentPoint
     }
     
 let n = Network.RegTest
