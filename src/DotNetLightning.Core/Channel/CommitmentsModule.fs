@@ -143,14 +143,15 @@ module internal Commitments =
             msg.HTLCId
             |> unknownHTLCId
 
-    let sendFail (localKey: Key) (op: OperationFailHTLC) (cm: Commitments) =
+    let sendFail (nodeSecret: NodeSecret) (op: OperationFailHTLC) (cm: Commitments) =
         match cm.GetHTLCCrossSigned(Direction.In, op.Id) with
         | Some htlc when  (cm.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
             htlc.HTLCId |> htlcAlreadySent
         | Some htlc ->
             let ad = htlc.PaymentHash.ToBytes()
             let rawPacket = htlc.OnionRoutingPacket.ToBytes()
-            Sphinx.parsePacket localKey ad rawPacket |> Result.mapError(ChannelError.CryptoError)
+            Sphinx.parsePacket (nodeSecret.RawKey()) ad rawPacket
+            |> Result.mapError(ChannelError.CryptoError)
             >>= fun ({ SharedSecret = ss}) ->
                 let reason =
                     op.Reason

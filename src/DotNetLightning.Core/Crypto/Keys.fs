@@ -221,8 +221,60 @@ type [<Struct>] HtlcPrivKey(key: Key) =
     member this.HtlcPubKey(): HtlcPubKey =
         HtlcPubKey <| this.RawKey().PubKey
 
+type [<Struct>] NodeSecret(key: Key) =
+    member this.RawKey(): Key =
+        key
+
+    member this.NodeId(): NodeId =
+        NodeId key.PubKey
+
+/// This is the node-wide master key which is also used for
+/// transport-level encryption. The channel's keys are derived from
+/// this via BIP32 key derivation where `channelIndex` is the child
+/// index used to derive the channel's master key.
+type [<Struct>] NodeMasterPrivKey(extKey: ExtKey) =
+    member this.RawExtKey(): ExtKey =
+        extKey
+
+    member this.NodeSecret(): NodeSecret =
+        NodeSecret extKey.PrivateKey
+
+    member this.NodeId(): NodeId =
+        this.NodeSecret().NodeId()
+
+    member this.ChannelPrivKeys (channelIndex: int): ChannelPrivKeys =
+        let channelMasterKey = extKey.Derive(channelIndex, true)
+
+        // TODO: make use of these keys or remove them
+        //let destinationKey = channelMasterKey.Derive(1, true).PrivateKey
+        //let shutdownKey = channelMasterKey.Derive(2, true).PrivateKey
+        let commitmentSeed = channelMasterKey.Derive(3, true).PrivateKey |> CommitmentSeed
+
+        let fundingPrivKey =
+            channelMasterKey.Derive(4, true).PrivateKey |> FundingPrivKey
+
+        let revocationBasepointSecret =
+            channelMasterKey.Derive(5, true).PrivateKey |> RevocationBasepointSecret
+
+        let paymentBasepointSecret =
+            channelMasterKey.Derive(6, true).PrivateKey |> PaymentBasepointSecret
+
+        let delayedPaymentBasepointSecret =
+            channelMasterKey.Derive(7, true).PrivateKey |> DelayedPaymentBasepointSecret
+
+        let htlcBasepointSecret =
+            channelMasterKey.Derive(8, true).PrivateKey |> HtlcBasepointSecret
+        {
+            FundingPrivKey = fundingPrivKey
+            RevocationBasepointSecret = revocationBasepointSecret
+            PaymentBasepointSecret = paymentBasepointSecret
+            DelayedPaymentBasepointSecret = delayedPaymentBasepointSecret
+            HtlcBasepointSecret = htlcBasepointSecret
+            CommitmentSeed = commitmentSeed
+        }
+
 /// Set of lightning keys needed to operate a channel as describe in BOLT 3
-type ChannelPrivKeys = {
+and ChannelPrivKeys = {
     FundingPrivKey: FundingPrivKey
     RevocationBasepointSecret: RevocationBasepointSecret
     PaymentBasepointSecret: PaymentBasepointSecret

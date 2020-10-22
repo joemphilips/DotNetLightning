@@ -71,17 +71,15 @@ let tests =
             let fundingTxId = [| for _ in 0..31 -> 1uy |] |> uint256 |> TxId
             let fundingAmount = Money.Satoshis 10000000L
             
-            let localNodeSecret = ExtKey("00000000000000000000000000000000")
+            let localNodeMasterPrivKey = NodeMasterPrivKey <| ExtKey("00000000000000000000000000000000")
             let localChannelIndex = 0
-            let localRepo = DefaultKeyRepository(localNodeSecret, localChannelIndex) :> IKeysRepository
-            let localKeys = localRepo.GetChannelPrivKeys(true)
-            let localPubKeys = localKeys.ToChannelPubKeys()
+            let localPrivKeys = localNodeMasterPrivKey.ChannelPrivKeys localChannelIndex
+            let localPubKeys = localPrivKeys.ToChannelPubKeys()
             
-            let remoteNodeSecret = ExtKey("88888888888888888888888888888888")
+            let remoteNodeMasterPrivKey = NodeMasterPrivKey <| ExtKey("88888888888888888888888888888888")
             let remoteChannelIndex = 1
-            let remoteRepo = DefaultKeyRepository(remoteNodeSecret, remoteChannelIndex) :> IKeysRepository
-            let remoteKeys = remoteRepo.GetChannelPrivKeys(false)
-            let remotePubKeys = remoteKeys.ToChannelPubKeys()
+            let remotePrivKeys = remoteNodeMasterPrivKey.ChannelPrivKeys remoteChannelIndex
+            let remotePubKeys = remotePrivKeys.ToChannelPubKeys()
 
             let fundingScriptCoin =
                 ChannelHelpers.getFundingScriptCoin
@@ -110,8 +108,8 @@ let tests =
                                           (HtlcPubKey <| remotePubKeys.HtlcBasepoint.RawPubKey())
                                           specBase
                                           n
-            let _remoteSigForLocalCommit, commitTx2 = remoteRepo.SignWithFundingPrivKey commitTx.Value
-            let _localSigForLocalCommit, commitTx3 = localRepo.SignWithFundingPrivKey commitTx2
+            let _remoteSigForLocalCommit, commitTx2 = remotePrivKeys.SignWithFundingPrivKey commitTx.Value
+            let _localSigForLocalCommit, commitTx3 = localPrivKeys.SignWithFundingPrivKey commitTx2
             commitTx3.Finalize() |> ignore
             Expect.isTrue (commitTx3.CanExtractTransaction()) (sprintf "failed to finalize commitTx %A" commitTx3)
             
@@ -133,8 +131,8 @@ let tests =
                                           specBase
                                           n
             
-            let _remoteSigForRemoteCommit, remoteCommitTx2 = remoteRepo.SignWithFundingPrivKey remoteCommitTx.Value
-            let localSigForRemoteCommit, commitTx3 = localRepo.SignWithFundingPrivKey remoteCommitTx2
+            let _remoteSigForRemoteCommit, remoteCommitTx2 = remotePrivKeys.SignWithFundingPrivKey remoteCommitTx.Value
+            let localSigForRemoteCommit, commitTx3 = localPrivKeys.SignWithFundingPrivKey remoteCommitTx2
             
             let localSigs = seq [(localPubKeys.FundingPubKey.RawPubKey(), TransactionSignature(localSigForRemoteCommit.Signature, SigHash.All))]
             let finalizedTx = Transactions.checkTxFinalized remoteCommitTx2 0 localSigs |> Result.deref
