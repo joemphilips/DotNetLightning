@@ -325,20 +325,22 @@ type LightningReaderStream(inner: Stream) =
         let len = this.ReadUInt16(false)
         this.ReadBytes(int32 len)
 
+    member this.ReadKey() =
+        let bytes: array<byte> = this.ReadBytes Key.BytesLength
+        Key bytes
+
     member this.ReadPubKey() =
-        let b = this.ReadBytes(33)
-        if PubKey.Check(b, true) then
-            PubKey(b, true)
+        let bytes = this.ReadBytes PubKey.BytesLength
+        if PubKey.Check(bytes, true) then
+            PubKey(bytes, true)
         else
             raise (FormatException("Invalid Pubkey encoding"))
 
     member this.ReadPerCommitmentSecret() =
-        let bytes = this.ReadBytes PerCommitmentSecret.BytesLength
-        PerCommitmentSecret.FromBytes bytes
+        PerCommitmentSecret <| this.ReadKey()
 
     member this.ReadPerCommitmentPoint() =
-        let bytes = this.ReadBytes PerCommitmentPoint.BytesLength
-        PerCommitmentPoint.FromBytes bytes
+        PerCommitmentPoint <| this.ReadPubKey()
 
     member this.ReadCommitmentNumber() =
         let n = this.ReadUInt64 false
