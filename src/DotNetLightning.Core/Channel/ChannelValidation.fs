@@ -93,11 +93,9 @@ module internal ChannelHelpers =
                                                   fundingTxId
                                                   fundingOutputIndex
                                                   fundingSatoshis
-            let revPubKeyForLocal = localPerCommitmentPoint.DeriveRevocationPubKey remoteChannelKeys.RevocationBasepoint
-            let delayedPubKeyForLocal = localPerCommitmentPoint.DeriveDelayedPaymentPubKey localChannelKeys.DelayedPaymentBasepoint
-            let paymentPubKeyForLocal = localPerCommitmentPoint.DerivePaymentPubKey remoteChannelKeys.PaymentBasepoint
-            let localHtlcPubKeyForLocal = localPerCommitmentPoint.DeriveHtlcPubKey localChannelKeys.HtlcBasepoint
-            let remoteHtlcPubKeyForLocal = localPerCommitmentPoint.DeriveHtlcPubKey remoteChannelKeys.HtlcBasepoint
+            let localPubKeysForLocalCommitment = localPerCommitmentPoint.DeriveCommitmentPubKeys localChannelKeys
+            let remotePubKeysForLocalCommitment = localPerCommitmentPoint.DeriveCommitmentPubKeys remoteChannelKeys
+
             let localCommitTx =
                 Transactions.makeCommitTx scriptCoin
                                           CommitmentNumber.FirstCommitment
@@ -105,19 +103,18 @@ module internal ChannelHelpers =
                                           remoteChannelKeys.PaymentBasepoint
                                           localParams.IsFunder
                                           localParams.DustLimitSatoshis
-                                          revPubKeyForLocal
+                                          remotePubKeysForLocalCommitment.RevocationPubKey
                                           remoteParams.ToSelfDelay
-                                          delayedPubKeyForLocal
-                                          paymentPubKeyForLocal
-                                          localHtlcPubKeyForLocal
-                                          remoteHtlcPubKeyForLocal
+                                          localPubKeysForLocalCommitment.DelayedPaymentPubKey
+                                          remotePubKeysForLocalCommitment.PaymentPubKey
+                                          localPubKeysForLocalCommitment.HtlcPubKey
+                                          remotePubKeysForLocalCommitment.HtlcPubKey
                                           localSpec
                                           n
-            let revPubKeyForRemote = remotePerCommitmentPoint.DeriveRevocationPubKey localChannelKeys.RevocationBasepoint
-            let delayedPubKeyForRemote = remotePerCommitmentPoint.DeriveDelayedPaymentPubKey remoteChannelKeys.DelayedPaymentBasepoint
-            let paymentPubKeyForRemote = remotePerCommitmentPoint.DerivePaymentPubKey localChannelKeys.PaymentBasepoint
-            let localHtlcPubKeyForRemote = remotePerCommitmentPoint.DeriveHtlcPubKey localChannelKeys.HtlcBasepoint
-            let remoteHtlcPubKeyForRemote = remotePerCommitmentPoint.DeriveHtlcPubKey remoteChannelKeys.HtlcBasepoint
+
+            let localPubKeysForRemoteCommitment = remotePerCommitmentPoint.DeriveCommitmentPubKeys localChannelKeys
+            let remotePubKeysForRemoteCommitment = remotePerCommitmentPoint.DeriveCommitmentPubKeys remoteChannelKeys
+
             let remoteCommitTx =
                 Transactions.makeCommitTx scriptCoin
                                           CommitmentNumber.FirstCommitment
@@ -125,12 +122,12 @@ module internal ChannelHelpers =
                                           localChannelKeys.PaymentBasepoint
                                           (not localParams.IsFunder)
                                           (remoteParams.DustLimitSatoshis)
-                                          revPubKeyForRemote
+                                          localPubKeysForRemoteCommitment.RevocationPubKey
                                           localParams.ToSelfDelay
-                                          delayedPubKeyForRemote
-                                          paymentPubKeyForRemote
-                                          remoteHtlcPubKeyForRemote
-                                          localHtlcPubKeyForRemote
+                                          remotePubKeysForRemoteCommitment.DelayedPaymentPubKey
+                                          localPubKeysForRemoteCommitment.PaymentPubKey
+                                          remotePubKeysForRemoteCommitment.HtlcPubKey
+                                          localPubKeysForRemoteCommitment.HtlcPubKey
                                           remoteSpec
                                           n
 

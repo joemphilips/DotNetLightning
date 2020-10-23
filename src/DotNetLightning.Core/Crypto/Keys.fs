@@ -248,6 +248,13 @@ and ChannelPubKeys = {
     HtlcBasepoint: HtlcBasepoint
 }
 
+and CommitmentPubKeys = {
+    RevocationPubKey: RevocationPubKey
+    PaymentPubKey: PaymentPubKey
+    DelayedPaymentPubKey: DelayedPaymentPubKey
+    HtlcPubKey: HtlcPubKey
+}
+
 and [<Struct>] CommitmentNumber(index: UInt48) =
     member this.Index = index
 
@@ -467,6 +474,18 @@ and [<Struct>] PerCommitmentPoint(pubKey: PubKey) =
             PubKey.Mul(revocationBasepoint.RawPubKey(), revocationBasepointTweak),
             PubKey.Mul(this.RawPubKey(), perCommitmentPointTweak)
         )
+
+    member this.DeriveCommitmentPubKeys (channelPubKeys: ChannelPubKeys)
+                                            : CommitmentPubKeys = {
+        RevocationPubKey =
+            this.DeriveRevocationPubKey channelPubKeys.RevocationBasepoint
+        PaymentPubKey =
+            this.DerivePaymentPubKey channelPubKeys.PaymentBasepoint
+        DelayedPaymentPubKey =
+            this.DeriveDelayedPaymentPubKey channelPubKeys.DelayedPaymentBasepoint
+        HtlcPubKey =
+            this.DeriveHtlcPubKey channelPubKeys.HtlcBasepoint
+    }
 
 and [<Struct>] CommitmentSeed(lastPerCommitmentSecret: PerCommitmentSecret) =
     new(key: Key) =

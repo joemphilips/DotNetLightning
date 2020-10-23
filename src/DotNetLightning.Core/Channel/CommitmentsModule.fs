@@ -30,11 +30,8 @@ module internal Commitments =
             (spec) (n) =
             let localChannelKeys = localParams.ChannelPubKeys
             let remoteChannelKeys = remoteParams.ChannelPubKeys
-            let localPaymentPK = remotePerCommitmentPoint.DerivePaymentPubKey localChannelKeys.PaymentBasepoint
-            let localHTLCPK = remotePerCommitmentPoint.DeriveHtlcPubKey localChannelKeys.HtlcBasepoint
-            let remoteDelayedPaymentPK = remotePerCommitmentPoint.DeriveDelayedPaymentPubKey remoteChannelKeys.DelayedPaymentBasepoint
-            let remoteHTLCPK = remotePerCommitmentPoint.DeriveHtlcPubKey remoteChannelKeys.HtlcBasepoint
-            let remoteRevocationPK = remotePerCommitmentPoint.DeriveRevocationPubKey localChannelKeys.RevocationBasepoint
+            let localCommitmentPubKeys = remotePerCommitmentPoint.DeriveCommitmentPubKeys localChannelKeys
+            let remoteCommitmentPubKeys = remotePerCommitmentPoint.DeriveCommitmentPubKeys remoteChannelKeys
             let commitTx =
                 Transactions.makeCommitTx commitmentInput 
                                           commitTxNumber
@@ -42,12 +39,12 @@ module internal Commitments =
                                           localChannelKeys.PaymentBasepoint
                                           (not localParams.IsFunder)
                                           (remoteParams.DustLimitSatoshis)
-                                          (remoteRevocationPK)
+                                          localCommitmentPubKeys.RevocationPubKey
                                           (localParams.ToSelfDelay)
-                                          (remoteDelayedPaymentPK)
-                                          (localPaymentPK)
-                                          (remoteHTLCPK)
-                                          (localHTLCPK)
+                                          remoteCommitmentPubKeys.DelayedPaymentPubKey
+                                          localCommitmentPubKeys.PaymentPubKey
+                                          remoteCommitmentPubKeys.HtlcPubKey
+                                          localCommitmentPubKeys.HtlcPubKey
                                           (spec)
                                           (n)
             result {
@@ -55,11 +52,11 @@ module internal Commitments =
                      Transactions.makeHTLCTxs
                          (commitTx.Value.GetGlobalTransaction())
                          (remoteParams.DustLimitSatoshis)
-                         (remoteRevocationPK)
+                         localCommitmentPubKeys.RevocationPubKey
                          (localParams.ToSelfDelay)
-                         (remoteDelayedPaymentPK)
-                         (remoteHTLCPK)
-                         (localHTLCPK)
+                         remoteCommitmentPubKeys.DelayedPaymentPubKey
+                         remoteCommitmentPubKeys.HtlcPubKey
+                         localCommitmentPubKeys.HtlcPubKey
                          (spec) (n)
                 return (commitTx, htlcTimeoutTxs, htlcSuccessTxs)
             }
@@ -74,12 +71,9 @@ module internal Commitments =
             n: Result<(CommitTx * HTLCTimeoutTx list * HTLCSuccessTx list), _> =
             let localChannelKeys = localParams.ChannelPubKeys
             let remoteChannelKeys = remoteParams.ChannelPubKeys
+            let localCommitmentPubKeys = localPerCommitmentPoint.DeriveCommitmentPubKeys localChannelKeys
+            let remoteCommitmentPubKeys = localPerCommitmentPoint.DeriveCommitmentPubKeys remoteChannelKeys
 
-            let localDelayedPaymentPK = localPerCommitmentPoint.DeriveDelayedPaymentPubKey localChannelKeys.DelayedPaymentBasepoint
-            let localHTLCPK = localPerCommitmentPoint.DeriveHtlcPubKey localChannelKeys.HtlcBasepoint
-            let remotePaymentPK = localPerCommitmentPoint.DerivePaymentPubKey remoteChannelKeys.PaymentBasepoint
-            let remoteHTLCPK = localPerCommitmentPoint.DeriveHtlcPubKey remoteChannelKeys.HtlcBasepoint
-            let localRevocationPK = localPerCommitmentPoint.DeriveRevocationPubKey remoteChannelKeys.RevocationBasepoint
             let commitTx =
                 Transactions.makeCommitTx commitmentInput
                                           commitTxNumber
@@ -87,22 +81,22 @@ module internal Commitments =
                                           remoteChannelKeys.PaymentBasepoint
                                           localParams.IsFunder
                                           localParams.DustLimitSatoshis
-                                          localRevocationPK
+                                          remoteCommitmentPubKeys.RevocationPubKey
                                           remoteParams.ToSelfDelay
-                                          localDelayedPaymentPK
-                                          remotePaymentPK
-                                          localHTLCPK
-                                          remoteHTLCPK
+                                          localCommitmentPubKeys.DelayedPaymentPubKey
+                                          remoteCommitmentPubKeys.PaymentPubKey
+                                          localCommitmentPubKeys.HtlcPubKey
+                                          remoteCommitmentPubKeys.HtlcPubKey
                                           spec n
             result {
                 let! (htlcTimeoutTxs, htlcSuccessTxs) =
                     Transactions.makeHTLCTxs (commitTx.Value.GetGlobalTransaction())
                                              (localParams.DustLimitSatoshis)
-                                             (localRevocationPK)
+                                             remoteCommitmentPubKeys.RevocationPubKey
                                              (remoteParams.ToSelfDelay)
-                                             (localDelayedPaymentPK)
-                                             (localHTLCPK)
-                                             (remoteHTLCPK)
+                                             localCommitmentPubKeys.DelayedPaymentPubKey
+                                             localCommitmentPubKeys.HtlcPubKey
+                                             remoteCommitmentPubKeys.HtlcPubKey
                                              (spec)
                                              (n)
                 return (commitTx, htlcTimeoutTxs, htlcSuccessTxs)
