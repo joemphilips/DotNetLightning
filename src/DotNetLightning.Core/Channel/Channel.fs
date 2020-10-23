@@ -167,7 +167,10 @@ module Channel =
         | WaitForAcceptChannel state, ApplyAcceptChannel msg ->
             result {
                 do! Validation.checkAcceptChannelMsgAcceptable (cs.Config) state msg
-                let redeem = state.InputInitFunder.ChannelKeys.ToChannelPubKeys() |> ChannelHelpers.getFundingRedeemScript <| (msg.FundingPubKey.RawPubKey())
+                let redeem =
+                    Scripts.funding
+                        (state.InputInitFunder.ChannelKeys.ToChannelPubKeys().FundingPubKey)
+                        msg.FundingPubKey
                 let! fundingTx, outIndex =
                     cs.FundingTxProvider (redeem.WitHash :> IDestination, state.InputInitFunder.FundingSatoshis, state.InputInitFunder.FundingTxFeeRatePerKw)
                     |> expectFundingTxError
@@ -226,11 +229,12 @@ module Channel =
                                     ChannelFlags = state.ChannelFlags
                                     FundingScriptCoin =
                                         let amount = state.FundingTx.Value.Outputs.[int state.LastSent.FundingOutputIndex.Value].Value
-                                        ChannelHelpers.getFundingScriptCoin state.LocalParams.ChannelPubKeys
-                                                                (remoteChannelKeys.FundingPubKey.RawPubKey())
-                                                                state.LastSent.FundingTxId
-                                                                state.LastSent.FundingOutputIndex
-                                                                amount
+                                        ChannelHelpers.getFundingScriptCoin
+                                            state.LocalParams.ChannelPubKeys.FundingPubKey
+                                            remoteChannelKeys.FundingPubKey
+                                            state.LastSent.FundingTxId
+                                            state.LastSent.FundingOutputIndex
+                                            amount
                                     LocalCommit = { Index = CommitmentNumber.FirstCommitment;
                                                     Spec = state.LocalSpec;
                                                     PublishableTxs = { PublishableTxs.CommitTx = finalizedLocalCommitTx
@@ -323,7 +327,13 @@ module Channel =
                 let commitments = { Commitments.LocalParams = state.LocalParams
                                     RemoteParams = state.RemoteParams
                                     ChannelFlags = state.ChannelFlags
-                                    FundingScriptCoin = ChannelHelpers.getFundingScriptCoin state.LocalParams.ChannelPubKeys (remoteChannelKeys.FundingPubKey.RawPubKey()) msg.FundingTxId msg.FundingOutputIndex state.FundingSatoshis
+                                    FundingScriptCoin =
+                                        ChannelHelpers.getFundingScriptCoin
+                                            state.LocalParams.ChannelPubKeys.FundingPubKey
+                                            remoteChannelKeys.FundingPubKey
+                                            msg.FundingTxId
+                                            msg.FundingOutputIndex
+                                            state.FundingSatoshis
                                     LocalCommit = { LocalCommit.Index = CommitmentNumber.FirstCommitment
                                                     Spec = localSpec
                                                     PublishableTxs = { PublishableTxs.CommitTx = finalizedCommitTx;

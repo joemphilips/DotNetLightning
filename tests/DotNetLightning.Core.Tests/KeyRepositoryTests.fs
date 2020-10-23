@@ -83,11 +83,13 @@ let tests =
             let remoteKeys = remoteRepo.GetChannelKeys(false)
             let remotePubKeys = remoteKeys.ToChannelPubKeys()
 
-            let fundingScriptCoin = ChannelHelpers.getFundingScriptCoin localPubKeys
-                                                                        (remotePubKeys.FundingPubKey.RawPubKey())
-                                                                        fundingTxId
-                                                                        (TxOutIndex 0us)
-                                                                        fundingAmount
+            let fundingScriptCoin =
+                ChannelHelpers.getFundingScriptCoin
+                    localPubKeys.FundingPubKey
+                    remotePubKeys.FundingPubKey
+                    fundingTxId
+                    (TxOutIndex 0us)
+                    fundingAmount
             
             let localDustLimit = Money.Satoshis(546L)
             let toLocalDelay = 200us |> BlockHeightOffset16

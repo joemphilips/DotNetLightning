@@ -12,8 +12,12 @@ module Scripts =
     let inline private encodeInt (n) =
         Op.GetPushOp(int64 n).ToString()
 
-    let multiSigOfM_2 (sort) (pks) =
-        PayToMultiSigTemplate.Instance.GenerateScriptPubKey(2, sort, pks)
+    let funding (fundingPubKey0: FundingPubKey) (fundingPubKey1: FundingPubKey) =
+        PayToMultiSigTemplate.Instance.GenerateScriptPubKey(
+            2,
+            true,
+            [| fundingPubKey0.RawPubKey(); fundingPubKey1.RawPubKey() |]
+        )
 
     let toLocalDelayed (revocationPubKey: RevocationPubKey)
                        (BlockHeightOffset16 toSelfDelay)

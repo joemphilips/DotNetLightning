@@ -143,9 +143,9 @@ log(sprintf "# funding-tx: %A" fundingTx)
 let local = getLocal()
 let remote = getRemote()
 let fundingRedeem =
-    let fundingPks = [| local.FundingPrivKey.FundingPubKey().RawPubKey()
-                        remote.FundingPrivKey.FundingPubKey().RawPubKey() |]
-    Scripts.multiSigOfM_2(true) (fundingPks)
+    Scripts.funding
+        (local.FundingPrivKey.FundingPubKey())
+        (remote.FundingPrivKey.FundingPubKey())
 
 let commitmentInputScriptCoin =
     Coin(fundingTx.GetHash(), 0u, fundingAmount, fundingRedeem.WitHash.ScriptPubKey)
