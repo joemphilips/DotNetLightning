@@ -44,7 +44,6 @@
     <Compile Include="Crypto/Keys.fs" />
     <Compile Include="Crypto/PerCommitmentSecretStore.fs" />
     <Compile Include="Crypto/ShaChain.fs" />
-    <Compile Include="Crypto/Generators.fs" />
     <Compile Include="Chain/ChainInterface.fs" />
     <Compile Include="Chain/KeysInterface.fs" />
     <Compile Include="Serialization\GenericTLV.fs" />

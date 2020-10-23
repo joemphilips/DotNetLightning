@@ -79,8 +79,8 @@ let getLocal(): LocalConfig =
       DelayedPaymentBasepoint = delayedPaymentBasepointSecret.DelayedPaymentBasepoint()
       FundingPrivKey = fundingPrivKey
       PerCommitmentPoint = localPerCommitmentPoint
-      PaymentPrivKey = PaymentPrivKey <| Generators.derivePrivKey(ctx) (paymentBasepointSecret.RawKey()) (localPerCommitmentPoint.RawPubKey())
-      DelayedPaymentPrivKey = DelayedPaymentPrivKey <| Generators.derivePrivKey(ctx) (delayedPaymentBasepointSecret.RawKey()) (localPerCommitmentPoint.RawPubKey())
+      PaymentPrivKey = localPerCommitmentPoint.DerivePaymentPrivKey paymentBasepointSecret
+      DelayedPaymentPrivKey = localPerCommitmentPoint.DeriveDelayedPaymentPrivKey delayedPaymentBasepointSecret
       RevocationPubKey = RevocationPubKey <| PubKey("0212a140cd0c6539d07cd08dfe09984dec3251ea808b892efeac3ede9402bf2b19")
       FeeRatePerKw = 15000u |> FeeRatePerKw
     }
@@ -129,7 +129,7 @@ let getRemote(): RemoteConfig =
       RevocationBasepointSecret = revocationBasepointSecret
       RevocationBasepoint = revocationBasepoint
       FundingPrivKey = fundingPrivKey
-      PaymentPrivKey = PaymentPrivKey <| Generators.derivePrivKey(ctx) (paymentBasepointSecret.RawKey()) (localPerCommitmentPoint.RawPubKey())
+      PaymentPrivKey = localPerCommitmentPoint.DerivePaymentPrivKey paymentBasepointSecret
       PerCommitmentPoint = perCommitmentPoint
     }
     

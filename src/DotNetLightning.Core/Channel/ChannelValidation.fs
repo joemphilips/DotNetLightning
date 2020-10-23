@@ -94,11 +94,11 @@ module internal ChannelHelpers =
                                                   fundingTxId
                                                   fundingOutputIndex
                                                   fundingSatoshis
-            let revPubKeyForLocal = RevocationPubKey <| Generators.revocationPubKey secpContext (remoteChannelKeys.RevocationBasepoint.RawPubKey()) (localPerCommitmentPoint.RawPubKey())
-            let delayedPubKeyForLocal = DelayedPaymentPubKey <| Generators.derivePubKey secpContext (localChannelKeys.DelayedPaymentBasepoint.RawPubKey()) (localPerCommitmentPoint.RawPubKey())
-            let paymentPubKeyForLocal = PaymentPubKey <| Generators.derivePubKey secpContext (remoteChannelKeys.PaymentBasepoint.RawPubKey()) (localPerCommitmentPoint.RawPubKey())
-            let localHtlcPubKeyForLocal = HtlcPubKey <| Generators.derivePubKey secpContext (localChannelKeys.HtlcBasepoint.RawPubKey()) (localPerCommitmentPoint.RawPubKey())
-            let remoteHtlcPubKeyForLocal = HtlcPubKey <| Generators.derivePubKey secpContext (remoteChannelKeys.HtlcBasepoint.RawPubKey()) (localPerCommitmentPoint.RawPubKey())
+            let revPubKeyForLocal = localPerCommitmentPoint.DeriveRevocationPubKey remoteChannelKeys.RevocationBasepoint
+            let delayedPubKeyForLocal = localPerCommitmentPoint.DeriveDelayedPaymentPubKey localChannelKeys.DelayedPaymentBasepoint
+            let paymentPubKeyForLocal = localPerCommitmentPoint.DerivePaymentPubKey remoteChannelKeys.PaymentBasepoint
+            let localHtlcPubKeyForLocal = localPerCommitmentPoint.DeriveHtlcPubKey localChannelKeys.HtlcBasepoint
+            let remoteHtlcPubKeyForLocal = localPerCommitmentPoint.DeriveHtlcPubKey remoteChannelKeys.HtlcBasepoint
             let localCommitTx =
                 Transactions.makeCommitTx scriptCoin
                                           CommitmentNumber.FirstCommitment
@@ -114,11 +114,11 @@ module internal ChannelHelpers =
                                           remoteHtlcPubKeyForLocal
                                           localSpec
                                           n
-            let revPubKeyForRemote = RevocationPubKey <| Generators.revocationPubKey secpContext (localChannelKeys.RevocationBasepoint.RawPubKey()) (remotePerCommitmentPoint.RawPubKey())
-            let delayedPubKeyForRemote = DelayedPaymentPubKey <| Generators.derivePubKey secpContext (remoteChannelKeys.DelayedPaymentBasepoint.RawPubKey()) (remotePerCommitmentPoint.RawPubKey())
-            let paymentPubKeyForRemote = PaymentPubKey <| Generators.derivePubKey secpContext (localChannelKeys.PaymentBasepoint.RawPubKey()) (remotePerCommitmentPoint.RawPubKey())
-            let localHtlcPubKeyForRemote = HtlcPubKey <| Generators.derivePubKey secpContext (localChannelKeys.HtlcBasepoint.RawPubKey()) (remotePerCommitmentPoint.RawPubKey())
-            let remoteHtlcPubKeyForRemote = HtlcPubKey <| Generators.derivePubKey secpContext (remoteChannelKeys.HtlcBasepoint.RawPubKey()) (remotePerCommitmentPoint.RawPubKey())
+            let revPubKeyForRemote = remotePerCommitmentPoint.DeriveRevocationPubKey localChannelKeys.RevocationBasepoint
+            let delayedPubKeyForRemote = remotePerCommitmentPoint.DeriveDelayedPaymentPubKey remoteChannelKeys.DelayedPaymentBasepoint
+            let paymentPubKeyForRemote = remotePerCommitmentPoint.DerivePaymentPubKey localChannelKeys.PaymentBasepoint
+            let localHtlcPubKeyForRemote = remotePerCommitmentPoint.DeriveHtlcPubKey localChannelKeys.HtlcBasepoint
+            let remoteHtlcPubKeyForRemote = remotePerCommitmentPoint.DeriveHtlcPubKey remoteChannelKeys.HtlcBasepoint
             let remoteCommitTx =
                 Transactions.makeCommitTx scriptCoin
                                           CommitmentNumber.FirstCommitment

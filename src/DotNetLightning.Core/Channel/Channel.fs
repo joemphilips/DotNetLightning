@@ -102,7 +102,6 @@ module Channel =
                 do! check (commitments.LocalCommit.PublishableTxs.CommitTx.Value.GetTxId()) (=) (commitTx.Value.GetTxId()) "txid mismatch. provided txid (%A) does not match current local commit tx (%A)"
                 let _localPerCommitmentPoint =
                     commitmentSeed.DerivePerCommitmentPoint commitments.LocalCommit.Index
-                let _localRevocationPubKey = Generators.revocationPubKey
                 failwith "TODO"
             }
 

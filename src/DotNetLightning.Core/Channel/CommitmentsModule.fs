@@ -31,12 +31,11 @@ module internal Commitments =
             (spec) (n) =
             let localChannelKeys = localParams.ChannelPubKeys
             let remoteChannelKeys = remoteParams.ChannelPubKeys
-            let pkGen = Generators.derivePubKey ctx (remotePerCommitmentPoint.RawPubKey())
-            let localPaymentPK = PaymentPubKey <| pkGen (localChannelKeys.PaymentBasepoint.RawPubKey())
-            let localHTLCPK = HtlcPubKey <| pkGen (localChannelKeys.HtlcBasepoint.RawPubKey())
-            let remoteDelayedPaymentPK = DelayedPaymentPubKey <| pkGen (remoteChannelKeys.DelayedPaymentBasepoint.RawPubKey())
-            let remoteHTLCPK = HtlcPubKey <| pkGen (remoteChannelKeys.HtlcBasepoint.RawPubKey())
-            let remoteRevocationPK = RevocationPubKey <| pkGen (localChannelKeys.RevocationBasepoint.RawPubKey())
+            let localPaymentPK = remotePerCommitmentPoint.DerivePaymentPubKey localChannelKeys.PaymentBasepoint
+            let localHTLCPK = remotePerCommitmentPoint.DeriveHtlcPubKey localChannelKeys.HtlcBasepoint
+            let remoteDelayedPaymentPK = remotePerCommitmentPoint.DeriveDelayedPaymentPubKey remoteChannelKeys.DelayedPaymentBasepoint
+            let remoteHTLCPK = remotePerCommitmentPoint.DeriveHtlcPubKey remoteChannelKeys.HtlcBasepoint
+            let remoteRevocationPK = remotePerCommitmentPoint.DeriveRevocationPubKey localChannelKeys.RevocationBasepoint
             let commitTx =
                 Transactions.makeCommitTx commitmentInput 
                                           commitTxNumber
@@ -77,12 +76,12 @@ module internal Commitments =
             n: Result<(CommitTx * HTLCTimeoutTx list * HTLCSuccessTx list), _> =
             let localChannelKeys = localParams.ChannelPubKeys
             let remoteChannelKeys = remoteParams.ChannelPubKeys
-            let pkGen = Generators.derivePubKey ctx (localPerCommitmentPoint.RawPubKey())
-            let localDelayedPaymentPK = DelayedPaymentPubKey <| pkGen (localChannelKeys.DelayedPaymentBasepoint.RawPubKey())
-            let localHTLCPK = HtlcPubKey <| pkGen (localChannelKeys.HtlcBasepoint.RawPubKey())
-            let remotePaymentPK = PaymentPubKey <| pkGen (remoteChannelKeys.PaymentBasepoint.RawPubKey())
-            let remoteHTLCPK = HtlcPubKey <| pkGen (remoteChannelKeys.HtlcBasepoint.RawPubKey())
-            let localRevocationPK = RevocationPubKey <| pkGen (remoteChannelKeys.RevocationBasepoint.RawPubKey())
+
+            let localDelayedPaymentPK = localPerCommitmentPoint.DeriveDelayedPaymentPubKey localChannelKeys.DelayedPaymentBasepoint
+            let localHTLCPK = localPerCommitmentPoint.DeriveHtlcPubKey localChannelKeys.HtlcBasepoint
+            let remotePaymentPK = localPerCommitmentPoint.DerivePaymentPubKey remoteChannelKeys.PaymentBasepoint
+            let remoteHTLCPK = localPerCommitmentPoint.DeriveHtlcPubKey remoteChannelKeys.HtlcBasepoint
+            let localRevocationPK = localPerCommitmentPoint.DeriveRevocationPubKey remoteChannelKeys.RevocationBasepoint
             let commitTx =
                 Transactions.makeCommitTx commitmentInput
                                           commitTxNumber
@@ -290,7 +289,7 @@ module internal Commitments =
                 let htlcSigs =
                     sortedHTLCTXs
                     |> List.map(
-                            (fun htlc -> keyRepo.GenerateKeyFromBasepointAndSign(htlc.Value, cm.LocalParams.ChannelPubKeys.HtlcBasepoint.RawPubKey(), remoteNextPerCommitmentPoint.RawPubKey()))
+                            (fun htlc -> keyRepo.GenerateKeyFromBasepointAndSign htlc.Value (cm.LocalParams.ChannelPubKeys.HtlcBasepoint.RawPubKey()) remoteNextPerCommitmentPoint)
                             >> fst
                             >> (fun txSig -> txSig.Signature)
                             )
@@ -355,21 +354,21 @@ module internal Commitments =
                 let _localHTLCSigs, sortedHTLCTXs =
                     let localHtlcSigsAndHTLCTxs =
                         sortedHTLCTXs |> List.map(fun htlc ->
-                            keyRepo.GenerateKeyFromBasepointAndSign(htlc.Value, cm.LocalParams.ChannelPubKeys.HtlcBasepoint.RawPubKey(), localPerCommitmentPoint.RawPubKey())
+                            keyRepo.GenerateKeyFromBasepointAndSign htlc.Value (cm.LocalParams.ChannelPubKeys.HtlcBasepoint.RawPubKey()) localPerCommitmentPoint
                         )
                     localHtlcSigsAndHTLCTxs |> List.map(fst), localHtlcSigsAndHTLCTxs |> List.map(snd) |> Seq.cast<IHTLCTx> |> List.ofSeq
 
-                let remoteHTLCPubKey = Generators.derivePubKey ctx (remoteChannelKeys.HtlcBasepoint.RawPubKey()) (localPerCommitmentPoint.RawPubKey())
+                let remoteHTLCPubKey = localPerCommitmentPoint.DeriveHtlcPubKey remoteChannelKeys.HtlcBasepoint
 
                 let checkHTLCSig (htlc: IHTLCTx, remoteECDSASig: LNECDSASignature): Result<_, _> =
                     let remoteS = TransactionSignature(remoteECDSASig.Value, SigHash.All)
                     match htlc with
                     | :? HTLCTimeoutTx ->
-                        (Transactions.checkTxFinalized (htlc.Value) (0) (seq [(remoteHTLCPubKey, remoteS)]))
+                        (Transactions.checkTxFinalized (htlc.Value) (0) (seq [(remoteHTLCPubKey.RawPubKey(), remoteS)]))
                         |> Result.map(box)
                     // we cannot check that htlc-success tx are spendable because we need the payment preimage; thus we only check the remote sig
                     | :? HTLCSuccessTx ->
-                        (Transactions.checkSigAndAdd (htlc) (remoteS) (remoteHTLCPubKey))
+                        (Transactions.checkSigAndAdd (htlc) (remoteS) (remoteHTLCPubKey.RawPubKey()))
                         |> Result.map(box)
                     | _ -> failwith "Unreachable!"
 
