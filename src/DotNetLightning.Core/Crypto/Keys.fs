@@ -228,92 +228,8 @@ type [<Struct>] NodeSecret(key: Key) =
     member this.NodeId(): NodeId =
         NodeId key.PubKey
 
-/// This is the node-wide master key which is also used for
-/// transport-level encryption. The channel's keys are derived from
-/// this via BIP32 key derivation where `channelIndex` is the child
-/// index used to derive the channel's master key.
-type [<Struct>] NodeMasterPrivKey(extKey: ExtKey) =
-    member this.RawExtKey(): ExtKey =
-        extKey
-
-    member this.NodeSecret(): NodeSecret =
-        NodeSecret extKey.PrivateKey
-
-    member this.NodeId(): NodeId =
-        this.NodeSecret().NodeId()
-
-    member this.ChannelPrivKeys (channelIndex: int): ChannelPrivKeys =
-        let channelMasterKey = extKey.Derive(channelIndex, true)
-
-        // TODO: make use of these keys or remove them
-        //let destinationKey = channelMasterKey.Derive(1, true).PrivateKey
-        //let shutdownKey = channelMasterKey.Derive(2, true).PrivateKey
-        let commitmentSeed = channelMasterKey.Derive(3, true).PrivateKey |> CommitmentSeed
-
-        let fundingPrivKey =
-            channelMasterKey.Derive(4, true).PrivateKey |> FundingPrivKey
-
-        let revocationBasepointSecret =
-            channelMasterKey.Derive(5, true).PrivateKey |> RevocationBasepointSecret
-
-        let paymentBasepointSecret =
-            channelMasterKey.Derive(6, true).PrivateKey |> PaymentBasepointSecret
-
-        let delayedPaymentBasepointSecret =
-            channelMasterKey.Derive(7, true).PrivateKey |> DelayedPaymentBasepointSecret
-
-        let htlcBasepointSecret =
-            channelMasterKey.Derive(8, true).PrivateKey |> HtlcBasepointSecret
-        {
-            FundingPrivKey = fundingPrivKey
-            RevocationBasepointSecret = revocationBasepointSecret
-            PaymentBasepointSecret = paymentBasepointSecret
-            DelayedPaymentBasepointSecret = delayedPaymentBasepointSecret
-            HtlcBasepointSecret = htlcBasepointSecret
-            CommitmentSeed = commitmentSeed
-        }
-
-/// Set of lightning keys needed to operate a channel as describe in BOLT 3
-and ChannelPrivKeys = {
-    FundingPrivKey: FundingPrivKey
-    RevocationBasepointSecret: RevocationBasepointSecret
-    PaymentBasepointSecret: PaymentBasepointSecret
-    DelayedPaymentBasepointSecret: DelayedPaymentBasepointSecret
-    HtlcBasepointSecret: HtlcBasepointSecret
-    CommitmentSeed: CommitmentSeed
-} with
-    member this.ToChannelPubKeys(): ChannelPubKeys =
-        {
-            FundingPubKey = this.FundingPrivKey.FundingPubKey()
-            RevocationBasepoint = this.RevocationBasepointSecret.RevocationBasepoint()
-            PaymentBasepoint = this.PaymentBasepointSecret.PaymentBasepoint()
-            DelayedPaymentBasepoint = this.DelayedPaymentBasepointSecret.DelayedPaymentBasepoint()
-            HtlcBasepoint = this.HtlcBasepointSecret.HtlcBasepoint()
-        }
-
-    member this.SignWithFundingPrivKey (psbt: PSBT)
-                                           : TransactionSignature * PSBT =
-        let fundingPubKey = this.FundingPrivKey.FundingPubKey()
-        psbt.SignWithKeys(this.FundingPrivKey.RawKey()) |> ignore
-        match psbt.GetMatchingSig(fundingPubKey.RawPubKey()) with
-        | Some signature -> (signature, psbt)
-        | None -> failwithf "Failed to get signature for %A with funding pub key (%A). This should never happen" psbt fundingPubKey
-
-    member this.SignHtlcTx (psbt: PSBT)
-                           (perCommitmentPoint: PerCommitmentPoint)
-                               : TransactionSignature * PSBT =
-        let htlcPrivKey = perCommitmentPoint.DeriveHtlcPrivKey this.HtlcBasepointSecret
-        let htlcPubKey = htlcPrivKey.HtlcPubKey()
-        psbt.SignWithKeys(htlcPrivKey.RawKey()) |> ignore
-        match psbt.GetMatchingSig(htlcPubKey.RawPubKey()) with
-        | Some signature -> (signature, psbt)
-        | None ->
-            failwithf
-                "failed to get htlc signature for %A. with htlc pubkey (%A) and perCommitmentPoint (%A)"
-                psbt htlcPubKey perCommitmentPoint
-
 /// In usual operation we should not hold secrets on memory. So only hold pubkey
-and ChannelPubKeys = {
+type ChannelPubKeys = {
     FundingPubKey: FundingPubKey
     RevocationBasepoint: RevocationBasepoint
     PaymentBasepoint: PaymentBasepoint
@@ -321,14 +237,98 @@ and ChannelPubKeys = {
     HtlcBasepoint: HtlcBasepoint
 }
 
-and CommitmentPubKeys = {
+type CommitmentPubKeys = {
     RevocationPubKey: RevocationPubKey
     PaymentPubKey: PaymentPubKey
     DelayedPaymentPubKey: DelayedPaymentPubKey
     HtlcPubKey: HtlcPubKey
 }
 
-and [<Struct>] CommitmentNumber(index: UInt48) =
+type [<Struct>] PerCommitmentPoint(pubKey: PubKey) =
+    member this.RawPubKey(): PubKey =
+        pubKey
+
+    static member BytesLength: int = PubKey.BytesLength
+
+    static member FromBytes(bytes: array<byte>): PerCommitmentPoint =
+        PerCommitmentPoint <| PubKey bytes
+
+    member this.ToBytes(): array<byte> =
+        this.RawPubKey().ToBytes()
+
+    member this.DerivePrivKey (basepointSecret: Key): Key =
+        let basepointBytes =
+            let basepoint = basepointSecret.PubKey
+            basepoint.ToBytes()
+        let perCommitmentPointBytes = this.ToBytes()
+        let tweak =
+            Key.FromHash <| Array.append perCommitmentPointBytes basepointBytes
+        Key.Add(basepointSecret, tweak)
+
+    member this.DerivePubKey (basepoint: PubKey): PubKey =
+        let basepointBytes = basepoint.ToBytes()
+        let perCommitmentPointBytes = this.ToBytes()
+        let tweak =
+            Key.FromHash <| Array.append perCommitmentPointBytes basepointBytes
+        PubKey.Add(basepoint, tweak.PubKey)
+
+    member this.DerivePaymentPrivKey (paymentBasepointSecret: PaymentBasepointSecret)
+                                         : PaymentPrivKey =
+        PaymentPrivKey <|
+            this.DerivePrivKey (paymentBasepointSecret.RawKey())
+
+    member this.DerivePaymentPubKey (paymentBasepoint: PaymentBasepoint)
+                                        : PaymentPubKey =
+        PaymentPubKey <|
+            this.DerivePubKey (paymentBasepoint.RawPubKey())
+
+    member this.DeriveDelayedPaymentPrivKey (delayedPaymentBasepointSecret: DelayedPaymentBasepointSecret)
+                                                : DelayedPaymentPrivKey =
+        DelayedPaymentPrivKey <|
+            this.DerivePrivKey (delayedPaymentBasepointSecret.RawKey())
+
+    member this.DeriveDelayedPaymentPubKey (delayedPaymentBasepoint: DelayedPaymentBasepoint)
+                                               : DelayedPaymentPubKey =
+        DelayedPaymentPubKey <|
+            this.DerivePubKey (delayedPaymentBasepoint.RawPubKey())
+
+    member this.DeriveHtlcPrivKey (htlcBasepointSecret: HtlcBasepointSecret)
+                                      : HtlcPrivKey =
+        HtlcPrivKey <|
+            this.DerivePrivKey (htlcBasepointSecret.RawKey())
+
+    member this.DeriveHtlcPubKey (htlcBasepoint: HtlcBasepoint)
+                                     : HtlcPubKey =
+        HtlcPubKey <|
+            this.DerivePubKey (htlcBasepoint.RawPubKey())
+
+    member this.DeriveRevocationPubKey (revocationBasepoint: RevocationBasepoint)
+                           : RevocationPubKey =
+        let revocationBasepointBytes = revocationBasepoint.ToBytes()
+        let perCommitmentPointBytes = this.ToBytes()
+        let revocationBasepointTweak =
+            Key.FromHash <| Array.append revocationBasepointBytes perCommitmentPointBytes
+        let perCommitmentPointTweak =
+            Key.FromHash <| Array.append perCommitmentPointBytes revocationBasepointBytes
+
+        RevocationPubKey <| PubKey.Add(
+            PubKey.Mul(revocationBasepoint.RawPubKey(), revocationBasepointTweak),
+            PubKey.Mul(this.RawPubKey(), perCommitmentPointTweak)
+        )
+
+    member this.DeriveCommitmentPubKeys (channelPubKeys: ChannelPubKeys)
+                                            : CommitmentPubKeys = {
+        RevocationPubKey =
+            this.DeriveRevocationPubKey channelPubKeys.RevocationBasepoint
+        PaymentPubKey =
+            this.DerivePaymentPubKey channelPubKeys.PaymentBasepoint
+        DelayedPaymentPubKey =
+            this.DeriveDelayedPaymentPubKey channelPubKeys.DelayedPaymentBasepoint
+        HtlcPubKey =
+            this.DeriveHtlcPubKey channelPubKeys.HtlcBasepoint
+    }
+
+type [<Struct>] CommitmentNumber(index: UInt48) =
     member this.Index = index
 
     override this.ToString() =
@@ -426,7 +426,7 @@ and [<Struct>] ObscuredCommitmentNumber(obscuredIndex: UInt48) =
                 remotePaymentBasepoint
         CommitmentNumber(UInt48.MaxValue - (this.ObscuredIndex ^^^ obscureFactor))
 
-and [<Struct>] PerCommitmentSecret(key: Key) =
+type [<Struct>] PerCommitmentSecret(key: Key) =
     member this.RawKey(): Key =
         key
 
@@ -476,91 +476,7 @@ and [<Struct>] PerCommitmentSecret(key: Key) =
             Key.Mul(this.RawKey(), perCommitmentSecretTweak)
         )
 
-and [<Struct>] PerCommitmentPoint(pubKey: PubKey) =
-    member this.RawPubKey(): PubKey =
-        pubKey
-
-    static member BytesLength: int = PubKey.BytesLength
-
-    static member FromBytes(bytes: array<byte>): PerCommitmentPoint =
-        PerCommitmentPoint <| PubKey bytes
-
-    member this.ToBytes(): array<byte> =
-        this.RawPubKey().ToBytes()
-
-    member this.DerivePrivKey (basepointSecret: Key): Key =
-        let basepointBytes =
-            let basepoint = basepointSecret.PubKey
-            basepoint.ToBytes()
-        let perCommitmentPointBytes = this.ToBytes()
-        let tweak =
-            Key.FromHash <| Array.append perCommitmentPointBytes basepointBytes
-        Key.Add(basepointSecret, tweak)
-
-    member this.DerivePubKey (basepoint: PubKey): PubKey =
-        let basepointBytes = basepoint.ToBytes()
-        let perCommitmentPointBytes = this.ToBytes()
-        let tweak =
-            Key.FromHash <| Array.append perCommitmentPointBytes basepointBytes
-        PubKey.Add(basepoint, tweak.PubKey)
-
-    member this.DerivePaymentPrivKey (paymentBasepointSecret: PaymentBasepointSecret)
-                                         : PaymentPrivKey =
-        PaymentPrivKey <|
-            this.DerivePrivKey (paymentBasepointSecret.RawKey())
-
-    member this.DerivePaymentPubKey (paymentBasepoint: PaymentBasepoint)
-                                        : PaymentPubKey =
-        PaymentPubKey <|
-            this.DerivePubKey (paymentBasepoint.RawPubKey())
-
-    member this.DeriveDelayedPaymentPrivKey (delayedPaymentBasepointSecret: DelayedPaymentBasepointSecret)
-                                                : DelayedPaymentPrivKey =
-        DelayedPaymentPrivKey <|
-            this.DerivePrivKey (delayedPaymentBasepointSecret.RawKey())
-
-    member this.DeriveDelayedPaymentPubKey (delayedPaymentBasepoint: DelayedPaymentBasepoint)
-                                               : DelayedPaymentPubKey =
-        DelayedPaymentPubKey <|
-            this.DerivePubKey (delayedPaymentBasepoint.RawPubKey())
-
-    member this.DeriveHtlcPrivKey (htlcBasepointSecret: HtlcBasepointSecret)
-                                      : HtlcPrivKey =
-        HtlcPrivKey <|
-            this.DerivePrivKey (htlcBasepointSecret.RawKey())
-
-    member this.DeriveHtlcPubKey (htlcBasepoint: HtlcBasepoint)
-                                     : HtlcPubKey =
-        HtlcPubKey <|
-            this.DerivePubKey (htlcBasepoint.RawPubKey())
-
-    member this.DeriveRevocationPubKey (revocationBasepoint: RevocationBasepoint)
-                           : RevocationPubKey =
-        let revocationBasepointBytes = revocationBasepoint.ToBytes()
-        let perCommitmentPointBytes = this.ToBytes()
-        let revocationBasepointTweak =
-            Key.FromHash <| Array.append revocationBasepointBytes perCommitmentPointBytes
-        let perCommitmentPointTweak =
-            Key.FromHash <| Array.append perCommitmentPointBytes revocationBasepointBytes
-
-        RevocationPubKey <| PubKey.Add(
-            PubKey.Mul(revocationBasepoint.RawPubKey(), revocationBasepointTweak),
-            PubKey.Mul(this.RawPubKey(), perCommitmentPointTweak)
-        )
-
-    member this.DeriveCommitmentPubKeys (channelPubKeys: ChannelPubKeys)
-                                            : CommitmentPubKeys = {
-        RevocationPubKey =
-            this.DeriveRevocationPubKey channelPubKeys.RevocationBasepoint
-        PaymentPubKey =
-            this.DerivePaymentPubKey channelPubKeys.PaymentBasepoint
-        DelayedPaymentPubKey =
-            this.DeriveDelayedPaymentPubKey channelPubKeys.DelayedPaymentBasepoint
-        HtlcPubKey =
-            this.DeriveHtlcPubKey channelPubKeys.HtlcBasepoint
-    }
-
-and [<Struct>] CommitmentSeed(lastPerCommitmentSecret: PerCommitmentSecret) =
+type [<Struct>] CommitmentSeed(lastPerCommitmentSecret: PerCommitmentSecret) =
     new(key: Key) =
         CommitmentSeed(PerCommitmentSecret key)
 
@@ -581,4 +497,88 @@ and [<Struct>] CommitmentSeed(lastPerCommitmentSecret: PerCommitmentSecret) =
     member this.DerivePerCommitmentPoint (commitmentNumber: CommitmentNumber): PerCommitmentPoint =
         let perCommitmentSecret = this.DerivePerCommitmentSecret commitmentNumber
         perCommitmentSecret.PerCommitmentPoint()
+
+/// Set of lightning keys needed to operate a channel as describe in BOLT 3
+type ChannelPrivKeys = {
+    FundingPrivKey: FundingPrivKey
+    RevocationBasepointSecret: RevocationBasepointSecret
+    PaymentBasepointSecret: PaymentBasepointSecret
+    DelayedPaymentBasepointSecret: DelayedPaymentBasepointSecret
+    HtlcBasepointSecret: HtlcBasepointSecret
+    CommitmentSeed: CommitmentSeed
+} with
+    member this.ToChannelPubKeys(): ChannelPubKeys =
+        {
+            FundingPubKey = this.FundingPrivKey.FundingPubKey()
+            RevocationBasepoint = this.RevocationBasepointSecret.RevocationBasepoint()
+            PaymentBasepoint = this.PaymentBasepointSecret.PaymentBasepoint()
+            DelayedPaymentBasepoint = this.DelayedPaymentBasepointSecret.DelayedPaymentBasepoint()
+            HtlcBasepoint = this.HtlcBasepointSecret.HtlcBasepoint()
+        }
+
+    member this.SignWithFundingPrivKey (psbt: PSBT)
+                                           : TransactionSignature * PSBT =
+        let fundingPubKey = this.FundingPrivKey.FundingPubKey()
+        psbt.SignWithKeys(this.FundingPrivKey.RawKey()) |> ignore
+        match psbt.GetMatchingSig(fundingPubKey.RawPubKey()) with
+        | Some signature -> (signature, psbt)
+        | None -> failwithf "Failed to get signature for %A with funding pub key (%A). This should never happen" psbt fundingPubKey
+
+    member this.SignHtlcTx (psbt: PSBT)
+                           (perCommitmentPoint: PerCommitmentPoint)
+                               : TransactionSignature * PSBT =
+        let htlcPrivKey = perCommitmentPoint.DeriveHtlcPrivKey this.HtlcBasepointSecret
+        let htlcPubKey = htlcPrivKey.HtlcPubKey()
+        psbt.SignWithKeys(htlcPrivKey.RawKey()) |> ignore
+        match psbt.GetMatchingSig(htlcPubKey.RawPubKey()) with
+        | Some signature -> (signature, psbt)
+        | None ->
+            failwithf
+                "failed to get htlc signature for %A. with htlc pubkey (%A) and perCommitmentPoint (%A)"
+                psbt htlcPubKey perCommitmentPoint
+
+/// This is the node-wide master key which is also used for
+/// transport-level encryption. The channel's keys are derived from
+/// this via BIP32 key derivation where `channelIndex` is the child
+/// index used to derive the channel's master key.
+type [<Struct>] NodeMasterPrivKey(extKey: ExtKey) =
+    member this.RawExtKey(): ExtKey =
+        extKey
+
+    member this.NodeSecret(): NodeSecret =
+        NodeSecret extKey.PrivateKey
+
+    member this.NodeId(): NodeId =
+        this.NodeSecret().NodeId()
+
+    member this.ChannelPrivKeys (channelIndex: int): ChannelPrivKeys =
+        let channelMasterKey = extKey.Derive(channelIndex, true)
+
+        // TODO: make use of these keys or remove them
+        //let destinationKey = channelMasterKey.Derive(1, true).PrivateKey
+        //let shutdownKey = channelMasterKey.Derive(2, true).PrivateKey
+        let commitmentSeed = channelMasterKey.Derive(3, true).PrivateKey |> CommitmentSeed
+
+        let fundingPrivKey =
+            channelMasterKey.Derive(4, true).PrivateKey |> FundingPrivKey
+
+        let revocationBasepointSecret =
+            channelMasterKey.Derive(5, true).PrivateKey |> RevocationBasepointSecret
+
+        let paymentBasepointSecret =
+            channelMasterKey.Derive(6, true).PrivateKey |> PaymentBasepointSecret
+
+        let delayedPaymentBasepointSecret =
+            channelMasterKey.Derive(7, true).PrivateKey |> DelayedPaymentBasepointSecret
+
+        let htlcBasepointSecret =
+            channelMasterKey.Derive(8, true).PrivateKey |> HtlcBasepointSecret
+        {
+            FundingPrivKey = fundingPrivKey
+            RevocationBasepointSecret = revocationBasepointSecret
+            PaymentBasepointSecret = paymentBasepointSecret
+            DelayedPaymentBasepointSecret = delayedPaymentBasepointSecret
+            HtlcBasepointSecret = htlcBasepointSecret
+            CommitmentSeed = commitmentSeed
+        }
 
