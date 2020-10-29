@@ -22,7 +22,7 @@
   </Choose>
 
   <ItemGroup>
-    <PackageReference Include="NBitcoin" Version="5.0.54" />
+    <PackageReference Include="NBitcoin" Version="5.0.62" />
     <PackageReference Condition="'$(BouncyCastle)'=='true'" Include="Portable.BouncyCastle" Version="1.8.6.7" />
   </ItemGroup>
 

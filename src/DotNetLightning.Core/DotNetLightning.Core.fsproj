@@ -95,7 +95,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="4.7.0" />
-    <PackageReference Condition="'$(BouncyCastle)' != 'true'" Include="NBitcoin.Secp256k1" Version="1.0.3" />
+    <PackageReference Condition="'$(BouncyCastle)' != 'true'" Include="NBitcoin.Secp256k1" Version="1.0.8" />
     <PackageReference Include="System.Memory" Version="4.5.3" />
   </ItemGroup>
 
