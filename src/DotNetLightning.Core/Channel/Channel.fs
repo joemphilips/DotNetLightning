@@ -25,15 +25,14 @@ type Channel = {
     Network: Network
  }
         with
-        static member Create (
-                config: ChannelConfig,
-                nodeMasterPrivKey: NodeMasterPrivKey,
-                channelIndex: int,
-                feeEstimator: IFeeEstimator,
-                fundingTxProvider: ProvideFundingTx,
-                n: Network,
-                remoteNodeId: NodeId
-            ) =
+        static member Create (config: ChannelConfig,
+                              nodeMasterPrivKey: NodeMasterPrivKey,
+                              channelIndex: int,
+                              feeEstimator: IFeeEstimator,
+                              fundingTxProvider: ProvideFundingTx,
+                              n: Network,
+                              remoteNodeId: NodeId
+                             ) =
             let channelPrivKeys = nodeMasterPrivKey.ChannelPrivKeys channelIndex
             let nodeSecret = nodeMasterPrivKey.NodeSecret()
             {
@@ -62,15 +61,14 @@ module Channel =
         |> fun ecdsaSig -> TransactionSignature(ecdsaSig.Value, SigHash.All)
 
     module Closing =
-        let makeClosingTx (
-                channelPrivKeys: ChannelPrivKeys,
-                cm: Commitments,
-                localSpk: Script,
-                remoteSpk: Script,
-                closingFee: Money,
-                localFundingPk: FundingPubKey,
-                network: Network
-            ) =
+        let makeClosingTx (channelPrivKeys: ChannelPrivKeys,
+                           cm: Commitments,
+                           localSpk: Script,
+                           remoteSpk: Script,
+                           closingFee: Money,
+                           localFundingPk: FundingPubKey,
+                           network: Network
+                          ) =
             assert (Scripts.isValidFinalScriptPubKey (remoteSpk) && Scripts.isValidFinalScriptPubKey (localSpk))
             let dustLimitSatoshis = Money.Max(cm.LocalParams.DustLimitSatoshis, cm.RemoteParams.DustLimitSatoshis)
             result {
@@ -95,15 +93,14 @@ module Channel =
                 return feeRatePerKw.CalculateFeeFromVirtualSize(tx)
             }
 
-        let makeFirstClosingTx (
-                channelPrivKeys: ChannelPrivKeys,
-                commitments: Commitments,
-                localSpk: Script,
-                remoteSpk: Script,
-                feeEst: IFeeEstimator,
-                localFundingPk: FundingPubKey,
-                network: Network
-            ) =
+        let makeFirstClosingTx (channelPrivKeys: ChannelPrivKeys,
+                                commitments: Commitments,
+                                localSpk: Script,
+                                remoteSpk: Script,
+                                feeEst: IFeeEstimator,
+                                localFundingPk: FundingPubKey,
+                                network: Network
+                               ) =
             result {
                 let! closingFee = firstClosingFee (commitments, localSpk, remoteSpk, feeEst, network)
                 return! makeClosingTx (channelPrivKeys, commitments, localSpk, remoteSpk, closingFee, localFundingPk, network)
@@ -119,11 +116,10 @@ module Channel =
             [ MutualClosePerformed (closingTx, nextData) ]
             |> Ok
 
-        let claimCurrentLocalCommitTxOutputs (
-                channelPrivKeys: ChannelPrivKeys,
-                commitments: Commitments,
-                commitTx: CommitTx
-            ) =
+        let claimCurrentLocalCommitTxOutputs (channelPrivKeys: ChannelPrivKeys,
+                                              commitments: Commitments,
+                                              commitTx: CommitTx
+                                             ) =
             result {
                 let commitmentSeed = channelPrivKeys.CommitmentSeed
                 do! check (commitments.LocalCommit.PublishableTxs.CommitTx.Value.GetTxId()) (=) (commitTx.Value.GetTxId()) "txid mismatch. provided txid (%A) does not match current local commit tx (%A)"

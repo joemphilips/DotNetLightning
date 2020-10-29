@@ -26,18 +26,17 @@ module internal ChannelHelpers =
     let private makeFlags (isNode1: bool, enable: bool) =
         (if isNode1 then 1uy else 0uy) ||| ((if enable then 1uy else 0uy) <<< 1)
 
-    let internal makeChannelUpdate (
-            chainHash,
-            nodeSecret: NodeSecret,
-            remoteNodeId: NodeId,
-            shortChannelId,
-            cltvExpiryDelta,
-            htlcMinimum,
-            feeBase,
-            feeProportionalMillionths,
-            enabled: bool,
-            timestamp
-        ) =
+    let internal makeChannelUpdate (chainHash,
+                                    nodeSecret: NodeSecret,
+                                    remoteNodeId: NodeId,
+                                    shortChannelId,
+                                    cltvExpiryDelta,
+                                    htlcMinimum,
+                                    feeBase,
+                                    feeProportionalMillionths,
+                                    enabled: bool,
+                                    timestamp
+                                   ) =
         let timestamp = defaultArg timestamp ((System.DateTime.UtcNow.ToUnixTimestamp()) |> uint32)
         let isNodeOne = nodeSecret.NodeId() < remoteNodeId
         let unsignedChannelUpdate = {
