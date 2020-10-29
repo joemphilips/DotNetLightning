@@ -64,7 +64,7 @@ let tests =
                     "c7518c8ae4660ed02894df8976fa1a3659c1a8b4b5bec0c4b872abeba4cb8964"
             match res with
             | Error(SecretMismatch(previous, current))
-                when previous.Index.UInt64 = 281474976710655UL && current.Index.UInt64 = 281474976710654UL
+                when previous.Index().UInt64 = 281474976710655UL && current.Index().UInt64 = 281474976710654UL
                 -> ()
             | _ -> failwith <| sprintf "unexpected result: %A" res
 
@@ -85,7 +85,7 @@ let tests =
                     "27cddaa5624534cb6cb9d7da077cf2b22ab21e9b506fd4998a51d54502e99116"
             match res with
             | Error(SecretMismatch(previous, current))
-                when previous.Index.UInt64 = 281474976710654UL && current.Index.UInt64 = 281474976710652UL
+                when previous.Index().UInt64 = 281474976710654UL && current.Index().UInt64 = 281474976710652UL
                 -> ()
             | _ -> failwith <| sprintf "unexpected result: %A" res
 
@@ -106,7 +106,7 @@ let tests =
                     "27cddaa5624534cb6cb9d7da077cf2b22ab21e9b506fd4998a51d54502e99116"
             match res with
             | Error(SecretMismatch(previous, current))
-                when previous.Index.UInt64 = 281474976710653UL && current.Index.UInt64 = 281474976710652UL
+                when previous.Index().UInt64 = 281474976710653UL && current.Index().UInt64 = 281474976710652UL
                 -> ()
             | _ -> failwith <| sprintf "unexpected result: %A" res
                 
@@ -140,10 +140,10 @@ let tests =
             match res with
             | Error(SecretMismatch(previous, current))
                 when (
-                        previous.Index.UInt64 = 281474976710654UL ||
-                        previous.Index.UInt64 = 281474976710653UL ||
-                        previous.Index.UInt64 = 281474976710652UL
-                    ) && current.Index.UInt64 = 281474976710648UL
+                        previous.Index().UInt64 = 281474976710654UL ||
+                        previous.Index().UInt64 = 281474976710653UL ||
+                        previous.Index().UInt64 = 281474976710652UL
+                    ) && current.Index().UInt64 = 281474976710648UL
                 -> ()
             | _ -> failwith <| sprintf "unexpected result: %A" res
 
@@ -170,7 +170,7 @@ let tests =
                     "969660042a28f32d9be17344e09374b379962d03db1574df5a8a5a47e19ce3f2"
             match res with
             | Error(SecretMismatch(previous, current))
-                when previous.Index.UInt64 = 281474976710651UL && current.Index.UInt64 = 281474976710650UL
+                when previous.Index().UInt64 = 281474976710651UL && current.Index().UInt64 = 281474976710650UL
                 -> ()
             | _ -> failwith <| sprintf "unexpected result: %A" res
 
@@ -203,7 +203,7 @@ let tests =
                     "05cde6323d949933f7f7b78776bcc1ea6d9b31447732e3802e1f7ac44b650e17"
             match res with
             | Error(SecretMismatch(previous, current))
-                when previous.Index.UInt64 = 281474976710650UL && current.Index.UInt64 = 281474976710648UL
+                when previous.Index().UInt64 = 281474976710650UL && current.Index().UInt64 = 281474976710648UL
                 -> ()
             | _ -> failwith <| sprintf "unexpected result: %A" res
 
@@ -236,7 +236,7 @@ let tests =
                     "05cde6323d949933f7f7b78776bcc1ea6d9b31447732e3802e1f7ac44b650e17"
             match res with
             | Error(SecretMismatch(previous, current))
-                when previous.Index.UInt64 = 281474976710649UL && current.Index.UInt64 = 281474976710648UL
+                when previous.Index().UInt64 = 281474976710649UL && current.Index().UInt64 = 281474976710648UL
                 -> ()
             | _ -> failwith <| sprintf "unexpected result: %A" res
 
@@ -269,7 +269,7 @@ let tests =
                     "a7efbc61aac46d34f77778bac22c8a20c6a46ca460addc49009bda875ec88fa4"
             match res with
             | Error(SecretMismatch(previous, current))
-                when previous.Index.UInt64 = 281474976710649UL && current.Index.UInt64 = 281474976710648UL
+                when previous.Index().UInt64 = 281474976710649UL && current.Index().UInt64 = 281474976710648UL
                 -> ()
             | _ -> failwith <| sprintf "unexpected result: %A" res
     ]

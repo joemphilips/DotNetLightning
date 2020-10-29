@@ -146,7 +146,7 @@ type LightningWriterStream(inner: Stream) =
         this.Inner.WriteByte(data.Green)
         this.Inner.WriteByte(data.Blue)
     member this.Write(commitmentNumber: CommitmentNumber) =
-        this.Write((UInt48.MaxValue - commitmentNumber.Index).UInt64, false)
+        this.Write((UInt48.MaxValue - commitmentNumber.Index()).UInt64, false)
 
     member this.WriteWithLen(data: byte[]) =
         let length = data.Length

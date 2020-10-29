@@ -7,8 +7,6 @@ open NBitcoin.Crypto
 open DotNetLightning.Utils
 open DotNetLightning.Core.Utils.Extensions
 
-// FIXME: Should the [<Struct>]-annotated types here be changed to records or single-constructor discriminated unions? 
-    
 [<AutoOpen>]
 module NBitcoinArithmethicExtensions =
     /// The functions in this module may fail but it does not return Result and just throw Exception in
@@ -65,35 +63,47 @@ module NBitcoinArithmethicExtensions =
             | true, result -> PubKey.CompressFromBytes result
             | false, _ -> failwith "failed to add PubKeys"
 
-type [<Struct>] FundingPubKey(pubKey: PubKey) =
+type FundingPubKey =
+    | FundingPubKey of PubKey
+    with
     member this.RawPubKey(): PubKey =
+        let (FundingPubKey pubKey) = this
         pubKey
 
     member this.ToBytes(): array<byte> =
-        pubKey.ToBytes()
+        this.RawPubKey().ToBytes()
 
-    override self.ToString() =
-        pubKey.ToString()
+    override this.ToString() =
+        this.RawPubKey().ToString()
 
-type [<Struct>] FundingPrivKey(key: Key) =
+type FundingPrivKey =
+    | FundingPrivKey of Key
+    with
     member this.RawKey(): Key =
+        let (FundingPrivKey key) = this
         key
 
     member this.FundingPubKey(): FundingPubKey =
-        FundingPubKey(key.PubKey)
+        FundingPubKey(this.RawKey().PubKey)
 
-type [<Struct>] RevocationBasepoint(pubKey: PubKey) =
+type RevocationBasepoint =
+    | RevocationBasepoint of PubKey
+    with
     member this.RawPubKey(): PubKey =
+        let (RevocationBasepoint pubKey) = this
         pubKey
 
     member this.ToBytes(): array<byte> =
-        pubKey.ToBytes()
+        this.RawPubKey().ToBytes()
 
-    override self.ToString() =
-        pubKey.ToString()
+    override this.ToString() =
+        this.RawPubKey().ToString()
 
-type [<Struct>] RevocationBasepointSecret(key: Key) =
+type RevocationBasepointSecret =
+    | RevocationBasepointSecret of Key
+    with
     member this.RawKey(): Key =
+        let (RevocationBasepointSecret key) = this
         key
 
     member this.RevocationBasepoint(): RevocationBasepoint =
@@ -102,131 +112,176 @@ type [<Struct>] RevocationBasepointSecret(key: Key) =
     member this.ToBytes(): array<byte> =
         this.RawKey().ToBytes()
 
-type [<Struct>] RevocationPubKey(pubKey: PubKey) =
+type RevocationPubKey =
+    | RevocationPubKey of PubKey
+    with
     member this.RawPubKey(): PubKey =
+        let (RevocationPubKey pubKey) = this
         pubKey
 
     member this.ToBytes(): array<byte> =
-        pubKey.ToBytes()
+        this.RawPubKey().ToBytes()
 
-    override self.ToString() =
-        pubKey.ToString()
+    override this.ToString() =
+        this.RawPubKey().ToString()
 
-type [<Struct>] RevocationPrivKey(key: Key) =
+type RevocationPrivKey =
+    | RevocationPrivKey of Key
+    with
     member this.RawKey(): Key =
+        let (RevocationPrivKey key) = this
         key
 
     member this.ToBytes(): array<byte> =
-        key.ToBytes()
+        this.RawKey().ToBytes()
 
-type [<Struct>] PaymentBasepoint(pubKey: PubKey) =
+type PaymentBasepoint =
+    | PaymentBasepoint of PubKey
+    with
     member this.RawPubKey(): PubKey =
+        let (PaymentBasepoint pubKey) = this
         pubKey
 
     member this.ToBytes(): array<byte> =
-        pubKey.ToBytes()
+        this.RawPubKey().ToBytes()
 
-    override self.ToString() =
-        pubKey.ToString()
+    override this.ToString() =
+        this.RawPubKey().ToString()
 
-type [<Struct>] PaymentBasepointSecret(key: Key) =
+type PaymentBasepointSecret =
+    | PaymentBasepointSecret of Key
+    with
     member this.RawKey(): Key =
+        let (PaymentBasepointSecret key) = this
         key
 
     member this.PaymentBasepoint(): PaymentBasepoint =
         PaymentBasepoint(this.RawKey().PubKey)
 
-type [<Struct>] PaymentPubKey(pubKey: PubKey) =
+type PaymentPubKey =
+    | PaymentPubKey of PubKey
+    with
     member this.RawPubKey(): PubKey =
+        let (PaymentPubKey pubKey) = this
         pubKey
 
     member this.ToBytes(): array<byte> =
         this.RawPubKey().ToBytes()
 
-    override self.ToString() =
-        pubKey.ToString()
+    override this.ToString() =
+        this.RawPubKey().ToString()
 
-type [<Struct>] PaymentPrivKey(key: Key) =
+type PaymentPrivKey =
+    | PaymentPrivKey of Key
+    with
     member this.RawKey(): Key =
+        let (PaymentPrivKey key) = this
         key
 
     member this.PaymentPubKey(): PaymentPubKey =
         PaymentPubKey <| this.RawKey().PubKey
 
-type [<Struct>] DelayedPaymentBasepoint(pubKey: PubKey) =
+type DelayedPaymentBasepoint =
+    | DelayedPaymentBasepoint of PubKey
+    with
     member this.RawPubKey(): PubKey =
+        let (DelayedPaymentBasepoint pubKey) = this
         pubKey
 
     member this.ToBytes(): array<byte> =
         this.RawPubKey().ToBytes()
 
-    override self.ToString() =
-        pubKey.ToString()
+    override this.ToString() =
+        this.RawPubKey().ToString()
 
-type [<Struct>] DelayedPaymentBasepointSecret(key: Key) =
+type DelayedPaymentBasepointSecret =
+    | DelayedPaymentBasepointSecret of Key
+    with
     member this.RawKey(): Key =
+        let (DelayedPaymentBasepointSecret key) = this
         key
 
     member this.DelayedPaymentBasepoint(): DelayedPaymentBasepoint =
         DelayedPaymentBasepoint(this.RawKey().PubKey)
 
-type [<Struct>] DelayedPaymentPubKey(pubKey: PubKey) =
+type DelayedPaymentPubKey =
+    | DelayedPaymentPubKey of PubKey
+    with
     member this.RawPubKey(): PubKey =
+        let (DelayedPaymentPubKey pubKey) = this
         pubKey
 
     member this.ToBytes(): array<byte> =
         this.RawPubKey().ToBytes()
 
-    override self.ToString() =
-        pubKey.ToString()
+    override this.ToString() =
+        this.RawPubKey().ToString()
 
-type [<Struct>] DelayedPaymentPrivKey(key: Key) =
+type DelayedPaymentPrivKey =
+    | DelayedPaymentPrivKey of Key
+    with
     member this.RawKey(): Key =
+        let (DelayedPaymentPrivKey key) = this
         key
 
     member this.DelayedPaymentPubKey(): DelayedPaymentPubKey =
         DelayedPaymentPubKey <| this.RawKey().PubKey
 
-type [<Struct>] HtlcBasepoint(pubKey: PubKey) =
+type HtlcBasepoint =
+    | HtlcBasepoint of PubKey
+    with
     member this.RawPubKey(): PubKey =
+        let (HtlcBasepoint pubKey) = this
         pubKey
 
     member this.ToBytes(): array<byte> =
         this.RawPubKey().ToBytes()
 
-    override self.ToString() =
-        pubKey.ToString()
+    override this.ToString() =
+        this.RawPubKey().ToString()
 
-type [<Struct>] HtlcBasepointSecret(key: Key) =
+type HtlcBasepointSecret =
+    | HtlcBasepointSecret of Key
+    with
     member this.RawKey(): Key =
+        let (HtlcBasepointSecret key) = this
         key
 
     member this.HtlcBasepoint(): HtlcBasepoint =
         HtlcBasepoint(this.RawKey().PubKey)
 
-type [<Struct>] HtlcPubKey(pubKey: PubKey) =
+type HtlcPubKey =
+    | HtlcPubKey of PubKey
+    with
     member this.RawPubKey(): PubKey =
+        let (HtlcPubKey pubKey) = this
         pubKey
 
     member this.ToBytes(): array<byte> =
         this.RawPubKey().ToBytes()
 
-    override self.ToString() =
-        pubKey.ToString()
+    override this.ToString() =
+        this.RawPubKey().ToString()
 
-type [<Struct>] HtlcPrivKey(key: Key) =
+type HtlcPrivKey =
+    | HtlcPrivKey of Key
+    with
     member this.RawKey(): Key =
+        let (HtlcPrivKey key) = this
         key
 
     member this.HtlcPubKey(): HtlcPubKey =
         HtlcPubKey <| this.RawKey().PubKey
 
-type [<Struct>] NodeSecret(key: Key) =
+type NodeSecret =
+    | NodeSecret of Key
+    with
     member this.RawKey(): Key =
+        let (NodeSecret key) = this
         key
 
     member this.NodeId(): NodeId =
-        NodeId key.PubKey
+        NodeId (this.RawKey().PubKey)
 
 /// In usual operation we should not hold secrets on memory. So only hold pubkey
 type ChannelPubKeys = {
@@ -244,8 +299,11 @@ type CommitmentPubKeys = {
     HtlcPubKey: HtlcPubKey
 }
 
-type [<Struct>] PerCommitmentPoint(pubKey: PubKey) =
+type PerCommitmentPoint =
+    | PerCommitmentPoint of PubKey
+    with
     member this.RawPubKey(): PubKey =
+        let (PerCommitmentPoint pubKey) = this
         pubKey
 
     static member BytesLength: int = PubKey.BytesLength
@@ -328,11 +386,15 @@ type [<Struct>] PerCommitmentPoint(pubKey: PubKey) =
             this.DeriveHtlcPubKey channelPubKeys.HtlcBasepoint
     }
 
-type [<Struct>] CommitmentNumber(index: UInt48) =
-    member this.Index = index
+type [<Struct>] CommitmentNumber =
+    | CommitmentNumber of UInt48
+    with
+    member this.Index() =
+        let (CommitmentNumber index) = this
+        index
 
     override this.ToString() =
-        sprintf "%012x (#%i)" this.Index.UInt64 (UInt48.MaxValue - this.Index).UInt64
+        sprintf "%012x (#%i)" (this.Index().UInt64) (UInt48.MaxValue - this.Index()).UInt64
 
     static member LastCommitment: CommitmentNumber =
         CommitmentNumber UInt48.Zero
@@ -358,18 +420,18 @@ type [<Struct>] CommitmentNumber(index: UInt48) =
         UInt48.FromBytesBigEndian pubKeysHash.[26..]
 
     member this.PreviousCommitment(): CommitmentNumber =
-        CommitmentNumber(this.Index + UInt48.One)
+        CommitmentNumber(this.Index() + UInt48.One)
 
     member this.NextCommitment(): CommitmentNumber =
-        CommitmentNumber(this.Index - UInt48.One)
+        CommitmentNumber(this.Index() - UInt48.One)
 
     member this.Subsumes(other: CommitmentNumber): bool =
-        let trailingZeros = this.Index.TrailingZeros()
-        (this.Index >>> trailingZeros) = (other.Index >>> trailingZeros)
+        let trailingZeros = this.Index().TrailingZeros()
+        (this.Index() >>> trailingZeros) = (other.Index() >>> trailingZeros)
 
     member this.PreviousUnsubsumed(): Option<CommitmentNumber> =
-        let trailingZeros = this.Index.TrailingZeros()
-        let prev = this.Index.UInt64 + (1UL <<< trailingZeros)
+        let trailingZeros = this.Index().TrailingZeros()
+        let prev = this.Index().UInt64 + (1UL <<< trailingZeros)
         if prev > UInt48.MaxValue.UInt64 then
             None
         else
@@ -384,21 +446,25 @@ type [<Struct>] CommitmentNumber(index: UInt48) =
                 isFunder
                 localPaymentBasepoint
                 remotePaymentBasepoint
-        ObscuredCommitmentNumber((UInt48.MaxValue - this.Index) ^^^ obscureFactor)
+        ObscuredCommitmentNumber((UInt48.MaxValue - this.Index()) ^^^ obscureFactor)
 
-and [<Struct>] ObscuredCommitmentNumber(obscuredIndex: UInt48) =
-    member this.ObscuredIndex: UInt48 = obscuredIndex
+and [<Struct>] ObscuredCommitmentNumber =
+    | ObscuredCommitmentNumber of UInt48
+    with
+    member this.ObscuredIndex(): UInt48 =
+        let (ObscuredCommitmentNumber obscuredIndex) = this
+        obscuredIndex
 
     override this.ToString() =
-        sprintf "%012x" this.ObscuredIndex.UInt64
+        sprintf "%012x" (this.ObscuredIndex().UInt64)
 
     member this.LockTime: LockTime =
-        Array.concat [| [| 0x20uy |]; this.ObscuredIndex.GetBytesBigEndian().[3..] |]
+        Array.concat [| [| 0x20uy |]; this.ObscuredIndex().GetBytesBigEndian().[3..] |]
         |> System.UInt32.FromBytesBigEndian
         |> LockTime
 
     member this.Sequence: Sequence =
-        Array.concat [| [| 0x80uy |]; this.ObscuredIndex.GetBytesBigEndian().[..2] |]
+        Array.concat [| [| 0x80uy |]; this.ObscuredIndex().GetBytesBigEndian().[..2] |]
         |> System.UInt32.FromBytesBigEndian
         |> Sequence
 
@@ -424,10 +490,13 @@ and [<Struct>] ObscuredCommitmentNumber(obscuredIndex: UInt48) =
                 isFunder
                 localPaymentBasepoint
                 remotePaymentBasepoint
-        CommitmentNumber(UInt48.MaxValue - (this.ObscuredIndex ^^^ obscureFactor))
+        CommitmentNumber(UInt48.MaxValue - (this.ObscuredIndex() ^^^ obscureFactor))
 
-type [<Struct>] PerCommitmentSecret(key: Key) =
+type PerCommitmentSecret =
+    | PerCommitmentSecret of Key
+    with
     member this.RawKey(): Key =
+        let (PerCommitmentSecret key) = this
         key
 
     static member BytesLength: int = Key.BytesLength
@@ -442,8 +511,8 @@ type [<Struct>] PerCommitmentSecret(key: Key) =
                             (childCommitmentNumber: CommitmentNumber)
                                 : Option<PerCommitmentSecret> =
         if thisCommitmentNumber.Subsumes childCommitmentNumber then
-            let commonBits = thisCommitmentNumber.Index.TrailingZeros()
-            let index = childCommitmentNumber.Index
+            let commonBits = thisCommitmentNumber.Index().TrailingZeros()
+            let index = childCommitmentNumber.Index()
             let mutable secret = this.ToBytes()
             for bit in (commonBits - 1) .. -1 .. 0 do
                 if (index >>> bit) &&& UInt48.One = UInt48.One then
@@ -476,15 +545,16 @@ type [<Struct>] PerCommitmentSecret(key: Key) =
             Key.Mul(this.RawKey(), perCommitmentSecretTweak)
         )
 
-type [<Struct>] CommitmentSeed(lastPerCommitmentSecret: PerCommitmentSecret) =
-    new(key: Key) =
-        CommitmentSeed(PerCommitmentSecret key)
-
-    member this.LastPerCommitmentSecret = lastPerCommitmentSecret
+type CommitmentSeed =
+    | CommitmentSeed of PerCommitmentSecret
+    with
+    member this.LastPerCommitmentSecret() =
+        let (CommitmentSeed lastPerCommitmentSecret) = this
+        lastPerCommitmentSecret
 
     member this.DerivePerCommitmentSecret (commitmentNumber: CommitmentNumber): PerCommitmentSecret =
         let res =
-            this.LastPerCommitmentSecret.DeriveChild
+            this.LastPerCommitmentSecret().DeriveChild
                 CommitmentNumber.LastCommitment
                 commitmentNumber
         match res with
@@ -541,23 +611,29 @@ type ChannelPrivKeys = {
 /// transport-level encryption. The channel's keys are derived from
 /// this via BIP32 key derivation where `channelIndex` is the child
 /// index used to derive the channel's master key.
-type [<Struct>] NodeMasterPrivKey(extKey: ExtKey) =
+type NodeMasterPrivKey =
+    | NodeMasterPrivKey of ExtKey
+    with
     member this.RawExtKey(): ExtKey =
+        let (NodeMasterPrivKey extKey) = this
         extKey
 
     member this.NodeSecret(): NodeSecret =
-        NodeSecret extKey.PrivateKey
+        NodeSecret (this.RawExtKey().PrivateKey)
 
     member this.NodeId(): NodeId =
         this.NodeSecret().NodeId()
 
     member this.ChannelPrivKeys (channelIndex: int): ChannelPrivKeys =
-        let channelMasterKey = extKey.Derive(channelIndex, true)
+        let channelMasterKey = this.RawExtKey().Derive(channelIndex, true)
 
         // TODO: make use of these keys or remove them
         //let destinationKey = channelMasterKey.Derive(1, true).PrivateKey
         //let shutdownKey = channelMasterKey.Derive(2, true).PrivateKey
-        let commitmentSeed = channelMasterKey.Derive(3, true).PrivateKey |> CommitmentSeed
+        let commitmentSeed =
+            channelMasterKey.Derive(3, true).PrivateKey
+            |> PerCommitmentSecret
+            |> CommitmentSeed
 
         let fundingPrivKey =
             channelMasterKey.Derive(4, true).PrivateKey |> FundingPrivKey
