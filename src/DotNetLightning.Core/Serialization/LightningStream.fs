@@ -317,29 +317,29 @@ type LightningReaderStream(inner: Stream) =
                 (uint64 m_buffer.[6] <<< 8) |||
                 (uint64 m_buffer.[7]))
 
-    member this.ReadUInt256([<O;D(true)>]lendian: bool) =
+    member this.ReadUInt256([<O;D(true)>]lendian: bool): uint256 =
         let b = this.ReadBytes(32)
         uint256(b, lendian)
 
-    member this.ReadWithLen() =
+    member this.ReadWithLen(): array<byte> =
         let len = this.ReadUInt16(false)
         this.ReadBytes(int32 len)
 
-    member this.ReadKey() =
+    member this.ReadKey(): Key =
         let bytes: array<byte> = this.ReadBytes Key.BytesLength
         Key bytes
 
-    member this.ReadPubKey() =
+    member this.ReadPubKey(): PubKey =
         let bytes = this.ReadBytes PubKey.BytesLength
         if PubKey.Check(bytes, true) then
             PubKey(bytes, true)
         else
             raise (FormatException("Invalid Pubkey encoding"))
 
-    member this.ReadPerCommitmentSecret() =
+    member this.ReadPerCommitmentSecret(): PerCommitmentSecret =
         PerCommitmentSecret <| this.ReadKey()
 
-    member this.ReadPerCommitmentPoint() =
+    member this.ReadPerCommitmentPoint(): PerCommitmentPoint =
         PerCommitmentPoint <| this.ReadPubKey()
 
     member this.ReadFundingPubKey(): FundingPubKey =
@@ -357,19 +357,19 @@ type LightningReaderStream(inner: Stream) =
     member this.ReadHtlcBasepoint(): HtlcBasepoint =
         HtlcBasepoint <| this.ReadPubKey()
 
-    member this.ReadCommitmentNumber() =
+    member this.ReadCommitmentNumber(): CommitmentNumber =
         let n = this.ReadUInt64 false
         CommitmentNumber <| (UInt48.MaxValue - (UInt48.FromUInt64 n))
 
-    member this.ReadECDSACompact() =
+    member this.ReadECDSACompact(): LNECDSASignature =
         let data = this.ReadBytes(64)
         LNECDSASignature.FromBytesCompact(data)
 
-    member this.ReadScript() =
+    member this.ReadScript(): Script =
         let d = this.ReadWithLen()
         Script.FromBytesUnsafe(d)
 
-    member this.ReadRGB() =
+    member this.ReadRGB(): RGB =
         let r = this.ReadUInt8()
         let g = this.ReadUInt8()
         let b = this.ReadUInt8()
@@ -379,7 +379,7 @@ type LightningReaderStream(inner: Stream) =
             Blue = b
         }
         
-    member this.ReadBigSize() =
+    member this.ReadBigSize(): uint64 =
         let x = this.ReadUInt8()
         if x < 0xfduy then
             uint64 x
@@ -399,7 +399,7 @@ type LightningReaderStream(inner: Stream) =
                 raise <| FormatException("decoded varint is not canonical")
             v
             
-    member this.ReadAllAsBigSize() =
+    member this.ReadAllAsBigSize(): array<uint64> =
         let mutable rest = int32 this.Length - int32 this.Position
         let result = ResizeArray<uint64>()
         while rest > 0 do
@@ -407,13 +407,13 @@ type LightningReaderStream(inner: Stream) =
             rest <- int32 this.Length - int32 this.Position
         result.ToArray()
                 
-    member this.ReadTLV() =
+    member this.ReadTLV(): GenericTLV =
         let ty = this.ReadBigSize()
         let length = this.ReadBigSize()
         let value = this.ReadBytes(int32 length)
         { GenericTLV.Type = ty; Value = value }
          
-    member this.ReadTLVStream() =
+    member this.ReadTLVStream(): array<GenericTLV> =
         let mutable rest = int32 this.Length - int32 this.Position
         let result = ResizeArray<GenericTLV>()
         while rest > 0 do
