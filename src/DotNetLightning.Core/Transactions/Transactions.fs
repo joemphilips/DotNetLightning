@@ -776,19 +776,19 @@ module Transactions =
             let outputs =
                 seq {
                     if toLocalAmount >= dustLimit then
-                        yield (toLocalAmount, localDestination)
+                        yield TxOut(toLocalAmount, localDestination)
                     if toRemoteAmount >= dustLimit then
-                        yield (toRemoteAmount, remoteDestination)
+                        yield TxOut(toRemoteAmount, remoteDestination)
                 }
-                |> Seq.sortBy (fun (money, dest) -> TxOut(money, dest).ToBytes())
+                |> Seq.sortWith TxOut.LexicographicCompare
             let psbt = 
                 let txb = (createTransactionBuilder network)
                            .AddCoins(commitTxInput)
                            .SendFees(closingFee)
                            .SetLockTime(!> 0u)
-                for (money, dest) in outputs do
-                    txb.Send(dest, money) |> ignore
-                let tx =  txb.BuildTransaction(false)
+                for txOut in outputs do
+                    txb.Send(txOut.ScriptPubKey, txOut.Value) |> ignore
+                let tx = txb.BuildTransaction(false)
                 tx.Version <- 2u
                 tx.Inputs.[0].Sequence <- !> UINT32_MAX
                 PSBT.FromTransaction(tx, network)

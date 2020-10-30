@@ -22,6 +22,32 @@ module NBitcoinExtensions =
             res.[31] <- res.[31] ^^^ (uint8 (this.N >>> 0) &&& 0xffuy)
             res  |> uint256 |> ChannelId
 
+    type TxOut with
+        static member LexicographicCompare (txOut0: TxOut)
+                                           (txOut1: TxOut)
+                                               : int =
+            if txOut0.Value < txOut1.Value then
+                -1
+            elif txOut0.Value > txOut1.Value then
+                1
+            else
+                let script0 = txOut0.ScriptPubKey.ToBytes()
+                let script1 = txOut1.ScriptPubKey.ToBytes()
+                let rec compare (index: int) =
+                    if script0.Length = index && script1.Length = index then
+                        0
+                    elif script0.Length = index then
+                        -1
+                    elif script1.Length = index then
+                        1
+                    elif script0.[index] < script1.[index] then
+                        -1
+                    elif script0.[index] > script1.[index] then
+                        1
+                    else
+                        compare (index + 1)
+                compare 0
+
     type PSBT with
         member this.GetMatchingSig(pubkey: PubKey) =
             this.Inputs
