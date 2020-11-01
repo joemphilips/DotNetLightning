@@ -320,14 +320,14 @@ type PerCommitmentPoint =
             basepoint.ToBytes()
         let perCommitmentPointBytes = this.ToBytes()
         let tweak =
-            Key.FromHash <| Array.append perCommitmentPointBytes basepointBytes
+            Key.FromHashOf <| Array.append perCommitmentPointBytes basepointBytes
         Key.Add(basepointSecret, tweak)
 
     member this.DerivePubKey (basepoint: PubKey): PubKey =
         let basepointBytes = basepoint.ToBytes()
         let perCommitmentPointBytes = this.ToBytes()
         let tweak =
-            Key.FromHash <| Array.append perCommitmentPointBytes basepointBytes
+            Key.FromHashOf <| Array.append perCommitmentPointBytes basepointBytes
         PubKey.Add(basepoint, tweak.PubKey)
 
     member this.DerivePaymentPrivKey (paymentBasepointSecret: PaymentBasepointSecret)
@@ -365,9 +365,9 @@ type PerCommitmentPoint =
         let revocationBasepointBytes = revocationBasepoint.ToBytes()
         let perCommitmentPointBytes = this.ToBytes()
         let revocationBasepointTweak =
-            Key.FromHash <| Array.append revocationBasepointBytes perCommitmentPointBytes
+            Key.FromHashOf <| Array.append revocationBasepointBytes perCommitmentPointBytes
         let perCommitmentPointTweak =
-            Key.FromHash <| Array.append perCommitmentPointBytes revocationBasepointBytes
+            Key.FromHashOf <| Array.append perCommitmentPointBytes revocationBasepointBytes
 
         RevocationPubKey <| PubKey.Add(
             PubKey.Mul(revocationBasepoint.RawPubKey(), revocationBasepointTweak),
@@ -536,9 +536,9 @@ type PerCommitmentSecret =
             let perCommitmentPoint = this.PerCommitmentPoint()
             perCommitmentPoint.ToBytes()
         let revocationBasepointSecretTweak =
-            Key.FromHash <| Array.append revocationBasepointBytes perCommitmentPointBytes
+            Key.FromHashOf <| Array.append revocationBasepointBytes perCommitmentPointBytes
         let perCommitmentSecretTweak =
-            Key.FromHash <| Array.append perCommitmentPointBytes revocationBasepointBytes
+            Key.FromHashOf <| Array.append perCommitmentPointBytes revocationBasepointBytes
 
         RevocationPrivKey <| Key.Add(
             Key.Mul(revocationBasepointSecret.RawKey(), revocationBasepointSecretTweak),

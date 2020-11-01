@@ -62,7 +62,7 @@ module NBitcoinExtensions =
     type Key with
         static member BytesLength: int = 32
 
-        static member FromHash(preimage: array<byte>): Key =
+        static member FromHashOf(preimage: array<byte>): Key =
             new Key (Hashes.SHA256 preimage)
 
     type PubKey with
