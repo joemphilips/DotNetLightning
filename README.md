@@ -4,17 +4,12 @@ The main entry point is `DotNetLightning.Core`.
 
 ## Installation
 
-The package is compiled and published with two variants
+The package is compiled and published in nuget:
 
-* [`DotNetLightning`](https://www.nuget.org/packages/DotNetLightning/)
-  * This does not use native bindings for cryptographic operations.
-  * This is the one you want to use if you run your code everywhere, but possibly slower than below.
-* [`DotNetLightning.Core`](https://www.nuget.org/packages/DotNetLightning.Core/)
-  * This uses a pre-compiled `libsodium` for cryptographic operations.
-  * It only supports `windows`, `mac` and `linux` environments.
-  * This is what you want if you need performance and the environments above are the only ones you are planning to support.
-  
-run `dotnet add package` with the one you want.
+* [`DotNetLightning.Kiss`](https://www.nuget.org/packages/DotNetLightning.Kiss/)
+
+It does not use native bindings for cryptographic operations.
+
 Currently it is in alpha, so you probably want to install a latest version by specifying it with `--version`.
 The version is prefixed with git commit hash and date. Please take a look at the nuget page.
 

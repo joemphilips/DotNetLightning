@@ -33,9 +33,4 @@ jobs:
       if: startsWith(matrix.os, 'ubuntu')
       run: |
         dotnet pack ./src/DotNetLightning.Core -p:Configuration=Release --version-suffix date`date +%Y%m%d-%H%M`-git-`echo $GITHUB_SHA | head -c 7` -p:BouncyCastle=True
-        dotnet nuget push ./src/DotNetLightning.Core/bin/Release/DotNetLightning.1*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
-
-    - name: Upload nuget packages (native)
-      run: |
-        bash -c "dotnet pack ./src/DotNetLightning.Core -p:Configuration=Release --version-suffix date$(date +%Y%m%d-%H%M).git-$(git rev-parse --short=7 HEAD)-${{ matrix.RID }}"
-        bash -c "dotnet nuget push ./src/DotNetLightning.Core/bin/Release/DotNetLightning.Core.1*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json"
+        dotnet nuget push ./src/DotNetLightning.Core/bin/Release/DotNetLightning.Kiss.1*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
