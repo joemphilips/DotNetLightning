@@ -11,7 +11,6 @@ open DotNetLightning.Utils
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils.OnionError
 open DotNetLightning.Core.Utils.Extensions
-open DotNetLightning.Crypto
 
 open DotNetLightning.Serialization
 

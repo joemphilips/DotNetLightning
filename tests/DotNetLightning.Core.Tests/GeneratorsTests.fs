@@ -2,6 +2,7 @@ module GeneratorsTests
 
 open Expecto
 open NBitcoin
+open DotNetLightning.Utils
 open DotNetLightning.Crypto
 
 let newSecp256k1 = DotNetLightning.Crypto.CryptoUtils.impl.newSecp256k1

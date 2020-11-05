@@ -3,7 +3,6 @@ namespace DotNetLightning.Serialization
 open System
 open System.IO
 open DotNetLightning.Utils
-open DotNetLightning.Crypto
 open NBitcoin
 
 type Scope(openAction: Action, closeAction: Action) =

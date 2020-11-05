@@ -7,7 +7,6 @@ open NBitcoin
 open NBitcoin.Crypto
 open DotNetLightning.Utils
 open DotNetLightning.Utils.NBitcoinExtensions
-open DotNetLightning.Crypto
 
 /// OutPoint
 type StaticOutput = {
