@@ -91,12 +91,12 @@ let openChannelGen =
         <*> (FeeRatePerKw <!> Arb.generate<uint32>)
         <*> (BlockHeightOffset16 <!> Arb.generate<uint16>)
         <*> Arb.generate<uint16>
-        <*> pubKeyGen
-        <*> pubKeyGen
-        <*> pubKeyGen
-        <*> pubKeyGen
-        <*> pubKeyGen
-        <*> commitmentPubKeyGen
+        <*> fundingPubKeyGen
+        <*> revocationBasepointGen
+        <*> paymentBasepointGen
+        <*> delayedPaymentBasepointGen
+        <*> htlcBasepointGen
+        <*> perCommitmentPointGen
         <*> Arb.generate<uint8>
         <*> (Gen.optionOf pushScriptGen)
 
@@ -129,12 +129,12 @@ let acceptChannelGen =
         <*> (Arb.generate<uint32> |> Gen.map(BlockHeightOffset32))
         <*> (BlockHeightOffset16 <!> Arb.generate<uint16>)
         <*> Arb.generate<uint16>
-        <*> pubKeyGen
-        <*> pubKeyGen
-        <*> pubKeyGen
-        <*> pubKeyGen
-        <*> pubKeyGen
-        <*> commitmentPubKeyGen
+        <*> fundingPubKeyGen
+        <*> revocationBasepointGen
+        <*> paymentBasepointGen
+        <*> delayedPaymentBasepointGen
+        <*> htlcBasepointGen
+        <*> perCommitmentPointGen
         <*> (Gen.optionOf pushScriptGen)
 
 let fundingCreatedGen =
@@ -163,7 +163,7 @@ let fundingSignedGen = gen {
 
 let fundingLockedGen = gen {
     let! c = ChannelId <!> uint256Gen
-    let! pk = commitmentPubKeyGen
+    let! pk = perCommitmentPointGen
     return {ChannelId = c; NextPerCommitmentPoint = pk}
 }
 
@@ -251,11 +251,11 @@ let commitmentSignedGen = gen {
 
 let revokeAndACKGen = gen {
     let! c = ChannelId <!> uint256Gen
-    let! revocationKey = revocationKeyGen
-    let! pk = commitmentPubKeyGen 
+    let! perCommitmentSecret = perCommitmentSecretGen
+    let! pk = perCommitmentPointGen 
     return {
         ChannelId = c
-        PerCommitmentSecret = revocationKey
+        PerCommitmentSecret = perCommitmentSecret
         NextPerCommitmentPoint = pk
     }
 }
@@ -269,10 +269,10 @@ let updateFeeGen = gen {
 }
 
 let private dataLossProtectGen = gen {
-    let! revocationKey = revocationKeyGen
-    let! pk = commitmentPubKeyGen
+    let! perCommitmentSecret = perCommitmentSecretGen
+    let! pk = perCommitmentPointGen
     return {
-        YourLastPerCommitmentSecret = Some revocationKey
+        YourLastPerCommitmentSecret = Some perCommitmentSecret
         MyCurrentPerCommitmentPoint = pk
     }
 }

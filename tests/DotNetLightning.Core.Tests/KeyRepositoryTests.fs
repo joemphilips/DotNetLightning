@@ -6,6 +6,7 @@ open DotNetLightning.Chain
 open DotNetLightning.Channel
 open DotNetLightning.Transactions
 open DotNetLightning.Utils
+open DotNetLightning.Crypto
 open NBitcoin
 open Expecto
 
@@ -70,23 +71,23 @@ let tests =
             let fundingTxId = [| for _ in 0..31 -> 1uy |] |> uint256 |> TxId
             let fundingAmount = Money.Satoshis 10000000L
             
-            let localNodeSecret = ExtKey("00000000000000000000000000000000")
+            let localNodeMasterPrivKey = NodeMasterPrivKey <| ExtKey("00000000000000000000000000000000")
             let localChannelIndex = 0
-            let localRepo = DefaultKeyRepository(localNodeSecret, localChannelIndex) :> IKeysRepository
-            let localKeys = localRepo.GetChannelKeys(true)
-            let localPubKeys = localKeys.ToChannelPubKeys()
+            let localPrivKeys = localNodeMasterPrivKey.ChannelPrivKeys localChannelIndex
+            let localPubKeys = localPrivKeys.ToChannelPubKeys()
             
-            let remoteNodeSecret = ExtKey("88888888888888888888888888888888")
+            let remoteNodeMasterPrivKey = NodeMasterPrivKey <| ExtKey("88888888888888888888888888888888")
             let remoteChannelIndex = 1
-            let remoteRepo = DefaultKeyRepository(remoteNodeSecret, remoteChannelIndex) :> IKeysRepository
-            let remoteKeys = remoteRepo.GetChannelKeys(false)
-            let remotePubKeys = remoteKeys.ToChannelPubKeys()
+            let remotePrivKeys = remoteNodeMasterPrivKey.ChannelPrivKeys remoteChannelIndex
+            let remotePubKeys = remotePrivKeys.ToChannelPubKeys()
 
-            let fundingScriptCoin = ChannelHelpers.getFundingScriptCoin localPubKeys
-                                                                        remotePubKeys.FundingPubKey
-                                                                        fundingTxId
-                                                                        (TxOutIndex 0us)
-                                                                        fundingAmount
+            let fundingScriptCoin =
+                ChannelHelpers.getFundingScriptCoin
+                    localPubKeys.FundingPubKey
+                    remotePubKeys.FundingPubKey
+                    fundingTxId
+                    (TxOutIndex 0us)
+                    fundingAmount
             
             let localDustLimit = Money.Satoshis(546L)
             let toLocalDelay = 200us |> BlockHeightOffset16
@@ -95,20 +96,20 @@ let tests =
             let commitTx =
                 Transactions.makeCommitTx fundingScriptCoin
                                           CommitmentNumber.FirstCommitment
-                                          (localPubKeys.PaymentBasePubKey)
-                                          (remotePubKeys.PaymentBasePubKey)
+                                          localPubKeys.PaymentBasepoint
+                                          remotePubKeys.PaymentBasepoint
                                           (true)
                                           localDustLimit
-                                          (localPubKeys.RevocationBasePubKey)
+                                          (RevocationPubKey <| localPubKeys.RevocationBasepoint.RawPubKey())            // FIXME: basepoint being used as pubkey here?
                                           toLocalDelay
-                                          localPubKeys.DelayedPaymentBasePubKey
-                                          remotePubKeys.PaymentBasePubKey
-                                          localPubKeys.HTLCBasePubKey
-                                          remotePubKeys.HTLCBasePubKey
+                                          (DelayedPaymentPubKey <| localPubKeys.DelayedPaymentBasepoint.RawPubKey())    // FIXME: basepoint being used as pubkey here?
+                                          (PaymentPubKey <| remotePubKeys.PaymentBasepoint.RawPubKey())                 // FIXME: basepoint being used as pubkey here?
+                                          (HtlcPubKey <| localPubKeys.HtlcBasepoint.RawPubKey())
+                                          (HtlcPubKey <| remotePubKeys.HtlcBasepoint.RawPubKey())
                                           specBase
                                           n
-            let _remoteSigForLocalCommit, commitTx2 = remoteRepo.GetSignatureFor(commitTx.Value, remotePubKeys.FundingPubKey)
-            let _localSigForLocalCommit, commitTx3 = localRepo.GetSignatureFor(commitTx2, localPubKeys.FundingPubKey)
+            let _remoteSigForLocalCommit, commitTx2 = remotePrivKeys.SignWithFundingPrivKey commitTx.Value
+            let _localSigForLocalCommit, commitTx3 = localPrivKeys.SignWithFundingPrivKey commitTx2
             commitTx3.Finalize() |> ignore
             Expect.isTrue (commitTx3.CanExtractTransaction()) (sprintf "failed to finalize commitTx %A" commitTx3)
             
@@ -117,23 +118,23 @@ let tests =
             let remoteCommitTx =
                 Transactions.makeCommitTx fundingScriptCoin
                                           CommitmentNumber.FirstCommitment
-                                          remotePubKeys.PaymentBasePubKey
-                                          localPubKeys.PaymentBasePubKey
+                                          remotePubKeys.PaymentBasepoint
+                                          localPubKeys.PaymentBasepoint
                                           false
                                           remoteDustLimit
-                                          remotePubKeys.RevocationBasePubKey
+                                          (RevocationPubKey <| remotePubKeys.RevocationBasepoint.RawPubKey())           // FIXME: basepoint being used as pubkey here?
                                           remoteDelay
-                                          remotePubKeys.DelayedPaymentBasePubKey
-                                          localPubKeys.PaymentBasePubKey
-                                          remotePubKeys.HTLCBasePubKey
-                                          localPubKeys.HTLCBasePubKey
+                                          (DelayedPaymentPubKey <| remotePubKeys.DelayedPaymentBasepoint.RawPubKey())   // FIXME: basepoint being used as pubkey here?
+                                          (PaymentPubKey <| localPubKeys.PaymentBasepoint.RawPubKey())                  // FIXME: basepoint being used as pubkey here?
+                                          (HtlcPubKey <| remotePubKeys.HtlcBasepoint.RawPubKey())
+                                          (HtlcPubKey <| localPubKeys.HtlcBasepoint.RawPubKey())
                                           specBase
                                           n
             
-            let _remoteSigForRemoteCommit, remoteCommitTx2 = remoteRepo.GetSignatureFor(remoteCommitTx.Value, remotePubKeys.FundingPubKey)
-            let localSigForRemoteCommit, commitTx3 = localRepo.GetSignatureFor(remoteCommitTx2, localPubKeys.FundingPubKey)
+            let _remoteSigForRemoteCommit, remoteCommitTx2 = remotePrivKeys.SignWithFundingPrivKey remoteCommitTx.Value
+            let localSigForRemoteCommit, commitTx3 = localPrivKeys.SignWithFundingPrivKey remoteCommitTx2
             
-            let localSigs = seq [(localPubKeys.FundingPubKey, TransactionSignature(localSigForRemoteCommit.Signature, SigHash.All))]
+            let localSigs = seq [(localPubKeys.FundingPubKey.RawPubKey(), TransactionSignature(localSigForRemoteCommit.Signature, SigHash.All))]
             let finalizedTx = Transactions.checkTxFinalized remoteCommitTx2 0 localSigs |> Result.deref
             ()
     ]

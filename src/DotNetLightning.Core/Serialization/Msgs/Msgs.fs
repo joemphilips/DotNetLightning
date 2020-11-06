@@ -503,12 +503,12 @@ type OpenChannelMsg = {
     mutable FeeRatePerKw: FeeRatePerKw
     mutable ToSelfDelay: BlockHeightOffset16
     mutable MaxAcceptedHTLCs: uint16
-    mutable FundingPubKey: PubKey
-    mutable RevocationBasepoint: PubKey
-    mutable PaymentBasepoint: PubKey
-    mutable DelayedPaymentBasepoint: PubKey
-    mutable HTLCBasepoint: PubKey
-    mutable FirstPerCommitmentPoint: CommitmentPubKey
+    mutable FundingPubKey: FundingPubKey
+    mutable RevocationBasepoint: RevocationBasepoint
+    mutable PaymentBasepoint: PaymentBasepoint
+    mutable DelayedPaymentBasepoint: DelayedPaymentBasepoint
+    mutable HTLCBasepoint: HtlcBasepoint
+    mutable FirstPerCommitmentPoint: PerCommitmentPoint
     mutable ChannelFlags: uint8
     mutable ShutdownScriptPubKey: OptionalField<Script>
 }
@@ -527,12 +527,12 @@ with
             this.FeeRatePerKw <- FeeRatePerKw(ls.ReadUInt32(false))
             this.ToSelfDelay <- BlockHeightOffset16(ls.ReadUInt16(false))
             this.MaxAcceptedHTLCs <- ls.ReadUInt16(false)
-            this.FundingPubKey <- ls.ReadPubKey()
-            this.RevocationBasepoint <- ls.ReadPubKey()
-            this.PaymentBasepoint <- ls.ReadPubKey()
-            this.DelayedPaymentBasepoint <- ls.ReadPubKey()
-            this.HTLCBasepoint <- ls.ReadPubKey()
-            this.FirstPerCommitmentPoint <- ls.ReadCommitmentPubKey()
+            this.FundingPubKey <- ls.ReadFundingPubKey()
+            this.RevocationBasepoint <- ls.ReadRevocationBasepoint()
+            this.PaymentBasepoint <- ls.ReadPaymentBasepoint()
+            this.DelayedPaymentBasepoint <- ls.ReadDelayedPaymentBasepoint()
+            this.HTLCBasepoint <- ls.ReadHtlcBasepoint()
+            this.FirstPerCommitmentPoint <- ls.ReadPerCommitmentPoint()
             this.ChannelFlags <- ls.ReadUInt8()
             this.ShutdownScriptPubKey <-
                 if (ls.Position = ls.Length) then None else
@@ -554,7 +554,7 @@ with
             ls.Write(this.PaymentBasepoint.ToBytes())
             ls.Write(this.DelayedPaymentBasepoint.ToBytes())
             ls.Write(this.HTLCBasepoint.ToBytes())
-            ls.Write(this.FirstPerCommitmentPoint.ToByteArray())
+            ls.Write(this.FirstPerCommitmentPoint.ToBytes())
             ls.Write(this.ChannelFlags)
             ls.WriteWithLen(this.ShutdownScriptPubKey |> Option.map(fun x -> x.ToBytes()))
 
@@ -568,12 +568,12 @@ type AcceptChannelMsg = {
     mutable MinimumDepth: BlockHeightOffset32
     mutable ToSelfDelay: BlockHeightOffset16
     mutable MaxAcceptedHTLCs: uint16
-    mutable FundingPubKey: PubKey
-    mutable RevocationBasepoint: PubKey
-    mutable PaymentBasepoint: PubKey
-    mutable DelayedPaymentBasepoint: PubKey
-    mutable HTLCBasepoint: PubKey
-    mutable FirstPerCommitmentPoint: CommitmentPubKey
+    mutable FundingPubKey: FundingPubKey
+    mutable RevocationBasepoint: RevocationBasepoint
+    mutable PaymentBasepoint: PaymentBasepoint
+    mutable DelayedPaymentBasepoint: DelayedPaymentBasepoint
+    mutable HTLCBasepoint: HtlcBasepoint
+    mutable FirstPerCommitmentPoint: PerCommitmentPoint
     mutable ShutdownScriptPubKey: OptionalField<Script>
 }
 with
@@ -588,12 +588,12 @@ with
             this.MinimumDepth <- ls.ReadUInt32(false) |> BlockHeightOffset32
             this.ToSelfDelay <- ls.ReadUInt16(false) |> BlockHeightOffset16
             this.MaxAcceptedHTLCs <- ls.ReadUInt16(false)
-            this.FundingPubKey <- ls.ReadPubKey()
-            this.RevocationBasepoint <- ls.ReadPubKey()
-            this.PaymentBasepoint <- ls.ReadPubKey()
-            this.DelayedPaymentBasepoint <- ls.ReadPubKey()
-            this.HTLCBasepoint <- ls.ReadPubKey()
-            this.FirstPerCommitmentPoint <- ls.ReadCommitmentPubKey()
+            this.FundingPubKey <- ls.ReadFundingPubKey()
+            this.RevocationBasepoint <- ls.ReadRevocationBasepoint()
+            this.PaymentBasepoint <- ls.ReadPaymentBasepoint()
+            this.DelayedPaymentBasepoint <- ls.ReadDelayedPaymentBasepoint()
+            this.HTLCBasepoint <- ls.ReadHtlcBasepoint()
+            this.FirstPerCommitmentPoint <- ls.ReadPerCommitmentPoint()
             this.ShutdownScriptPubKey <-
                 if (ls.Position = ls.Length) then None else
                 ls.ReadWithLen() |> Script |> Some
@@ -611,7 +611,7 @@ with
             ls.Write(this.PaymentBasepoint.ToBytes())
             ls.Write(this.DelayedPaymentBasepoint.ToBytes())
             ls.Write(this.HTLCBasepoint.ToBytes())
-            ls.Write(this.FirstPerCommitmentPoint.ToByteArray())
+            ls.Write(this.FirstPerCommitmentPoint.ToBytes())
             ls.WriteWithLen(this.ShutdownScriptPubKey |> Option.map(fun x -> x.ToBytes()))
 
 [<CLIMutable>]
@@ -653,17 +653,17 @@ with
 [<CLIMutable>]
 type FundingLockedMsg = {
     mutable ChannelId: ChannelId
-    mutable NextPerCommitmentPoint: CommitmentPubKey
+    mutable NextPerCommitmentPoint: PerCommitmentPoint
 }
 with
     interface IChannelMsg
     interface ILightningSerializable<FundingLockedMsg> with
         member this.Deserialize(ls) =
             this.ChannelId <- ls.ReadUInt256(true) |> ChannelId
-            this.NextPerCommitmentPoint <- ls.ReadCommitmentPubKey()
+            this.NextPerCommitmentPoint <- ls.ReadPerCommitmentPoint()
         member this.Serialize(ls) =
             ls.Write(this.ChannelId.Value.ToBytes())
-            ls.Write(this.NextPerCommitmentPoint.ToByteArray())
+            ls.Write(this.NextPerCommitmentPoint.ToBytes())
 
 [<CLIMutable>]
 type ShutdownMsg = {
@@ -810,20 +810,20 @@ with
 [<CLIMutable>]
 type RevokeAndACKMsg = {
     mutable ChannelId: ChannelId
-    mutable PerCommitmentSecret: RevocationKey
-    mutable NextPerCommitmentPoint: CommitmentPubKey
+    mutable PerCommitmentSecret: PerCommitmentSecret
+    mutable NextPerCommitmentPoint: PerCommitmentPoint
 }
 with
     interface IHTLCMsg
     interface ILightningSerializable<RevokeAndACKMsg> with
         member this.Deserialize(ls) =
             this.ChannelId <- ls.ReadUInt256(true) |> ChannelId
-            this.PerCommitmentSecret <- ls.ReadRevocationKey()
-            this.NextPerCommitmentPoint <- ls.ReadCommitmentPubKey()
+            this.PerCommitmentSecret <- ls.ReadPerCommitmentSecret()
+            this.NextPerCommitmentPoint <- ls.ReadPerCommitmentPoint()
         member this.Serialize(ls) =
             ls.Write(this.ChannelId.Value.ToBytes())
-            ls.Write(this.PerCommitmentSecret.ToByteArray())
-            ls.Write(this.NextPerCommitmentPoint.ToByteArray())
+            ls.Write(this.PerCommitmentSecret.ToBytes())
+            ls.Write(this.NextPerCommitmentPoint.ToBytes())
 
 [<CLIMutable>]
 type UpdateFeeMsg = {
@@ -843,24 +843,24 @@ with
 
 [<CLIMutable>]
 type DataLossProtect = {
-    mutable YourLastPerCommitmentSecret: Option<RevocationKey>
-    mutable MyCurrentPerCommitmentPoint: CommitmentPubKey
+    mutable YourLastPerCommitmentSecret: Option<PerCommitmentSecret>
+    mutable MyCurrentPerCommitmentPoint: PerCommitmentPoint
 }
     with
         interface ILightningSerializable<DataLossProtect> with
             member this.Deserialize(ls: LightningReaderStream) =
                 this.YourLastPerCommitmentSecret <-
-                    let bytes = ls.ReadBytes RevocationKey.BytesLength
+                    let bytes = ls.ReadBytes PerCommitmentSecret.BytesLength
                     if bytes.All(fun b -> b = 0uy) then
                         None
                     else
-                        Some <| RevocationKey.FromBytes bytes
-                this.MyCurrentPerCommitmentPoint <- ls.ReadCommitmentPubKey()
+                        Some <| PerCommitmentSecret.FromBytes bytes
+                this.MyCurrentPerCommitmentPoint <- ls.ReadPerCommitmentPoint()
             member this.Serialize(ls: LightningWriterStream): unit = 
                 match this.YourLastPerCommitmentSecret with
-                | Some revocationKey -> ls.Write(revocationKey.ToByteArray())
-                | None -> ls.Write(Array.zeroCreate RevocationKey.BytesLength)
-                ls.Write(this.MyCurrentPerCommitmentPoint.ToByteArray())
+                | Some perCommitmentSecret -> ls.Write(perCommitmentSecret.ToBytes())
+                | None -> ls.Write(Array.zeroCreate PerCommitmentSecret.BytesLength)
+                ls.Write(this.MyCurrentPerCommitmentPoint.ToBytes())
 
 
 [<CLIMutable>]

@@ -6,6 +6,7 @@ open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Utils.OnionError
 open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Chain
+open DotNetLightning.Crypto
 open DotNetLightning.Transactions
 
 open DotNetLightning.Serialization
@@ -90,16 +91,19 @@ type RemoteParams = {
     HTLCMinimumMSat: LNMoney
     ToSelfDelay: BlockHeightOffset16
     MaxAcceptedHTLCs: uint16
-    PaymentBasePoint: PubKey
-    FundingPubKey: PubKey
-    RevocationBasePoint: PubKey
-    DelayedPaymentBasePoint: PubKey
-    HTLCBasePoint: PubKey
+    ChannelPubKeys: ChannelPubKeys
     Features: FeatureBits
     MinimumDepth: BlockHeightOffset32
 }
     with
         static member FromAcceptChannel nodeId (remoteInit: InitMsg) (msg: AcceptChannelMsg) =
+            let channelPubKeys = {
+                FundingPubKey = msg.FundingPubKey
+                RevocationBasepoint = msg.RevocationBasepoint
+                PaymentBasepoint = msg.PaymentBasepoint
+                DelayedPaymentBasepoint = msg.DelayedPaymentBasepoint
+                HtlcBasepoint = msg.HTLCBasepoint
+            }
             {
                 NodeId = nodeId
                 DustLimitSatoshis = msg.DustLimitSatoshis
@@ -108,16 +112,19 @@ type RemoteParams = {
                 HTLCMinimumMSat = msg.HTLCMinimumMSat
                 ToSelfDelay = msg.ToSelfDelay
                 MaxAcceptedHTLCs = msg.MaxAcceptedHTLCs
-                PaymentBasePoint = msg.PaymentBasepoint
-                FundingPubKey = msg.FundingPubKey
-                RevocationBasePoint = msg.RevocationBasepoint
-                DelayedPaymentBasePoint = msg.DelayedPaymentBasepoint
-                HTLCBasePoint = msg.HTLCBasepoint
+                ChannelPubKeys = channelPubKeys
                 Features = remoteInit.Features
                 MinimumDepth = msg.MinimumDepth
             }
 
         static member FromOpenChannel (nodeId) (remoteInit: InitMsg) (msg: OpenChannelMsg) (channelHandshakeConfig: ChannelHandshakeConfig) =
+            let channelPubKeys = {
+                FundingPubKey = msg.FundingPubKey
+                RevocationBasepoint = msg.RevocationBasepoint
+                PaymentBasepoint = msg.PaymentBasepoint
+                DelayedPaymentBasepoint = msg.DelayedPaymentBasepoint
+                HtlcBasepoint = msg.HTLCBasepoint
+            }
             {
                 NodeId = nodeId
                 DustLimitSatoshis = msg.DustLimitSatoshis
@@ -126,11 +133,7 @@ type RemoteParams = {
                 HTLCMinimumMSat = msg.HTLCMinimumMsat
                 ToSelfDelay = msg.ToSelfDelay
                 MaxAcceptedHTLCs = msg.MaxAcceptedHTLCs
-                PaymentBasePoint = msg.PaymentBasepoint
-                FundingPubKey = msg.FundingPubKey
-                RevocationBasePoint = msg.RevocationBasepoint
-                DelayedPaymentBasePoint = msg.DelayedPaymentBasepoint
-                HTLCBasePoint = msg.HTLCBasepoint
+                ChannelPubKeys = channelPubKeys
                 Features = remoteInit.Features
                 MinimumDepth = channelHandshakeConfig.MinimumDepth
             }
@@ -144,10 +147,10 @@ type InputInitFunder = {
     LocalParams: LocalParams
     RemoteInit: InitMsg
     ChannelFlags: uint8
-    ChannelKeys: ChannelKeys
+    ChannelPrivKeys: ChannelPrivKeys
 }
     with
-        static member FromOpenChannel (localParams) (remoteInit) (channelKeys) (o: OpenChannelMsg) =
+        static member FromOpenChannel (localParams) (remoteInit) (channelPrivKeys) (o: OpenChannelMsg) =
             {
                 InputInitFunder.TemporaryChannelId = o.TemporaryChannelId
                 FundingSatoshis = o.FundingSatoshis
@@ -157,7 +160,7 @@ type InputInitFunder = {
                 LocalParams = localParams
                 RemoteInit = remoteInit
                 ChannelFlags = o.ChannelFlags
-                ChannelKeys = channelKeys
+                ChannelPrivKeys = channelPrivKeys
             }
 
         member this.DeriveCommitmentSpec() =
@@ -171,7 +174,7 @@ and InputInitFundee = {
     LocalParams: LocalParams
     RemoteInit: InitMsg
     ToLocal: LNMoney
-    ChannelKeys: ChannelKeys
+    ChannelPrivKeys: ChannelPrivKeys
 }
 
 

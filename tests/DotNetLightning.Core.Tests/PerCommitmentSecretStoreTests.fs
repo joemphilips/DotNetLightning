@@ -1,4 +1,4 @@
-module RevocationSetTests
+module PerCommitmentSecretStoreTests
 
 open NBitcoin
 open Expecto
@@ -10,23 +10,23 @@ open DotNetLightning.Crypto
 let tests =
     let insert (commitmentNumber: uint64)
                (key: string)
-               (revocationSet: RevocationSet)
-                   : Result<RevocationSet, InsertRevocationKeyError> =
+               (perCommitmentSecretStore: PerCommitmentSecretStore)
+                   : Result<PerCommitmentSecretStore, InsertPerCommitmentSecretError> =
         let hex = NBitcoin.DataEncoders.HexEncoder()
         let commitmentNumber = CommitmentNumber <| UInt48.FromUInt64 commitmentNumber
-        let key = key |> hex.DecodeData |> fun h -> new Key(h) |> RevocationKey
-        revocationSet.InsertRevocationKey commitmentNumber key
+        let perCommitmentSecret = key |> hex.DecodeData |> fun h -> new Key(h) |> PerCommitmentSecret
+        perCommitmentSecretStore.InsertPerCommitmentSecret commitmentNumber perCommitmentSecret
 
     let insertUnwrap (commitmentNumber: uint64)
                      (key: string)
-                     (revocationSet: RevocationSet)
-                         : RevocationSet =
-        Result.deref <| insert commitmentNumber key revocationSet
+                     (perCommitmentSecretStore: PerCommitmentSecretStore)
+                         : PerCommitmentSecretStore =
+        Result.deref <| insert commitmentNumber key perCommitmentSecretStore
 
-    testList "Revocation tests" [
+    testList "Per commitment secret store tests" [
         testCase "insert secret correct sequence" <| fun _ ->
-            let _revocationSet: RevocationSet =
-                RevocationSet()
+            let _perCommitmentSecretStore: PerCommitmentSecretStore =
+                PerCommitmentSecretStore()
                 |> insertUnwrap
                     281474976710655UL
                     "7cc854b54e3e0dcdb010d7a3fee464a9687be6e8db3be6854c475621e007a5dc"
@@ -55,7 +55,7 @@ let tests =
 
         testCase "insert secret 1 incorrect" <| fun _ ->
             let res =
-                RevocationSet()
+                PerCommitmentSecretStore()
                 |> insertUnwrap
                     281474976710655UL
                     "02a40c85b6f28da08dfdbe0926c53fab2de6d28c10301f8f7c4073d5e42e3148"
@@ -63,14 +63,14 @@ let tests =
                     281474976710654UL
                     "c7518c8ae4660ed02894df8976fa1a3659c1a8b4b5bec0c4b872abeba4cb8964"
             match res with
-            | Error(KeyMismatch(previous, current))
-                when previous.Index.UInt64 = 281474976710655UL && current.Index.UInt64 = 281474976710654UL
+            | Error(SecretMismatch(previous, current))
+                when previous.Index().UInt64 = 281474976710655UL && current.Index().UInt64 = 281474976710654UL
                 -> ()
             | _ -> failwith <| sprintf "unexpected result: %A" res
 
         testCase "insert secret 2 incorrect" <| fun _ ->
             let res =
-                RevocationSet()
+                PerCommitmentSecretStore()
                 |> insertUnwrap
                     281474976710655UL
                     "02a40c85b6f28da08dfdbe0926c53fab2de6d28c10301f8f7c4073d5e42e3148"
@@ -84,14 +84,14 @@ let tests =
                     281474976710652UL
                     "27cddaa5624534cb6cb9d7da077cf2b22ab21e9b506fd4998a51d54502e99116"
             match res with
-            | Error(KeyMismatch(previous, current))
-                when previous.Index.UInt64 = 281474976710654UL && current.Index.UInt64 = 281474976710652UL
+            | Error(SecretMismatch(previous, current))
+                when previous.Index().UInt64 = 281474976710654UL && current.Index().UInt64 = 281474976710652UL
                 -> ()
             | _ -> failwith <| sprintf "unexpected result: %A" res
 
         testCase "insert secret 3 incorrect" <| fun _ ->
             let res =
-                RevocationSet()
+                PerCommitmentSecretStore()
                 |> insertUnwrap
                     281474976710655UL
                     "7cc854b54e3e0dcdb010d7a3fee464a9687be6e8db3be6854c475621e007a5dc"
@@ -105,14 +105,14 @@ let tests =
                     281474976710652UL
                     "27cddaa5624534cb6cb9d7da077cf2b22ab21e9b506fd4998a51d54502e99116"
             match res with
-            | Error(KeyMismatch(previous, current))
-                when previous.Index.UInt64 = 281474976710653UL && current.Index.UInt64 = 281474976710652UL
+            | Error(SecretMismatch(previous, current))
+                when previous.Index().UInt64 = 281474976710653UL && current.Index().UInt64 = 281474976710652UL
                 -> ()
             | _ -> failwith <| sprintf "unexpected result: %A" res
                 
         testCase "insert secret 4 incorrect" <| fun _ ->
             let res =
-                RevocationSet()
+                PerCommitmentSecretStore()
                 |> insertUnwrap
                     281474976710655UL
                     "02a40c85b6f28da08dfdbe0926c53fab2de6d28c10301f8f7c4073d5e42e3148"
@@ -138,18 +138,18 @@ let tests =
                     281474976710648UL
                     "05cde6323d949933f7f7b78776bcc1ea6d9b31447732e3802e1f7ac44b650e17"
             match res with
-            | Error(KeyMismatch(previous, current))
+            | Error(SecretMismatch(previous, current))
                 when (
-                        previous.Index.UInt64 = 281474976710654UL ||
-                        previous.Index.UInt64 = 281474976710653UL ||
-                        previous.Index.UInt64 = 281474976710652UL
-                    ) && current.Index.UInt64 = 281474976710648UL
+                        previous.Index().UInt64 = 281474976710654UL ||
+                        previous.Index().UInt64 = 281474976710653UL ||
+                        previous.Index().UInt64 = 281474976710652UL
+                    ) && current.Index().UInt64 = 281474976710648UL
                 -> ()
             | _ -> failwith <| sprintf "unexpected result: %A" res
 
         testCase "insert secret 5 incorrect" <| fun _ ->
             let res =
-                RevocationSet()
+                PerCommitmentSecretStore()
                 |> insertUnwrap
                     281474976710655UL
                     "7cc854b54e3e0dcdb010d7a3fee464a9687be6e8db3be6854c475621e007a5dc"
@@ -169,14 +169,14 @@ let tests =
                     281474976710650UL
                     "969660042a28f32d9be17344e09374b379962d03db1574df5a8a5a47e19ce3f2"
             match res with
-            | Error(KeyMismatch(previous, current))
-                when previous.Index.UInt64 = 281474976710651UL && current.Index.UInt64 = 281474976710650UL
+            | Error(SecretMismatch(previous, current))
+                when previous.Index().UInt64 = 281474976710651UL && current.Index().UInt64 = 281474976710650UL
                 -> ()
             | _ -> failwith <| sprintf "unexpected result: %A" res
 
         testCase "insert secret 6 incorrect" <| fun _ ->
             let res =
-                RevocationSet()
+                PerCommitmentSecretStore()
                 |> insertUnwrap
                     281474976710655UL
                     "7cc854b54e3e0dcdb010d7a3fee464a9687be6e8db3be6854c475621e007a5dc"
@@ -202,14 +202,14 @@ let tests =
                     281474976710648UL
                     "05cde6323d949933f7f7b78776bcc1ea6d9b31447732e3802e1f7ac44b650e17"
             match res with
-            | Error(KeyMismatch(previous, current))
-                when previous.Index.UInt64 = 281474976710650UL && current.Index.UInt64 = 281474976710648UL
+            | Error(SecretMismatch(previous, current))
+                when previous.Index().UInt64 = 281474976710650UL && current.Index().UInt64 = 281474976710648UL
                 -> ()
             | _ -> failwith <| sprintf "unexpected result: %A" res
 
         testCase "insert secret 7 incorrect" <| fun _ ->
             let res =
-                RevocationSet()
+                PerCommitmentSecretStore()
                 |> insertUnwrap
                     281474976710655UL
                     "7cc854b54e3e0dcdb010d7a3fee464a9687be6e8db3be6854c475621e007a5dc"
@@ -235,14 +235,14 @@ let tests =
                     281474976710648UL
                     "05cde6323d949933f7f7b78776bcc1ea6d9b31447732e3802e1f7ac44b650e17"
             match res with
-            | Error(KeyMismatch(previous, current))
-                when previous.Index.UInt64 = 281474976710649UL && current.Index.UInt64 = 281474976710648UL
+            | Error(SecretMismatch(previous, current))
+                when previous.Index().UInt64 = 281474976710649UL && current.Index().UInt64 = 281474976710648UL
                 -> ()
             | _ -> failwith <| sprintf "unexpected result: %A" res
 
         testCase "insert secret 8 incorrect" <| fun _ ->
             let res =
-                RevocationSet()
+                PerCommitmentSecretStore()
                 |> insertUnwrap
                     281474976710655UL
                     "7cc854b54e3e0dcdb010d7a3fee464a9687be6e8db3be6854c475621e007a5dc"
@@ -268,8 +268,8 @@ let tests =
                     281474976710648UL
                     "a7efbc61aac46d34f77778bac22c8a20c6a46ca460addc49009bda875ec88fa4"
             match res with
-            | Error(KeyMismatch(previous, current))
-                when previous.Index.UInt64 = 281474976710649UL && current.Index.UInt64 = 281474976710648UL
+            | Error(SecretMismatch(previous, current))
+                when previous.Index().UInt64 = 281474976710649UL && current.Index().UInt64 = 281474976710648UL
                 -> ()
             | _ -> failwith <| sprintf "unexpected result: %A" res
     ]

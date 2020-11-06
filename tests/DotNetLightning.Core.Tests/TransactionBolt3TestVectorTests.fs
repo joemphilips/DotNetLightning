@@ -13,8 +13,6 @@ open Expecto
 open GeneratorsTests
 open NBitcoin
 
-let newSecp256k1 = DotNetLightning.Crypto.CryptoUtils.impl.newSecp256k1
-
 // let logger = Log.create "bolt3-transaction tests"
 let log =
     // uncomment this if you want to see the debug message for this test
@@ -26,78 +24,105 @@ let log =
 let dataPath1 = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "../../..", ("Data/bolt3-tx.json"))
 let data1 = dataPath1 |> File.ReadAllText |> JsonDocument.Parse
 
-let localPerCommitmentPoint = PubKey("025f7117a78150fe2ef97db7cfc83bd57b2e2c0d0dd25eaf467a4a1c2a45ce1486")
+let localPerCommitmentPoint = PerCommitmentPoint <| PubKey("025f7117a78150fe2ef97db7cfc83bd57b2e2c0d0dd25eaf467a4a1c2a45ce1486")
 type LocalConfig = {
-    Ctx: ISecp256k1
     CommitTxNumber: CommitmentNumber
     ToSelfDelay: BlockHeightOffset16
     DustLimit: Money
-    PaymentBasePointSecret: Key
-    PaymentBasePoint: PubKey
-    RevocationBasePointSecret: uint256
-    DelayedPaymentBasePointSecret: Key
-    delayedPaymentBasePoint: PubKey
-    PerCommitmentPoint: PubKey
-    PaymentPrivKey: Key
-    DelayedPaymentPrivKey: Key
-    RevocationPubKey: PubKey
+    PaymentBasepointSecret: PaymentBasepointSecret
+    PaymentBasepoint: PaymentBasepoint
+    RevocationBasepointSecret: RevocationBasepointSecret
+    DelayedPaymentBasepointSecret: DelayedPaymentBasepointSecret
+    DelayedPaymentBasepoint: DelayedPaymentBasepoint
+    PerCommitmentPoint: PerCommitmentPoint
+    PaymentPrivKey: PaymentPrivKey
+    DelayedPaymentPrivKey: DelayedPaymentPrivKey
+    RevocationPubKey: RevocationPubKey
     FeeRatePerKw: FeeRatePerKw
-    FundingPrivKey: Key
+    FundingPrivKey: FundingPrivKey
 }
 let getLocal(): LocalConfig =
-    let ctx = newSecp256k1()
-    let paymentBasePointSecret = "1111111111111111111111111111111111111111111111111111111111111111" |> hex.DecodeData |> fun h -> new Key(h)
-    let paymentBasePoint = paymentBasePointSecret.PubKey
-    let delayedPaymentBasePointSecret = "3333333333333333333333333333333333333333333333333333333333333333" |> hex.DecodeData |> fun h -> new Key(h)
+    let paymentBasepointSecret =
+        "1111111111111111111111111111111111111111111111111111111111111111"
+        |> hex.DecodeData
+        |> fun h -> new Key(h)
+        |> PaymentBasepointSecret
+    let paymentBasepoint = paymentBasepointSecret.PaymentBasepoint()
+    let delayedPaymentBasepointSecret =
+        "3333333333333333333333333333333333333333333333333333333333333333"
+        |> hex.DecodeData
+        |> fun h -> new Key(h)
+        |> DelayedPaymentBasepointSecret
+    let revocationBasepointSecret =
+        "2222222222222222222222222222222222222222222222222222222222222222"
+        |> hex.DecodeData
+        |> fun h -> new Key(h)
+        |> RevocationBasepointSecret
+    let fundingPrivKey =
+      "30ff4956bbdd3222d44cc5e8a1261dab1e07957bdac5ae88fe3261ef321f3749"
+        |> hex.DecodeData
+        |> fun h -> new Key(h)
+        |> FundingPrivKey
     {
-      Ctx = ctx
       CommitTxNumber = CommitmentNumber(UInt48.MaxValue - (UInt48.FromUInt64 42UL))
       ToSelfDelay = 144us |> BlockHeightOffset16
       DustLimit = Money.Satoshis(546L)
-      PaymentBasePointSecret = paymentBasePointSecret
-      PaymentBasePoint = paymentBasePoint
-      RevocationBasePointSecret = uint256.Parse("2222222222222222222222222222222222222222222222222222222222222222")
-      DelayedPaymentBasePointSecret = delayedPaymentBasePointSecret
-      delayedPaymentBasePoint = delayedPaymentBasePointSecret.PubKey
-      FundingPrivKey = "30ff4956bbdd3222d44cc5e8a1261dab1e07957bdac5ae88fe3261ef321f3749" |> hex.DecodeData |> fun h -> new Key(h)
+      PaymentBasepointSecret = paymentBasepointSecret
+      PaymentBasepoint = paymentBasepoint
+      RevocationBasepointSecret = revocationBasepointSecret
+      DelayedPaymentBasepointSecret = delayedPaymentBasepointSecret
+      DelayedPaymentBasepoint = delayedPaymentBasepointSecret.DelayedPaymentBasepoint()
+      FundingPrivKey = fundingPrivKey
       PerCommitmentPoint = localPerCommitmentPoint
-      PaymentPrivKey = Generators.derivePrivKey(ctx) (paymentBasePointSecret) (localPerCommitmentPoint)
-      DelayedPaymentPrivKey = Generators.derivePrivKey(ctx) (delayedPaymentBasePointSecret) (localPerCommitmentPoint)
-      RevocationPubKey = PubKey("0212a140cd0c6539d07cd08dfe09984dec3251ea808b892efeac3ede9402bf2b19")
+      PaymentPrivKey = localPerCommitmentPoint.DerivePaymentPrivKey paymentBasepointSecret
+      DelayedPaymentPrivKey = localPerCommitmentPoint.DeriveDelayedPaymentPrivKey delayedPaymentBasepointSecret
+      RevocationPubKey = RevocationPubKey <| PubKey("0212a140cd0c6539d07cd08dfe09984dec3251ea808b892efeac3ede9402bf2b19")
       FeeRatePerKw = 15000u |> FeeRatePerKw
     }
 
 type RemoteConfig = {
-    Ctx: ISecp256k1
     CommitTxNumber: CommitmentNumber
     ToSelfDelay: BlockHeightOffset16
     DustLimit: Money
-    PaymentBasePointSecret: Key
-    PaymentBasePoint: PubKey
-    RevocationBasePointSecret: Key
-    RevocationBasePoint: PubKey
-    FundingPrivKey: Key
-    PaymentPrivKey: Key
-    PerCommitmentPoint: PubKey
+    PaymentBasepointSecret: PaymentBasepointSecret
+    PaymentBasepoint: PaymentBasepoint
+    RevocationBasepointSecret: RevocationBasepointSecret
+    RevocationBasepoint: RevocationBasepoint
+    FundingPrivKey: FundingPrivKey
+    PaymentPrivKey: PaymentPrivKey
+    PerCommitmentPoint: PerCommitmentPoint
 }
 let getRemote(): RemoteConfig =
-    let ctx = newSecp256k1()
-    let paymentBasePointSecret = "4444444444444444444444444444444444444444444444444444444444444444" |> hex.DecodeData |> fun h -> new Key(h)
-    let paymentBasePoint = paymentBasePointSecret.PubKey
-    let revocationBasePointSecret = "2222222222222222222222222222222222222222222222222222222222222222" |> hex.DecodeData |> fun h -> new Key(h)
-    let revocationBasePoint = revocationBasePointSecret.PubKey
+    let paymentBasepointSecret =
+        "4444444444444444444444444444444444444444444444444444444444444444"
+        |> hex.DecodeData
+        |> fun h -> new Key(h)
+        |> PaymentBasepointSecret
+    let paymentBasepoint = paymentBasepointSecret.PaymentBasepoint()
+    let revocationBasepointSecret =
+        "2222222222222222222222222222222222222222222222222222222222222222"
+        |> hex.DecodeData
+        |> fun h -> new Key(h)
+        |> RevocationBasepointSecret
+    let revocationBasepoint = revocationBasepointSecret.RevocationBasepoint()
+    let fundingPrivKey =
+        "1552dfba4f6cf29a62a0af13c8d6981d36d0ef8d61ba10fb0fe90da7634d7e13"
+        |> hex.DecodeData
+        |> fun h -> new Key(h)
+        |> FundingPrivKey
+    let perCommitmentPoint =
+        PerCommitmentPoint <| PubKey("022c76692fd70814a8d1ed9dedc833318afaaed8188db4d14727e2e99bc619d325")
     {
-      Ctx = ctx
       CommitTxNumber = CommitmentNumber(UInt48.MaxValue - (UInt48.FromUInt64 42UL))
       ToSelfDelay = 144us |> BlockHeightOffset16
       DustLimit = Money.Satoshis(546L)
-      PaymentBasePointSecret = paymentBasePointSecret
-      PaymentBasePoint = paymentBasePoint
-      RevocationBasePointSecret = revocationBasePointSecret
-      RevocationBasePoint = revocationBasePoint
-      FundingPrivKey = "1552dfba4f6cf29a62a0af13c8d6981d36d0ef8d61ba10fb0fe90da7634d7e13" |> hex.DecodeData |> fun h -> new Key(h)
-      PaymentPrivKey = Generators.derivePrivKey (ctx) (paymentBasePointSecret) localPerCommitmentPoint
-      PerCommitmentPoint = "022c76692fd70814a8d1ed9dedc833318afaaed8188db4d14727e2e99bc619d325" |> PubKey
+      PaymentBasepointSecret = paymentBasepointSecret
+      PaymentBasepoint = paymentBasepoint
+      RevocationBasepointSecret = revocationBasepointSecret
+      RevocationBasepoint = revocationBasepoint
+      FundingPrivKey = fundingPrivKey
+      PaymentPrivKey = localPerCommitmentPoint.DerivePaymentPrivKey paymentBasepointSecret
+      PerCommitmentPoint = perCommitmentPoint
     }
     
 let n = Network.RegTest
@@ -110,32 +135,32 @@ log(sprintf "# funding-tx: %A" fundingTx)
 let local = getLocal()
 let remote = getRemote()
 let fundingRedeem =
-    let fundingPks = [| local.FundingPrivKey.PubKey
-                        remote.FundingPrivKey.PubKey |]
-    Scripts.multiSigOfM_2(true) (fundingPks)
+    Scripts.funding
+        (local.FundingPrivKey.FundingPubKey())
+        (remote.FundingPrivKey.FundingPubKey())
 
 let commitmentInputScriptCoin =
     Coin(fundingTx.GetHash(), 0u, fundingAmount, fundingRedeem.WitHash.ScriptPubKey)
     |> fun c -> ScriptCoin(c, fundingRedeem)
 
-log (sprintf "local payment basepoint is %A" local.PaymentBasePoint)
-log (sprintf "remote payment basepoint is %A" remote.PaymentBasePoint)
+log (sprintf "local payment basepoint is %A" local.PaymentBasepoint)
+log (sprintf "remote payment basepoint is %A" remote.PaymentBasepoint)
 let obscuredTxNumber =
     let commitmentNumber = CommitmentNumber(UInt48.MaxValue - (UInt48.FromUInt64 42UL))
-    commitmentNumber.Obscure true local.PaymentBasePoint remote.PaymentBasePoint
+    commitmentNumber.Obscure true local.PaymentBasepoint remote.PaymentBasepoint
 Expect.equal obscuredTxNumber (0x2bb038521914UL ^^^ 42UL |> UInt48.FromUInt64 |> ObscuredCommitmentNumber) ""
 
-sprintf "local_payment_basepoint: %A " local.PaymentBasePoint |> log
-sprintf "remote_payment_basepoint: %A" remote.PaymentBasePoint |> log
+sprintf "local_payment_basepoint: %A " local.PaymentBasepoint |> log
+sprintf "remote_payment_basepoint: %A" remote.PaymentBasepoint |> log
 sprintf "local_funding_privkey: %A" local.FundingPrivKey |> log
-sprintf "local_funding_pubkey: %A" local.FundingPrivKey.PubKey |> log
+sprintf "local_funding_pubkey: %A" (local.FundingPrivKey.FundingPubKey()) |> log
 sprintf "remote_funding_privkey: %A" remote.FundingPrivKey |> log
-sprintf "remote_funding_pubkey: %A" remote.FundingPrivKey.PubKey |> log
+sprintf "remote_funding_pubkey: %A" (remote.FundingPrivKey.FundingPubKey()) |> log
 sprintf "local_secretkey: %A" local.PaymentPrivKey |> log
-sprintf "localkey: %A" local.PaymentPrivKey.PubKey|> log
+sprintf "localkey: %A" (local.PaymentPrivKey.PaymentPubKey()) |> log
 sprintf "remotekey: %A" remote.PaymentPrivKey |> log
-sprintf "local_delayedkey: %A" local.DelayedPaymentPrivKey.PubKey |> log
-sprintf "local_revocation_key: %A" local.RevocationPubKey|> log
+sprintf "local_delayedkey: %A" (local.DelayedPaymentPrivKey.DelayedPaymentPubKey()) |> log
+sprintf "local_revocation_key: %A" local.RevocationPubKey |> log
 sprintf "# funding wscript = %A" fundingRedeem |> log
 assert(fundingRedeem = Script.FromBytesUnsafe(hex.DecodeData "5221023da092f6980e58d2c037173180e9a465476026ee50f96695963e8efe436f54eb21030e9f7b623d2ccc7c9bd44d66d5ce21ce504c0acf6385a132cec6d3c39fa711c152ae"))
 
@@ -194,13 +219,15 @@ let htlcScripts =
     htlcs
     |> List.map(fun htlc -> match htlc.Direction with
                             | Out -> Scripts.htlcOffered
-                                        local.PaymentPrivKey.PubKey
-                                        (remote.PaymentPrivKey.PubKey)
+                                        // FIXME: payment keys being used as htlc keys??
+                                        (HtlcPubKey <| local.PaymentPrivKey.PaymentPubKey().RawPubKey())
+                                        (HtlcPubKey <| remote.PaymentPrivKey.PaymentPubKey().RawPubKey())
                                         (local.RevocationPubKey)
                                         (htlc.Add.PaymentHash)
                             | In -> Scripts.htlcReceived
-                                        (local.PaymentPrivKey.PubKey)
-                                        (remote.PaymentPrivKey.PubKey)
+                                        // FIXME: payment keys being used as htlc keys??
+                                        (HtlcPubKey <| local.PaymentPrivKey.PaymentPubKey().RawPubKey())
+                                        (HtlcPubKey <| remote.PaymentPrivKey.PaymentPubKey().RawPubKey())
                                         (local.RevocationPubKey)
                                         (htlc.Add.PaymentHash)
                                         (htlc.Add.CLTVExpiry.Value))
@@ -214,24 +241,25 @@ let run (spec: CommitmentSpec): (Transaction * _) =
         let commitTx = Transactions.makeCommitTx
                          (commitmentInputScriptCoin)
                          (local.CommitTxNumber)
-                         (local.PaymentBasePoint)
-                         (remote.PaymentBasePoint)
+                         (local.PaymentBasepoint)
+                         (remote.PaymentBasepoint)
                          (true)
                          (local.DustLimit)
                          (local.RevocationPubKey)
                          (local.ToSelfDelay)
-                         (local.DelayedPaymentPrivKey.PubKey)
-                         (remote.PaymentPrivKey.PubKey)
-                         (local.PaymentPrivKey.PubKey)
-                         (remote.PaymentPrivKey.PubKey)
+                         (local.DelayedPaymentPrivKey.DelayedPaymentPubKey())
+                         (remote.PaymentPrivKey.PaymentPubKey())
+                         // FIXME: payment keys being used as htlc keys??
+                         (HtlcPubKey <| local.PaymentPrivKey.PaymentPubKey().RawPubKey())
+                         (HtlcPubKey <| remote.PaymentPrivKey.PaymentPubKey().RawPubKey())
                          (spec)
                          (n)
         // test vectors requires us to use RFC6974
-        let localSig, tx2 = Transactions.signCore(commitTx, local.FundingPrivKey, false)
-        let remoteSig, tx3 = Transactions.signCore(tx2, remote.FundingPrivKey, false)
-        Transactions.checkSigAndAdd (tx3) (localSig) (local.FundingPrivKey.PubKey)
+        let localSig, tx2 = Transactions.signCore(commitTx, local.FundingPrivKey.RawKey(), false)
+        let remoteSig, tx3 = Transactions.signCore(tx2, remote.FundingPrivKey.RawKey(), false)
+        Transactions.checkSigAndAdd (tx3) (localSig) (local.FundingPrivKey.FundingPubKey().RawPubKey())
         >>= fun tx4 ->
-            Transactions.checkSigAndAdd (tx4) (remoteSig) (remote.FundingPrivKey.PubKey)
+            Transactions.checkSigAndAdd (tx4) (remoteSig) (remote.FundingPrivKey.FundingPubKey().RawPubKey())
         |> function Ok e -> e | Error e -> failwithf "%A" e
     let baseFee = Transactions.commitTxFee(local.DustLimit)(spec)
     log (sprintf "base commitment transaction fee is %A" baseFee)
@@ -241,7 +269,7 @@ let run (spec: CommitmentSpec): (Transaction * _) =
     commitTx.Value.GetGlobalTransaction().Outputs
         |> List.ofSeq
         |> List.iter(fun txOut -> match txOut.ScriptPubKey.Length with
-                                  | 22 -> log(sprintf "to-remote amount %A P2WPKH(%A)" (txOut.Value) (remote.PaymentPrivKey.PubKey))
+                                  | 22 -> log(sprintf "to-remote amount %A P2WPKH(%A)" (txOut.Value) (remote.PaymentPrivKey.PaymentPubKey()))
                                   | 34 ->
                                       let maybeIndex = htlcScripts |> List.tryFindIndex(fun s -> s.WitHash.ScriptPubKey = txOut.ScriptPubKey)
                                       match maybeIndex with
@@ -250,7 +278,7 @@ let run (spec: CommitmentSpec): (Transaction * _) =
                                                txOut.Value
                                                (Scripts.toLocalDelayed(local.RevocationPubKey)
                                                                       (local.ToSelfDelay)
-                                                                      (local.DelayedPaymentPrivKey.PubKey)))
+                                                                      (local.DelayedPaymentPrivKey.DelayedPaymentPubKey())))
                                           |> log
                                       | Some i ->
                                           (sprintf "to-local amount %A \n to-local wscript (%A)" txOut.Value htlcScripts.[i])
@@ -260,8 +288,8 @@ let run (spec: CommitmentSpec): (Transaction * _) =
         Transactions.getCommitTxNumber
             (commitTx.Value.GetGlobalTransaction())
             (true)
-            (local.PaymentBasePoint)
-            (remote.PaymentBasePoint)
+            (local.PaymentBasepoint)
+            (remote.PaymentBasepoint)
     let expectedCommitTxNumber = local.CommitTxNumber
     Expect.equal actualCommitTxNumOpt.Value (expectedCommitTxNumber) ""
     commitTx.Value.Finalize() |> ignore
@@ -272,9 +300,10 @@ let run (spec: CommitmentSpec): (Transaction * _) =
                                  local.DustLimit
                                  local.RevocationPubKey
                                  local.ToSelfDelay
-                                 local.DelayedPaymentPrivKey.PubKey
-                                 local.PaymentPrivKey.PubKey
-                                 remote.PaymentPrivKey.PubKey
+                                 (local.DelayedPaymentPrivKey.DelayedPaymentPubKey())
+                                 // FIXME: payment keys being used as htlc keys??
+                                 (HtlcPubKey <| local.PaymentPrivKey.PaymentPubKey().RawPubKey())
+                                 (HtlcPubKey <| remote.PaymentPrivKey.PaymentPubKey().RawPubKey())
                                  spec
                                  n
         |> Result.defaultWith(fun _ -> failwith "fail(BOLT3 transactions): couldn't make HTLC transactions")
@@ -288,8 +317,8 @@ let run (spec: CommitmentSpec): (Transaction * _) =
         htlcTxs
         |> List.map(fun htlcTx -> match htlcTx with
                                   | :? HTLCSuccessTx as tx ->
-                                      let localSig, tx2 = Transactions.signCore(tx, local.PaymentPrivKey, false)
-                                      let remoteSig, _tx3 = Transactions.signCore(tx2, remote.PaymentPrivKey, false)
+                                      let localSig, tx2 = Transactions.signCore(tx, local.PaymentPrivKey.RawKey(), false)
+                                      let remoteSig, _tx3 = Transactions.signCore(tx2, remote.PaymentPrivKey.RawKey(), false)
                                       // just checking preimage is in global list
                                       let paymentPreimage = (paymentPreImages |> List.find(fun p -> p.Hash = tx.PaymentHash))
                                       log (sprintf "Finalizing %A" tx)
@@ -297,8 +326,8 @@ let run (spec: CommitmentSpec): (Transaction * _) =
                                       | Ok tx -> tx
                                       | Error e -> failwithf "%A" e
                                   | :? HTLCTimeoutTx as tx ->
-                                      let localSig, _ = Transactions.signCore(tx, local.PaymentPrivKey, false)
-                                      let remoteSig, _ = Transactions.signCore(tx, remote.PaymentPrivKey, false)
+                                      let localSig, _ = Transactions.signCore(tx, local.PaymentPrivKey.RawKey(), false)
+                                      let remoteSig, _ = Transactions.signCore(tx, remote.PaymentPrivKey.RawKey(), false)
                                       match tx.Finalize(localSig, remoteSig) with
                                       | Ok tx -> tx
                                       | Error e -> failwithf "%A" e

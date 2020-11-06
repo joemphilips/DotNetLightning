@@ -12,6 +12,7 @@ open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils
 open DotNetLightning.Core.Utils.Extensions
 open DotNetLightning.Utils.Aether
+open DotNetLightning.Crypto
 open DotNetLightning.Serialization.Msgs
 
 /// We define all possible txs here.
@@ -330,8 +331,8 @@ module Transactions =
 
     let getCommitTxNumber (commitTx: Transaction)
                           (isFunder: bool)
-                          (localPaymentBasePoint: PubKey)
-                          (remotePaymentBasePoint: PubKey)
+                          (localPaymentBasepoint: PaymentBasepoint)
+                          (remotePaymentBasepoint: PaymentBasepoint)
                               : Option<CommitmentNumber> =
         let obscuredCommitmentNumberOpt =
             ObscuredCommitmentNumber.TryFromLockTimeAndSequence
@@ -342,8 +343,8 @@ module Transactions =
         | Some obscuredCommitmentNumber ->
             Some <| obscuredCommitmentNumber.Unobscure
                 isFunder
-                localPaymentBasePoint
-                remotePaymentBasePoint
+                localPaymentBasepoint
+                remotePaymentBasepoint
 
     /// Sort by BOLT 3: Compliant way (i.e. BIP69 + CLTV order)
     let sortTxOut (txOutsWithMeta: (TxOut * _) list) =
@@ -353,16 +354,16 @@ module Transactions =
 
     let makeCommitTx (inputInfo: ScriptCoin)
                      (commitmentNumber: CommitmentNumber)
-                     (localPaymentBasePoint: PubKey)
-                     (remotePaymentBasePoint: PubKey)
+                     (localPaymentBasepoint: PaymentBasepoint)
+                     (remotePaymentBasepoint: PaymentBasepoint)
                      (localIsFunder: bool)
                      (localDustLimit: Money)
-                     (localRevocationPubKey: PubKey)
+                     (localRevocationPubKey: RevocationPubKey)
                      (toLocalDelay: BlockHeightOffset16)
-                     (localDelayedPaymentPubKey)
-                     (remotePaymentPubkey: PubKey)
-                     (localHTLCPubKey: PubKey)
-                     (remoteHTLCPubkey: PubKey)
+                     (localDelayedPaymentPubKey: DelayedPaymentPubKey)
+                     (remotePaymentPubkey: PaymentPubKey)
+                     (localHTLCPubKey: HtlcPubKey)
+                     (remoteHTLCPubkey: HtlcPubKey)
                      (spec: CommitmentSpec)
                      (network: Network)
                          =
@@ -380,7 +381,7 @@ module Transactions =
                 None
         let toRemoteOutput_opt =
             if (toRemoteAmount >= localDustLimit) then 
-                Some(TxOut(toRemoteAmount, (remotePaymentPubkey.WitHash.ScriptPubKey)))
+                Some(TxOut(toRemoteAmount, (remotePaymentPubkey.RawPubKey().WitHash.ScriptPubKey)))
             else
                 None
 
@@ -396,7 +397,7 @@ module Transactions =
                     TxOut(htlc.Add.Amount.ToMoney(), redeem.WitHash.ScriptPubKey), Some htlc.Add)
         
         let obscuredCommitmentNumber =
-            commitmentNumber.Obscure localIsFunder localPaymentBasePoint remotePaymentBasePoint
+            commitmentNumber.Obscure localIsFunder localPaymentBasepoint remotePaymentBasepoint
         let sequence = obscuredCommitmentNumber.Sequence
         let lockTime = obscuredCommitmentNumber.LockTime
 
@@ -498,11 +499,11 @@ module Transactions =
     let sign(tx, key) = signCore(tx, key, true)
     let makeHTLCTimeoutTx (commitTx: Transaction)
                           (localDustLimit: Money)
-                          (localRevocationPubKey: PubKey)
+                          (localRevocationPubKey: RevocationPubKey)
                           (toLocalDelay: BlockHeightOffset16)
-                          (localDelayedPaymentPubKey: PubKey)
-                          (localHTLCPubKey: PubKey)
-                          (remoteHTLCPubKey: PubKey)
+                          (localDelayedPaymentPubKey: DelayedPaymentPubKey)
+                          (localHTLCPubKey: HtlcPubKey)
+                          (remoteHTLCPubKey: HtlcPubKey)
                           (feeratePerKw: FeeRatePerKw)
                           (htlc: UpdateAddHTLCMsg)
                           (network: Network)
@@ -540,11 +541,11 @@ module Transactions =
 
     let makeHTLCSuccessTx (commitTx: Transaction)
                           (localDustLimit: Money)
-                          (localRevocationPubKey: PubKey)
+                          (localRevocationPubKey: RevocationPubKey)
                           (toLocalDelay: BlockHeightOffset16)
-                          (localDelayedPaymentPubKey: PubKey)
-                          (localHTLCPubKey: PubKey)
-                          (remoteHTLCPubKey: PubKey)
+                          (localDelayedPaymentPubKey: DelayedPaymentPubKey)
+                          (localHTLCPubKey: HtlcPubKey)
+                          (remoteHTLCPubKey: HtlcPubKey)
                           (feeratePerKw: FeeRatePerKw)
                           (htlc: UpdateAddHTLCMsg)
                           (network: Network)
@@ -583,9 +584,9 @@ module Transactions =
 
     let makeHTLCTxs (commitTx: Transaction)
                     (localDustLimit: Money)
-                    (localRevocationPubKey: PubKey)
+                    (localRevocationPubKey: RevocationPubKey)
                     (toLocalDelay)
-                    (toLocalDelayedPaymentPubKey)
+                    (toLocalDelayedPaymentPubKey: DelayedPaymentPubKey)
                     (localHTLCPubKey)
                     (remoteHTLCPubKey)
                     (spec: CommitmentSpec)
@@ -622,9 +623,9 @@ module Transactions =
 
     let makeClaimHTLCSuccessTx (commitTx: Transaction)
                                (localDustLimit: Money)
-                               (localHTLCPubKey: PubKey)
-                               (remoteHTLCPubKey: PubKey)
-                               (remoteRevocationPubKey: PubKey)
+                               (localHTLCPubKey: HtlcPubKey)
+                               (remoteHTLCPubKey: HtlcPubKey)
+                               (remoteRevocationPubKey: RevocationPubKey)
                                (localFinalScriptPubKey: Script)
                                (htlc: UpdateAddHTLCMsg)
                                (feeRatePerKw: FeeRatePerKw)
@@ -654,9 +655,9 @@ module Transactions =
 
     let makeClaimHTLCTimeoutTx (commitTx: Transaction)
                                (localDustLimit: Money)
-                               (localHTLCPubKey: PubKey)
-                               (remoteHTLCPubKey: PubKey)
-                               (remoteRevocationPubKey: PubKey)
+                               (localHTLCPubKey: HtlcPubKey)
+                               (remoteHTLCPubKey: HtlcPubKey)
+                               (remoteRevocationPubKey: RevocationPubKey)
                                (localFinalScriptPubKey: Script)
                                (htlc: UpdateAddHTLCMsg)
                                (feeRatePerKw: FeeRatePerKw)
@@ -686,13 +687,13 @@ module Transactions =
 
     let makeClaimP2WPKHOutputTx (delayedOutputTx: Transaction)
                                 (localDustLimit: Money)
-                                (localPaymentPubKey: PubKey)
+                                (localPaymentPubKey: PaymentPubKey)
                                 (localFinalDestination: IDestination)
                                 (feeRatePerKw: FeeRatePerKw)
                                 (network: Network)
                                     : Result<ClaimP2WPKHOutputTx, _> =
         let fee = feeRatePerKw.CalculateFeeFromWeight(CLAIM_P2WPKH_OUTPUT_WEIGHT)
-        let spk = localPaymentPubKey.WitHash.ScriptPubKey
+        let spk = localPaymentPubKey.RawPubKey().WitHash.ScriptPubKey
         let spkIndex = findScriptPubKeyIndex delayedOutputTx spk
         let outPut = delayedOutputTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex)
         let amount = (outPut).TxOut.Value - fee
@@ -718,10 +719,10 @@ module Transactions =
 
     let makeMainPenaltyTx (commitTx: Transaction)
                           (localDustLimit: Money)
-                          (remoteRevocationKey: PubKey)
+                          (remoteRevocationKey: RevocationPubKey)
                           (localFinalDestination: IDestination)
                           (toRemoteDelay: BlockHeightOffset16)
-                          (remoteDelayedPaymentPubKey: PubKey)
+                          (remoteDelayedPaymentPubKey: DelayedPaymentPubKey)
                           (feeRatePerKw: FeeRatePerKw)
                           (network: Network)
                               : Result<MainPenaltyTx, _>  =

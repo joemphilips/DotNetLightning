@@ -70,7 +70,7 @@ type RemoteCommit = {
     Index: CommitmentNumber
     Spec: CommitmentSpec
     TxId: TxId
-    RemotePerCommitmentPoint: CommitmentPubKey
+    RemotePerCommitmentPoint: PerCommitmentPoint
 }
 
 type WaitingForRevocation = {
@@ -90,7 +90,7 @@ type WaitingForRevocation = {
 
 type RemoteNextCommitInfo =
     | Waiting of WaitingForRevocation
-    | Revoked of CommitmentPubKey
+    | Revoked of PerCommitmentPoint
     with
         static member Waiting_: Prism<RemoteNextCommitInfo, WaitingForRevocation> =
             (fun remoteNextCommitInfo ->
@@ -102,7 +102,7 @@ type RemoteNextCommitInfo =
                 | Waiting _ -> Waiting waitingForRevocation
                 | Revoked _ -> remoteNextCommitInfo)
 
-        static member Revoked_: Prism<RemoteNextCommitInfo, CommitmentPubKey> =
+        static member Revoked_: Prism<RemoteNextCommitInfo, PerCommitmentPoint> =
             (fun remoteNextCommitInfo ->
                 match remoteNextCommitInfo with
                 | Waiting _ -> None
@@ -125,7 +125,7 @@ type Commitments = {
     RemoteNextHTLCId: HTLCId
     OriginChannels: Map<HTLCId, HTLCSource>
     RemoteNextCommitInfo: RemoteNextCommitInfo
-    RemotePerCommitmentSecrets: RevocationSet
+    RemotePerCommitmentSecrets: PerCommitmentSecretStore
     ChannelId: ChannelId
 }
     with

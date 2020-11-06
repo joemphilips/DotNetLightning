@@ -13,26 +13,32 @@ open DotNetLightning.Transactions
 exception ChannelException of ChannelError
 module internal ChannelHelpers =
 
-    let getFundingRedeemScript (ck: ChannelPubKeys) (theirFundingPubKey: PubKey): Script =
-        let ourFundingKey = ck.FundingPubKey
-        let pks = if ourFundingKey.ToBytes() < theirFundingPubKey.ToBytes() then
-                      [| ourFundingKey; theirFundingPubKey |]
-                  else
-                      [| theirFundingPubKey; ourFundingKey |]
-        PayToMultiSigTemplate.Instance.GenerateScriptPubKey(2, pks)
-
-    let getFundingScriptCoin (ck: ChannelPubKeys) (theirFundingPubKey: PubKey) (TxId fundingTxId) (TxOutIndex fundingOutputIndex) (fundingSatoshis): ScriptCoin =
-        let redeem = getFundingRedeemScript ck theirFundingPubKey
+    let getFundingScriptCoin (ourFundingPubKey: FundingPubKey)
+                             (theirFundingPubKey: FundingPubKey)
+                             (TxId fundingTxId)
+                             (TxOutIndex fundingOutputIndex)
+                             (fundingSatoshis)
+                                 : ScriptCoin =
+        let redeem = Scripts.funding ourFundingPubKey theirFundingPubKey
         Coin(fundingTxId, uint32 fundingOutputIndex, fundingSatoshis, redeem.WitHash.ScriptPubKey)
         |> fun c -> ScriptCoin(c, redeem)
 
     let private makeFlags (isNode1: bool, enable: bool) =
         (if isNode1 then 1uy else 0uy) ||| ((if enable then 1uy else 0uy) <<< 1)
 
-    let internal makeChannelUpdate (chainHash, nodeSecret: Key, remoteNodeId: NodeId, shortChannelId, cltvExpiryDelta,
-                                    htlcMinimum, feeBase, feeProportionalMillionths, enabled: bool, timestamp) =
+    let internal makeChannelUpdate (chainHash,
+                                    nodeSecret: NodeSecret,
+                                    remoteNodeId: NodeId,
+                                    shortChannelId,
+                                    cltvExpiryDelta,
+                                    htlcMinimum,
+                                    feeBase,
+                                    feeProportionalMillionths,
+                                    enabled: bool,
+                                    timestamp
+                                   ) =
         let timestamp = defaultArg timestamp ((System.DateTime.UtcNow.ToUnixTimestamp()) |> uint32)
-        let isNodeOne = NodeId (nodeSecret.PubKey) < remoteNodeId
+        let isNodeOne = nodeSecret.NodeId() < remoteNodeId
         let unsignedChannelUpdate = {
             ChainHash = chainHash
             ShortChannelId = shortChannelId
@@ -45,7 +51,12 @@ module internal ChannelHelpers =
             FeeProportionalMillionths = feeProportionalMillionths
             HTLCMaximumMSat = None
         }
-        let signature = unsignedChannelUpdate.ToBytes() |> Crypto.Hashes.SHA256 |> uint256 |> nodeSecret.Sign |> LNECDSASignature
+        let signature =
+            unsignedChannelUpdate.ToBytes()
+            |> Crypto.Hashes.SHA256
+            |> uint256
+            |> nodeSecret.RawKey().Sign
+            |> LNECDSASignature
         {
             ChannelUpdateMsg.Contents = unsignedChannelUpdate
             Signature = signature
@@ -73,12 +84,13 @@ module internal ChannelHelpers =
                           (initialFeeRatePerKw: FeeRatePerKw)
                           (fundingOutputIndex: TxOutIndex)
                           (fundingTxId: TxId)
-                          (localPerCommitmentPoint: CommitmentPubKey)
-                          (remotePerCommitmentPoint: CommitmentPubKey)
-                          (secpContext: ISecp256k1)
+                          (localPerCommitmentPoint: PerCommitmentPoint)
+                          (remotePerCommitmentPoint: PerCommitmentPoint)
                           (n: Network): Result<CommitmentSpec * CommitTx * CommitmentSpec * CommitTx, ChannelError> =
         let toLocal = if (localParams.IsFunder) then fundingSatoshis.ToLNMoney() - pushMSat else pushMSat
         let toRemote = if (localParams.IsFunder) then pushMSat else fundingSatoshis.ToLNMoney() - pushMSat
+        let localChannelKeys = localParams.ChannelPubKeys
+        let remoteChannelKeys = remoteParams.ChannelPubKeys
         let localSpec = CommitmentSpec.Create toLocal toRemote initialFeeRatePerKw
         let remoteSpec = CommitmentSpec.Create toRemote toLocal initialFeeRatePerKw
         let checkTheyCanAffordFee() =
@@ -90,45 +102,46 @@ module internal ChannelHelpers =
             else
                 Ok()
         let makeFirstCommitTxCore() =
-            let scriptCoin = getFundingScriptCoin localParams.ChannelPubKeys
-                                                  remoteParams.FundingPubKey
+            let scriptCoin = getFundingScriptCoin localChannelKeys.FundingPubKey
+                                                  remoteChannelKeys.FundingPubKey
                                                   fundingTxId
                                                   fundingOutputIndex
                                                   fundingSatoshis
-            let revPubKeyForLocal = Generators.revocationPubKey secpContext remoteParams.RevocationBasePoint localPerCommitmentPoint.PubKey
-            let delayedPubKeyForLocal = Generators.derivePubKey secpContext localParams.ChannelPubKeys.DelayedPaymentBasePubKey localPerCommitmentPoint.PubKey
-            let paymentPubKeyForLocal = Generators.derivePubKey secpContext remoteParams.PaymentBasePoint localPerCommitmentPoint.PubKey
+            let localPubKeysForLocalCommitment = localPerCommitmentPoint.DeriveCommitmentPubKeys localChannelKeys
+            let remotePubKeysForLocalCommitment = localPerCommitmentPoint.DeriveCommitmentPubKeys remoteChannelKeys
+
             let localCommitTx =
                 Transactions.makeCommitTx scriptCoin
                                           CommitmentNumber.FirstCommitment
-                                          localParams.ChannelPubKeys.PaymentBasePubKey
-                                          remoteParams.PaymentBasePoint
+                                          localChannelKeys.PaymentBasepoint
+                                          remoteChannelKeys.PaymentBasepoint
                                           localParams.IsFunder
                                           localParams.DustLimitSatoshis
-                                          revPubKeyForLocal
+                                          remotePubKeysForLocalCommitment.RevocationPubKey
                                           remoteParams.ToSelfDelay
-                                          delayedPubKeyForLocal
-                                          paymentPubKeyForLocal
-                                          (localParams.ChannelPubKeys.HTLCBasePubKey)
-                                          (remoteParams.HTLCBasePoint)
+                                          localPubKeysForLocalCommitment.DelayedPaymentPubKey
+                                          remotePubKeysForLocalCommitment.PaymentPubKey
+                                          localPubKeysForLocalCommitment.HtlcPubKey
+                                          remotePubKeysForLocalCommitment.HtlcPubKey
                                           localSpec
                                           n
-            let revPubKeyForRemote = Generators.revocationPubKey secpContext localParams.ChannelPubKeys.RevocationBasePubKey remotePerCommitmentPoint.PubKey
-            let delayedPubKeyForRemote = Generators.derivePubKey secpContext remoteParams.DelayedPaymentBasePoint remotePerCommitmentPoint.PubKey
-            let paymentPubKeyForRemote = Generators.derivePubKey secpContext localParams.ChannelPubKeys.PaymentBasePubKey remotePerCommitmentPoint.PubKey
+
+            let localPubKeysForRemoteCommitment = remotePerCommitmentPoint.DeriveCommitmentPubKeys localChannelKeys
+            let remotePubKeysForRemoteCommitment = remotePerCommitmentPoint.DeriveCommitmentPubKeys remoteChannelKeys
+
             let remoteCommitTx =
                 Transactions.makeCommitTx scriptCoin
                                           CommitmentNumber.FirstCommitment
-                                          remoteParams.PaymentBasePoint
-                                          localParams.ChannelPubKeys.PaymentBasePubKey
+                                          remoteChannelKeys.PaymentBasepoint
+                                          localChannelKeys.PaymentBasepoint
                                           (not localParams.IsFunder)
                                           (remoteParams.DustLimitSatoshis)
-                                          revPubKeyForRemote
+                                          localPubKeysForRemoteCommitment.RevocationPubKey
                                           localParams.ToSelfDelay
-                                          delayedPubKeyForRemote
-                                          paymentPubKeyForRemote
-                                          (remoteParams.HTLCBasePoint)
-                                          (localParams.ChannelPubKeys.HTLCBasePubKey)
+                                          remotePubKeysForRemoteCommitment.DelayedPaymentPubKey
+                                          localPubKeysForRemoteCommitment.PaymentPubKey
+                                          remotePubKeysForRemoteCommitment.HtlcPubKey
+                                          localPubKeysForRemoteCommitment.HtlcPubKey
                                           remoteSpec
                                           n
 

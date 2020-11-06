@@ -3,6 +3,7 @@ open FsCheck
 open NBitcoin
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils
+open DotNetLightning.Crypto
 open System
 open DotNetLightning.Crypto
 
@@ -25,14 +26,39 @@ let pubKeyGen = gen {
     return key.PubKey
 }
 
-let revocationKeyGen = gen {
+let perCommitmentSecretGen = gen {
     let! key = keyGen
-    return RevocationKey key
+    return PerCommitmentSecret key
 }
 
-let commitmentPubKeyGen = gen {
+let perCommitmentPointGen = gen {
     let! pubKey = pubKeyGen
-    return CommitmentPubKey pubKey
+    return PerCommitmentPoint pubKey
+}
+
+let fundingPubKeyGen = gen {
+    let! pubKey = pubKeyGen
+    return FundingPubKey pubKey
+}
+
+let paymentBasepointGen = gen {
+    let! pubKey = pubKeyGen
+    return PaymentBasepoint pubKey
+}
+
+let revocationBasepointGen = gen {
+    let! pubKey = pubKeyGen
+    return RevocationBasepoint pubKey
+}
+
+let delayedPaymentBasepointGen = gen {
+    let! pubKey = pubKeyGen
+    return DelayedPaymentBasepoint pubKey
+}
+
+let htlcBasepointGen = gen {
+    let! pubKey = pubKeyGen
+    return HtlcBasepoint pubKey
 }
 
 let commitmentNumberGen = gen {

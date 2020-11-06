@@ -4,6 +4,7 @@ open ResultUtils
 open DotNetLightning.Utils
 open DotNetLightning.Core.Utils.Extensions
 open DotNetLightning.Serialization.Msgs
+open DotNetLightning.Crypto
 
 open DotNetLightning.Serialization
 open Expecto
@@ -88,9 +89,9 @@ module SerializationTest =
                     NextRevocationNumber = CommitmentNumber <| (UInt48.MaxValue - UInt48.FromUInt64 4UL)
                     DataLossProtect = OptionalField.Some <| {
                         YourLastPerCommitmentSecret = 
-                            Some <| RevocationKey.FromBytes
-                                [| for _ in 0..(RevocationKey.BytesLength - 1) -> 9uy |]
-                        MyCurrentPerCommitmentPoint = CommitmentPubKey pubkey1
+                            Some <| PerCommitmentSecret.FromBytes
+                                [| for _ in 0..(PerCommitmentSecret.BytesLength - 1) -> 9uy |]
+                        MyCurrentPerCommitmentPoint = PerCommitmentPoint pubkey1
                     }
                 }
                 let expected = [|4; 0; 0; 0; 0; 0; 0; 0; 5; 0; 0; 0; 0; 0; 0; 0; 6; 0; 0; 0; 0; 0; 0; 0; 7; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 3; 0; 0; 0; 0; 0; 0; 0; 4; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 9; 3; 27; 132; 197; 86; 123; 18; 100; 64; 153; 93; 62; 213; 170; 186; 5; 101; 215; 30; 24; 52; 96; 72; 25; 255; 156; 23; 245; 233; 213; 221; 7; 143 |] |> Array.map (byte)
@@ -480,12 +481,12 @@ module SerializationTest =
                         FeeRatePerKw = FeeRatePerKw(821716u)
                         ToSelfDelay = BlockHeightOffset16(49340us)
                         MaxAcceptedHTLCs = 49340us
-                        FundingPubKey = pubkey1
-                        RevocationBasepoint = pubkey2
-                        PaymentBasepoint = pubkey3
-                        DelayedPaymentBasepoint = pubkey4
-                        HTLCBasepoint = pubkey5
-                        FirstPerCommitmentPoint = CommitmentPubKey pubkey6
+                        FundingPubKey = FundingPubKey pubkey1
+                        RevocationBasepoint = RevocationBasepoint pubkey2
+                        PaymentBasepoint = PaymentBasepoint pubkey3
+                        DelayedPaymentBasepoint = DelayedPaymentBasepoint pubkey4
+                        HTLCBasepoint = HtlcBasepoint pubkey5
+                        FirstPerCommitmentPoint = PerCommitmentPoint pubkey6
                         ChannelFlags = if randomBit then 1uy <<< 5 else 0uy
                         ShutdownScriptPubKey = if shutdown then Some (pubkey1.Hash.ScriptPubKey) else None
                     }
@@ -520,12 +521,12 @@ module SerializationTest =
                         MinimumDepth = 821716u |> BlockHeightOffset32
                         ToSelfDelay = BlockHeightOffset16(49340us)
                         MaxAcceptedHTLCs = 49340us
-                        FundingPubKey = pubkey1
-                        RevocationBasepoint = pubkey2
-                        PaymentBasepoint = pubkey3
-                        DelayedPaymentBasepoint = pubkey4
-                        HTLCBasepoint = pubkey5
-                        FirstPerCommitmentPoint = CommitmentPubKey pubkey6
+                        FundingPubKey = FundingPubKey pubkey1
+                        RevocationBasepoint = RevocationBasepoint pubkey2
+                        PaymentBasepoint = PaymentBasepoint pubkey3
+                        DelayedPaymentBasepoint = DelayedPaymentBasepoint pubkey4
+                        HTLCBasepoint = HtlcBasepoint pubkey5
+                        FirstPerCommitmentPoint = PerCommitmentPoint pubkey6
                         ShutdownScriptPubKey = if shutdown then Some(pubkey1.Hash.ScriptPubKey) else None
                     }
                     let actual = acceptChannelMsg.ToBytes()
@@ -561,7 +562,7 @@ module SerializationTest =
             testCase "funding_locked" <| fun _ ->
                 let fundingLockedMsg = {
                     FundingLockedMsg.ChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
-                    NextPerCommitmentPoint = CommitmentPubKey pubkey1
+                    NextPerCommitmentPoint = PerCommitmentPoint pubkey1
                 }
                 let expected = hex.DecodeData("0202020202020202020202020202020202020202020202020202020202020202031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f")
                 CheckArrayEqual (fundingLockedMsg.ToBytes()) expected
@@ -665,9 +666,9 @@ module SerializationTest =
                 let revokeAndACKMsg = {
                     ChannelId = ChannelId(uint256([| for _ in 0..31 -> 2uy |]))
                     PerCommitmentSecret =
-                        RevocationKey.FromBytes
+                        PerCommitmentSecret.FromBytes
                             [| for _ in 0..(PaymentPreimage.LENGTH - 1) -> 1uy |]
-                    NextPerCommitmentPoint = CommitmentPubKey pubkey1
+                    NextPerCommitmentPoint = PerCommitmentPoint pubkey1
                 }
                 let expected = hex.DecodeData("02020202020202020202020202020202020202020202020202020202020202020101010101010101010101010101010101010101010101010101010101010101031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f")
                 CheckArrayEqual (revokeAndACKMsg.ToBytes()) expected
