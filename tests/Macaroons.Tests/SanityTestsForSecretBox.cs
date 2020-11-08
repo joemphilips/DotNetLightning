@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;
@@ -74,7 +73,7 @@ CId = this was how we remind auth of key/pred
   VId = AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA027FAuBYhtHwJ58FX6UlVNFtFsGxQHS7uD_w_dedwv4Jjw7UorCREw5rXbRqIKhr
   Cl = http://auth.mybank/
 Signature = d27db2fd1f22760e4c3dae8137e2d8fc1df6c0741c18aed4b97256bf78d1f55c
-".Replace("\n", Environment.NewLine);
+";
 
             Assert.Equal(expectedStringRepresentation, m.Inspect());
 

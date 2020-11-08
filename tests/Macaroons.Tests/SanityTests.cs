@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;
@@ -63,7 +62,7 @@ CId = account = 3735928559
 CId = time < 2015-01-01T00:00
 CId = email = alice@example.org
 Signature = 882e6d59496ed5245edb7ab5b8839ecd63e5d504e54839804f164070d8eed952
-".Replace("\n", Environment.NewLine);
+";
 
       Assert.Equal(expectedStringRepresentation, m.Inspect());
     }
