@@ -37,6 +37,8 @@ type LNMoney = | LNMoney of int64 with
         let satoshi = Checked.op_Multiply (amount) (decimal lnUnit)
         LNMoney(Checked.int64 satoshi)
 
+    static member FromMoney (money: Money) =
+        LNMoney.Satoshis money.Satoshi
 
     static member Coins(coins: decimal) =
         LNMoney.FromUnit(coins * (decimal LNMoneyUnit.BTC), LNMoneyUnit.MilliSatoshi)

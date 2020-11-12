@@ -269,6 +269,9 @@ type ChannelEvent =
     | BothFundingLocked of nextState: Data.NormalData
 
     // -------- normal operation ------
+    | WeAcceptedOperationMonoHopUnidirectionalPayment of msg: MonoHopUnidirectionalPaymentMsg * newCommitments: Commitments
+    | WeAcceptedMonoHopUnidirectionalPayment of newCommitments: Commitments
+
     | WeAcceptedOperationAddHTLC of msg: UpdateAddHTLCMsg * newCommitments: Commitments
     | WeAcceptedUpdateAddHTLC of newCommitments: Commitments
 
@@ -360,6 +363,26 @@ type ChannelState =
             (fun v cc -> match cc with
                          | Normal _ -> Normal v
                          | _ -> cc )
+        member this.ChannelId: Option<ChannelId> =
+            match this with
+            | WaitForInitInternal
+            | WaitForOpenChannel _
+            | WaitForAcceptChannel _
+            | WaitForFundingCreated _ -> None
+            | WaitForFundingSigned data -> Some data.ChannelId
+            | WaitForFundingConfirmed data -> Some data.ChannelId
+            | WaitForFundingLocked data -> Some data.ChannelId
+            | Normal data -> Some data.ChannelId
+            | Shutdown data -> Some data.ChannelId
+            | Negotiating data -> Some data.ChannelId
+            | Closing data -> Some data.ChannelId
+            | Closed _
+            | Offline _
+            | Syncing _
+            | ErrFundingLost _
+            | ErrFundingTimeOut _
+            | ErrInformationLeak _ -> None
+
         member this.Phase =
             match this with
             | WaitForInitInternal
@@ -379,3 +402,24 @@ type ChannelState =
             | ErrFundingLost _
             | ErrFundingTimeOut _
             | ErrInformationLeak _ -> Abnormal
+
+        member this.Commitments: Option<Commitments> =
+            match this with
+            | WaitForInitInternal
+            | WaitForOpenChannel _
+            | WaitForAcceptChannel _
+            | WaitForFundingCreated _
+            | WaitForFundingSigned _ -> None
+            | WaitForFundingConfirmed data -> Some (data :> IHasCommitments).Commitments
+            | WaitForFundingLocked data -> Some (data :> IHasCommitments).Commitments
+            | Normal data -> Some (data :> IHasCommitments).Commitments
+            | Shutdown data -> Some (data :> IHasCommitments).Commitments
+            | Negotiating data -> Some (data :> IHasCommitments).Commitments
+            | Closing data -> Some (data :> IHasCommitments).Commitments
+            | Closed _
+            | Offline _
+            | Syncing _
+            | ErrFundingLost _
+            | ErrFundingTimeOut _
+            | ErrInformationLeak _ -> None
+

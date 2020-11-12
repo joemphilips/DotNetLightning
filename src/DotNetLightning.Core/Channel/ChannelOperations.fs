@@ -13,6 +13,10 @@ open DotNetLightning.Serialization
 
 open NBitcoin
 
+type OperationMonoHopUnidirectionalPayment = {
+    Amount: LNMoney
+}
+
 type OperationAddHTLC = {
     Amount: LNMoney
     PaymentHash: PaymentHash
@@ -200,6 +204,8 @@ type ChannelCommand =
     | CreateChannelReestablish
 
     // normal
+    | MonoHopUnidirectionalPayment of OperationMonoHopUnidirectionalPayment
+    | ApplyMonoHopUnidirectionalPayment of msg: MonoHopUnidirectionalPaymentMsg
     | AddHTLC of OperationAddHTLC
     | ApplyUpdateAddHTLC of msg: UpdateAddHTLCMsg * currentHeight: BlockHeight
     | FulfillHTLC of OperationFulfillHTLC

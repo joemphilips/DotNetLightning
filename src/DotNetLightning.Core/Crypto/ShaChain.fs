@@ -1,5 +1,7 @@
 namespace DotNetLightning.Crypto
 
+open System
+
 type Node = {
     Value: byte[]
     Height: int32
@@ -16,8 +18,9 @@ module ShaChain =
     let flip (_input: byte[]) (_index: uint64): byte[] =
         failwith "Not implemented: ShaChain::flip"
 
-    let addHash (_receiver: ShaChain) (_hash: byte[]) (_index: uint64) =
-        failwith "Not implemented: ShaChain::addHash"
+    let addHash (receiver: ShaChain) (_hash: byte[]) (_index: uint64) =
+        Console.WriteLine("WARNING: Not implemented: ShaChain::addHash")
+        receiver
 
     let getHash (_receiver: ShaChain)(_index: uint64) =
         failwith "Not implemented: ShaChain::getHash"

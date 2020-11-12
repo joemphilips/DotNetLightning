@@ -183,3 +183,39 @@ type Commitments = {
             match remoteSigned, localSigned with
             | Some _, Some htlcIn -> htlcIn.Add |> Some
             | _ -> None
+
+        member this.SpendableBalance(): LNMoney =
+            let remoteCommit =
+                match this.RemoteNextCommitInfo with
+                | RemoteNextCommitInfo.Waiting info -> info.NextRemoteCommit
+                | RemoteNextCommitInfo.Revoked _info -> this.RemoteCommit
+            let reducedRes =
+                remoteCommit.Spec.Reduce(
+                    this.RemoteChanges.ACKed,
+                    this.LocalChanges.Proposed
+                )
+            let reduced =
+                match reducedRes with
+                | Error err ->
+                    failwithf
+                        "reducing commit failed even though we have not proposed any changes\
+                        error: %A"
+                        err
+                | Ok reduced -> reduced
+            let fees =
+                if this.LocalParams.IsFunder then
+                    Transactions.commitTxFee this.RemoteParams.DustLimitSatoshis reduced
+                    |> LNMoney.FromMoney
+                else
+                    LNMoney.Zero
+            let channelReserve =
+                this.RemoteParams.ChannelReserveSatoshis
+                |> LNMoney.FromMoney
+            let totalBalance = reduced.ToRemote
+            let untrimmedSpendableBalance = totalBalance - channelReserve - fees
+            let dustLimit =
+                this.RemoteParams.DustLimitSatoshis
+                |> LNMoney.FromMoney
+            let untrimmedMax = LNMoney.Min(untrimmedSpendableBalance, dustLimit)
+            let spendableBalance = LNMoney.Max(untrimmedMax, untrimmedSpendableBalance)
+            spendableBalance

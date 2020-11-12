@@ -36,6 +36,7 @@ type ChannelError =
     // --- case they sent unacceptable msg ---
     | InvalidOpenChannel of InvalidOpenChannelError
     | InvalidAcceptChannel of InvalidAcceptChannelError
+    | InvalidMonoHopUnidirectionalPayment of InvalidMonoHopUnidirectionalPaymentError
     | InvalidUpdateAddHTLC of InvalidUpdateAddHTLCError
     | InvalidRevokeAndACK of InvalidRevokeAndACKError
     | InvalidUpdateFee of InvalidUpdateFeeError
@@ -69,6 +70,7 @@ type ChannelError =
         | TheyCannotAffordFee (_, _, _) -> Close
         | InvalidOpenChannel _ -> DistrustPeer
         | InvalidAcceptChannel _ -> DistrustPeer
+        | InvalidMonoHopUnidirectionalPayment _ -> Close
         | InvalidUpdateAddHTLC _ -> Close
         | InvalidRevokeAndACK _ -> Close
         | InvalidUpdateFee _ -> Close
@@ -179,6 +181,18 @@ and InvalidAcceptChannelError = {
     member this.Message =
         String.concat "; " this.Errors
     
+and InvalidMonoHopUnidirectionalPaymentError = {
+    NetworkMsg: MonoHopUnidirectionalPaymentMsg
+    Errors: string list
+}
+    with
+    static member Create msg e = {
+        NetworkMsg = msg
+        Errors = e
+    }
+    member this.Message =
+        String.concat "; " this.Errors
+
 and InvalidUpdateAddHTLCError = {
     NetworkMsg: UpdateAddHTLCMsg
     Errors: string list
@@ -507,6 +521,22 @@ module internal AcceptChannelMsgValidation =
 
         (check1 |> Validation.ofResult) *^> check2 *^> check3 *^> check4 *^> check5 *^> check6 *^> check7
         
+module UpdateMonoHopUnidirectionalPaymentWithContext =
+    let internal checkWeHaveSufficientFunds (state: Commitments) (currentSpec) =
+        let fees =
+            if state.LocalParams.IsFunder then
+                Transactions.commitTxFee state.RemoteParams.DustLimitSatoshis currentSpec
+            else
+                Money.Zero
+        let missing = currentSpec.ToRemote.ToMoney() - state.RemoteParams.ChannelReserveSatoshis - fees
+        if missing < Money.Zero then
+            sprintf "We don't have sufficient funds to send mono-hop unidirectional payment. current to_remote amount is: %A. Remote Channel Reserve is: %A. and fee is %A"
+                    (currentSpec.ToRemote.ToMoney())
+                    state.RemoteParams.ChannelReserveSatoshis
+                    fees
+            |> Error
+        else
+            Ok()
 
 module UpdateAddHTLCValidation =
     let internal checkExpiryIsNotPast (current: BlockHeight) (expiry) =
@@ -521,7 +551,23 @@ module UpdateAddHTLCValidation =
     let internal checkAmountIsLargerThanMinimum (htlcMinimum: LNMoney) (amount) =
         check (amount) (<) (htlcMinimum) "htlc value (%A) is too small. must be greater or equal to %A"
 
-    
+module internal MonoHopUnidirectionalPaymentValidationWithContext =
+    let checkWeHaveSufficientFunds (state: Commitments) (currentSpec) =
+        let fees =
+            if state.LocalParams.IsFunder then
+                Transactions.commitTxFee state.RemoteParams.DustLimitSatoshis currentSpec
+            else
+                Money.Zero
+        let missing = currentSpec.ToRemote.ToMoney() - state.RemoteParams.ChannelReserveSatoshis - fees
+        if missing < Money.Zero then
+            sprintf "We don't have sufficient funds to send mono-hop unidirectional payment. current to_remote amount is: %A. Remote Channel Reserve is: %A. and fee is %A"
+                    (currentSpec.ToRemote.ToMoney())
+                    state.RemoteParams.ChannelReserveSatoshis
+                    fees
+            |> Error
+        else
+            Ok()
+
 module internal UpdateAddHTLCValidationWithContext =
     let checkLessThanHTLCValueInFlightLimit (currentSpec: CommitmentSpec) (limit) (add: UpdateAddHTLCMsg) =
         let htlcValueInFlight = currentSpec.HTLCs |> Map.toSeq |> Seq.sumBy (fun (_, v) -> v.Add.Amount)

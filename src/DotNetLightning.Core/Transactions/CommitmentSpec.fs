@@ -52,6 +52,11 @@ type CommitmentSpec = {
         member this.TotalFunds =
             this.ToLocal + this.ToRemote + (this.HTLCs |> Seq.sumBy(fun h -> h.Value.Add.Amount))
 
+        member internal this.MonoHopUnidirectionalPayment(direction: Direction, update: MonoHopUnidirectionalPaymentMsg) =
+            match direction with
+            | Out -> { this with ToLocal = this.ToLocal - update.Amount; ToRemote = this.ToRemote + update.Amount }
+            | In ->  { this with ToLocal = this.ToLocal + update.Amount; ToRemote = this.ToRemote - update.Amount }
+
         member internal this.AddHTLC(direction: Direction, update: UpdateAddHTLCMsg) =
             let htlc = { DirectedHTLC.Direction = direction; Add = update }
             match direction with
@@ -81,6 +86,24 @@ type CommitmentSpec = {
                 UnknownHTLC htlcId |> Error
 
         member internal this.Reduce(localChanges: #IUpdateMsg list, remoteChanges: #IUpdateMsg list) =
+            let specMonoHopUnidirectionalPaymentLocal =
+                localChanges
+                |> List.fold(fun (acc: CommitmentSpec) updateMsg ->
+                        match box updateMsg with
+                        | :? MonoHopUnidirectionalPaymentMsg as u -> acc.MonoHopUnidirectionalPayment(Out, u)
+                        | _ -> acc
+                    )
+                    this
+
+            let specMonoHopUnidirectionalPaymentRemote =
+                remoteChanges
+                |> List.fold(fun (acc: CommitmentSpec) updateMsg ->
+                        match box updateMsg with
+                        | :? MonoHopUnidirectionalPaymentMsg as u -> acc.MonoHopUnidirectionalPayment(In, u)
+                        | _ -> acc
+                    )
+                    specMonoHopUnidirectionalPaymentLocal
+
             let spec1 =
                 localChanges
                 |> List.fold(fun (acc: CommitmentSpec) updateMsg ->
@@ -88,7 +111,7 @@ type CommitmentSpec = {
                         | :? UpdateAddHTLCMsg as u -> acc.AddHTLC(Out, u)
                         | _ -> acc
                     )
-                    this
+                    specMonoHopUnidirectionalPaymentRemote
 
             let spec2 =
                 remoteChanges
