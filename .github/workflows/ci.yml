@@ -15,11 +15,11 @@ jobs:
       with:
         dotnet-version: ${{ matrix.dotnet }}
 
-    - name: Run tests (BouncyCastle)
+    - name: Run tests (Portability)
       # we want to run only once.
       if: startsWith(matrix.os, 'ubuntu-18')
       run: |
-        dotnet build tests/DotNetLightning.Core.Tests -p:BouncyCastle=True
+        dotnet build tests/DotNetLightning.Core.Tests -p:Portability=True
         dotnet run --no-build --project tests/DotNetLightning.Core.Tests
 
     - name: Clean to prepare for NSec build
@@ -40,6 +40,6 @@ jobs:
       run: |
         DEBIAN_FRONTEND=noninteractive sudo apt install -y msbuild fsharp
 
-        dotnet restore -p:BouncyCastle=True DotNetLightning.sln
-        msbuild src/DotNetLightning.Core/DotNetLightning.Core.fsproj -p:BouncyCastle=True -p:TargetFramework=netstandard2.0
+        dotnet restore -p:Portability=True DotNetLightning.sln
+        msbuild src/DotNetLightning.Core/DotNetLightning.Core.fsproj -p:Portability=True -p:TargetFramework=netstandard2.0
 

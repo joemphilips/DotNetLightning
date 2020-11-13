@@ -2,11 +2,12 @@ namespace DotNetLightning.Serialization
 
 open System.Collections
 
-open ResultUtils
-
 open System
 open System.Text
 open DotNetLightning.Core.Utils.Extensions
+
+open ResultUtils
+open ResultUtils.Portability
 
 type FeaturesSupport =
     | Mandatory

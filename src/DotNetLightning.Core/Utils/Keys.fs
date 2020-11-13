@@ -3,6 +3,9 @@ namespace DotNetLightning.Utils
 open System
 open NBitcoin
 
+open ResultUtils
+open ResultUtils.Portability
+
 type FundingPubKey =
     | FundingPubKey of PubKey
     with
@@ -254,7 +257,10 @@ type PerCommitmentPoint =
     member this.ToBytes(): array<byte> =
         this.RawPubKey().ToBytes()
 
-type [<Struct>] CommitmentNumber =
+#if !NoDUsAsStructs
+[<Struct>]
+#endif
+type CommitmentNumber =
     | CommitmentNumber of UInt48
     with
     member this.Index() =
@@ -276,7 +282,10 @@ type [<Struct>] CommitmentNumber =
     member this.NextCommitment(): CommitmentNumber =
         CommitmentNumber(this.Index() - UInt48.One)
 
-type [<Struct>] ObscuredCommitmentNumber =
+#if !NoDUsAsStructs
+[<Struct>]
+#endif
+type ObscuredCommitmentNumber =
     | ObscuredCommitmentNumber of UInt48
     with
     member this.ObscuredIndex(): UInt48 =

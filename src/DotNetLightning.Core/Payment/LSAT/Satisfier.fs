@@ -1,11 +1,13 @@
 namespace DotNetLightning.Payment.LSAT
 
-open ResultUtils
 open DotNetLightning.Utils
 open Macaroons
 open System.Collections.Generic
 open System.Runtime.CompilerServices
 open NBitcoin
+
+open ResultUtils
+open ResultUtils.Portability
 
 /// When we verify a macaroon for its caveats, usually it check each caveats independently.
 /// In case of LSAT, this does not work since the validity of a caveat depends on a previous caveat

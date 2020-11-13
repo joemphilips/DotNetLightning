@@ -14,6 +14,9 @@ open DotNetLightning.Core.Utils.Extensions
 
 open DotNetLightning.Serialization
 
+open ResultUtils
+open ResultUtils.Portability
+
 // #region serialization
 type P2PDecodeError =
     | UnknownVersion

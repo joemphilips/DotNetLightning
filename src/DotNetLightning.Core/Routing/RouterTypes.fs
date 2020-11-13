@@ -8,8 +8,9 @@ open System.Collections.Generic
 open DotNetLightning.Utils
 open DotNetLightning.Serialization.Msgs
 open NBitcoin
-open ResultUtils
 
+open ResultUtils
+open ResultUtils.Portability
 
 type NetworkEvent =
     | NodeDiscovered of msg: NodeAnnouncementMsg

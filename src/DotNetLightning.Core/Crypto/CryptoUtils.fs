@@ -10,8 +10,10 @@ open Org.BouncyCastle.Crypto.Parameters
 open Org.BouncyCastle.Crypto.Macs // For Poly1305
 #else
 open NBitcoin.Secp256k1
-
 #endif
+
+open ResultUtils
+open ResultUtils.Portability
 
 type CryptoError =
     | BadMac

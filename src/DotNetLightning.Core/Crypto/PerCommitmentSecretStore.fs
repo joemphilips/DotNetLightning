@@ -4,6 +4,9 @@ open NBitcoin
 open NBitcoin.Crypto
 open DotNetLightning.Utils
 
+open ResultUtils
+open ResultUtils.Portability
+
 type InsertPerCommitmentSecretError =
     | UnexpectedCommitmentNumber of got: CommitmentNumber * expected: CommitmentNumber
     | SecretMismatch of previousCommitmentNumber: CommitmentNumber * newCommitmentNumber: CommitmentNumber

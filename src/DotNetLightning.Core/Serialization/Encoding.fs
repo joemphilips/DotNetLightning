@@ -5,11 +5,12 @@ namespace DotNetLightning.Serialization
 
 open DotNetLightning.Core.Utils.Extensions
 open DotNetLightning.Utils.Primitives
-open ResultUtils
 open System
 open System.IO
 open System.IO.Compression
 
+open ResultUtils
+open ResultUtils.Portability
 
 module Decoder =
     let private tryDecode (encodingType: EncodingType) (bytes : byte[]) =

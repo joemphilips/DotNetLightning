@@ -6,10 +6,12 @@ open DotNetLightning.Payment
 open DotNetLightning.Utils
 
 open DotNetLightning.Serialization
-open ResultUtils
 open Expecto
 open NBitcoin
 open NBitcoin.Crypto
+
+open ResultUtils
+open ResultUtils.Portability
 
 [<Tests>]
 let tests =
@@ -184,7 +186,7 @@ let tests =
         testCase "Same, but adding invalid unknown feature 100" <| fun _ ->
             let data = "lnbc25m1pvjluezpp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypqdq5vdhkven9v5sxyetpdeessp5zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygs9q4psqqqqqqqqqqqqqqqpqsqq40wa3khl49yue3zsgm26jrepqr2eghqlx86rttutve3ugd05em86nsefzh4pfurpd9ek9w2vp95zxqnfe2u7ckudyahsa52q66tgzcp6t2dyk"
             let pr = PaymentRequest.Parse(data)
-            Expect.isError(pr) ""
+            Expect.isError (Result.ToFSharpCoreResult  pr) ""
     ]
     
 [<Tests>]
@@ -218,12 +220,12 @@ let unitTest =
                                with
                                    member this.SignMessage(data) = nodeSecret.SignCompact(data, false) }
             let r = PaymentRequest.TryCreate("lnbc", None, DateTimeOffset.UnixEpoch, nodeId, taggedFields, msgSigner)
-            Expect.isOk r ""
+            Expect.isOk (Result.ToFSharpCoreResult r) ""
             let r2 = PaymentRequest.Parse(r |> Result.deref |> fun x -> x.ToString())
-            Expect.isOk r2 ""
+            Expect.isOk (Result.ToFSharpCoreResult r2) ""
             Expect.equal r r2 "Should not change by de/serializing it"
             let r3 = PaymentRequest.TryCreate("lnbc", None, DateTimeOffset.UnixEpoch, nodeId, {Fields = [dht; dt]}, msgSigner)
-            Expect.isError r3 "Field contains both description and description hash! this must be invalid"
+            Expect.isError (Result.ToFSharpCoreResult r3) "Field contains both description and description hash! this must be invalid"
         testCase "PaymentSecret can get correct PaymentHash by its .Hash field" <| fun _ ->
             let p = Primitives.PaymentPreimage.Create(hex.DecodeData "60ba77a7f0174a3dd0f4fc8c1b28cda6aa9fab0e87c87e936af40b34cca40883")
             let h = p.Hash

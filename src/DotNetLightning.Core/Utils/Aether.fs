@@ -1,5 +1,7 @@
 namespace DotNetLightning.Utils
 
+open ResultUtils
+open ResultUtils.Portability
 
 module Aether =
     type Lens<'a, 'b> =

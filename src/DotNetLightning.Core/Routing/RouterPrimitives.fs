@@ -3,10 +3,12 @@ namespace DotNetLightning.Routing
 open DotNetLightning.Payment
 open System
 open NBitcoin
-open ResultUtils
 open DotNetLightning.Utils
 open DotNetLightning.Serialization.Msgs
 open Graph
+
+open ResultUtils
+open ResultUtils.Portability
 
 [<AutoOpen>]
 module RouterPrimitives =

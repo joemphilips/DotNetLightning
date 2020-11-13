@@ -5,31 +5,33 @@ open System.Linq
 open Expecto
 open DotNetLightning.Payment.LSAT
 open Macaroons
+
 open ResultUtils
+open ResultUtils.Portability
 
 [<Tests>]
 let lsatTests =
     testList "LSAT tests" [
         testCase "service decode tests" <| fun _ ->
             let r = Service.ParseMany("a:0")
-            Expect.isOk r "can parse single service"
+            Expect.isOk (Result.ToFSharpCoreResult r) "can parse single service"
             Expect.equal 1 (r |> Result.deref).Count ""
             Expect.equal "a" (r |> Result.deref).[0].Name ""
             let r = Service.ParseMany("a:0,b:1,c:0")
-            Expect.isOk r "can parse multiple service"
+            Expect.isOk (Result.ToFSharpCoreResult r) "can parse multiple service"
             Expect.equal 3 (r |> Result.deref).Count ""
             Expect.equal "c" (r |> Result.deref).[2].Name ""
             Expect.equal 0uy (r |> Result.deref).[2].ServiceTier ""
             let r = Service.ParseMany ""
-            Expect.isError r "can not parse empty service"
+            Expect.isError (Result.ToFSharpCoreResult r) "can not parse empty service"
             let r = Service.ParseMany ":a"
-            Expect.isError r "can not parse service missing name"
+            Expect.isError (Result.ToFSharpCoreResult r) "can not parse service missing name"
             let r = Service.ParseMany "a"
-            Expect.isError r "can not parse service missing tier"
+            Expect.isError (Result.ToFSharpCoreResult r) "can not parse service missing tier"
             let r = Service.ParseMany "a:"
-            Expect.isError r "can not parse service with empty tier"
+            Expect.isError (Result.ToFSharpCoreResult r) "can not parse service with empty tier"
             let r = Service.ParseMany ",,"
-            Expect.isError r "can not parse empty services"
+            Expect.isError (Result.ToFSharpCoreResult r) "can not parse empty services"
             ()
             
         testList "check macaroon verification works in LSAT compliant way" [
