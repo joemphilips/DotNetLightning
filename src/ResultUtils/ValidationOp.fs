@@ -1,5 +1,7 @@
 namespace ResultUtils
 
+open ResultUtils.Portability
+
 [<AutoOpen>]
 module ValidationOp =
   let inline (<!>) f (x: Result<'a, 'b list>) = Result.map f x

@@ -1,6 +1,5 @@
 namespace DotNetLightning.Channel
 
-open ResultUtils
 open DotNetLightning.Utils
 open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Utils.OnionError
@@ -12,6 +11,9 @@ open DotNetLightning.Transactions
 open DotNetLightning.Serialization
 
 open NBitcoin
+
+open ResultUtils
+open ResultUtils.Portability
 
 type OperationMonoHopUnidirectionalPayment = {
     Amount: LNMoney

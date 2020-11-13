@@ -2,7 +2,9 @@ namespace TaskUtils
 
 open System.Threading.Tasks
 open FSharp.Control.Tasks
+
 open ResultUtils
+open ResultUtils.Portability
 
 [<RequireQualifiedAccess>]
 module Result =

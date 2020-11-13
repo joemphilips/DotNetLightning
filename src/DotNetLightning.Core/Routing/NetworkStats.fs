@@ -4,6 +4,9 @@ open DotNetLightning.Utils
 open DotNetLightning.Utils.Primitives
 open NBitcoin
 
+open ResultUtils
+open ResultUtils.Portability
+
 type Stats<'T> = {
     Median: 'T
     Percentile5: 'T

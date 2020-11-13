@@ -7,6 +7,9 @@ open NBitcoin.Crypto
 open DotNetLightning.Utils
 open DotNetLightning.Core.Utils.Extensions
 
+open ResultUtils
+open ResultUtils.Portability
+
 [<AutoOpen>]
 module NBitcoinArithmethicExtensions =
     /// The functions in this module may fail but it does not return Result and just throw Exception in

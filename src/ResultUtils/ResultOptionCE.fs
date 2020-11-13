@@ -1,5 +1,8 @@
 namespace ResultUtils
 
+open ResultUtils
+open ResultUtils.Portability
+
 [<AutoOpen>]
 module ResultOptionCE =
 

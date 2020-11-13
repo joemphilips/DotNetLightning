@@ -3,7 +3,6 @@ module RouteCalculationTests
 open NBitcoin
 open NBitcoin.DataEncoders
 open Expecto
-open ResultUtils
 
 open DotNetLightning.Utils
 open DotNetLightning.Serialization.Msgs
@@ -15,6 +14,9 @@ open DotNetLightning.Serialization
 open Generators
 open GraphTests
 open GraphTests.Constants
+
+open ResultUtils
+open ResultUtils.Portability
 
 let hex = Encoders.Hex
 
@@ -149,7 +151,7 @@ let tests = testList "Route Calculation" [
         
         let route2 =
             Routing.findRoute(graphWithRemovedEdge) a e DEFAULT_AMOUNT_MSAT 1 (Set.empty) (Set.empty)(Set.empty)DEFAULT_ROUTE_PARAMS (BlockHeight(400000u))
-        Expect.isError (route2) ""
+        Expect.isError (Result.ToFSharpCoreResult route2) ""
         
     testCase "calculate the shortest path (select direct channel)" <| fun _ ->
         let updates = [
@@ -189,7 +191,7 @@ let tests = testList "Route Calculation" [
         let graph = DirectedLNGraph.Create().AddEdges(updates)
         let route =
             Routing.findRoute graph f i DEFAULT_AMOUNT_MSAT 1 (Set.empty)(Set.empty)(Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u))
-        Expect.isError (route) ""
+        Expect.isError (Result.ToFSharpCoreResult route) ""
         
     testCase "if there are multiple channels between the same node, select the cheapest" <| fun _ ->
         let updates = [
@@ -225,7 +227,7 @@ let tests = testList "Route Calculation" [
         
         let g = DirectedLNGraph.Create().AddEdges(updates)
         let route = Routing.findRoute(g) a e DEFAULT_AMOUNT_MSAT 1 (Set.empty)(Set.empty)(Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u))
-        Expect.isError route ""
+        Expect.isError (Result.ToFSharpCoreResult route) ""
         
     testCase "route not found (source OR target node not connected)" <| fun _ ->
         let updates = [
@@ -233,8 +235,8 @@ let tests = testList "Route Calculation" [
             makeUpdateSimple(4UL, c, d)
         ]
         let g = DirectedLNGraph.Create().AddEdges(updates).AddVertex(a).AddVertex(e)
-        Expect.isError(Routing.findRoute g a d DEFAULT_AMOUNT_MSAT 1 (Set.empty)(Set.empty)(Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u))) ""
-        Expect.isError(Routing.findRoute g b e DEFAULT_AMOUNT_MSAT 1 (Set.empty)(Set.empty)(Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u))) ""
+        Expect.isError (Result.ToFSharpCoreResult (Routing.findRoute g a d DEFAULT_AMOUNT_MSAT 1 (Set.empty)(Set.empty)(Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u)))) ""
+        Expect.isError (Result.ToFSharpCoreResult (Routing.findRoute g b e DEFAULT_AMOUNT_MSAT 1 (Set.empty)(Set.empty)(Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u)))) ""
         
     testCase "route not found (amount too high OR too low)" <| fun _ ->
         let highAmount = DEFAULT_AMOUNT_MSAT * 10
@@ -253,8 +255,8 @@ let tests = testList "Route Calculation" [
         let gHigh = DirectedLNGraph.Create().AddEdges(updatesHi)
         let gLow = DirectedLNGraph.Create().AddEdges(updatesLow)
         
-        Expect.isError (Routing.findRoute gHigh a d highAmount 1 (Set.empty)(Set.empty)(Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u))) ""
-        Expect.isError (Routing.findRoute gLow a d lowAmount 1 (Set.empty)(Set.empty)(Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u))) ""
+        Expect.isError (Result.ToFSharpCoreResult (Routing.findRoute gHigh a d highAmount 1 (Set.empty)(Set.empty)(Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u)))) ""
+        Expect.isError (Result.ToFSharpCoreResult (Routing.findRoute gLow a d lowAmount 1 (Set.empty)(Set.empty)(Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u)))) ""
         
     testCase "route to self" <| fun _ ->
         let updates = [
@@ -266,7 +268,7 @@ let tests = testList "Route Calculation" [
         let g = DirectedLNGraph.Create().AddEdges(updates)
         let route =
             Routing.findRoute g a a DEFAULT_AMOUNT_MSAT 1 (Set.empty)(Set.empty)(Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u))
-        Expect.isError route ""
+        Expect.isError (Result.ToFSharpCoreResult route) ""
         
     testCase "route to immediate neighbor" <| fun _ ->
         let updates = [
@@ -298,7 +300,7 @@ let tests = testList "Route Calculation" [
         Expect.sequenceEqual (hops2Ids(route1)) [1UL; 2UL; 3UL; 4UL] ""
         let route2 =
             Routing.findRoute g e e DEFAULT_AMOUNT_MSAT 1 (Set.empty)(Set.empty)(Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u))
-        Expect.isError route2 ""
+        Expect.isError (Result.ToFSharpCoreResult route2) ""
         
     testCase "calculate route and return metadata" <| fun _ ->
         let uab =
@@ -451,7 +453,7 @@ let tests = testList "Route Calculation" [
         let g = DirectedLNGraph.Create().AddEdges(updates)
         let ignoredE = Set.singleton({ ShortChannelId = ShortChannelId.FromUInt64(3UL); A = c; B = d })
         let route1 = Routing.findRoute(g) a e DEFAULT_AMOUNT_MSAT 1 (Set.empty) (ignoredE) (Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u))
-        Expect.isError (route1) ""
+        Expect.isError (Result.ToFSharpCoreResult route1) ""
         
         // verify that we left the graph untouched
         Expect.isTrue(g.ContainsEdge(makeUpdateSimple(3UL, c, d) |> fst)) ""
@@ -473,7 +475,7 @@ let tests = testList "Route Calculation" [
         let g = DirectedLNGraph.Create().AddEdges(updates)
         let route =
             Routing.findRoute(g) a e DEFAULT_AMOUNT_MSAT 1 (Set.empty)(Set.empty)(Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u))
-        Expect.isError(route) "there should be no e node in the graph"
+        Expect.isError (Result.ToFSharpCoreResult route) "there should be no e node in the graph"
         
         // now we add the missing edge to reach the destination
         let (extraDesc, extraUpdate) = makeUpdate(4UL, d, e, LNMoney.MilliSatoshis(5L), 5u, None, None, None)
@@ -567,7 +569,7 @@ let tests = testList "Route Calculation" [
         Expect.sequenceEqual (hops2Ids(r20)) [ for i in 0..19 -> (uint64 i) ] ""
         let r21 =
             (Routing.findRoute g (nodes.[0]) nodes.[21] DEFAULT_AMOUNT_MSAT 1 (Set.empty) (Set.empty) (Set.empty) DEFAULT_ROUTE_PARAMS (BlockHeight(400000u)))
-        Expect.isError(r21) ""
+        Expect.isError (Result.ToFSharpCoreResult r21) ""
         
     testCase "ignore cheaper route when it has more than 20 hops" <| fun _ ->
         let nodes = [ for _ in 0..50 -> (new Key()).PubKey |> NodeId ]
@@ -740,7 +742,7 @@ let tests = testList "Route Calculation" [
         let strictFeeParams = { DEFAULT_ROUTE_PARAMS with MaxFeeBase = LNMoney.MilliSatoshis(7); MaxFeePCT = 0. }
         for _ in 0..10 do
             let r = Routing.findRoute graph a d DEFAULT_AMOUNT_MSAT 3 (Set.empty) (Set.empty) (Set.empty) strictFeeParams (BlockHeight(400000u))
-            Expect.isOk r ""
+            Expect.isOk (Result.ToFSharpCoreResult r) ""
             let someRoute = r |> Result.deref
             let routeCost =
                 (Graph.pathWeight (hops2Edges(someRoute)) DEFAULT_AMOUNT_MSAT false (BlockHeight 0u) None).Cost - DEFAULT_AMOUNT_MSAT

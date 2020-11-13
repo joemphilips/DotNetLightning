@@ -8,22 +8,22 @@
 
   <!-->Since NBitcoin.Secp256k1 does not support netstandard 2.0, we will fallback to BouncyCastle build<-->
   <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <BouncyCastle>True</BouncyCastle>
+    <Portability>True</Portability>
   </PropertyGroup>
 
 
   <Choose>
-    <When Condition="'$(BouncyCastle)'=='true'">
+    <When Condition="'$(Portability)'=='true'">
       <PropertyGroup>
-        <OtherFlags>$(OtherFlags) -d:BouncyCastle</OtherFlags>
-        <DefineConstants>$(DefineConstants);BouncyCastle</DefineConstants>
+        <OtherFlags>$(OtherFlags) -d:NoDUsAsStructs -d:BouncyCastle</OtherFlags>
+        <DefineConstants>$(DefineConstants);NoDUsAsStructs;BouncyCastle</DefineConstants>
       </PropertyGroup>
     </When>
   </Choose>
 
   <ItemGroup>
     <PackageReference Include="NBitcoin" Version="5.0.65" />
-    <PackageReference Condition="'$(BouncyCastle)'=='true'" Include="Portable.BouncyCastle" Version="1.8.6.7" />
+    <PackageReference Condition="'$(Portability)'=='true'" Include="Portable.BouncyCastle" Version="1.8.6.7" />
   </ItemGroup>
 
   <PropertyGroup>

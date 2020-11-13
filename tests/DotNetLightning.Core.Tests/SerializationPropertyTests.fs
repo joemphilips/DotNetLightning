@@ -1,6 +1,5 @@
 module SerializationPropertyTests
 
-open ResultUtils
 open System.IO
 
 open Expecto
@@ -8,6 +7,9 @@ open DotNetLightning.Utils
 open DotNetLightning.Serialization
 open DotNetLightning.Serialization.Msgs
 open Generators
+
+open ResultUtils
+open ResultUtils.Portability
 
 let config =
     { FsCheckConfig.defaultConfig with

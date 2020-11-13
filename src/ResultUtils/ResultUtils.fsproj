@@ -2,6 +2,11 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Portability)'=='true'">
+    <OtherFlags>$(OtherFlags) -d:NoDUsAsStructs -d:BouncyCastle</OtherFlags>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Include="Option.fs" />
     <Compile Include="Result.fs" />

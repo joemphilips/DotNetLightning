@@ -1,13 +1,14 @@
 namespace DotNetLightning.Routing
 
-open ResultUtils
 open System.Collections.Generic
 open DotNetLightning.Payment
 open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Utils
 open Graph
 
-        
+open ResultUtils
+open ResultUtils.Portability
+
 type RouteParams = {
     Randomize: bool
     MaxFeeBase: LNMoney

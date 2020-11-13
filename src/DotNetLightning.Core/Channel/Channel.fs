@@ -1,7 +1,5 @@
 namespace DotNetLightning.Channel
 
-open ResultUtils
-
 open DotNetLightning.Utils
 open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Utils.Aether
@@ -12,6 +10,8 @@ open DotNetLightning.Serialization.Msgs
 open NBitcoin
 open System
 
+open ResultUtils
+open ResultUtils.Portability
 
 type ProvideFundingTx = IDestination * Money * FeeRatePerKw -> Result<FinalizedTx * TxOutIndex, string> 
 type Channel = {

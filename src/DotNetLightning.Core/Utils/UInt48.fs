@@ -3,7 +3,9 @@ namespace DotNetLightning.Utils
 open System
 open DotNetLightning.Core.Utils.Extensions
 
+#if !NoDUsAsStructs
 [<Struct>]
+#endif
 type UInt48 = {
     UInt64: uint64
 } with

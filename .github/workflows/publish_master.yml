@@ -29,8 +29,8 @@ jobs:
       with:
         dotnet-version: '3.1.200'
 
-    - name: Upload nuget packages (BouncyCastle)
+    - name: Upload nuget packages (Portability)
       if: startsWith(matrix.os, 'ubuntu')
       run: |
-        dotnet pack ./src/DotNetLightning.Core -p:Configuration=Release --version-suffix date`date +%Y%m%d-%H%M`-git-`echo $GITHUB_SHA | head -c 7` -p:BouncyCastle=True
+        dotnet pack ./src/DotNetLightning.Core -p:Configuration=Release --version-suffix date`date +%Y%m%d-%H%M`-git-`echo $GITHUB_SHA | head -c 7` -p:Portability=True
         dotnet nuget push ./src/DotNetLightning.Core/bin/Release/DotNetLightning.Kiss.1*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json

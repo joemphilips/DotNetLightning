@@ -6,8 +6,6 @@ open System.Text
 open System.Collections
 open System.Diagnostics
 
-open ResultUtils
-
 open DotNetLightning.Utils
 open DotNetLightning.Core.Utils.Extensions
 open DotNetLightning.Serialization
@@ -16,6 +14,8 @@ open NBitcoin
 open NBitcoin.Crypto
 open NBitcoin.DataEncoders
 
+open ResultUtils
+open ResultUtils.Portability
 
 module private Helpers =
     let base58check = Base58CheckEncoder()

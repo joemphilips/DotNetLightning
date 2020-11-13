@@ -1,6 +1,5 @@
 namespace DotNetLightning.Routing
 
-open ResultUtils
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils
 
@@ -10,6 +9,9 @@ open System
 open DotNetLightning.Payment
 open DotNetLightning.Routing.Graph
 open NBitcoin
+
+open ResultUtils
+open ResultUtils.Portability
 
 module Routing =
     

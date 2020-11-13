@@ -1,10 +1,12 @@
 namespace DotNetLightning.Serialization
 
 open System
-open ResultUtils
 open NBitcoin
 open DotNetLightning.Utils
 open DotNetLightning.Core.Utils.Extensions
+
+open ResultUtils
+open ResultUtils.Portability
 
 type OnionRealm0HopData = {
     ShortChannelId: ShortChannelId

@@ -6,7 +6,7 @@
   </PropertyGroup>
   
   <Choose>
-    <When Condition="'$(BouncyCastle)'=='true'">
+    <When Condition="'$(Portability)'=='true'">
       <PropertyGroup>
         <PackageId>DotNetLightning.Kiss</PackageId>
       </PropertyGroup>
@@ -19,7 +19,7 @@
   </Choose>
 
   <ItemGroup>
-    <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\NSec\Experimental\NSec.Experimental.csproj" PrivateAssets="all" />
+    <ProjectReference Condition="'$(Portability)'!='true'" Include="..\NSec\Experimental\NSec.Experimental.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\ResultUtils\ResultUtils.fsproj" PrivateAssets="all" />
     <ProjectReference Include="..\InternalBech32Encoder\InternalBech32Encoder.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\Macaroons\Macaroons.csproj" PrivateAssets="all" />
@@ -96,7 +96,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="4.7.0" />
-    <PackageReference Condition="'$(BouncyCastle)' != 'true'" Include="NBitcoin.Secp256k1" Version="1.0.8" />
+    <PackageReference Condition="'$(Portability)' != 'true'" Include="NBitcoin.Secp256k1" Version="1.0.8" />
     <PackageReference Include="System.Memory" Version="4.5.3" />
   </ItemGroup>
 
