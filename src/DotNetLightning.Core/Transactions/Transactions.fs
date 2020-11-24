@@ -304,6 +304,7 @@ module Transactions =
         let txb = network.CreateTransactionBuilder()
         txb.ShuffleOutputs <- false
         txb.ShuffleInputs <- false
+        txb.ShuffleRandom <- null
         txb
 
     let UINT32_MAX = 0xffffffffu
