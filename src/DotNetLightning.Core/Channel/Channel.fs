@@ -854,7 +854,8 @@ module Channel =
 
         | WeAcceptedOperationUpdateFee(_msg, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
-        | WeAcceptedUpdateFee(_msg), ChannelState.Normal _d -> c
+        | WeAcceptedUpdateFee(_msg, newCommitments), ChannelState.Normal normalData ->
+            { c with State = ChannelState.Normal({ normalData with Commitments = newCommitments }) }
 
         | WeAcceptedOperationSign(_msg, newCommitments), ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with Commitments = newCommitments }) }
