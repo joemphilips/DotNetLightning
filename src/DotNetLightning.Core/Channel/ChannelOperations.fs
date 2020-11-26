@@ -188,7 +188,6 @@ and InputInitFundee = {
 /// It is just an input to the state.
 type ChannelCommand =
     // open: funder
-    | CreateOutbound of InputInitFunder
     | ApplyAcceptChannel of AcceptChannelMsg
     | CreateFundingTx of fundingTx: FinalizedTx * outIndex: TxOutIndex
     | ApplyFundingSigned of FundingSignedMsg
@@ -196,7 +195,6 @@ type ChannelCommand =
     | ApplyFundingConfirmedOnBC of height: BlockHeight * txIndex: TxIndexInBlock * depth: BlockHeightOffset32
 
     // open: fundee
-    | CreateInbound of InputInitFundee
     | ApplyOpenChannel of OpenChannelMsg
     | ApplyFundingCreated of FundingCreatedMsg
 
