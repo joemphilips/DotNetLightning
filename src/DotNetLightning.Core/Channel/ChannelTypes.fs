@@ -318,8 +318,6 @@ type ChannelStatePhase =
     | Opening
     | Normal
     | Closing
-    | Closed
-    | Abnormal
 type ChannelState =
     /// Establishing
     | WaitForFundingConfirmed of WaitForFundingConfirmedData
@@ -332,16 +330,6 @@ type ChannelState =
     | Shutdown of ShutdownData
     | Negotiating of NegotiatingData
     | Closing of ClosingData
-    | Closed of IChannelStateData
-
-    /// Abnormal
-    | Offline of IChannelStateData
-    | Syncing of IChannelStateData
-
-    /// Error
-    | ErrFundingLost of IChannelStateData
-    | ErrFundingTimeOut of IChannelStateData
-    | ErrInformationLeak of IChannelStateData
     with
         interface IState 
 
@@ -360,9 +348,3 @@ type ChannelState =
             | Shutdown _
             | Negotiating _
             | Closing _ -> ChannelStatePhase.Closing
-            | Closed _ -> ChannelStatePhase.Closed
-            | Offline _
-            | Syncing _
-            | ErrFundingLost _
-            | ErrFundingTimeOut _
-            | ErrInformationLeak _ -> Abnormal
