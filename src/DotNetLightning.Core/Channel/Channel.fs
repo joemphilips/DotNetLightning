@@ -20,6 +20,7 @@ type ChannelWaitingForFundingSigned = {
     RemoteNodeId: NodeId
     NodeSecret: NodeSecret
     Network: Network
+    FundingTxMinimumDepth: BlockHeightOffset32
     WaitForFundingSignedData: WaitForFundingSignedData
 } with
     member self.ApplyFundingSigned (msg: FundingSignedMsg)
@@ -73,6 +74,7 @@ type ChannelWaitingForFundingSigned = {
             NodeSecret = self.NodeSecret
             State = WaitForFundingConfirmed nextState
             Network = self.Network
+            FundingTxMinimumDepth = self.FundingTxMinimumDepth
         }
         return state.FundingTx, channel
     }
@@ -84,6 +86,7 @@ and ChannelWaitingForFundingCreated = {
     RemoteNodeId: NodeId
     NodeSecret: NodeSecret
     Network: Network
+    FundingTxMinimumDepth: BlockHeightOffset32
     WaitForFundingCreatedData: WaitForFundingCreatedData
 } with
     member self.ApplyFundingCreated (msg: FundingCreatedMsg)
@@ -155,6 +158,7 @@ and ChannelWaitingForFundingCreated = {
             NodeSecret = self.NodeSecret
             Network = self.Network
             State = WaitForFundingConfirmed nextState
+            FundingTxMinimumDepth = self.FundingTxMinimumDepth
         }
         return msgToSend, channel
     }
@@ -222,6 +226,7 @@ and ChannelWaitingForFundingTx = {
             RemoteNodeId = self.RemoteNodeId
             NodeSecret = self.NodeSecret
             Network = self.Network
+            FundingTxMinimumDepth = state.LastReceived.MinimumDepth
             WaitForFundingSignedData = waitForFundingSignedData
         }
         return nextMsg, channelWaitingForFundingSigned
@@ -272,6 +277,7 @@ and Channel = {
     NodeSecret: NodeSecret
     State: ChannelState
     Network: Network
+    FundingTxMinimumDepth: BlockHeightOffset32
  }
         with
         static member NewOutbound(config: ChannelConfig,
@@ -330,6 +336,7 @@ and Channel = {
                                   network: Network,
                                   remoteNodeId: NodeId,
                                   inputInitFundee: InputInitFundee,
+                                  minimumDepth: BlockHeightOffset32,
                                   openChannelMsg: OpenChannelMsg
                                  ): Result<AcceptChannelMsg * ChannelWaitingForFundingCreated, ChannelError> =
             result {
@@ -343,7 +350,7 @@ and Channel = {
                     MaxHTLCValueInFlightMsat = localParams.MaxHTLCValueInFlightMSat
                     ChannelReserveSatoshis = localParams.ChannelReserveSatoshis
                     HTLCMinimumMSat = localParams.HTLCMinimumMSat
-                    MinimumDepth = config.ChannelHandshakeConfig.MinimumDepth
+                    MinimumDepth = minimumDepth
                     ToSelfDelay = localParams.ToSelfDelay
                     MaxAcceptedHTLCs = localParams.MaxAcceptedHTLCs
                     FundingPubKey = channelKeys.FundingPrivKey.FundingPubKey()
@@ -354,7 +361,7 @@ and Channel = {
                     FirstPerCommitmentPoint = localCommitmentPubKey
                     ShutdownScriptPubKey = config.ChannelOptions.ShutdownScriptPubKey
                 }
-                let remoteParams = RemoteParams.FromOpenChannel remoteNodeId inputInitFundee.RemoteInit openChannelMsg config.ChannelHandshakeConfig
+                let remoteParams = RemoteParams.FromOpenChannel remoteNodeId inputInitFundee.RemoteInit openChannelMsg
                 let waitForFundingCreatedData = Data.WaitForFundingCreatedData.Create localParams remoteParams openChannelMsg acceptChannelMsg
                 let channelPrivKeys = nodeMasterPrivKey.ChannelPrivKeys channelIndex
                 let nodeSecret = nodeMasterPrivKey.NodeSecret()
@@ -365,6 +372,7 @@ and Channel = {
                     RemoteNodeId = remoteNodeId
                     NodeSecret = nodeSecret
                     Network = network
+                    FundingTxMinimumDepth = minimumDepth
                     WaitForFundingCreatedData = waitForFundingCreatedData
                 }
                 return (acceptChannelMsg, channelWaitingForFundingCreated)
@@ -481,7 +489,7 @@ module Channel =
         | WaitForFundingConfirmed _state, ApplyFundingLocked msg ->
             [ TheySentFundingLocked msg ] |> Ok
         | WaitForFundingConfirmed state, ApplyFundingConfirmedOnBC(height, txindex, depth) ->
-            if state.Commitments.RemoteParams.MinimumDepth > depth then
+            if cs.FundingTxMinimumDepth > depth then
                 [] |> Ok
             else
                 let nextPerCommitmentPoint =
@@ -510,7 +518,7 @@ module Channel =
                 | Some msg ->
                     [ FundingConfirmed nextState; WeSentFundingLocked msgToSend; WeResumedDelayedFundingLocked msg ] |> Ok
         | WaitForFundingLocked _state, ApplyFundingConfirmedOnBC(height, _txindex, depth) ->
-            if (cs.Config.ChannelHandshakeConfig.MinimumDepth <= depth) then
+            if (cs.FundingTxMinimumDepth <= depth) then
                 [] |> Ok
             else
                 onceConfirmedFundingTxHasBecomeUnconfirmed(height, depth)

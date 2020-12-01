@@ -4,19 +4,6 @@ open NBitcoin
 open Aether
 
 
-type ChannelHandshakeConfig = {
-    /// Confirmations we will wait for before considering the channel locked in.
-    /// Applied only for inbound channels (see `ChannelHandshakeLimits.MaxMinimumDepth` for the
-    /// equivalent limit applied to outbound channel)
-    MinimumDepth: BlockHeightOffset32
- }
-    with
-
-    static member Zero =
-        {
-            MinimumDepth = BlockHeightOffset32 6u
-        }
-
 /// Optional Channel limits which are applied during channel creation.
 /// These limits are only applied to our counterparty's limits, not our own
 type ChannelHandshakeLimits = {
@@ -74,7 +61,6 @@ type ChannelHandshakeLimits = {
 
 /// Configuration containing all information used by Channel
 type ChannelConfig = {
-    ChannelHandshakeConfig: ChannelHandshakeConfig
     PeerChannelConfigLimits: ChannelHandshakeLimits
     ChannelOptions: ChannelOptions
  }
@@ -82,7 +68,6 @@ type ChannelConfig = {
     with
     static member Zero =
         {
-            ChannelHandshakeConfig = ChannelHandshakeConfig.Zero
             PeerChannelConfigLimits = ChannelHandshakeLimits.Zero
             ChannelOptions = ChannelOptions.Zero
         }

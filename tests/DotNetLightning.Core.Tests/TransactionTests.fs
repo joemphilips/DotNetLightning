@@ -79,7 +79,6 @@ let testList = testList "transaction tests" [
             MaxAcceptedHTLCs = 1000us
             ChannelPubKeys = remoteChannelPubKeys
             Features = FeatureBits.Zero
-            MinimumDepth = 6u |> BlockHeightOffset32
         }
         let feeRate = FeeRatePerKw (rand.Next(0, 300) |> uint32)
         let localAmount = 2_000_000_000L |> LNMoney
@@ -189,7 +188,6 @@ let testList = testList "transaction tests" [
             MaxAcceptedHTLCs = localParams.MaxAcceptedHTLCs
             ChannelPubKeys = localParams.ChannelPubKeys
             Features = localParams.Features
-            MinimumDepth = 6u |> BlockHeightOffset32
         }
 
         let transactionBuilder =
