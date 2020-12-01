@@ -161,7 +161,7 @@ module internal ChannelHelpers =
 module internal Validation =
 
     open DotNetLightning.Channel
-    let checkOurOpenChannelMsgAcceptable (_conf: ChannelConfig) (msg: OpenChannelMsg) =
+    let checkOurOpenChannelMsgAcceptable (msg: OpenChannelMsg) =
         Validation.ofResult(OpenChannelMsgValidation.checkFundingSatoshisLessThanMax msg)
         *^> OpenChannelMsgValidation.checkChannelReserveSatohisLessThanFundingSatoshis msg
         *^> OpenChannelMsgValidation.checkPushMSatLesserThanFundingValue msg
@@ -170,23 +170,28 @@ module internal Validation =
         *^> OpenChannelMsgValidation.checkFunderCanAffordFee (msg.FeeRatePerKw) msg
         |> Result.mapError((@)["open_channel msg is invalid"] >> InvalidOpenChannelError.Create msg >> InvalidOpenChannel)
 
-    let internal checkOpenChannelMsgAcceptable (feeEstimator: IFeeEstimator) (conf: ChannelConfig) (msg: OpenChannelMsg) =
+    let internal checkOpenChannelMsgAcceptable (feeEstimator: IFeeEstimator)
+                                               (channelHandshakeLimits: ChannelHandshakeLimits)
+                                               (channelOptions: ChannelOptions)
+                                               (msg: OpenChannelMsg) =
         let feeRate = feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background)
         Validation.ofResult(OpenChannelMsgValidation.checkFundingSatoshisLessThanMax msg)
         *^> OpenChannelMsgValidation.checkChannelReserveSatohisLessThanFundingSatoshis msg
         *^> OpenChannelMsgValidation.checkPushMSatLesserThanFundingValue msg
         *^> OpenChannelMsgValidation.checkFundingSatoshisLessThanDustLimitSatoshis msg
-        *^> OpenChannelMsgValidation.checkRemoteFee feeEstimator msg.FeeRatePerKw conf.ChannelOptions.MaxFeeRateMismatchRatio
+        *^> OpenChannelMsgValidation.checkRemoteFee feeEstimator msg.FeeRatePerKw channelOptions.MaxFeeRateMismatchRatio
         *^> OpenChannelMsgValidation.checkToSelfDelayIsInAcceptableRange msg
         *^> OpenChannelMsgValidation.checkMaxAcceptedHTLCs msg
-        *> OpenChannelMsgValidation.checkConfigPermits conf.PeerChannelConfigLimits msg
-        *^> OpenChannelMsgValidation.checkChannelAnnouncementPreferenceAcceptable conf msg
+        *> OpenChannelMsgValidation.checkConfigPermits channelHandshakeLimits msg
+        *^> OpenChannelMsgValidation.checkChannelAnnouncementPreferenceAcceptable channelHandshakeLimits channelOptions msg
         *> OpenChannelMsgValidation.checkIsAcceptableByCurrentFeeRate feeEstimator msg
         *^> OpenChannelMsgValidation.checkFunderCanAffordFee feeRate msg
         |> Result.mapError((@)["rejected received open_channel msg"] >> InvalidOpenChannelError.Create msg >> InvalidOpenChannel)
 
 
-    let internal checkAcceptChannelMsgAcceptable (conf: ChannelConfig) (state) (msg: AcceptChannelMsg) =
+    let internal checkAcceptChannelMsgAcceptable (channelHandshakeLimits: ChannelHandshakeLimits)
+                                                 (state: WaitForAcceptChannelData)
+                                                 (msg: AcceptChannelMsg) =
         Validation.ofResult(AcceptChannelMsgValidation.checkMaxAcceptedHTLCs msg)
         *^> AcceptChannelMsgValidation.checkDustLimit msg
         *^> (AcceptChannelMsgValidation.checkChannelReserveSatoshis state msg)
@@ -194,7 +199,7 @@ module internal Validation =
         *^> AcceptChannelMsgValidation.checkDustLimitIsLargerThanOurChannelReserve state msg
         *^> AcceptChannelMsgValidation.checkMinimumHTLCValueIsAcceptable state msg
         *^> AcceptChannelMsgValidation.checkToSelfDelayIsAcceptable msg
-        *> AcceptChannelMsgValidation.checkConfigPermits conf.PeerChannelConfigLimits msg
+        *> AcceptChannelMsgValidation.checkConfigPermits channelHandshakeLimits msg
         |> Result.mapError(InvalidAcceptChannelError.Create msg >> InvalidAcceptChannel)
 
 

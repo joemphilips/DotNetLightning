@@ -38,9 +38,6 @@ type ChannelHandshakeLimits = {
     /// Defaults to true to make the default that no announced channels are possible (which is
     /// appropriate for any nodes which are not online very reliably)
     ForceChannelAnnouncementPreference: bool
-
-    /// We don't exchange more than this many signatures when negotiating the closing fee
-    MaxClosingNegotiationIterations: int32
  }
 
     with
@@ -55,32 +52,10 @@ type ChannelHandshakeLimits = {
             MaxDustLimitSatoshis = Money.Coins(21_000_000m)
             MaxMinimumDepth = 144u |> BlockHeightOffset32
             ForceChannelAnnouncementPreference = true
-            MaxClosingNegotiationIterations = 20
         }
 
 
-/// Configuration containing all information used by Channel
-type ChannelConfig = {
-    PeerChannelConfigLimits: ChannelHandshakeLimits
-    ChannelOptions: ChannelOptions
- }
-
-    with
-    static member Zero =
-        {
-            PeerChannelConfigLimits = ChannelHandshakeLimits.Zero
-            ChannelOptions = ChannelOptions.Zero
-        }
-
-    static member PeerChannelConfigLimits_: Lens<_, _> =
-        (fun uc -> uc.PeerChannelConfigLimits),
-        (fun v uc -> { uc with PeerChannelConfigLimits = v })
-
-    static member ChannelOptions_: Lens<_, _> =
-        (fun uc -> uc.ChannelOptions),
-        (fun v uc -> { uc with ChannelOptions = v })
-
-and ChannelOptions = {
+type ChannelOptions = {
     MaxFeeRateMismatchRatio: float
     // Amount (in millionth of a satoshi) the channel will charge per transferred satoshi.
     // This may be allowed to change at runtime in a later update, however doing so must result in
@@ -92,6 +67,9 @@ and ChannelOptions = {
     // `ChannelHandshakeLimits.ForceAnnouncedChannelPreferences` is set.
     AnnounceChannel: bool
     
+    /// We don't exchange more than this many signatures when negotiating the closing fee
+    MaxClosingNegotiationIterations: int32
+
     ShutdownScriptPubKey: Script option
  }
     with
@@ -101,6 +79,7 @@ and ChannelOptions = {
             FeeProportionalMillionths = 0u
             AnnounceChannel = false
             MaxFeeRateMismatchRatio = 0.
+            MaxClosingNegotiationIterations = 20
             ShutdownScriptPubKey = None
         }
 

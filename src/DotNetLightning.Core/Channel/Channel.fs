@@ -14,7 +14,7 @@ open ResultUtils
 open ResultUtils.Portability
 
 type ChannelWaitingForFundingSigned = {
-    Config: ChannelConfig
+    ChannelOptions: ChannelOptions
     ChannelPrivKeys: ChannelPrivKeys
     FeeEstimator: IFeeEstimator
     RemoteNodeId: NodeId
@@ -67,7 +67,7 @@ type ChannelWaitingForFundingSigned = {
                           InitialFeeRatePerKw = state.InitialFeeRatePerKw
                           ChannelId = msg.ChannelId }
         let channel = {
-            Config = self.Config
+            ChannelOptions = self.ChannelOptions
             ChannelPrivKeys = self.ChannelPrivKeys
             FeeEstimator = self.FeeEstimator
             RemoteNodeId = self.RemoteNodeId
@@ -80,7 +80,7 @@ type ChannelWaitingForFundingSigned = {
     }
 
 and ChannelWaitingForFundingCreated = {
-    Config: ChannelConfig
+    ChannelOptions: ChannelOptions
     ChannelPrivKeys: ChannelPrivKeys
     FeeEstimator: IFeeEstimator
     RemoteNodeId: NodeId
@@ -151,7 +151,7 @@ and ChannelWaitingForFundingCreated = {
                           InitialFeeRatePerKw = state.InitialFeeRatePerKw
                           ChannelId = channelId }
         let channel = {
-            Config = self.Config
+            ChannelOptions = self.ChannelOptions
             ChannelPrivKeys = self.ChannelPrivKeys
             FeeEstimator = self.FeeEstimator
             RemoteNodeId = self.RemoteNodeId
@@ -164,7 +164,7 @@ and ChannelWaitingForFundingCreated = {
     }
 
 and ChannelWaitingForFundingTx = {
-    Config: ChannelConfig
+    ChannelOptions: ChannelOptions
     ChannelPrivKeys: ChannelPrivKeys
     FeeEstimator: IFeeEstimator
     RemoteNodeId: NodeId
@@ -220,7 +220,7 @@ and ChannelWaitingForFundingTx = {
             InitialFeeRatePerKw = state.InputInitFunder.InitFeeRatePerKw
         }
         let channelWaitingForFundingSigned = {
-            Config = self.Config
+            ChannelOptions = self.ChannelOptions
             ChannelPrivKeys = self.ChannelPrivKeys
             FeeEstimator = self.FeeEstimator
             RemoteNodeId = self.RemoteNodeId
@@ -234,7 +234,8 @@ and ChannelWaitingForFundingTx = {
 
 
 and ChannelWaitingForAcceptChannel = {
-    Config: ChannelConfig
+    ChannelOptions: ChannelOptions
+    ChannelHandshakeLimits: ChannelHandshakeLimits
     ChannelPrivKeys: ChannelPrivKeys
     FeeEstimator: IFeeEstimator
     RemoteNodeId: NodeId
@@ -245,7 +246,7 @@ and ChannelWaitingForAcceptChannel = {
     member self.ApplyAcceptChannel (msg: AcceptChannelMsg)
                                        : Result<IDestination * Money * ChannelWaitingForFundingTx, ChannelError> = result {
         let state = self.WaitForAcceptChannelData
-        do! Validation.checkAcceptChannelMsgAcceptable (self.Config) state msg
+        do! Validation.checkAcceptChannelMsgAcceptable self.ChannelHandshakeLimits state msg
         let redeem =
             Scripts.funding
                 (state.InputInitFunder.ChannelPrivKeys.ToChannelPubKeys().FundingPubKey)
@@ -258,7 +259,7 @@ and ChannelWaitingForAcceptChannel = {
             LastReceived = msg
         }
         let channelWaitingForFundingTx = {
-            Config = self.Config
+            ChannelOptions = self.ChannelOptions
             ChannelPrivKeys = self.ChannelPrivKeys
             FeeEstimator = self.FeeEstimator
             RemoteNodeId = self.RemoteNodeId
@@ -270,7 +271,7 @@ and ChannelWaitingForAcceptChannel = {
     }
 
 and Channel = {
-    Config: ChannelConfig
+    ChannelOptions: ChannelOptions
     ChannelPrivKeys: ChannelPrivKeys
     FeeEstimator: IFeeEstimator
     RemoteNodeId: NodeId
@@ -280,7 +281,8 @@ and Channel = {
     FundingTxMinimumDepth: BlockHeightOffset32
  }
         with
-        static member NewOutbound(config: ChannelConfig,
+        static member NewOutbound(channelHandshakeLimits: ChannelHandshakeLimits,
+                                  channelOptions: ChannelOptions,
                                   nodeMasterPrivKey: NodeMasterPrivKey,
                                   channelIndex: int,
                                   feeEstimator: IFeeEstimator,
@@ -307,10 +309,10 @@ and Channel = {
                 HTLCBasepoint = inputInitFunder.ChannelPrivKeys.HtlcBasepointSecret.HtlcBasepoint()
                 FirstPerCommitmentPoint = inputInitFunder.ChannelPrivKeys.CommitmentSeed.DerivePerCommitmentPoint CommitmentNumber.FirstCommitment
                 ChannelFlags = inputInitFunder.ChannelFlags
-                ShutdownScriptPubKey = config.ChannelOptions.ShutdownScriptPubKey
+                ShutdownScriptPubKey = channelOptions.ShutdownScriptPubKey
             }
             result {
-                do! Validation.checkOurOpenChannelMsgAcceptable config openChannelMsgToSend
+                do! Validation.checkOurOpenChannelMsgAcceptable openChannelMsgToSend
                 let channelPrivKeys = nodeMasterPrivKey.ChannelPrivKeys channelIndex
                 let nodeSecret = nodeMasterPrivKey.NodeSecret()
                 let waitForAcceptChannelData = {
@@ -318,7 +320,8 @@ and Channel = {
                     LastSent = openChannelMsgToSend
                 }
                 let channelWaitingForAcceptChannel = {
-                    Config = config
+                    ChannelHandshakeLimits = channelHandshakeLimits
+                    ChannelOptions = channelOptions
                     ChannelPrivKeys = channelPrivKeys
                     FeeEstimator = feeEstimator
                     RemoteNodeId = remoteNodeId
@@ -329,7 +332,8 @@ and Channel = {
                 return (openChannelMsgToSend, channelWaitingForAcceptChannel)
             }
 
-        static member NewInbound (config: ChannelConfig,
+        static member NewInbound (channelHandshakeLimits: ChannelHandshakeLimits,
+                                  channelOptions: ChannelOptions,
                                   nodeMasterPrivKey: NodeMasterPrivKey,
                                   channelIndex: int,
                                   feeEstimator: IFeeEstimator,
@@ -340,7 +344,7 @@ and Channel = {
                                   openChannelMsg: OpenChannelMsg
                                  ): Result<AcceptChannelMsg * ChannelWaitingForFundingCreated, ChannelError> =
             result {
-                do! Validation.checkOpenChannelMsgAcceptable feeEstimator config openChannelMsg
+                do! Validation.checkOpenChannelMsgAcceptable feeEstimator channelHandshakeLimits channelOptions openChannelMsg
                 let localParams = inputInitFundee.LocalParams
                 let channelKeys = inputInitFundee.ChannelPrivKeys
                 let localCommitmentPubKey = channelKeys.CommitmentSeed.DerivePerCommitmentPoint CommitmentNumber.FirstCommitment
@@ -359,14 +363,14 @@ and Channel = {
                     DelayedPaymentBasepoint = channelKeys.DelayedPaymentBasepointSecret.DelayedPaymentBasepoint()
                     HTLCBasepoint = channelKeys.HtlcBasepointSecret.HtlcBasepoint()
                     FirstPerCommitmentPoint = localCommitmentPubKey
-                    ShutdownScriptPubKey = config.ChannelOptions.ShutdownScriptPubKey
+                    ShutdownScriptPubKey = channelOptions.ShutdownScriptPubKey
                 }
                 let remoteParams = RemoteParams.FromOpenChannel remoteNodeId inputInitFundee.RemoteInit openChannelMsg
                 let waitForFundingCreatedData = Data.WaitForFundingCreatedData.Create localParams remoteParams openChannelMsg acceptChannelMsg
                 let channelPrivKeys = nodeMasterPrivKey.ChannelPrivKeys channelIndex
                 let nodeSecret = nodeMasterPrivKey.NodeSecret()
                 let channelWaitingForFundingCreated = {
-                    Config = config
+                    ChannelOptions = channelOptions
                     ChannelPrivKeys = channelPrivKeys
                     FeeEstimator = feeEstimator
                     RemoteNodeId = remoteNodeId
@@ -533,7 +537,7 @@ module Channel =
                                                state.Commitments.LocalParams.ToSelfDelay,
                                                state.Commitments.RemoteParams.HTLCMinimumMSat,
                                                feeBase,
-                                               cs.Config.ChannelOptions.FeeProportionalMillionths,
+                                               cs.ChannelOptions.FeeProportionalMillionths,
                                                true,
                                                None)
                 let nextState = { NormalData.Buried = true
@@ -613,7 +617,7 @@ module Channel =
             state.Commitments |> Commitments.sendFee op
         | ChannelState.Normal state, ApplyUpdateFee msg ->
             let localFeerate = cs.FeeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority)
-            state.Commitments |> Commitments.receiveFee cs.Config localFeerate msg
+            state.Commitments |> Commitments.receiveFee cs.ChannelOptions localFeerate msg
 
         | ChannelState.Normal state, SignCommitment ->
             let cm = state.Commitments
@@ -764,7 +768,7 @@ module Channel =
             state.Commitments |> Commitments.sendFee op
         | Shutdown state, ApplyUpdateFee msg ->
             let localFeerate = cs.FeeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority)
-            state.Commitments |> Commitments.receiveFee cs.Config localFeerate msg
+            state.Commitments |> Commitments.receiveFee cs.ChannelOptions localFeerate msg
         | Shutdown state, SignCommitment ->
             let cm = state.Commitments
             match cm.RemoteNextCommitInfo with
@@ -814,7 +818,7 @@ module Channel =
                     |> Option.map (fun v -> v.LocalClosingSigned.FeeSatoshis)
                 let areWeInDeal = Some(msg.FeeSatoshis) = maybeLocalFee
                 let hasTooManyNegotiationDone =
-                    (state.ClosingTxProposed |> List.collect (id) |> List.length) >= cs.Config.PeerChannelConfigLimits.MaxClosingNegotiationIterations
+                    (state.ClosingTxProposed |> List.collect (id) |> List.length) >= cs.ChannelOptions.MaxClosingNegotiationIterations
                 if (areWeInDeal || hasTooManyNegotiationDone) then
                     return! Closing.handleMutualClose (finalizedTx, { state with MaybeBestUnpublishedTx = Some(finalizedTx) })
                 else
@@ -895,7 +899,7 @@ module Channel =
                                                            s.Commitments.LocalParams.ToSelfDelay,
                                                            s.Commitments.RemoteParams.HTLCMinimumMSat,
                                                            feeBase,
-                                                           c.Config.ChannelOptions.FeeProportionalMillionths,
+                                                           c.ChannelOptions.FeeProportionalMillionths,
                                                            true,
                                                            None)
             let nextState = { NormalData.Buried = false;
