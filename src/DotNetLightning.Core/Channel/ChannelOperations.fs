@@ -72,7 +72,6 @@ module OperationClose =
         cmdClose.ScriptPubKey
 
 type LocalParams = {
-    NodeId: NodeId
     ChannelPubKeys: ChannelPubKeys
     DustLimitSatoshis: Money
     MaxHTLCValueInFlightMSat: LNMoney

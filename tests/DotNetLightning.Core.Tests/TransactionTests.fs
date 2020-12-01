@@ -58,7 +58,6 @@ let testList = testList "transaction tests" [
         let remoteCommitmentPubKeys = perCommitmentPoint.DeriveCommitmentPubKeys remoteChannelPubKeys
 
         let localParams = {
-            NodeId = localNodeId
             ChannelPubKeys = localChannelPubKeys
             DustLimitSatoshis = 546L |> Money.Satoshis
             MaxHTLCValueInFlightMSat = 10_000_000L |> LNMoney
@@ -169,7 +168,6 @@ let testList = testList "transaction tests" [
             RemotePerCommitmentPoint = perCommitmentPoint
         }
         let remoteLocalParams: LocalParams = {
-            NodeId = remoteParams.NodeId
             ChannelPubKeys = remoteParams.ChannelPubKeys
             DustLimitSatoshis = remoteParams.DustLimitSatoshis
             MaxHTLCValueInFlightMSat = remoteParams.MaxHTLCValueInFlightMSat
@@ -182,7 +180,7 @@ let testList = testList "transaction tests" [
             Features = remoteParams.Features
         }
         let remoteRemoteParams = {
-            NodeId = localParams.NodeId
+            NodeId = localNodeId
             DustLimitSatoshis = localParams.DustLimitSatoshis
             MaxHTLCValueInFlightMSat = localParams.MaxHTLCValueInFlightMSat
             ChannelReserveSatoshis = localParams.ChannelReserveSatoshis
