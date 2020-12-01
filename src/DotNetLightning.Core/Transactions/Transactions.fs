@@ -779,8 +779,8 @@ module Transactions =
         raise <| NotImplementedException()
 
     let makeClosingTx (commitTxInput: ScriptCoin)
-                      (localDestination: Script)
-                      (remoteDestination: Script)
+                      (localDestination: ShutdownScriptPubKey)
+                      (remoteDestination: ShutdownScriptPubKey)
                       (localIsFunder: bool)
                       (dustLimit: Money)
                       (closingFee: Money)
@@ -799,9 +799,9 @@ module Transactions =
             let outputs =
                 seq {
                     if toLocalAmount >= dustLimit then
-                        yield TxOut(toLocalAmount, localDestination)
+                        yield TxOut(toLocalAmount, localDestination.ScriptPubKey())
                     if toRemoteAmount >= dustLimit then
-                        yield TxOut(toRemoteAmount, remoteDestination)
+                        yield TxOut(toRemoteAmount, remoteDestination.ScriptPubKey())
                 }
                 |> Seq.sortWith TxOut.LexicographicCompare
             let psbt = 

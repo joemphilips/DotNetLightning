@@ -66,7 +66,6 @@ let testList = testList "transaction tests" [
             ToSelfDelay = 144us |> BlockHeightOffset16
             MaxAcceptedHTLCs = 1000us
             IsFunder = true
-            DefaultFinalScriptPubKey = localDestPubKey.ScriptPubKey
             Features = FeatureBits.Zero
         }
         let remoteParams = {
@@ -175,7 +174,6 @@ let testList = testList "transaction tests" [
             ToSelfDelay = remoteParams.ToSelfDelay
             MaxAcceptedHTLCs = remoteParams.MaxAcceptedHTLCs
             IsFunder = false
-            DefaultFinalScriptPubKey = remoteDestPubKey.ScriptPubKey
             Features = remoteParams.Features
         }
         let remoteRemoteParams = {

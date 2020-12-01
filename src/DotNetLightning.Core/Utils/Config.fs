@@ -69,8 +69,6 @@ type ChannelOptions = {
     
     /// We don't exchange more than this many signatures when negotiating the closing fee
     MaxClosingNegotiationIterations: int32
-
-    ShutdownScriptPubKey: Script option
  }
     with
 
@@ -80,7 +78,6 @@ type ChannelOptions = {
             AnnounceChannel = false
             MaxFeeRateMismatchRatio = 0.
             MaxClosingNegotiationIterations = 20
-            ShutdownScriptPubKey = None
         }
 
     static member FeeProportionalMillionths_: Lens<_, _> =

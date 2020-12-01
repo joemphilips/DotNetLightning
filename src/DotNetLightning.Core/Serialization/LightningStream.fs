@@ -5,6 +5,9 @@ open System.IO
 open DotNetLightning.Utils
 open NBitcoin
 
+open ResultUtils
+open ResultUtils.Portability
+
 type Scope(openAction: Action, closeAction: Action) =
     let _close = closeAction
     do openAction.Invoke()
@@ -416,4 +419,9 @@ type LightningReaderStream(inner: Stream) =
             rest <- int32 this.Length - int32 this.Position
         result |> Seq.toArray
          
-        
+    member this.ReadShutdownScriptPubKey(): ShutdownScriptPubKey =
+        let script = this.ReadScript()
+        match ShutdownScriptPubKey.TryFromScript script with
+        | Ok shutdownScript -> shutdownScript
+        | Error errorMsg ->
+            raise <| FormatException(errorMsg)

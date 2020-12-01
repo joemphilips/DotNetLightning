@@ -562,7 +562,7 @@ with
             ls.Write(this.ChannelFlags)
             this.TLVs |> Array.map(fun tlv -> tlv.ToGenericTLV()) |> ls.WriteTLVStream
 
-    member this.ShutdownScriptPubKey() : Option<Script> =
+    member this.ShutdownScriptPubKey() : Option<ShutdownScriptPubKey> =
         Seq.choose
             (function
                 | OpenChannelTLV.UpfrontShutdownScript script -> Some script
@@ -628,7 +628,7 @@ with
             ls.Write(this.FirstPerCommitmentPoint.ToBytes())
             this.TLVs |> Array.map(fun tlv -> tlv.ToGenericTLV()) |> ls.WriteTLVStream
 
-    member this.ShutdownScriptPubKey() : Option<Script> =
+    member this.ShutdownScriptPubKey() : Option<ShutdownScriptPubKey> =
         Seq.choose
             (function
                 | AcceptChannelTLV.UpfrontShutdownScript script -> Some script
@@ -692,14 +692,14 @@ with
 [<CLIMutable>]
 type ShutdownMsg = {
     mutable ChannelId: ChannelId
-    mutable ScriptPubKey: Script
+    mutable ScriptPubKey: ShutdownScriptPubKey
 }
 with
     interface IChannelMsg
     interface ILightningSerializable<ShutdownMsg> with
         member this.Deserialize(ls) =
             this.ChannelId <- ls.ReadUInt256(true) |> ChannelId
-            this.ScriptPubKey <- ls.ReadScript()
+            this.ScriptPubKey <- ls.ReadShutdownScriptPubKey()
         member this.Serialize(ls) =
             ls.Write(this.ChannelId.Value.ToBytes())
             ls.WriteWithLen(this.ScriptPubKey.ToBytes())

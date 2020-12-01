@@ -490,7 +490,14 @@ module SerializationTest =
                         HTLCBasepoint = HtlcBasepoint pubkey5
                         FirstPerCommitmentPoint = PerCommitmentPoint pubkey6
                         ChannelFlags = if randomBit then 1uy <<< 5 else 0uy
-                        TLVs = [| OpenChannelTLV.UpfrontShutdownScript (if shutdown then Some pubkey1.Hash.ScriptPubKey else None) |]
+                        TLVs = [|
+                            OpenChannelTLV.UpfrontShutdownScript (
+                                if shutdown then
+                                    Some <| ShutdownScriptPubKey.FromPubKeyP2pkh pubkey1
+                                else
+                                    None
+                            )
+                        |]
                     } 
                     let actual = openChannelMsg.ToBytes()
                     let mutable expected = [||]
@@ -531,7 +538,14 @@ module SerializationTest =
                         DelayedPaymentBasepoint = DelayedPaymentBasepoint pubkey4
                         HTLCBasepoint = HtlcBasepoint pubkey5
                         FirstPerCommitmentPoint = PerCommitmentPoint pubkey6
-                        TLVs = [| AcceptChannelTLV.UpfrontShutdownScript (if shutdown then Some pubkey1.Hash.ScriptPubKey else None) |]
+                        TLVs = [|
+                            AcceptChannelTLV.UpfrontShutdownScript (
+                                if shutdown then
+                                    Some <| ShutdownScriptPubKey.FromPubKeyP2pkh pubkey1
+                                else
+                                    None
+                            )
+                        |]
                     }
                     let actual = acceptChannelMsg.ToBytes()
                     let mutable expected = hex.DecodeData("020202020202020202020202020202020202020202020202020202020202020212345678901234562334032891223698321446687011447600083a840000034d000c89d4c0bcc0bc031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f024d4b6cd1361032ca9bd2aeb9d900aa4d45d9ead80ac9423374c451a7254d076602531fe6068134503d2723133227c867ac8fa6c83c537e9a44c3c5bdbdcb1fe33703462779ad4aad39514614751a71085f2f10e1c7a593e4e030efb5b8721ce55b0b0362c0a046dacce86ddd0343c6d3c7c79c2208ba0d9c9cf24a6d046d21d21f90f703f006a18d5653c4edf5391ff23a61f03ff83d237e880ee61187fa9f379a028e0a")
@@ -577,13 +591,13 @@ module SerializationTest =
                     let script = Script("OP_TRUE")
                     let spk =
                         if (scriptType = 1uy) then
-                            pubkey1.Hash.ScriptPubKey
+                            ShutdownScriptPubKey.FromPubKeyP2pkh pubkey1
                         else if (scriptType = 2uy) then
-                            script.Hash.ScriptPubKey
+                            ShutdownScriptPubKey.FromScriptP2sh script
                         else if (scriptType = 3uy) then
-                            pubkey1.WitHash.ScriptPubKey
+                            ShutdownScriptPubKey.FromPubKeyP2wpkh pubkey1
                         else
-                            script.WitHash.ScriptPubKey
+                            ShutdownScriptPubKey.FromScriptP2wsh script
                     let shutdownMsg = {
                         ShutdownMsg.ChannelId = ChannelId(uint256[| for _ in 0..31 -> 2uy|])
                         ScriptPubKey = spk

@@ -5,6 +5,9 @@ open DotNetLightning.Utils
 open System
 open NBitcoin
 
+open ResultUtils
+open ResultUtils.Portability
+
 type InitTLV =
     /// genesis chain hash that the node is interested in
     | Networks of uint256 array
@@ -29,19 +32,22 @@ type InitTLV =
         | Unknown tlv -> tlv
 
 type OpenChannelTLV =
-    | UpfrontShutdownScript of Option<Script>
+    | UpfrontShutdownScript of Option<ShutdownScriptPubKey>
     | Unknown of GenericTLV
     with
     static member FromGenericTLV(tlv: GenericTLV) =
         match tlv.Type with
         | 0UL ->
             let script = Script tlv.Value
-            let script =
+            let shutdownScript =
                 if script = Script.Empty then
                     None
                 else
-                    Some script
-            UpfrontShutdownScript script
+                    match ShutdownScriptPubKey.TryFromScript script with
+                    | Ok shutdownScript -> Some shutdownScript
+                    | Error err ->
+                        raise <| FormatException(sprintf "invalid script for shutdown script: %s" err)
+            UpfrontShutdownScript shutdownScript
         | _ -> Unknown tlv
 
     member this.ToGenericTLV() =
@@ -57,19 +63,22 @@ type OpenChannelTLV =
         | Unknown tlv -> tlv
 
 type AcceptChannelTLV =
-    | UpfrontShutdownScript of Option<Script>
+    | UpfrontShutdownScript of Option<ShutdownScriptPubKey>
     | Unknown of GenericTLV
     with
     static member FromGenericTLV(tlv: GenericTLV) =
         match tlv.Type with
         | 0UL ->
             let script = Script tlv.Value
-            let script =
+            let shutdownScript =
                 if script = Script.Empty then
                     None
                 else
-                    Some script
-            UpfrontShutdownScript script
+                    match ShutdownScriptPubKey.TryFromScript script with
+                    | Ok shutdownScript -> Some shutdownScript
+                    | Error err ->
+                        raise <| FormatException(sprintf "invalid script for shutdown script: %s" err)
+            UpfrontShutdownScript shutdownScript
         | _ -> Unknown tlv
 
     member this.ToGenericTLV() =
