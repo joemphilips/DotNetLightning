@@ -125,46 +125,6 @@ type RemoteParams = {
                 Features = remoteInit.Features
             }
 
-type InputInitFunder = {
-    TemporaryChannelId: ChannelId
-    FundingSatoshis: Money
-    PushMSat: LNMoney
-    InitFeeRatePerKw: FeeRatePerKw
-    FundingTxFeeRatePerKw: FeeRatePerKw
-    LocalParams: LocalParams
-    RemoteInit: InitMsg
-    ChannelFlags: uint8
-    ChannelPrivKeys: ChannelPrivKeys
-}
-    with
-        static member FromOpenChannel (localParams) (remoteInit) (channelPrivKeys) (o: OpenChannelMsg) =
-            {
-                InputInitFunder.TemporaryChannelId = o.TemporaryChannelId
-                FundingSatoshis = o.FundingSatoshis
-                PushMSat = o.PushMSat
-                InitFeeRatePerKw = o.FeeRatePerKw
-                FundingTxFeeRatePerKw = o.FeeRatePerKw
-                LocalParams = localParams
-                RemoteInit = remoteInit
-                ChannelFlags = o.ChannelFlags
-                ChannelPrivKeys = channelPrivKeys
-            }
-
-        member this.DeriveCommitmentSpec() =
-            CommitmentSpec.Create this.ToLocal this.PushMSat this.FundingTxFeeRatePerKw
-
-        member this.ToLocal =
-            this.FundingSatoshis.ToLNMoney() - this.PushMSat
-
-and InputInitFundee = {
-    TemporaryChannelId: ChannelId
-    LocalParams: LocalParams
-    RemoteInit: InitMsg
-    ToLocal: LNMoney
-    ChannelPrivKeys: ChannelPrivKeys
-}
-
-
 /// possible input to the channel. Command prefixed from `Apply` is passive. i.e.
 /// it has caused by the outside world and not by the user. Mostly this is a message sent
 /// from this channel's remote peer.

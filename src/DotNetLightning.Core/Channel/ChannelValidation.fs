@@ -190,17 +190,17 @@ module internal Validation =
 
 
     let internal checkAcceptChannelMsgAcceptable (channelHandshakeLimits: ChannelHandshakeLimits)
-                                                 (state: WaitForAcceptChannelData)
-                                                 (msg: AcceptChannelMsg) =
-        Validation.ofResult(AcceptChannelMsgValidation.checkMaxAcceptedHTLCs msg)
-        *^> AcceptChannelMsgValidation.checkDustLimit msg
-        *^> (AcceptChannelMsgValidation.checkChannelReserveSatoshis state msg)
-        *^> AcceptChannelMsgValidation.checkChannelReserveSatoshis state msg
-        *^> AcceptChannelMsgValidation.checkDustLimitIsLargerThanOurChannelReserve state msg
-        *^> AcceptChannelMsgValidation.checkMinimumHTLCValueIsAcceptable state msg
-        *^> AcceptChannelMsgValidation.checkToSelfDelayIsAcceptable msg
-        *> AcceptChannelMsgValidation.checkConfigPermits channelHandshakeLimits msg
-        |> Result.mapError(InvalidAcceptChannelError.Create msg >> InvalidAcceptChannel)
+                                                 (fundingSatoshis: Money)
+                                                 (openChannelMsg: OpenChannelMsg)
+                                                 (acceptChannelMsg: AcceptChannelMsg) =
+        Validation.ofResult(AcceptChannelMsgValidation.checkMaxAcceptedHTLCs acceptChannelMsg)
+        *^> AcceptChannelMsgValidation.checkDustLimit acceptChannelMsg
+        *^> AcceptChannelMsgValidation.checkChannelReserveSatoshis fundingSatoshis openChannelMsg acceptChannelMsg
+        *^> AcceptChannelMsgValidation.checkDustLimitIsLargerThanOurChannelReserve openChannelMsg acceptChannelMsg
+        *^> AcceptChannelMsgValidation.checkMinimumHTLCValueIsAcceptable openChannelMsg acceptChannelMsg
+        *^> AcceptChannelMsgValidation.checkToSelfDelayIsAcceptable acceptChannelMsg
+        *> AcceptChannelMsgValidation.checkConfigPermits channelHandshakeLimits acceptChannelMsg
+        |> Result.mapError(InvalidAcceptChannelError.Create acceptChannelMsg >> InvalidAcceptChannel)
 
 
     let checkOperationAddHTLC (commitments: Commitments) (op: OperationAddHTLC) =

@@ -59,61 +59,6 @@ module Data =
 
     type IChannelStateData = interface inherit IStateData end
 
-    type WaitForAcceptChannelData = {
-            InputInitFunder: InputInitFunder
-            LastSent: OpenChannelMsg
-    } with
-        interface IChannelStateData
-
-    type WaitForFundingTxData = {
-        InputInitFunder: InputInitFunder
-        LastSent: OpenChannelMsg
-        LastReceived: AcceptChannelMsg
-    }
-
-    type WaitForFundingCreatedData = {
-        TemporaryFailure: ChannelId
-        LocalParams: LocalParams
-        RemoteParams: RemoteParams
-        FundingSatoshis: Money
-        PushMSat: LNMoney
-        InitialFeeRatePerKw: FeeRatePerKw
-        RemoteFirstPerCommitmentPoint: PerCommitmentPoint
-        ChannelFlags: uint8
-        LastSent: AcceptChannelMsg
-    } with
-        interface IChannelStateData
-
-        static member Create (localParams: LocalParams)
-                             (remoteParams: RemoteParams)
-                             (msg: OpenChannelMsg)
-                             (acceptChannelMsg: AcceptChannelMsg)
-                                 : WaitForFundingCreatedData = {
-            ChannelFlags = msg.ChannelFlags
-            TemporaryFailure = msg.TemporaryChannelId
-            LocalParams = localParams
-            RemoteParams = remoteParams
-            FundingSatoshis = msg.FundingSatoshis
-            PushMSat = msg.PushMSat
-            InitialFeeRatePerKw = msg.FeeRatePerKw
-            RemoteFirstPerCommitmentPoint = msg.FirstPerCommitmentPoint
-            LastSent = acceptChannelMsg
-        }
-
-    type WaitForFundingSignedData = {
-        ChannelId: ChannelId
-        LocalParams: LocalParams
-        RemoteParams: RemoteParams
-        FundingTx: FinalizedTx
-        LocalSpec: CommitmentSpec
-        LocalCommitTx: CommitTx
-        RemoteCommit: RemoteCommit
-        ChannelFlags: uint8
-        LastSent: FundingCreatedMsg
-        InitialFeeRatePerKw: FeeRatePerKw
-    } with
-        interface IChannelStateData
-
     type WaitForFundingConfirmedData = {
         Deferred: Option<FundingLockedMsg>
         LastSent: Choice<FundingCreatedMsg, FundingSignedMsg>
