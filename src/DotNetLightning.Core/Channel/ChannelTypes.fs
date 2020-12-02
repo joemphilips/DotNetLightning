@@ -58,11 +58,6 @@ module Data =
     }
 
     type IChannelStateData = interface inherit IStateData end
-    type IHasCommitments =
-        inherit IChannelStateData
-        abstract member ChannelId: ChannelId
-        abstract member Commitments: Commitments
-
 
     type WaitForAcceptChannelData = {
             InputInitFunder: InputInitFunder
@@ -120,81 +115,41 @@ module Data =
         interface IChannelStateData
 
     type WaitForFundingConfirmedData = {
-        Commitments: Commitments
         Deferred: Option<FundingLockedMsg>
         LastSent: Choice<FundingCreatedMsg, FundingSignedMsg>
         InitialFeeRatePerKw: FeeRatePerKw
-        ChannelId: ChannelId
-    } with
-        interface IHasCommitments with
-            member this.ChannelId: ChannelId = 
-                this.ChannelId
-            member this.Commitments: Commitments = 
-                this.Commitments
+    }
 
     type WaitForFundingLockedData = {
-        Commitments: Commitments
         ShortChannelId: ShortChannelId
         OurMessage: FundingLockedMsg
         TheirMessage: Option<FundingLockedMsg>
         InitialFeeRatePerKw: FeeRatePerKw
         HaveWeSentFundingLocked: bool
-        ChannelId: ChannelId
-    } with
-        interface IHasCommitments with
-            member this.ChannelId: ChannelId = 
-                this.ChannelId
-            member this.Commitments: Commitments = 
-                this.Commitments
+    }
 
     type NormalData = {
-        Commitments: Commitments
         ShortChannelId: ShortChannelId
         Buried: bool
         ChannelAnnouncement: Option<ChannelAnnouncementMsg>
         ChannelUpdate: ChannelUpdateMsg
         LocalShutdown: Option<ShutdownMsg>
         RemoteShutdown: Option<ShutdownMsg>
-        ChannelId: ChannelId
-    } with
-        static member Commitments_: Lens<_, _> =
-            (fun nd -> nd.Commitments), (fun v nd -> { nd with Commitments = v })
-
-        interface IHasCommitments with
-            member this.ChannelId: ChannelId = 
-                this.ChannelId
-            member this.Commitments: Commitments = 
-                this.Commitments
+    }
 
     type ShutdownData = {
-        Commitments: Commitments
         LocalShutdown: ShutdownMsg
         RemoteShutdown: ShutdownMsg
-        ChannelId: ChannelId
-    } with
-        interface IHasCommitments with
-            member this.ChannelId: ChannelId = 
-                this.ChannelId
-            member this.Commitments: Commitments = 
-                this.Commitments
+    }
 
     type NegotiatingData = {
-        Commitments: Commitments
         LocalShutdown: ShutdownMsg
         RemoteShutdown: ShutdownMsg
         ClosingTxProposed: List<List<ClosingTxProposed>>
         MaybeBestUnpublishedTx: Option<FinalizedTx>
-        ChannelId: ChannelId
-    } with
-        interface IHasCommitments with
-            member this.ChannelId: ChannelId = 
-                this.ChannelId
-            member this.Commitments: Commitments = 
-                this.Commitments
+    }
 
     type ClosingData = {
-        ChannelId: ChannelId
-        Commitments: Commitments
         MaybeFundingTx: Option<Transaction>
         WaitingSince: System.DateTime
         MutualCloseProposed: List<ClosingTx>
@@ -205,24 +160,14 @@ module Data =
         FutureRemoteCommitPublished: Option<RemoteCommitPublished>
         RevokedCommitPublished: List<RevokedCommitPublished>
     } with
-        interface IHasCommitments with
-            member this.ChannelId: ChannelId = 
-                this.ChannelId
-            member this.Commitments: Commitments = 
-                this.Commitments
-                    
         member this.FinalizedTx =
             this.MutualClosePublished
         
-        static member Create (channelId: ChannelId)
-                             (commitments: Commitments)
-                             (maybeFundingTx: Option<Transaction>)
+        static member Create (maybeFundingTx: Option<Transaction>)
                              (waitingSince: System.DateTime)
                              (mutualCloseProposed: List<ClosingTx>)
                              (mutualClosePublished: FinalizedTx)
                                  : ClosingData = {
-            ChannelId = channelId
-            Commitments = commitments
             MaybeFundingTx = maybeFundingTx
             WaitingSince = waitingSince
             MutualCloseProposed = mutualCloseProposed
@@ -252,7 +197,7 @@ type ChannelEvent =
     | TheySentFundingLocked of msg: FundingLockedMsg
     | WeSentFundingLocked of msg: FundingLockedMsg
     | WeResumedDelayedFundingLocked of msg: FundingLockedMsg
-    | BothFundingLocked of nextState: Data.NormalData
+    | BothFundingLocked of nextState: Data.NormalData * nextCommitments: Commitments
 
     // -------- normal operation ------
     | WeAcceptedOperationAddHTLC of msg: UpdateAddHTLCMsg * newCommitments: Commitments
