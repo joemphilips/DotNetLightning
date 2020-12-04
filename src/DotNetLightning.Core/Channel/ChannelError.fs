@@ -464,30 +464,31 @@ module internal AcceptChannelMsgValidation =
             Ok()
 
     let checkChannelReserveSatoshis (fundingSatoshis: Money)
-                                    (openChannelMsg: OpenChannelMsg)
+                                    (channelReserveSatoshis: Money)
+                                    (dustLimitSatoshis: Money)
                                     (acceptChannelMsg: AcceptChannelMsg) =
-        if acceptChannelMsg.ChannelReserveSatoshis > openChannelMsg.FundingSatoshis then
+        if acceptChannelMsg.ChannelReserveSatoshis > fundingSatoshis then
             sprintf "bogus channel_reserve_satoshis %A . Must be larger than funding_satoshis %A" (acceptChannelMsg.ChannelReserveSatoshis) fundingSatoshis
             |> Error
-        else if acceptChannelMsg.DustLimitSatoshis > openChannelMsg.ChannelReserveSatoshis then
-            sprintf "Bogus channel_reserve and dust_limit. dust_limit: %A; channel_reserve %A" acceptChannelMsg.DustLimitSatoshis (openChannelMsg.ChannelReserveSatoshis)
+        else if acceptChannelMsg.DustLimitSatoshis > channelReserveSatoshis then
+            sprintf "Bogus channel_reserve and dust_limit. dust_limit: %A; channel_reserve %A" acceptChannelMsg.DustLimitSatoshis channelReserveSatoshis
             |> Error
-        else if acceptChannelMsg.ChannelReserveSatoshis < openChannelMsg.DustLimitSatoshis then
-            sprintf "Peer never wants payout outputs? channel_reserve_satoshis are %A; dust_limit_satoshis in our last sent msg is %A" acceptChannelMsg.ChannelReserveSatoshis (openChannelMsg.DustLimitSatoshis)
+        else if acceptChannelMsg.ChannelReserveSatoshis < dustLimitSatoshis then
+            sprintf "Peer never wants payout outputs? channel_reserve_satoshis are %A; dust_limit_satoshis in our last sent msg is %A" acceptChannelMsg.ChannelReserveSatoshis dustLimitSatoshis
             |> Error
         else
             Ok()
 
-    let checkDustLimitIsLargerThanOurChannelReserve (openChannelMsg: OpenChannelMsg)
+    let checkDustLimitIsLargerThanOurChannelReserve (channelReserveSatoshis: Money)
                                                     (acceptChannelMsg: AcceptChannelMsg) =
         check
-            acceptChannelMsg.DustLimitSatoshis (>) openChannelMsg.ChannelReserveSatoshis
+            acceptChannelMsg.DustLimitSatoshis (>) channelReserveSatoshis
             "dust limit (%A) is bigger than our channel reserve (%A)" 
 
-    let checkMinimumHTLCValueIsAcceptable (openChannelMsg: OpenChannelMsg)
+    let checkMinimumHTLCValueIsAcceptable (fundingSatoshis: Money)
                                           (acceptChannelMsg: AcceptChannelMsg) =
-        if (acceptChannelMsg.HTLCMinimumMSat.ToMoney() >= (openChannelMsg.FundingSatoshis - acceptChannelMsg.ChannelReserveSatoshis)) then
-            sprintf "Minimum HTLC value is greater than full channel value HTLCMinimum %A satoshi; funding_satoshis %A; channel_reserve: %A" (acceptChannelMsg.HTLCMinimumMSat.ToMoney()) (openChannelMsg.FundingSatoshis) (acceptChannelMsg.ChannelReserveSatoshis)
+        if (acceptChannelMsg.HTLCMinimumMSat.ToMoney() >= (fundingSatoshis - acceptChannelMsg.ChannelReserveSatoshis)) then
+            sprintf "Minimum HTLC value is greater than full channel value HTLCMinimum %A satoshi; funding_satoshis %A; channel_reserve: %A" (acceptChannelMsg.HTLCMinimumMSat.ToMoney()) (fundingSatoshis) (acceptChannelMsg.ChannelReserveSatoshis)
             |> Error
         else
             Ok()

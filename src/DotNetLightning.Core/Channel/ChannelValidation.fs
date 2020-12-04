@@ -191,13 +191,14 @@ module internal Validation =
 
     let internal checkAcceptChannelMsgAcceptable (channelHandshakeLimits: ChannelHandshakeLimits)
                                                  (fundingSatoshis: Money)
-                                                 (openChannelMsg: OpenChannelMsg)
+                                                 (channelReserveSatoshis: Money)
+                                                 (dustLimitSatoshis: Money)
                                                  (acceptChannelMsg: AcceptChannelMsg) =
         Validation.ofResult(AcceptChannelMsgValidation.checkMaxAcceptedHTLCs acceptChannelMsg)
         *^> AcceptChannelMsgValidation.checkDustLimit acceptChannelMsg
-        *^> AcceptChannelMsgValidation.checkChannelReserveSatoshis fundingSatoshis openChannelMsg acceptChannelMsg
-        *^> AcceptChannelMsgValidation.checkDustLimitIsLargerThanOurChannelReserve openChannelMsg acceptChannelMsg
-        *^> AcceptChannelMsgValidation.checkMinimumHTLCValueIsAcceptable openChannelMsg acceptChannelMsg
+        *^> AcceptChannelMsgValidation.checkChannelReserveSatoshis fundingSatoshis channelReserveSatoshis dustLimitSatoshis acceptChannelMsg
+        *^> AcceptChannelMsgValidation.checkDustLimitIsLargerThanOurChannelReserve channelReserveSatoshis acceptChannelMsg
+        *^> AcceptChannelMsgValidation.checkMinimumHTLCValueIsAcceptable fundingSatoshis acceptChannelMsg
         *^> AcceptChannelMsgValidation.checkToSelfDelayIsAcceptable acceptChannelMsg
         *> AcceptChannelMsgValidation.checkConfigPermits channelHandshakeLimits acceptChannelMsg
         |> Result.mapError(InvalidAcceptChannelError.Create acceptChannelMsg >> InvalidAcceptChannel)
