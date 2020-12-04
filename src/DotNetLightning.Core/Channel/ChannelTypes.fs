@@ -71,7 +71,6 @@ module Data =
 
     type NormalData = {
         ShortChannelId: ShortChannelId
-        Buried: bool
         ChannelAnnouncement: Option<ChannelAnnouncementMsg>
         ChannelUpdate: ChannelUpdateMsg
         LocalShutdown: Option<ShutdownMsg>

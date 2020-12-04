@@ -670,7 +670,6 @@ module Channel =
                             RemoteNextCommitInfo.Revoked(msg.NextPerCommitmentPoint)
                 }
                 let nextState = {
-                    NormalData.Buried = true
                     ShortChannelId = state.ShortChannelId
                     ChannelAnnouncement = None
                     ChannelUpdate = initialChannelUpdate
@@ -1086,7 +1085,6 @@ module Channel =
                                                            true,
                                                            None)
             let nextState = {
-                NormalData.Buried = false;
                 ShortChannelId = s.ShortChannelId
                 ChannelAnnouncement = None
                 ChannelUpdate = channelUpdate
