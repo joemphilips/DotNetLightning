@@ -61,7 +61,6 @@ module Data =
 
     type WaitForFundingConfirmedData = {
         Deferred: Option<FundingLockedMsg>
-        LastSent: Choice<FundingCreatedMsg, FundingSignedMsg>
         InitialFeeRatePerKw: FeeRatePerKw
     }
 
