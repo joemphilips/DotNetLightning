@@ -229,7 +229,6 @@ and ChannelWaitingForFundingTx = {
     FundingSatoshis: Money
     PushMSat: LNMoney
     InitFeeRatePerKw: FeeRatePerKw
-    FundingTxFeeRatePerKw: FeeRatePerKw
     LocalParams: LocalParams
     RemoteInit: InitMsg
     ChannelFlags: uint8
@@ -239,7 +238,7 @@ and ChannelWaitingForFundingTx = {
                                     : Result<FundingCreatedMsg * ChannelWaitingForFundingSigned, ChannelError> = result {
         let remoteParams = RemoteParams.FromAcceptChannel self.RemoteInit self.LastReceived
         let localParams = self.LocalParams
-        let commitmentSpec = CommitmentSpec.Create (self.FundingSatoshis.ToLNMoney() - self.PushMSat) self.PushMSat self.FundingTxFeeRatePerKw
+        let commitmentSpec = CommitmentSpec.Create (self.FundingSatoshis.ToLNMoney() - self.PushMSat) self.PushMSat self.InitFeeRatePerKw
         let commitmentSeed = self.ChannelPrivKeys.CommitmentSeed
         let fundingTxId = fundingTx.Value.GetTxId()
         let! (_localSpec, localCommitTx, remoteSpec, remoteCommitTx) =
@@ -308,7 +307,6 @@ and ChannelWaitingForAcceptChannel = {
     FundingSatoshis: Money
     PushMSat: LNMoney
     InitFeeRatePerKw: FeeRatePerKw
-    FundingTxFeeRatePerKw: FeeRatePerKw
     LocalParams: LocalParams
     RemoteInit: InitMsg
     ChannelFlags: uint8
@@ -343,7 +341,6 @@ and ChannelWaitingForAcceptChannel = {
             FundingSatoshis = self.FundingSatoshis
             PushMSat = self.PushMSat
             InitFeeRatePerKw = self.InitFeeRatePerKw
-            FundingTxFeeRatePerKw = self.FundingTxFeeRatePerKw
             LocalParams = self.LocalParams
             RemoteInit = self.RemoteInit
             ChannelFlags = self.ChannelFlags
@@ -376,7 +373,6 @@ and Channel = {
                                   fundingSatoshis: Money,
                                   pushMSat: LNMoney,
                                   initFeeRatePerKw: FeeRatePerKw,
-                                  fundingTxFeeRatePerKw: FeeRatePerKw,
                                   localParams: LocalParams,
                                   remoteInit: InitMsg,
                                   channelFlags: uint8,
@@ -420,7 +416,6 @@ and Channel = {
                     FundingSatoshis = fundingSatoshis
                     PushMSat = pushMSat
                     InitFeeRatePerKw = initFeeRatePerKw
-                    FundingTxFeeRatePerKw = fundingTxFeeRatePerKw
                     LocalParams = localParams
                     RemoteInit = remoteInit
                     ChannelFlags = channelFlags
