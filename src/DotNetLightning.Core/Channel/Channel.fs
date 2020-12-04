@@ -32,7 +32,6 @@ type ChannelWaitingForFundingSigned = {
     RemoteCommit: RemoteCommit
     ChannelFlags: uint8
     LastSent: FundingCreatedMsg
-    InitialFeeRatePerKw: FeeRatePerKw
     LocalShutdownScriptPubKey: Option<ShutdownScriptPubKey>
 } with
     member self.ApplyFundingSigned (msg: FundingSignedMsg)
@@ -86,7 +85,6 @@ type ChannelWaitingForFundingSigned = {
         }
         let nextState = WaitForFundingConfirmed {
             Deferred = None
-            InitialFeeRatePerKw = self.InitialFeeRatePerKw
         }
         let channel = {
             ChannelOptions = self.ChannelOptions
@@ -201,7 +199,6 @@ and ChannelWaitingForFundingCreated = {
         }
         let nextState = WaitForFundingConfirmed {
             Deferred = None
-            InitialFeeRatePerKw = self.InitialFeeRatePerKw
         }
         let channel = {
             ChannelOptions = self.ChannelOptions
@@ -293,7 +290,6 @@ and ChannelWaitingForFundingTx = {
             }
             ChannelFlags = self.ChannelFlags
             LastSent = nextMsg
-            InitialFeeRatePerKw = self.InitFeeRatePerKw
         }
         return nextMsg, channelWaitingForFundingSigned
     }
@@ -643,7 +639,6 @@ module Channel =
                     OurMessage = msgToSend
                     TheirMessage = None
                     HaveWeSentFundingLocked = false
-                    InitialFeeRatePerKw = state.InitialFeeRatePerKw
                 }
                 
                 match (state.Deferred) with
@@ -659,7 +654,12 @@ module Channel =
         | WaitForFundingLocked state, ApplyFundingLocked msg ->
             if (state.HaveWeSentFundingLocked) then
                 let initialChannelUpdate =
-                    let feeBase = ChannelHelpers.getOurFeeBaseMSat cs.FeeEstimator state.InitialFeeRatePerKw cs.Commitments.IsFunder
+                    let feeRate = cs.Commitments.LocalCommit.Spec.FeeRatePerKw
+                    let feeBase =
+                        ChannelHelpers.getOurFeeBaseMSat
+                            cs.FeeEstimator
+                            feeRate
+                            cs.Commitments.IsFunder
                     ChannelHelpers.makeChannelUpdate (cs.Network.Consensus.HashGenesisBlock,
                                                cs.NodeSecret,
                                                cs.RemoteNodeId,
@@ -1075,7 +1075,12 @@ module Channel =
         | TheySentFundingLocked msg, WaitForFundingConfirmed s ->
             { c with State = WaitForFundingConfirmed({ s with Deferred = Some(msg) }) }
         | TheySentFundingLocked _msg, WaitForFundingLocked s ->
-            let feeBase = ChannelHelpers.getOurFeeBaseMSat c.FeeEstimator s.InitialFeeRatePerKw c.Commitments.IsFunder
+            let feeRate = c.Commitments.LocalCommit.Spec.FeeRatePerKw
+            let feeBase =
+                ChannelHelpers.getOurFeeBaseMSat
+                    c.FeeEstimator
+                    feeRate
+                    c.Commitments.IsFunder
             let channelUpdate = ChannelHelpers.makeChannelUpdate (c.Network.Consensus.HashGenesisBlock,
                                                            c.NodeSecret,
                                                            c.RemoteNodeId,

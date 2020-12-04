@@ -61,14 +61,12 @@ module Data =
 
     type WaitForFundingConfirmedData = {
         Deferred: Option<FundingLockedMsg>
-        InitialFeeRatePerKw: FeeRatePerKw
     }
 
     type WaitForFundingLockedData = {
         ShortChannelId: ShortChannelId
         OurMessage: FundingLockedMsg
         TheirMessage: Option<FundingLockedMsg>
-        InitialFeeRatePerKw: FeeRatePerKw
         HaveWeSentFundingLocked: bool
     }
 
