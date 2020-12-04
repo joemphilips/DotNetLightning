@@ -59,7 +59,6 @@ type OperationUpdateFee = {
 }
 
 type LocalParams = {
-    ChannelPubKeys: ChannelPubKeys
     DustLimitSatoshis: Money
     MaxHTLCValueInFlightMSat: LNMoney
     ChannelReserveSatoshis: Money
@@ -76,18 +75,10 @@ type RemoteParams = {
     HTLCMinimumMSat: LNMoney
     ToSelfDelay: BlockHeightOffset16
     MaxAcceptedHTLCs: uint16
-    ChannelPubKeys: ChannelPubKeys
     Features: FeatureBits
 }
     with
         static member FromAcceptChannel (remoteInit: InitMsg) (msg: AcceptChannelMsg) =
-            let channelPubKeys = {
-                FundingPubKey = msg.FundingPubKey
-                RevocationBasepoint = msg.RevocationBasepoint
-                PaymentBasepoint = msg.PaymentBasepoint
-                DelayedPaymentBasepoint = msg.DelayedPaymentBasepoint
-                HtlcBasepoint = msg.HTLCBasepoint
-            }
             {
                 DustLimitSatoshis = msg.DustLimitSatoshis
                 MaxHTLCValueInFlightMSat = msg.MaxHTLCValueInFlightMsat
@@ -95,20 +86,12 @@ type RemoteParams = {
                 HTLCMinimumMSat = msg.HTLCMinimumMSat
                 ToSelfDelay = msg.ToSelfDelay
                 MaxAcceptedHTLCs = msg.MaxAcceptedHTLCs
-                ChannelPubKeys = channelPubKeys
                 Features = remoteInit.Features
             }
 
         static member FromOpenChannel (remoteInit: InitMsg)
                                       (msg: OpenChannelMsg)
                                           : RemoteParams =
-            let channelPubKeys = {
-                FundingPubKey = msg.FundingPubKey
-                RevocationBasepoint = msg.RevocationBasepoint
-                PaymentBasepoint = msg.PaymentBasepoint
-                DelayedPaymentBasepoint = msg.DelayedPaymentBasepoint
-                HtlcBasepoint = msg.HTLCBasepoint
-            }
             {
                 DustLimitSatoshis = msg.DustLimitSatoshis
                 MaxHTLCValueInFlightMSat = msg.MaxHTLCValueInFlightMsat
@@ -116,7 +99,6 @@ type RemoteParams = {
                 HTLCMinimumMSat = msg.HTLCMinimumMsat
                 ToSelfDelay = msg.ToSelfDelay
                 MaxAcceptedHTLCs = msg.MaxAcceptedHTLCs
-                ChannelPubKeys = channelPubKeys
                 Features = remoteInit.Features
             }
 

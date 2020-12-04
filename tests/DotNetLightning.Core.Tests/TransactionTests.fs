@@ -54,23 +54,12 @@ let testList = testList "transaction tests" [
         let remoteCommitmentPubKeys = perCommitmentPoint.DeriveCommitmentPubKeys remoteChannelPubKeys
 
         let localParams : LocalParams = {
-            ChannelPubKeys = localChannelPubKeys
             DustLimitSatoshis = 546L |> Money.Satoshis
             MaxHTLCValueInFlightMSat = 10_000_000L |> LNMoney
             ChannelReserveSatoshis = 1000L |> Money.Satoshis
             HTLCMinimumMSat = 1000L |> LNMoney
             ToSelfDelay = 144us |> BlockHeightOffset16
             MaxAcceptedHTLCs = 1000us
-            Features = FeatureBits.Zero
-        }
-        let remoteParams = {
-            DustLimitSatoshis = 546L |> Money.Satoshis
-            MaxHTLCValueInFlightMSat = 10_000_000L |> LNMoney
-            ChannelReserveSatoshis = 1000L |> Money.Satoshis
-            HTLCMinimumMSat = 1000L |> LNMoney
-            ToSelfDelay = 144us |> BlockHeightOffset16
-            MaxAcceptedHTLCs = 1000us
-            ChannelPubKeys = remoteChannelPubKeys
             Features = FeatureBits.Zero
         }
         let feeRate = FeeRatePerKw (rand.Next(0, 300) |> uint32)
@@ -109,9 +98,9 @@ let testList = testList "transaction tests" [
             ForceCloseFundsRecovery.tryGetFundsFromLocalCommitmentTx
                 true
                 localParams
-                remoteParams
                 fundingScriptCoin
                 localChannelPrivKeys
+                remoteChannelPubKeys
                 Network.RegTest
                 commitmentTx
             |> Result.deref
@@ -160,16 +149,6 @@ let testList = testList "transaction tests" [
             TxId = TxId <| commitmentTx.GetHash()
             RemotePerCommitmentPoint = perCommitmentPoint
         }
-        let remoteLocalParams: LocalParams = {
-            ChannelPubKeys = remoteParams.ChannelPubKeys
-            DustLimitSatoshis = remoteParams.DustLimitSatoshis
-            MaxHTLCValueInFlightMSat = remoteParams.MaxHTLCValueInFlightMSat
-            ChannelReserveSatoshis = remoteParams.ChannelReserveSatoshis
-            HTLCMinimumMSat = remoteParams.HTLCMinimumMSat
-            ToSelfDelay = remoteParams.ToSelfDelay
-            MaxAcceptedHTLCs = remoteParams.MaxAcceptedHTLCs
-            Features = remoteParams.Features
-        }
         let remoteRemoteParams = {
             DustLimitSatoshis = localParams.DustLimitSatoshis
             MaxHTLCValueInFlightMSat = localParams.MaxHTLCValueInFlightMSat
@@ -177,19 +156,17 @@ let testList = testList "transaction tests" [
             HTLCMinimumMSat = localParams.HTLCMinimumMSat
             ToSelfDelay = localParams.ToSelfDelay
             MaxAcceptedHTLCs = localParams.MaxAcceptedHTLCs
-            ChannelPubKeys = localParams.ChannelPubKeys
             Features = localParams.Features
         }
 
         let transactionBuilder =
             ForceCloseFundsRecovery.tryGetFundsFromRemoteCommitmentTx
                 false
-                remoteLocalParams
-                remoteRemoteParams
                 fundingScriptCoin
                 remoteRemotePerCommitmentSecrets
                 remoteRemoteCommit
                 remoteChannelPrivKeys
+                localChannelPubKeys
                 Network.RegTest
                 commitmentTx
             |> Result.deref
@@ -210,11 +187,11 @@ let testList = testList "transaction tests" [
         let transactionBuilder =
             ForceCloseFundsRecovery.createPenaltyTx
                 false
-                remoteLocalParams
                 remoteRemoteParams
                 perCommitmentSecret
                 remoteRemoteCommit
                 remoteChannelPrivKeys
+                localChannelPubKeys
                 Network.RegTest
         let penaltyTransaction =
             transactionBuilder

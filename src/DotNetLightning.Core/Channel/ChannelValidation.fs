@@ -80,6 +80,8 @@ module internal ChannelHelpers =
         res |> LNMoney.Satoshis
 
     let makeFirstCommitTxs (localIsFunder: bool)
+                           (localChannelPubKeys: ChannelPubKeys)
+                           (remoteChannelPubKeys: ChannelPubKeys)
                            (localParams: LocalParams)
                            (remoteParams: RemoteParams)
                            (fundingSatoshis: Money)
@@ -93,8 +95,7 @@ module internal ChannelHelpers =
                                : Result<CommitmentSpec * CommitTx * CommitmentSpec * CommitTx, ChannelError> =
         let toLocal = if localIsFunder then fundingSatoshis.ToLNMoney() - pushMSat else pushMSat
         let toRemote = if localIsFunder then pushMSat else fundingSatoshis.ToLNMoney() - pushMSat
-        let localChannelKeys = localParams.ChannelPubKeys
-        let remoteChannelKeys = remoteParams.ChannelPubKeys
+        let localChannelKeys = localChannelPubKeys
         let localSpec = CommitmentSpec.Create toLocal toRemote initialFeeRatePerKw
         let remoteSpec = CommitmentSpec.Create toRemote toLocal initialFeeRatePerKw
         let checkTheyCanAffordFee() =
@@ -107,18 +108,18 @@ module internal ChannelHelpers =
                 Ok()
         let makeFirstCommitTxCore() =
             let scriptCoin = getFundingScriptCoin localChannelKeys.FundingPubKey
-                                                  remoteChannelKeys.FundingPubKey
+                                                  remoteChannelPubKeys.FundingPubKey
                                                   fundingTxId
                                                   fundingOutputIndex
                                                   fundingSatoshis
             let localPubKeysForLocalCommitment = localPerCommitmentPoint.DeriveCommitmentPubKeys localChannelKeys
-            let remotePubKeysForLocalCommitment = localPerCommitmentPoint.DeriveCommitmentPubKeys remoteChannelKeys
+            let remotePubKeysForLocalCommitment = localPerCommitmentPoint.DeriveCommitmentPubKeys remoteChannelPubKeys
 
             let localCommitTx =
                 Transactions.makeCommitTx scriptCoin
                                           CommitmentNumber.FirstCommitment
                                           localChannelKeys.PaymentBasepoint
-                                          remoteChannelKeys.PaymentBasepoint
+                                          remoteChannelPubKeys.PaymentBasepoint
                                           localIsFunder
                                           localParams.DustLimitSatoshis
                                           remotePubKeysForLocalCommitment.RevocationPubKey
@@ -131,12 +132,12 @@ module internal ChannelHelpers =
                                           n
 
             let localPubKeysForRemoteCommitment = remotePerCommitmentPoint.DeriveCommitmentPubKeys localChannelKeys
-            let remotePubKeysForRemoteCommitment = remotePerCommitmentPoint.DeriveCommitmentPubKeys remoteChannelKeys
+            let remotePubKeysForRemoteCommitment = remotePerCommitmentPoint.DeriveCommitmentPubKeys remoteChannelPubKeys
 
             let remoteCommitTx =
                 Transactions.makeCommitTx scriptCoin
                                           CommitmentNumber.FirstCommitment
-                                          remoteChannelKeys.PaymentBasepoint
+                                          remoteChannelPubKeys.PaymentBasepoint
                                           localChannelKeys.PaymentBasepoint
                                           (not localIsFunder)
                                           (remoteParams.DustLimitSatoshis)

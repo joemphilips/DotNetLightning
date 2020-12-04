@@ -27,20 +27,20 @@ module internal Commitments =
         let makeRemoteTxs
             (localIsFunder: bool)
             (commitTxNumber: CommitmentNumber)
+            (localChannelPubKeys: ChannelPubKeys)
+            (remoteChannelPubKeys: ChannelPubKeys)
             (localParams: LocalParams)
             (remoteParams: RemoteParams)
             (commitmentInput: ScriptCoin)
             (remotePerCommitmentPoint: PerCommitmentPoint)
             (spec) (n) =
-            let localChannelKeys = localParams.ChannelPubKeys
-            let remoteChannelKeys = remoteParams.ChannelPubKeys
-            let localCommitmentPubKeys = remotePerCommitmentPoint.DeriveCommitmentPubKeys localChannelKeys
-            let remoteCommitmentPubKeys = remotePerCommitmentPoint.DeriveCommitmentPubKeys remoteChannelKeys
+            let localCommitmentPubKeys = remotePerCommitmentPoint.DeriveCommitmentPubKeys localChannelPubKeys
+            let remoteCommitmentPubKeys = remotePerCommitmentPoint.DeriveCommitmentPubKeys remoteChannelPubKeys
             let commitTx =
                 Transactions.makeCommitTx commitmentInput 
                                           commitTxNumber
-                                          remoteChannelKeys.PaymentBasepoint
-                                          localChannelKeys.PaymentBasepoint
+                                          remoteChannelPubKeys.PaymentBasepoint
+                                          localChannelPubKeys.PaymentBasepoint
                                           (not localIsFunder)
                                           (remoteParams.DustLimitSatoshis)
                                           localCommitmentPubKeys.RevocationPubKey
@@ -68,22 +68,22 @@ module internal Commitments =
         let makeLocalTXs
             (localIsFunder: bool)
             (commitTxNumber: CommitmentNumber)
+            (localChannelPubKeys: ChannelPubKeys)
+            (remoteChannelPubKeys: ChannelPubKeys)
             (localParams: LocalParams)
             (remoteParams: RemoteParams)
             (commitmentInput: ScriptCoin)
             (localPerCommitmentPoint: PerCommitmentPoint)
             (spec: CommitmentSpec)
             n: Result<(CommitTx * HTLCTimeoutTx list * HTLCSuccessTx list), _> =
-            let localChannelKeys = localParams.ChannelPubKeys
-            let remoteChannelKeys = remoteParams.ChannelPubKeys
-            let localCommitmentPubKeys = localPerCommitmentPoint.DeriveCommitmentPubKeys localChannelKeys
-            let remoteCommitmentPubKeys = localPerCommitmentPoint.DeriveCommitmentPubKeys remoteChannelKeys
+            let localCommitmentPubKeys = localPerCommitmentPoint.DeriveCommitmentPubKeys localChannelPubKeys
+            let remoteCommitmentPubKeys = localPerCommitmentPoint.DeriveCommitmentPubKeys remoteChannelPubKeys
 
             let commitTx =
                 Transactions.makeCommitTx commitmentInput
                                           commitTxNumber
-                                          localChannelKeys.PaymentBasepoint
-                                          remoteChannelKeys.PaymentBasepoint
+                                          localChannelPubKeys.PaymentBasepoint
+                                          remoteChannelPubKeys.PaymentBasepoint
                                           localIsFunder
                                           localParams.DustLimitSatoshis
                                           remoteCommitmentPubKeys.RevocationPubKey
@@ -294,6 +294,8 @@ module internal Commitments =
                 let! (remoteCommitTx, htlcTimeoutTxs, htlcSuccessTxs) =
                     Helpers.makeRemoteTxs cm.IsFunder
                                           (cm.RemoteCommit.Index.NextCommitment())
+                                          (channelPrivKeys.ToChannelPubKeys())
+                                          (cm.RemoteChannelPubKeys)
                                           (cm.LocalParams)
                                           (cm.RemoteParams)
                                           (cm.FundingScriptCoin)
@@ -345,8 +347,8 @@ module internal Commitments =
             ReceivedCommitmentSignedWhenWeHaveNoPendingChanges |> Error
         else
             let commitmentSeed = channelPrivKeys.CommitmentSeed
-            let localChannelKeys = cm.LocalParams.ChannelPubKeys
-            let remoteChannelKeys = cm.RemoteParams.ChannelPubKeys
+            let localChannelKeys = channelPrivKeys.ToChannelPubKeys()
+            let remoteChannelKeys = cm.RemoteChannelPubKeys
             let nextI = cm.LocalCommit.Index.NextCommitment()
             result {
                 let! spec = cm.LocalCommit.Spec.Reduce(cm.LocalChanges.ACKed, cm.RemoteChanges.Proposed) |> expectTransactionError
@@ -355,6 +357,8 @@ module internal Commitments =
                     Helpers.makeLocalTXs
                         cm.IsFunder
                         nextI
+                        (channelPrivKeys.ToChannelPubKeys())
+                        remoteChannelKeys
                         cm.LocalParams
                         cm.RemoteParams
                         cm.FundingScriptCoin
@@ -497,15 +501,14 @@ module ForceCloseFundsRecovery =
     }
 
     let createPenaltyTx (isLocalFunder: bool)
-                        (localParams: LocalParams)
                         (remoteParams: RemoteParams)
                         (perCommitmentSecret: PerCommitmentSecret)
                         (remoteCommit: RemoteCommit)
                         (localChannelPrivKeys: ChannelPrivKeys)
+                        (remoteChannelPubKeys: ChannelPubKeys)
                         (network: Network) 
                             : TransactionBuilder =
-        let localChannelPubKeys = localParams.ChannelPubKeys
-        let remoteChannelPubKeys = remoteParams.ChannelPubKeys
+        let localChannelPubKeys = localChannelPrivKeys.ToChannelPubKeys()
 
         let perCommitmentPoint = perCommitmentSecret.PerCommitmentPoint()
 
@@ -615,12 +618,11 @@ module ForceCloseFundsRecovery =
     /// commitment transaction. It is the caller's responsibility to add outputs
     /// and fees to the TransactionBuilder before building the transaction.
     let tryGetFundsFromRemoteCommitmentTx (isLocalFunder: bool)
-                                          (localParams: LocalParams)
-                                          (remoteParams: RemoteParams)
                                           (fundingScriptCoin: ScriptCoin)
                                           (remotePerCommitmentSecrets: PerCommitmentSecretStore)
                                           (remoteCommit: RemoteCommit)
                                           (localChannelPrivKeys: ChannelPrivKeys)
+                                          (remoteChannelPubKeys: ChannelPubKeys)
                                           (network: Network)
                                           (transaction: Transaction)
                                               : Result<TransactionBuilder, RemoteCommitmentTxRecoveryError> = result {
@@ -629,8 +631,7 @@ module ForceCloseFundsRecovery =
                 fundingScriptCoin.Outpoint
                 transaction
             |> Result.mapError InvalidCommitmentTx
-        let localChannelPubKeys = localParams.ChannelPubKeys
-        let remoteChannelPubKeys = remoteParams.ChannelPubKeys
+        let localChannelPubKeys = localChannelPrivKeys.ToChannelPubKeys()
         let commitmentNumber =
             obscuredCommitmentNumber.Unobscure
                 isLocalFunder
@@ -687,9 +688,9 @@ module ForceCloseFundsRecovery =
     /// and fees to the TransactionBuilder before building the transaction.
     let tryGetFundsFromLocalCommitmentTx (isLocalFunder: bool)
                                          (localParams: LocalParams)
-                                         (remoteParams: RemoteParams)
                                          (fundingScriptCoin: ScriptCoin)
                                          (localChannelPrivKeys: ChannelPrivKeys)
+                                         (remoteChannelPubKeys: ChannelPubKeys)
                                          (network: Network)
                                          (transaction: Transaction)
                                              : Result<TransactionBuilder, LocalCommitmentTxRecoveryError> = result {
@@ -698,8 +699,7 @@ module ForceCloseFundsRecovery =
                 fundingScriptCoin.Outpoint
                 transaction
             |> Result.mapError InvalidCommitmentTx
-        let localChannelPubKeys = localParams.ChannelPubKeys
-        let remoteChannelPubKeys = remoteParams.ChannelPubKeys
+        let localChannelPubKeys = localChannelPrivKeys.ToChannelPubKeys()
         let commitmentNumber =
             obscuredCommitmentNumber.Unobscure
                 isLocalFunder
