@@ -65,7 +65,6 @@ module Data =
 
     type WaitForFundingLockedData = {
         ShortChannelId: ShortChannelId
-        HaveWeSentFundingLocked: bool
     }
 
     type NormalData = {
@@ -132,9 +131,8 @@ module Data =
 type ChannelEvent =
     // --- ln events ---
     /// -------- init both -----
-    | FundingConfirmed of nextState: Data.WaitForFundingLockedData
+    | FundingConfirmed of FundingLockedMsg * nextState: Data.WaitForFundingLockedData
     | TheySentFundingLocked of msg: FundingLockedMsg
-    | WeSentFundingLocked of msg: FundingLockedMsg
     | WeResumedDelayedFundingLocked of msg: FundingLockedMsg
     | BothFundingLocked of nextState: Data.NormalData * nextCommitments: Commitments
 

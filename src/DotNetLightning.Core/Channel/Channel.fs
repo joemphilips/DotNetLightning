@@ -631,53 +631,49 @@ module Channel =
                 }
                 let nextState = {
                     ShortChannelId = shortChannelId
-                    HaveWeSentFundingLocked = false
                 }
                 
                 match (state.Deferred) with
                 | None ->
-                    [ FundingConfirmed nextState; WeSentFundingLocked msgToSend ] |> Ok
+                    [ FundingConfirmed (msgToSend, nextState) ] |> Ok
                 | Some msg ->
-                    [ FundingConfirmed nextState; WeSentFundingLocked msgToSend; WeResumedDelayedFundingLocked msg ] |> Ok
+                    [ FundingConfirmed (msgToSend, nextState); WeResumedDelayedFundingLocked msg ] |> Ok
         | WaitForFundingLocked _state, ApplyFundingConfirmedOnBC(height, _txindex, depth) ->
             if (cs.FundingTxMinimumDepth <= depth) then
                 [] |> Ok
             else
                 onceConfirmedFundingTxHasBecomeUnconfirmed(height, depth)
         | WaitForFundingLocked state, ApplyFundingLocked msg ->
-            if (state.HaveWeSentFundingLocked) then
-                let initialChannelUpdate =
-                    let feeRate = cs.Commitments.LocalCommit.Spec.FeeRatePerKw
-                    let feeBase =
-                        ChannelHelpers.getOurFeeBaseMSat
-                            cs.FeeEstimator
-                            feeRate
-                            cs.Commitments.IsFunder
-                    ChannelHelpers.makeChannelUpdate (cs.Network.Consensus.HashGenesisBlock,
-                                               cs.NodeSecret,
-                                               cs.RemoteNodeId,
-                                               state.ShortChannelId,
-                                               cs.Commitments.LocalParams.ToSelfDelay,
-                                               cs.Commitments.RemoteParams.HTLCMinimumMSat,
-                                               feeBase,
-                                               cs.ChannelOptions.FeeProportionalMillionths,
-                                               true,
-                                               None)
-                let nextCommitments = {
-                    cs.Commitments with
-                        RemoteNextCommitInfo =
-                            RemoteNextCommitInfo.Revoked(msg.NextPerCommitmentPoint)
-                }
-                let nextState = {
-                    ShortChannelId = state.ShortChannelId
-                    ChannelAnnouncement = None
-                    ChannelUpdate = initialChannelUpdate
-                    LocalShutdown = None
-                    RemoteShutdown = None
-                }
-                [ BothFundingLocked(nextState, nextCommitments) ] |> Ok
-            else
-                [] |> Ok
+            let initialChannelUpdate =
+                let feeRate = cs.Commitments.LocalCommit.Spec.FeeRatePerKw
+                let feeBase =
+                    ChannelHelpers.getOurFeeBaseMSat
+                        cs.FeeEstimator
+                        feeRate
+                        cs.Commitments.IsFunder
+                ChannelHelpers.makeChannelUpdate (cs.Network.Consensus.HashGenesisBlock,
+                                           cs.NodeSecret,
+                                           cs.RemoteNodeId,
+                                           state.ShortChannelId,
+                                           cs.Commitments.LocalParams.ToSelfDelay,
+                                           cs.Commitments.RemoteParams.HTLCMinimumMSat,
+                                           feeBase,
+                                           cs.ChannelOptions.FeeProportionalMillionths,
+                                           true,
+                                           None)
+            let nextCommitments = {
+                cs.Commitments with
+                    RemoteNextCommitInfo =
+                        RemoteNextCommitInfo.Revoked(msg.NextPerCommitmentPoint)
+            }
+            let nextState = {
+                ShortChannelId = state.ShortChannelId
+                ChannelAnnouncement = None
+                ChannelUpdate = initialChannelUpdate
+                LocalShutdown = None
+                RemoteShutdown = None
+            }
+            [ BothFundingLocked(nextState, nextCommitments) ] |> Ok
 
         // ---------- normal operation ---------
         | ChannelState.Normal state, AddHTLC op when state.LocalShutdown.IsSome || state.RemoteShutdown.IsSome ->
@@ -1062,7 +1058,7 @@ module Channel =
     let applyEvent c (e: ChannelEvent): Channel =
         match e, c.State with
         // --------- init both ------
-        | FundingConfirmed data, WaitForFundingConfirmed _ ->
+        | FundingConfirmed (_ourFundingLockedMsg, data), WaitForFundingConfirmed _ ->
             { c with State = WaitForFundingLocked data }
         | TheySentFundingLocked msg, WaitForFundingConfirmed s ->
             { c with State = WaitForFundingConfirmed({ s with Deferred = Some(msg) }) }
@@ -1091,8 +1087,6 @@ module Channel =
                 RemoteShutdown = None
             }
             { c with State = ChannelState.Normal nextState }
-        | WeSentFundingLocked _msg, WaitForFundingLocked prevState ->
-            { c with State = WaitForFundingLocked { prevState with HaveWeSentFundingLocked = true } }
         | BothFundingLocked (data, newCommitments), WaitForFundingLocked _s ->
             { c with
                 Commitments = newCommitments
