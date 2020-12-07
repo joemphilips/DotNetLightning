@@ -65,7 +65,6 @@ module Data =
 
     type WaitForFundingLockedData = {
         ShortChannelId: ShortChannelId
-        TheirMessage: Option<FundingLockedMsg>
         HaveWeSentFundingLocked: bool
     }
 
