@@ -73,14 +73,17 @@ module Data =
         ChannelUpdate: ChannelUpdateMsg
         LocalShutdown: Option<ShutdownMsg>
         RemoteShutdown: Option<ShutdownMsg>
+        RemoteNextCommitInfo: RemoteNextCommitInfo
     }
 
     type ShutdownData = {
+        RemoteNextCommitInfo: RemoteNextCommitInfo
         LocalShutdown: ShutdownMsg
         RemoteShutdown: ShutdownMsg
     }
 
     type NegotiatingData = {
+        RemoteNextCommitInfo: RemoteNextCommitInfo
         LocalShutdown: ShutdownMsg
         RemoteShutdown: ShutdownMsg
         ClosingTxProposed: List<List<ClosingTxProposed>>
@@ -88,6 +91,7 @@ module Data =
     }
 
     type ClosingData = {
+        RemoteNextCommitInfo: RemoteNextCommitInfo
         MaybeFundingTx: Option<Transaction>
         WaitingSince: System.DateTime
         MutualCloseProposed: List<ClosingTx>
@@ -105,7 +109,9 @@ module Data =
                              (waitingSince: System.DateTime)
                              (mutualCloseProposed: List<ClosingTx>)
                              (mutualClosePublished: FinalizedTx)
+                             (remoteNextCommitInfo: RemoteNextCommitInfo)
                                  : ClosingData = {
+            RemoteNextCommitInfo = remoteNextCommitInfo
             MaybeFundingTx = maybeFundingTx
             WaitingSince = waitingSince
             MutualCloseProposed = mutualCloseProposed
@@ -134,7 +140,7 @@ type ChannelEvent =
     | FundingConfirmed of FundingLockedMsg * nextState: Data.WaitForFundingLockedData
     | TheySentFundingLocked of msg: FundingLockedMsg
     | WeResumedDelayedFundingLocked of msg: FundingLockedMsg
-    | BothFundingLocked of nextState: Data.NormalData * nextCommitments: Commitments
+    | BothFundingLocked of nextState: Data.NormalData
 
     // -------- normal operation ------
     | WeAcceptedOperationAddHTLC of msg: UpdateAddHTLCMsg * newCommitments: Commitments
@@ -152,10 +158,10 @@ type ChannelEvent =
     | WeAcceptedOperationUpdateFee of msg: UpdateFeeMsg  * nextCommitments: Commitments
     | WeAcceptedUpdateFee of msg: UpdateFeeMsg * newCommitments: Commitments
 
-    | WeAcceptedOperationSign of msg: CommitmentSignedMsg * nextCommitments: Commitments
+    | WeAcceptedOperationSign of msg: CommitmentSignedMsg * nextCommitments: Commitments * WaitingForRevocation
     | WeAcceptedCommitmentSigned of msg: RevokeAndACKMsg * nextCommitments: Commitments
 
-    | WeAcceptedRevokeAndACK of nextCommitments: Commitments
+    | WeAcceptedRevokeAndACK of nextCommitments: Commitments * remoteNextPerCommitmentPoint: PerCommitmentPoint
 
     | AcceptedOperationShutdown of msg: ShutdownMsg
     | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs of remoteShutdown: ShutdownMsg * nextCommitments: Commitments

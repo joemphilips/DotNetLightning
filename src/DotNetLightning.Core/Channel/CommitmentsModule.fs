@@ -121,8 +121,10 @@ module internal Commitments =
             let maxMismatch = channelOptions.MaxFeeRateMismatchRatio
             UpdateFeeValidation.checkFeeDiffTooHigh (msg) (localFeeRate) (maxMismatch)
 
-    let sendFulfill (op: OperationFulfillHTLC) (cm: Commitments) =
-        match cm.GetHTLCCrossSigned(Direction.In, op.Id) with
+    let sendFulfill (op: OperationFulfillHTLC)
+                    (cm: Commitments)
+                    (remoteNextCommitInfo: RemoteNextCommitInfo) =
+        match cm.GetHTLCCrossSigned remoteNextCommitInfo Direction.In op.Id with
         | Some htlc when (cm.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
             htlc.HTLCId |> htlcAlreadySent
         | Some htlc when (htlc.PaymentHash = op.PaymentPreimage.Hash) ->
@@ -140,8 +142,10 @@ module internal Commitments =
             op.Id
             |> unknownHTLCId
 
-    let receiveFulfill(msg: UpdateFulfillHTLCMsg) (cm: Commitments) =
-        match cm.GetHTLCCrossSigned(Direction.Out, msg.HTLCId) with
+    let receiveFulfill (msg: UpdateFulfillHTLCMsg)
+                       (cm: Commitments)
+                       (remoteNextCommitInfo: RemoteNextCommitInfo) =
+        match cm.GetHTLCCrossSigned remoteNextCommitInfo Direction.Out msg.HTLCId with
         | Some htlc when htlc.PaymentHash = msg.PaymentPreimage.Hash ->
             let commitments = cm.AddRemoteProposal(msg)
             let origin = cm.OriginChannels |> Map.find(msg.HTLCId)
@@ -153,8 +157,11 @@ module internal Commitments =
             msg.HTLCId
             |> unknownHTLCId
 
-    let sendFail (nodeSecret: NodeSecret) (op: OperationFailHTLC) (cm: Commitments) =
-        match cm.GetHTLCCrossSigned(Direction.In, op.Id) with
+    let sendFail (nodeSecret: NodeSecret)
+                 (op: OperationFailHTLC)
+                 (cm: Commitments)
+                 (remoteNextCommitInfo: RemoteNextCommitInfo) =
+        match cm.GetHTLCCrossSigned remoteNextCommitInfo Direction.In op.Id with
         | Some htlc when  (cm.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
             htlc.HTLCId |> htlcAlreadySent
         | Some htlc ->
@@ -177,8 +184,10 @@ module internal Commitments =
         | None ->
             op.Id |> unknownHTLCId
 
-    let receiveFail (msg: UpdateFailHTLCMsg) (cm: Commitments) =
-        match cm.GetHTLCCrossSigned(Direction.Out, msg.HTLCId) with
+    let receiveFail (msg: UpdateFailHTLCMsg)
+                    (cm: Commitments)
+                    (remoteNextCommitInfo: RemoteNextCommitInfo) =
+        match cm.GetHTLCCrossSigned remoteNextCommitInfo Direction.Out msg.HTLCId with
         | Some htlc ->
             result {
                 let! o =
@@ -193,12 +202,14 @@ module internal Commitments =
             msg.HTLCId |> unknownHTLCId
 
 
-    let sendFailMalformed (op: OperationFailMalformedHTLC) (cm: Commitments) =
+    let sendFailMalformed (op: OperationFailMalformedHTLC)
+                          (cm: Commitments)
+                          (remoteNextCommitInfo: RemoteNextCommitInfo) =
         // BADONION bit must be set in failure code
         if (op.FailureCode.Value &&& OnionError.BADONION) = 0us then
             op.FailureCode |> invalidFailureCode
         else
-            match cm.GetHTLCCrossSigned(Direction.In, op.Id) with
+            match cm.GetHTLCCrossSigned remoteNextCommitInfo Direction.In op.Id with
             | Some htlc when (cm.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
                 htlc.HTLCId |> htlcAlreadySent
             | Some _htlc ->
@@ -214,11 +225,13 @@ module internal Commitments =
             | None ->
                 op.Id |> unknownHTLCId
 
-    let receiveFailMalformed (msg: UpdateFailMalformedHTLCMsg) (cm: Commitments) =
+    let receiveFailMalformed (msg: UpdateFailMalformedHTLCMsg)
+                             (cm: Commitments)
+                             (remoteNextCommitInfo: RemoteNextCommitInfo) =
         if msg.FailureCode.Value &&& OnionError.BADONION = 0us then
             msg.FailureCode |> invalidFailureCode
         else
-            match cm.GetHTLCCrossSigned(Direction.Out, msg.HTLCId) with
+            match cm.GetHTLCCrossSigned remoteNextCommitInfo Direction.Out msg.HTLCId with
             | Some htlc ->
                 result {
                     let! o =
@@ -285,8 +298,11 @@ module internal Commitments =
                         [ WeAcceptedUpdateFee(msg, nextCommitments) ]
             }
 
-    let sendCommit (channelPrivKeys: ChannelPrivKeys) (n: Network) (cm: Commitments) =
-        match cm.RemoteNextCommitInfo with
+    let sendCommit (channelPrivKeys: ChannelPrivKeys)
+                   (n: Network)
+                   (cm: Commitments)
+                   (remoteNextCommitInfo: RemoteNextCommitInfo) =
+        match remoteNextCommitInfo with
         | RemoteNextCommitInfo.Revoked remoteNextPerCommitmentPoint ->
             result {
                 // remote commitment will include all local changes + remote acked changes
@@ -315,21 +331,30 @@ module internal Commitments =
                     Signature = !> signature.Signature
                     HTLCSignatures = htlcSigs |> List.map (!>)
                 }
-                let nextCommitments =
-                    let nextRemoteCommitInfo = {
-                        WaitingForRevocation.NextRemoteCommit = {
-                            cm.RemoteCommit
-                            with
-                                Index = cm.RemoteCommit.Index.NextCommitment()
-                                Spec = spec
-                                RemotePerCommitmentPoint = remoteNextPerCommitmentPoint
-                                TxId = remoteCommitTx.GetTxId()
-                        }
+                let nextRemoteCommitInfo = {
+                    WaitingForRevocation.NextRemoteCommit = {
+                        cm.RemoteCommit
+                        with
+                            Index = cm.RemoteCommit.Index.NextCommitment()
+                            Spec = spec
+                            RemotePerCommitmentPoint = remoteNextPerCommitmentPoint
+                            TxId = remoteCommitTx.GetTxId()
                     }
-                    { cm with RemoteNextCommitInfo = RemoteNextCommitInfo.Waiting(nextRemoteCommitInfo)
-                              LocalChanges = { cm.LocalChanges with Proposed = []; Signed = cm.LocalChanges.Proposed }
-                              RemoteChanges = { cm.RemoteChanges with ACKed = []; Signed = cm.RemoteChanges.ACKed } }
-                return [ WeAcceptedOperationSign (msg, nextCommitments) ]
+                }
+                let nextCommitments = {
+                    cm with
+                        LocalChanges = {
+                            cm.LocalChanges with
+                                Proposed = []
+                                Signed = cm.LocalChanges.Proposed
+                        }
+                        RemoteChanges = {
+                            cm.RemoteChanges with
+                                ACKed = []
+                                Signed = cm.RemoteChanges.ACKed
+                        }
+                }
+                return [ WeAcceptedOperationSign (msg, nextCommitments, nextRemoteCommitInfo) ]
             }
         | RemoteNextCommitInfo.Waiting _ ->
             CanNotSignBeforeRevocation |> Error
