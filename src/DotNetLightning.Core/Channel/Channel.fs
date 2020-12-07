@@ -77,7 +77,7 @@ type ChannelWaitingForFundingSigned = {
             RemotePerCommitmentSecrets = PerCommitmentSecretStore()
         }
         let nextState = WaitForFundingConfirmed {
-            Deferred = None
+            RemoteNextPerCommitmentPointOpt = None
         }
         let channel = {
             ChannelOptions = self.ChannelOptions
@@ -185,7 +185,7 @@ and ChannelWaitingForFundingCreated = {
             Signature = !>localSigOfRemoteCommit.Signature
         }
         let nextState = WaitForFundingConfirmed {
-            Deferred = None
+            RemoteNextPerCommitmentPointOpt = None
         }
         let channel = {
             ChannelOptions = self.ChannelOptions
@@ -621,11 +621,11 @@ module Channel =
                     ShortChannelId = shortChannelId
                 }
                 
-                match (state.Deferred) with
+                match (state.RemoteNextPerCommitmentPointOpt) with
                 | None ->
                     [ FundingConfirmed (msgToSend, nextState) ] |> Ok
-                | Some msg ->
-                    [ FundingConfirmed (msgToSend, nextState); WeResumedDelayedFundingLocked msg ] |> Ok
+                | Some remoteNextPerCommitmentPoint ->
+                    [ FundingConfirmed (msgToSend, nextState); WeResumedDelayedFundingLocked remoteNextPerCommitmentPoint ] |> Ok
         | WaitForFundingLocked _state, ApplyFundingConfirmedOnBC(height, _txindex, depth) ->
             if (cs.FundingTxMinimumDepth <= depth) then
                 [] |> Ok
@@ -1061,7 +1061,13 @@ module Channel =
         | FundingConfirmed (_ourFundingLockedMsg, data), WaitForFundingConfirmed _ ->
             { c with State = WaitForFundingLocked data }
         | TheySentFundingLocked msg, WaitForFundingConfirmed s ->
-            { c with State = WaitForFundingConfirmed({ s with Deferred = Some(msg) }) }
+            {
+                c with
+                    State = WaitForFundingConfirmed {
+                        s with
+                            RemoteNextPerCommitmentPointOpt = Some(msg.NextPerCommitmentPoint)
+                    }
+            }
         | TheySentFundingLocked msg, WaitForFundingLocked s ->
             let feeRate = c.Commitments.LocalCommit.Spec.FeeRatePerKw
             let feeBase =

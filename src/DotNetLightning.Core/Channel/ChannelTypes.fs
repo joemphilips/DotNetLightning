@@ -60,7 +60,7 @@ module Data =
     type IChannelStateData = interface inherit IStateData end
 
     type WaitForFundingConfirmedData = {
-        Deferred: Option<FundingLockedMsg>
+        RemoteNextPerCommitmentPointOpt: Option<PerCommitmentPoint>
     }
 
     type WaitForFundingLockedData = {
@@ -139,7 +139,7 @@ type ChannelEvent =
     /// -------- init both -----
     | FundingConfirmed of FundingLockedMsg * nextState: Data.WaitForFundingLockedData
     | TheySentFundingLocked of msg: FundingLockedMsg
-    | WeResumedDelayedFundingLocked of msg: FundingLockedMsg
+    | WeResumedDelayedFundingLocked of remoteNextPerCommitmentPoint: PerCommitmentPoint
     | BothFundingLocked of nextState: Data.NormalData
 
     // -------- normal operation ------
