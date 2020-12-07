@@ -54,10 +54,6 @@ type RemoteChanges = {
             (fun v lc -> { lc with ACKed = v })
 
 
-type Changes =
-    | Local of LocalChanges
-    | Remote of RemoteChanges
-
 type PublishableTxs = {
     CommitTx: FinalizedTx
     HTLCTxs: FinalizedTx list
