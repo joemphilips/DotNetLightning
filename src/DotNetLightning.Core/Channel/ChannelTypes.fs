@@ -158,7 +158,7 @@ type ChannelEvent =
     | WeAcceptedOperationUpdateFee of msg: UpdateFeeMsg  * nextCommitments: Commitments
     | WeAcceptedUpdateFee of msg: UpdateFeeMsg * newCommitments: Commitments
 
-    | WeAcceptedOperationSign of msg: CommitmentSignedMsg * nextCommitments: Commitments * WaitingForRevocation
+    | WeAcceptedOperationSign of msg: CommitmentSignedMsg * nextCommitments: Commitments * nextRemoteCommit: RemoteCommit
     | WeAcceptedCommitmentSigned of msg: RevokeAndACKMsg * nextCommitments: Commitments
 
     | WeAcceptedRevokeAndACK of nextCommitments: Commitments * remoteNextPerCommitmentPoint: PerCommitmentPoint

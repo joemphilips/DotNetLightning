@@ -332,14 +332,12 @@ module internal Commitments =
                     HTLCSignatures = htlcSigs |> List.map (!>)
                 }
                 let nextRemoteCommitInfo = {
-                    WaitingForRevocation.NextRemoteCommit = {
-                        cm.RemoteCommit
-                        with
-                            Index = cm.RemoteCommit.Index.NextCommitment()
-                            Spec = spec
-                            RemotePerCommitmentPoint = remoteNextPerCommitmentPoint
-                            TxId = remoteCommitTx.GetTxId()
-                    }
+                    cm.RemoteCommit
+                    with
+                        Index = cm.RemoteCommit.Index.NextCommitment()
+                        Spec = spec
+                        RemotePerCommitmentPoint = remoteNextPerCommitmentPoint
+                        TxId = remoteCommitTx.GetTxId()
                 }
                 let nextCommitments = {
                     cm with
