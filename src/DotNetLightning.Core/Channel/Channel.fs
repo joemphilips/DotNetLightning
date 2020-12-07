@@ -848,20 +848,9 @@ module Channel =
                         // Are we in the middle of a signature?
                         match cm.RemoteNextCommitInfo with
                         // yes.
-                        | RemoteNextCommitInfo.Waiting waitingForRevocation ->
-                            let nextCommitments = {
-                                cs.Commitments with
-                                    RemoteNextCommitInfo =
-                                        RemoteNextCommitInfo.Waiting {
-                                            waitingForRevocation with
-                                                ReSignASAP = true
-                                        }
-                            }
+                        | RemoteNextCommitInfo.Waiting _waitingForRevocation ->
                             return [
-                                AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs(
-                                    msg,
-                                    nextCommitments
-                                )
+                                AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs(msg, cm)
                             ]
                         // No. let's sign right away.
                         | RemoteNextCommitInfo.Revoked _ ->

@@ -75,16 +75,11 @@ type RemoteCommit = {
 
 type WaitingForRevocation = {
     NextRemoteCommit: RemoteCommit
-    ReSignASAP: bool
 }
     with
         static member NextRemoteCommit_: Lens<_,_> =
             (fun w -> w.NextRemoteCommit),
             (fun v w -> { w with NextRemoteCommit = v})
-
-        static member ReSignASAP_: Lens<_,_> =
-            (fun w -> w.ReSignASAP),
-            (fun v w -> { w with ReSignASAP = v })
 
 type RemoteNextCommitInfo =
     | Waiting of WaitingForRevocation

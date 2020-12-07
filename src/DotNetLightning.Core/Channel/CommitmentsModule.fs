@@ -325,7 +325,6 @@ module internal Commitments =
                                 RemotePerCommitmentPoint = remoteNextPerCommitmentPoint
                                 TxId = remoteCommitTx.GetTxId()
                         }
-                        ReSignASAP = false
                     }
                     { cm with RemoteNextCommitInfo = RemoteNextCommitInfo.Waiting(nextRemoteCommitInfo)
                               LocalChanges = { cm.LocalChanges with Proposed = []; Signed = cm.LocalChanges.Proposed }
