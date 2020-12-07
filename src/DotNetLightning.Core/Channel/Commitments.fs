@@ -75,7 +75,6 @@ type RemoteCommit = {
 
 type WaitingForRevocation = {
     NextRemoteCommit: RemoteCommit
-    Sent: CommitmentSignedMsg
     SentAfterLocalCommitmentIndex: CommitmentNumber
     ReSignASAP: bool
 }
