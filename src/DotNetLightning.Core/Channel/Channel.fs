@@ -919,13 +919,13 @@ module Channel =
                         // yes.
                         | RemoteNextCommitInfo.Waiting _waitingForRevocation ->
                             return [
-                                AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs(msg, cm)
+                                AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs msg
                             ]
                         // No. let's sign right away.
                         | RemoteNextCommitInfo.Revoked _ ->
                             return [
                                 ChannelStateRequestedSignCommitment;
-                                AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs(msg, cm)
+                                AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs msg
                             ]
                 else
                     let (localShutdown, _sendList) =
@@ -1269,10 +1269,9 @@ module Channel =
         // -----  closing ------
         | AcceptedOperationShutdown msg, ChannelState.Normal d ->
             { c with State = ChannelState.Normal({ d with LocalShutdown = Some msg }) }
-        | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs(remoteShutdown, nextCommitments), ChannelState.Normal normalData ->
+        | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs remoteShutdown, ChannelState.Normal normalData ->
             { 
                 c with
-                    Commitments = nextCommitments
                     State = ChannelState.Normal {
                         normalData with
                             RemoteShutdown = Some remoteShutdown

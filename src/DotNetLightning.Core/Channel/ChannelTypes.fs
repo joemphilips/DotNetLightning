@@ -154,7 +154,7 @@ type ChannelEvent =
     | WeAcceptedRevokeAndACK of nextCommitments: Commitments * remoteNextPerCommitmentPoint: PerCommitmentPoint
 
     | AcceptedOperationShutdown of msg: ShutdownMsg
-    | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs of remoteShutdown: ShutdownMsg * nextCommitments: Commitments
+    | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs of remoteShutdown: ShutdownMsg
     /// We have to send closing_signed to initiate the negotiation only when if we are the funder
     | AcceptedShutdownWhenNoPendingHTLCs of msgToSend: ClosingSignedMsg option * nextState: NegotiatingData
     | AcceptedShutdownWhenWeHavePendingHTLCs of nextState: ShutdownData
