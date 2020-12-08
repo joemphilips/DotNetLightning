@@ -69,7 +69,6 @@ module Data =
 
     type NormalData = {
         ShortChannelId: ShortChannelId
-        ChannelUpdate: ChannelUpdateMsg
         LocalShutdown: Option<ShutdownMsg>
         RemoteShutdown: Option<ShutdownMsg>
         RemoteNextCommitInfo: RemoteNextCommitInfo

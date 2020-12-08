@@ -632,26 +632,8 @@ module Channel =
             else
                 onceConfirmedFundingTxHasBecomeUnconfirmed(height, depth)
         | WaitForFundingLocked state, ApplyFundingLocked msg ->
-            let initialChannelUpdate =
-                let feeRate = cs.Commitments.LocalCommit.Spec.FeeRatePerKw
-                let feeBase =
-                    ChannelHelpers.getOurFeeBaseMSat
-                        cs.FeeEstimator
-                        feeRate
-                        cs.Commitments.IsFunder
-                ChannelHelpers.makeChannelUpdate (cs.Network.Consensus.HashGenesisBlock,
-                                           cs.NodeSecret,
-                                           cs.RemoteNodeId,
-                                           state.ShortChannelId,
-                                           cs.Commitments.LocalParams.ToSelfDelay,
-                                           cs.Commitments.RemoteParams.HTLCMinimumMSat,
-                                           feeBase,
-                                           cs.ChannelOptions.FeeProportionalMillionths,
-                                           true,
-                                           None)
             let nextState = {
                 ShortChannelId = state.ShortChannelId
-                ChannelUpdate = initialChannelUpdate
                 LocalShutdown = None
                 RemoteShutdown = None
                 RemoteNextCommitInfo = RemoteNextCommitInfo.Revoked(msg.NextPerCommitmentPoint)
@@ -1068,26 +1050,9 @@ module Channel =
                     }
             }
         | TheySentFundingLocked msg, WaitForFundingLocked s ->
-            let feeRate = c.Commitments.LocalCommit.Spec.FeeRatePerKw
-            let feeBase =
-                ChannelHelpers.getOurFeeBaseMSat
-                    c.FeeEstimator
-                    feeRate
-                    c.Commitments.IsFunder
-            let channelUpdate = ChannelHelpers.makeChannelUpdate (c.Network.Consensus.HashGenesisBlock,
-                                                           c.NodeSecret,
-                                                           c.RemoteNodeId,
-                                                           s.ShortChannelId,
-                                                           c.Commitments.LocalParams.ToSelfDelay,
-                                                           c.Commitments.RemoteParams.HTLCMinimumMSat,
-                                                           feeBase,
-                                                           c.ChannelOptions.FeeProportionalMillionths,
-                                                           true,
-                                                           None)
             let nextState = {
                 RemoteNextCommitInfo = RemoteNextCommitInfo.Revoked msg.NextPerCommitmentPoint
                 ShortChannelId = s.ShortChannelId
-                ChannelUpdate = channelUpdate
                 LocalShutdown = None
                 RemoteShutdown = None
             }
