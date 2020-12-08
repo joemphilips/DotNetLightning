@@ -36,6 +36,7 @@ type ChannelError =
     | TheyCannotAffordFee of toRemote: LNMoney * fee: Money * channelReserve: Money
     
     // --- case they sent unacceptable msg ---
+    | InvalidFundingLocked of InvalidFundingLockedError
     | InvalidOpenChannel of InvalidOpenChannelError
     | InvalidAcceptChannel of InvalidAcceptChannelError
     | InvalidUpdateAddHTLC of InvalidUpdateAddHTLCError
@@ -69,6 +70,7 @@ type ChannelError =
         | ReceivedShutdownWhenRemoteHasUnsignedOutgoingHTLCs _ -> Close
         | SignatureCountMismatch (_, _) -> Close
         | TheyCannotAffordFee (_, _, _) -> Close
+        | InvalidFundingLocked _ -> DistrustPeer
         | InvalidOpenChannel _ -> DistrustPeer
         | InvalidAcceptChannel _ -> DistrustPeer
         | InvalidUpdateAddHTLC _ -> Close
@@ -100,6 +102,8 @@ type ChannelError =
             sprintf "Number of signatures went from the remote (%A) does not match the number expected (%A)" actual expected
         | TheyCannotAffordFee (toRemote, fee, channelReserve) ->
             sprintf "they are funder but cannot afford their fee. to_remote output is: %A; actual fee is %A; channel_reserve_satoshis is: %A" toRemote fee channelReserve
+        | InvalidFundingLocked invalidFundingLockedError ->
+            sprintf "Invalid funding_locked from the peer: %s" invalidFundingLockedError.Message
         | InvalidOpenChannel invalidOpenChannelError ->
             sprintf "Invalid open_channel from the peer.: %s" invalidOpenChannelError.Message
         | OnceConfirmedFundingTxHasBecomeUnconfirmed (height, depth) ->
@@ -157,6 +161,13 @@ and ChannelConsumerAction =
     /// The error is not critical to the channel operation.
     /// But it maybe good to report the log message, or maybe lower the peer score.
     | Ignore
+and InvalidFundingLockedError ={
+    NetworkMsg: FundingLockedMsg
+}
+    with
+    member this.Message =
+        "remote peer sent a second funding_locked message which does not match their first"
+
 and InvalidOpenChannelError = {
     NetworkMsg: OpenChannelMsg
     Errors: string list
@@ -286,7 +297,7 @@ module internal ChannelError =
         Result.mapError(FundingTxNotGiven) msg
         
     let invalidRevokeAndACK msg e =
-        InvalidRevokeAndACKError.Create msg ([e]) |> InvalidRevokeAndACK |> Error
+        InvalidRevokeAndACKError.Create msg ([e]) |> InvalidRevokeAndACK
         
     let cannotCloseChannel msg =
         msg |> CannotCloseChannel|> Error

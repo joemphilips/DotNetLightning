@@ -59,29 +59,21 @@ module Data =
 
     type IChannelStateData = interface inherit IStateData end
 
-    type WaitForFundingConfirmedData = {
-        RemoteNextPerCommitmentPointOpt: Option<PerCommitmentPoint>
-    }
-
-    type WaitForFundingLockedData = {
-        ShortChannelId: ShortChannelId
-    }
-
     type NormalData = {
-        ShortChannelId: ShortChannelId
+        ShortChannelId: Option<ShortChannelId>
         LocalShutdown: Option<ShutdownMsg>
         RemoteShutdown: Option<ShutdownMsg>
-        RemoteNextCommitInfo: RemoteNextCommitInfo
+        RemoteNextCommitInfo: Option<RemoteNextCommitInfo>
     }
 
     type ShutdownData = {
-        RemoteNextCommitInfo: RemoteNextCommitInfo
+        RemoteNextCommitInfo: Option<RemoteNextCommitInfo>
         LocalShutdown: ShutdownMsg
         RemoteShutdown: ShutdownMsg
     }
 
     type NegotiatingData = {
-        RemoteNextCommitInfo: RemoteNextCommitInfo
+        RemoteNextCommitInfo: Option<RemoteNextCommitInfo>
         LocalShutdown: ShutdownMsg
         RemoteShutdown: ShutdownMsg
         ClosingTxProposed: List<List<ClosingTxProposed>>
@@ -89,7 +81,7 @@ module Data =
     }
 
     type ClosingData = {
-        RemoteNextCommitInfo: RemoteNextCommitInfo
+        RemoteNextCommitInfo: Option<RemoteNextCommitInfo>
         MaybeFundingTx: Option<Transaction>
         WaitingSince: System.DateTime
         MutualCloseProposed: List<ClosingTx>
@@ -107,9 +99,9 @@ module Data =
                              (waitingSince: System.DateTime)
                              (mutualCloseProposed: List<ClosingTx>)
                              (mutualClosePublished: FinalizedTx)
-                             (remoteNextCommitInfo: RemoteNextCommitInfo)
+                             (remoteNextCommitInfo: Option<RemoteNextCommitInfo>)
                                  : ClosingData = {
-            RemoteNextCommitInfo = remoteNextCommitInfo
+            RemoteNextCommitInfo= remoteNextCommitInfo
             MaybeFundingTx = maybeFundingTx
             WaitingSince = waitingSince
             MutualCloseProposed = mutualCloseProposed
@@ -135,7 +127,7 @@ module Data =
 type ChannelEvent =
     // --- ln events ---
     /// -------- init both -----
-    | FundingConfirmed of FundingLockedMsg * nextState: Data.WaitForFundingLockedData
+    | FundingConfirmed of FundingLockedMsg * shortChannelId: ShortChannelId
     | TheySentFundingLocked of msg: FundingLockedMsg
     | WeResumedDelayedFundingLocked of remoteNextPerCommitmentPoint: PerCommitmentPoint
     | BothFundingLocked of nextState: Data.NormalData
@@ -193,10 +185,6 @@ type ChannelStatePhase =
     | Normal
     | Closing
 type ChannelState =
-    /// Establishing
-    | WaitForFundingConfirmed of WaitForFundingConfirmedData
-    | WaitForFundingLocked of WaitForFundingLockedData
-
     /// normal
     | Normal of NormalData
 
@@ -216,9 +204,11 @@ type ChannelState =
                          | _ -> cc )
         member this.Phase =
             match this with
-            | WaitForFundingConfirmed _
-            | WaitForFundingLocked _ -> Opening
-            | Normal _ -> ChannelStatePhase.Normal
+            | Normal normalData ->
+                if normalData.ShortChannelId.IsNone || normalData.RemoteNextCommitInfo.IsNone then
+                    ChannelStatePhase.Opening
+                else
+                    ChannelStatePhase.Normal
             | Shutdown _
             | Negotiating _
             | Closing _ -> ChannelStatePhase.Closing
