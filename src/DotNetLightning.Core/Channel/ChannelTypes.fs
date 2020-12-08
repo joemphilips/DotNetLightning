@@ -61,15 +61,15 @@ module Data =
 
     type NormalData = {
         ShortChannelId: Option<ShortChannelId>
-        LocalShutdown: Option<ShutdownMsg>
-        RemoteShutdown: Option<ShutdownMsg>
+        LocalShutdown: Option<ShutdownScriptPubKey>
+        RemoteShutdown: Option<ShutdownScriptPubKey>
         RemoteNextCommitInfo: Option<RemoteNextCommitInfo>
     }
 
     type NegotiatingData = {
         RemoteNextCommitInfo: Option<RemoteNextCommitInfo>
-        LocalShutdown: ShutdownMsg
-        RemoteShutdown: ShutdownMsg
+        LocalShutdown: ShutdownScriptPubKey
+        RemoteShutdown: ShutdownScriptPubKey
         ClosingTxProposed: List<List<ClosingTxProposed>>
         MaybeBestUnpublishedTx: Option<FinalizedTx>
     }
@@ -148,10 +148,10 @@ type ChannelEvent =
     | WeAcceptedRevokeAndACK of nextCommitments: Commitments * remoteNextPerCommitmentPoint: PerCommitmentPoint
 
     | AcceptedOperationShutdown of msg: ShutdownMsg
-    | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs of remoteShutdown: ShutdownMsg
+    | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs of remoteShutdownScriptPubKey: ShutdownScriptPubKey
     /// We have to send closing_signed to initiate the negotiation only when if we are the funder
     | AcceptedShutdownWhenNoPendingHTLCs of msgToSend: ClosingSignedMsg option * nextState: NegotiatingData
-    | AcceptedShutdownWhenWeHavePendingHTLCs of localShutdown: ShutdownMsg * remoteShutdown: ShutdownMsg
+    | AcceptedShutdownWhenWeHavePendingHTLCs of localShutdown: ShutdownMsg * remoteShutdownScriptPubKey: ShutdownScriptPubKey
 
     // ------ closing ------
     | MutualClosePerformed of txToPublish: FinalizedTx * nextState : ClosingData * nextMsgToSend: Option<ClosingSignedMsg>
