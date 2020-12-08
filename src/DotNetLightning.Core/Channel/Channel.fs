@@ -33,6 +33,7 @@ type ChannelWaitingForFundingSigned = {
     ChannelFlags: uint8
     LastSent: FundingCreatedMsg
     LocalShutdownScriptPubKey: Option<ShutdownScriptPubKey>
+    RemoteShutdownScriptPubKey: Option<ShutdownScriptPubKey>
 } with
     member self.ApplyFundingSigned (msg: FundingSignedMsg)
                                        : Result<FinalizedTx * Channel, ChannelError> = result {
@@ -92,6 +93,7 @@ type ChannelWaitingForFundingSigned = {
             Network = self.Network
             FundingTxMinimumDepth = self.FundingTxMinimumDepth
             LocalShutdownScriptPubKey = self.LocalShutdownScriptPubKey
+            RemoteShutdownScriptPubKey = self.RemoteShutdownScriptPubKey
             Commitments = commitments
         }
         return self.FundingTx, channel
@@ -106,6 +108,7 @@ and ChannelWaitingForFundingCreated = {
     Network: Network
     FundingTxMinimumDepth: BlockHeightOffset32
     LocalShutdownScriptPubKey: Option<ShutdownScriptPubKey>
+    RemoteShutdownScriptPubKey: Option<ShutdownScriptPubKey>
     TemporaryFailure: ChannelId
     LocalParams: LocalParams
     RemoteParams: RemoteParams
@@ -202,6 +205,7 @@ and ChannelWaitingForFundingCreated = {
             Network = self.Network
             State = nextState
             LocalShutdownScriptPubKey = self.LocalShutdownScriptPubKey
+            RemoteShutdownScriptPubKey = self.RemoteShutdownScriptPubKey
             FundingTxMinimumDepth = self.FundingTxMinimumDepth
             Commitments = commitments
         }
@@ -216,6 +220,7 @@ and ChannelWaitingForFundingTx = {
     NodeSecret: NodeSecret
     Network: Network
     LocalShutdownScriptPubKey: Option<ShutdownScriptPubKey>
+    RemoteShutdownScriptPubKey: Option<ShutdownScriptPubKey>
     LastReceived: AcceptChannelMsg
     TemporaryChannelId: ChannelId
     RemoteChannelPubKeys: ChannelPubKeys
@@ -267,6 +272,7 @@ and ChannelWaitingForFundingTx = {
             Network = self.Network
             FundingTxMinimumDepth = self.LastReceived.MinimumDepth
             LocalShutdownScriptPubKey = self.LocalShutdownScriptPubKey
+            RemoteShutdownScriptPubKey = self.RemoteShutdownScriptPubKey
             ChannelId = channelId
             LocalParams = localParams
             RemoteParams = remoteParams
@@ -328,6 +334,7 @@ and ChannelWaitingForAcceptChannel = {
             NodeSecret = self.NodeSecret
             Network = self.Network
             LocalShutdownScriptPubKey = self.LocalShutdownScriptPubKey
+            RemoteShutdownScriptPubKey = msg.ShutdownScriptPubKey()
             LastReceived = msg
             TemporaryChannelId = self.TemporaryChannelId
             RemoteChannelPubKeys = remoteChannelPubKeys
@@ -350,6 +357,7 @@ and Channel = {
     State: ChannelState
     Network: Network
     LocalShutdownScriptPubKey: Option<ShutdownScriptPubKey>
+    RemoteShutdownScriptPubKey: Option<ShutdownScriptPubKey>
     FundingTxMinimumDepth: BlockHeightOffset32
     Commitments: Commitments
  }
@@ -469,6 +477,7 @@ and Channel = {
                     Network = network
                     FundingTxMinimumDepth = minimumDepth
                     LocalShutdownScriptPubKey = shutdownScriptPubKey
+                    RemoteShutdownScriptPubKey = openChannelMsg.ShutdownScriptPubKey()
                     ChannelFlags = openChannelMsg.ChannelFlags
                     TemporaryFailure = openChannelMsg.TemporaryChannelId
                     LocalParams = localParams
@@ -883,10 +892,16 @@ module Channel =
         | ChannelState.Normal state, RemoteShutdown(msg, localShutdownScriptPubKey) ->
             result {
                 match cs.LocalShutdownScriptPubKey with
-                | Some commitedShutdownScriptPubKey ->
-                    if commitedShutdownScriptPubKey <> localShutdownScriptPubKey then
+                | Some commitedLocalShutdownScriptPubKey ->
+                    if commitedLocalShutdownScriptPubKey <> localShutdownScriptPubKey then
                         do! cannotCloseChannel "Shutdown script does not match the shutdown script we orginally gave the peer"
                 | None -> ()
+                match cs.RemoteShutdownScriptPubKey with
+                | Some commitedRemoteShutdownScriptPubKey ->
+                    if commitedRemoteShutdownScriptPubKey <> msg.ScriptPubKey then
+                        do! cannotCloseChannel "Shutdown script does not match the shutdown script the peer originally gave us"
+                | None -> ()
+                    
                 let cm = cs.Commitments
                 // They have pending unsigned htlcs => they violated the spec, close the channel
                 // they don't have pending unsigned htlcs
