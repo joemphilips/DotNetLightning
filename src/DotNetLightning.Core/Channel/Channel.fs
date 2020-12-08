@@ -979,99 +979,9 @@ module Channel =
                             }
                             return [ AcceptedShutdownWhenNoPendingHTLCs(None, nextState) ]
                     else
-                        let nextState = {
-                            LocalShutdown = localShutdown
-                            RemoteShutdown = msg
-                            RemoteNextCommitInfo = state.RemoteNextCommitInfo
-                        }
-                        return [ AcceptedShutdownWhenWeHavePendingHTLCs(nextState) ]
+                        return [ AcceptedShutdownWhenWeHavePendingHTLCs(localShutdown, msg) ]
             }
         // ----------- closing ---------
-        | Shutdown state, FulfillHTLC op ->
-            result {
-                let! remoteNextCommitInfo =
-                    remoteNextCommitInfoIfFundingLocked state.RemoteNextCommitInfo "FulfillHTLC"
-                let! t = Commitments.sendFulfill op cs.Commitments remoteNextCommitInfo
-                return [ WeAcceptedOperationFulfillHTLC t ]
-            }
-        | Shutdown state, ApplyUpdateFulfillHTLC msg ->
-            result {
-                let! remoteNextCommitInfo =
-                    remoteNextCommitInfoIfFundingLocked
-                        state.RemoteNextCommitInfo
-                        "ApplyUpdateFulfillHTLC"
-                return! Commitments.receiveFulfill msg cs.Commitments remoteNextCommitInfo
-            }
-        | Shutdown state, FailHTLC op ->
-            result {
-                let! remoteNextCommitInfo =
-                    remoteNextCommitInfoIfFundingLocked state.RemoteNextCommitInfo "FailHTLC"
-                return! Commitments.sendFail cs.NodeSecret op cs.Commitments remoteNextCommitInfo
-            }
-        | Shutdown state, FailMalformedHTLC op ->
-            result {
-                let! remoteNextCommitInfo =
-                    remoteNextCommitInfoIfFundingLocked
-                        state.RemoteNextCommitInfo
-                        "FailMalformedHTLC"
-                return! Commitments.sendFailMalformed op cs.Commitments remoteNextCommitInfo
-            }
-        | Shutdown state, ApplyUpdateFailMalformedHTLC msg ->
-            result {
-                let! remoteNextCommitInfo =
-                    remoteNextCommitInfoIfFundingLocked
-                        state.RemoteNextCommitInfo
-                        "ApplyUpdateFailMalformedHTLC"
-                return!
-                    Commitments.receiveFailMalformed msg cs.Commitments remoteNextCommitInfo
-            }
-        | Shutdown state, UpdateFee op ->
-            result {
-                let! _remoteNextCommitInfo =
-                    remoteNextCommitInfoIfFundingLocked state.RemoteNextCommitInfo "UpdateFee"
-                return! cs.Commitments |> Commitments.sendFee op
-            }
-        | Shutdown state, ApplyUpdateFee msg ->
-            result {
-                let! _remoteNextCommitInfo =
-                    remoteNextCommitInfoIfFundingLocked
-                        state.RemoteNextCommitInfo
-                        "ApplyUpdateFee"
-                let localFeerate =
-                    cs.FeeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority)
-                return! cs.Commitments |> Commitments.receiveFee cs.ChannelOptions localFeerate msg
-            }
-        | Shutdown state, SignCommitment ->
-            let cm = cs.Commitments
-            result {
-                let! remoteNextCommitInfo =
-                    remoteNextCommitInfoIfFundingLocked state.RemoteNextCommitInfo "SignCommit"
-                match remoteNextCommitInfo with
-                | _ when (not <| cm.LocalHasChanges()) ->
-                    // nothing to sign
-                    return []
-                | RemoteNextCommitInfo.Revoked _ ->
-                    return!
-                        Commitments.sendCommit
-                            cs.ChannelPrivKeys
-                            cs.Network
-                            cm
-                            remoteNextCommitInfo
-                | RemoteNextCommitInfo.Waiting _waitForRevocation ->
-                    // Already in the process of signing.
-                    return []
-            }
-        | Shutdown state, ApplyCommitmentSigned msg ->
-            result {
-                let! _remoteNextCommitInfo =
-                    remoteNextCommitInfoIfFundingLocked
-                        state.RemoteNextCommitInfo
-                        "ApplyCommitmentSigned"
-                return! Commitments.receiveCommit cs.ChannelPrivKeys msg cs.Network cs.Commitments
-            }
-        | Shutdown _state, ApplyRevokeAndACK _msg ->
-            failwith "not implemented"
-
         | Negotiating state, ApplyClosingSigned msg ->
             result {
                 let cm = cs.Commitments
@@ -1279,8 +1189,15 @@ module Channel =
             }
         | AcceptedShutdownWhenNoPendingHTLCs(_maybeMsg, nextState), ChannelState.Normal _d ->
             { c with State = Negotiating nextState }
-        | AcceptedShutdownWhenWeHavePendingHTLCs(nextState), ChannelState.Normal _d ->
-            { c with State = Shutdown nextState }
+        | AcceptedShutdownWhenWeHavePendingHTLCs(localShutdown, remoteShutdown), ChannelState.Normal normalData ->
+            {
+                c with
+                    State = ChannelState.Normal {
+                        normalData with
+                            LocalShutdown = Some localShutdown
+                            RemoteShutdown = Some remoteShutdown
+                    }
+            }
         | MutualClosePerformed (_txToPublish, nextState, _), ChannelState.Negotiating _d ->
             { c with State = Closing nextState }
         | WeProposedNewClosingSigned(_msg, nextState), ChannelState.Negotiating _d ->

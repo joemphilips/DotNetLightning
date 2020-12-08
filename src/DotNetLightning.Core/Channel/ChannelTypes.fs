@@ -66,12 +66,6 @@ module Data =
         RemoteNextCommitInfo: Option<RemoteNextCommitInfo>
     }
 
-    type ShutdownData = {
-        RemoteNextCommitInfo: Option<RemoteNextCommitInfo>
-        LocalShutdown: ShutdownMsg
-        RemoteShutdown: ShutdownMsg
-    }
-
     type NegotiatingData = {
         RemoteNextCommitInfo: Option<RemoteNextCommitInfo>
         LocalShutdown: ShutdownMsg
@@ -157,7 +151,7 @@ type ChannelEvent =
     | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs of remoteShutdown: ShutdownMsg
     /// We have to send closing_signed to initiate the negotiation only when if we are the funder
     | AcceptedShutdownWhenNoPendingHTLCs of msgToSend: ClosingSignedMsg option * nextState: NegotiatingData
-    | AcceptedShutdownWhenWeHavePendingHTLCs of nextState: ShutdownData
+    | AcceptedShutdownWhenWeHavePendingHTLCs of localShutdown: ShutdownMsg * remoteShutdown: ShutdownMsg
 
     // ------ closing ------
     | MutualClosePerformed of txToPublish: FinalizedTx * nextState : ClosingData * nextMsgToSend: Option<ClosingSignedMsg>
@@ -189,7 +183,6 @@ type ChannelState =
     | Normal of NormalData
 
     /// Closing
-    | Shutdown of ShutdownData
     | Negotiating of NegotiatingData
     | Closing of ClosingData
     with
@@ -205,10 +198,12 @@ type ChannelState =
         member this.Phase =
             match this with
             | Normal normalData ->
-                if normalData.ShortChannelId.IsNone || normalData.RemoteNextCommitInfo.IsNone then
-                    ChannelStatePhase.Opening
+                if normalData.LocalShutdown.IsSome && normalData.RemoteShutdown.IsSome then
+                    ChannelStatePhase.Closing
                 else
-                    ChannelStatePhase.Normal
-            | Shutdown _
+                    if normalData.ShortChannelId.IsNone || normalData.RemoteNextCommitInfo.IsNone then
+                        ChannelStatePhase.Opening
+                    else
+                        ChannelStatePhase.Normal
             | Negotiating _
             | Closing _ -> ChannelStatePhase.Closing
