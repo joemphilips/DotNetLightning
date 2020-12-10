@@ -70,7 +70,7 @@ module Data =
         RemoteNextCommitInfo: Option<RemoteNextCommitInfo>
         LocalShutdown: ShutdownScriptPubKey
         RemoteShutdown: ShutdownScriptPubKey
-        ClosingTxProposed: List<List<ClosingTxProposed>>
+        ClosingTxProposed: List<Option<ClosingTxProposed>>
         MaybeBestUnpublishedTx: Option<FinalizedTx>
     }
 
