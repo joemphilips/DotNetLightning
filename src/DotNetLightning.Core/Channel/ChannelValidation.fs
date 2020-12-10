@@ -231,3 +231,21 @@ module internal Validation =
         *^> UpdateAddHTLCValidationWithContext.checkLessThanMaxAcceptedHTLC currentSpec state.LocalParams.MaxAcceptedHTLCs
         *^> UpdateAddHTLCValidationWithContext.checkWeHaveSufficientFunds state currentSpec
         |> Result.mapError(InvalidUpdateAddHTLCError.Create add >> InvalidUpdateAddHTLC)
+
+    let checkShutdownScriptPubKeyAcceptable (shutdownStateOpt: Option<ShutdownState>)
+                                            (requestedShutdownScriptPubKey: ShutdownScriptPubKey)
+                                                : Result<ShutdownState, ChannelError> = result {
+            match shutdownStateOpt with
+            | None -> ()
+            | Some shutdownState ->
+                if shutdownState.ShutdownScriptPubKey <> requestedShutdownScriptPubKey then
+                    do!
+                        Error <|
+                            cannotCloseChannel
+                                "requested shutdown script does not match shutdown \
+                                script in open/accept channel"
+            return {
+                ShutdownScriptPubKey = requestedShutdownScriptPubKey
+                HasRequestedShutdown = true
+            }
+        }

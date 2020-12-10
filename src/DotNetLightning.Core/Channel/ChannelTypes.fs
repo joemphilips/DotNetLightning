@@ -59,12 +59,35 @@ module Data =
 
     type IChannelStateData = interface inherit IStateData end
 
+    type ShutdownState = {
+        ShutdownScriptPubKey: ShutdownScriptPubKey
+        HasRequestedShutdown: bool
+    } with
+        static member ForNewChannel (shutdownScriptPubKeyOpt: Option<ShutdownScriptPubKey>)
+                                        : Option<ShutdownState> =
+            match shutdownScriptPubKeyOpt with
+            | None -> None
+            | Some shutdownScriptPubKey -> Some {
+                ShutdownScriptPubKey = shutdownScriptPubKey
+                HasRequestedShutdown = false
+            }
+
     type NormalData = {
         ShortChannelId: Option<ShortChannelId>
-        LocalShutdown: Option<ShutdownScriptPubKey>
-        RemoteShutdown: Option<ShutdownScriptPubKey>
+        LocalShutdownState: Option<ShutdownState>
+        RemoteShutdownState: Option<ShutdownState>
         RemoteNextCommitInfo: Option<RemoteNextCommitInfo>
-    }
+    } with
+        member self.HasEnteredShutdown(): bool =
+            let localEnteredShutdown =
+                match self.LocalShutdownState with
+                | None -> false
+                | Some shutdownState -> shutdownState.HasRequestedShutdown
+            let remoteEnteredShutdown =
+                match self.RemoteShutdownState with
+                | None -> false
+                | Some shutdownState -> shutdownState.HasRequestedShutdown
+            localEnteredShutdown || remoteEnteredShutdown
 
     type NegotiatingData = {
         RemoteNextCommitInfo: Option<RemoteNextCommitInfo>
@@ -147,11 +170,11 @@ type ChannelEvent =
 
     | WeAcceptedRevokeAndACK of nextCommitments: Commitments * remoteNextPerCommitmentPoint: PerCommitmentPoint
 
-    | AcceptedOperationShutdown of msg: ShutdownMsg
-    | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs of remoteShutdownScriptPubKey: ShutdownScriptPubKey
+    | AcceptedOperationShutdown of msg: ShutdownMsg * nextLocalShutdownState: ShutdownState
+    | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs of nextRemoteShutdownState: ShutdownState
     /// We have to send closing_signed to initiate the negotiation only when if we are the funder
     | AcceptedShutdownWhenNoPendingHTLCs of msgToSend: ClosingSignedMsg option * nextState: NegotiatingData
-    | AcceptedShutdownWhenWeHavePendingHTLCs of localShutdown: ShutdownMsg * remoteShutdownScriptPubKey: ShutdownScriptPubKey
+    | AcceptedShutdownWhenWeHavePendingHTLCs of localShutdown: ShutdownMsg * nextState: NormalData
 
     // ------ closing ------
     | MutualClosePerformed of txToPublish: FinalizedTx * nextState : ClosingData * nextMsgToSend: Option<ClosingSignedMsg>
@@ -198,7 +221,7 @@ type ChannelState =
         member this.Phase =
             match this with
             | Normal normalData ->
-                if normalData.LocalShutdown.IsSome && normalData.RemoteShutdown.IsSome then
+                if normalData.HasEnteredShutdown() then
                     ChannelStatePhase.Closing
                 else
                     if normalData.ShortChannelId.IsNone || normalData.RemoteNextCommitInfo.IsNone then
