@@ -948,7 +948,7 @@ module Channel =
                                 RemoteNextCommitInfo = state.RemoteNextCommitInfo
                                 LocalShutdown = localShutdownScriptPubKey
                                 RemoteShutdown = msg.ScriptPubKey
-                                ClosingTxProposed = [ Some {
+                                ClosingTxProposed = [{
                                     ClosingTxProposed.UnsignedTx = closingTx
                                     LocalClosingSigned = closingSignedMsg
                                 }]
@@ -965,7 +965,7 @@ module Channel =
                                 RemoteNextCommitInfo = state.RemoteNextCommitInfo
                                 LocalShutdown = localShutdownScriptPubKey
                                 RemoteShutdown = msg.ScriptPubKey
-                                ClosingTxProposed = [ None ]
+                                ClosingTxProposed = []
                                 MaybeBestUnpublishedTx = None
                             }
                             return [ AcceptedShutdownWhenNoPendingHTLCs(None, nextState) ]
@@ -1016,11 +1016,10 @@ module Channel =
                 let maybeLocalFee =
                     state.ClosingTxProposed
                     |> List.tryHead
-                    |> Option.bind id
                     |> Option.map (fun v -> v.LocalClosingSigned.FeeSatoshis)
                 let areWeInDeal = Some(msg.FeeSatoshis) = maybeLocalFee
                 let hasTooManyNegotiationDone =
-                    (state.ClosingTxProposed |> List.choose (id) |> List.length) >= cs.ChannelOptions.MaxClosingNegotiationIterations
+                    (state.ClosingTxProposed |> List.length) >= cs.ChannelOptions.MaxClosingNegotiationIterations
                 if (areWeInDeal || hasTooManyNegotiationDone) then
                     return!
                         Closing.handleMutualClose
@@ -1029,7 +1028,7 @@ module Channel =
                             state.RemoteNextCommitInfo
                             None
                 else
-                    let lastLocalClosingFee = state.ClosingTxProposed |> List.tryHead |> Option.bind id |> Option.map (fun txp -> txp.LocalClosingSigned.FeeSatoshis)
+                    let lastLocalClosingFee = state.ClosingTxProposed |> List.tryHead |> Option.map (fun txp -> txp.LocalClosingSigned.FeeSatoshis)
                     let! localF = 
                         match lastLocalClosingFee with
                         | Some v -> Ok v
@@ -1053,7 +1052,7 @@ module Channel =
                     else if (nextClosingFee = msg.FeeSatoshis) then
                         // we have reached on agreement!
                         let closingTxProposed1 =
-                            let newProposed = Some {
+                            let newProposed = {
                                 ClosingTxProposed.UnsignedTx = closingTx
                                 LocalClosingSigned = closingSignedMsg
                             }
@@ -1078,7 +1077,7 @@ module Channel =
                             )
                             |> expectTransactionError
                         let closingTxProposed1 =
-                            let newProposed = Some {
+                            let newProposed = {
                                 ClosingTxProposed.UnsignedTx = closingTx
                                 LocalClosingSigned = closingSignedMsg
                             }
