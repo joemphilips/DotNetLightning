@@ -34,29 +34,6 @@ module Data =
             (fun p -> p.LocalClosingSigned),
             (fun v p -> { p with LocalClosingSigned = v })
 
-    type LocalCommitPublished = {
-        CommitTx: CommitTx
-        ClaimMainDelayedOutputTx: ClaimDelayedOutputTx option
-        HTLCSuccessTxs: HTLCSuccessTx list
-        HTLCTimeoutTxs: HTLCTimeoutTx list
-    }
-
-    type RemoteCommitPublished = {
-        CommitTx: CommitTx
-        ClaimMainOutputTx: ClaimP2WPKHOutputTx
-        ClaimHTLCSuccessTxs: ClaimHTLCSuccessTx list
-        ClaimHTLCTimeoutTxs: ClaimHTLCTimeoutTx list
-    }
-
-    type RevokedCommitPublished = {
-        CommitTx: CommitTx
-        ClaimMainOutputTx: ClaimP2WPKHOutputTx option
-        MainPenaltyTx: MainPenaltyTx option
-        ClaimHTLCTimeoutTxs: ClaimHTLCTimeoutTx list
-        HTLCTimeoutTxs: HTLCTimeoutTx list
-        HTLCPenaltyTxs: HTLCPenaltyTx list
-    }
-
     type IChannelStateData = interface inherit IStateData end
 
     type ShutdownState = {
@@ -99,35 +76,10 @@ module Data =
 
     type ClosingData = {
         RemoteNextCommitInfo: Option<RemoteNextCommitInfo>
-        MaybeFundingTx: Option<Transaction>
-        WaitingSince: System.DateTime
-        MutualCloseProposed: List<ClosingTx>
-        MutualClosePublished: FinalizedTx
-        LocalCommitPublished: Option<LocalCommitPublished>
-        RemoteCommitPublished: Option<RemoteCommitPublished>
-        NextRemoteCommitPublished: Option<RemoteCommitPublished>
-        FutureRemoteCommitPublished: Option<RemoteCommitPublished>
-        RevokedCommitPublished: List<RevokedCommitPublished>
     } with
-        member this.FinalizedTx =
-            this.MutualClosePublished
-        
-        static member Create (maybeFundingTx: Option<Transaction>)
-                             (waitingSince: System.DateTime)
-                             (mutualCloseProposed: List<ClosingTx>)
-                             (mutualClosePublished: FinalizedTx)
-                             (remoteNextCommitInfo: Option<RemoteNextCommitInfo>)
+        static member Create (remoteNextCommitInfo: Option<RemoteNextCommitInfo>)
                                  : ClosingData = {
-            RemoteNextCommitInfo= remoteNextCommitInfo
-            MaybeFundingTx = maybeFundingTx
-            WaitingSince = waitingSince
-            MutualCloseProposed = mutualCloseProposed
-            MutualClosePublished = mutualClosePublished
-            LocalCommitPublished = None
-            RemoteCommitPublished = None
-            NextRemoteCommitPublished = None
-            FutureRemoteCommitPublished = None
-            RevokedCommitPublished = []
+            RemoteNextCommitInfo = remoteNextCommitInfo
         }
 
 //     8888888888 888     888 8888888888 888b    888 88888888888 .d8888b.

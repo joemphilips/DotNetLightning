@@ -550,15 +550,11 @@ module Channel =
             |> Money.Satoshis
 
         let handleMutualClose (closingTx: FinalizedTx)
-                              (d: NegotiatingData)
+                              (_d: NegotiatingData)
                               (remoteNextCommitInfoOpt: Option<RemoteNextCommitInfo>)
                               (nextMessage: Option<ClosingSignedMsg>) =
             let nextData =
                 ClosingData.Create
-                    None
-                    DateTime.Now
-                    (d.ClosingTxProposed |> List.collect id |> List.map (fun tx -> tx.UnsignedTx))
-                    closingTx
                     remoteNextCommitInfoOpt
             [ MutualClosePerformed (closingTx, nextData, nextMessage) ]
             |> Ok
@@ -1094,17 +1090,8 @@ module Channel =
                     remoteNextCommitInfoIfFundingLocked
                         state.RemoteNextCommitInfo
                         "FulfillHTC"
-                let! (_msgToSend, newCommitments) =
+                let! (_msgToSend, _newCommitments) =
                     Commitments.sendFulfill op cm remoteNextCommitInfo
-                let _localCommitPublished =
-                    state.LocalCommitPublished
-                    |> Option.map (fun localCommitPublished ->
-                        Closing.claimCurrentLocalCommitTxOutputs (
-                            cs.ChannelPrivKeys,
-                            newCommitments,
-                            localCommitPublished.CommitTx
-                        )
-                    )
                 return failwith "Not Implemented yet"
             }
         | state, cmd ->
