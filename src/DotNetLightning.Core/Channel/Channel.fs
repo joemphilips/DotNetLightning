@@ -952,7 +952,6 @@ module Channel =
                                     ClosingTxProposed.UnsignedTx = closingTx
                                     LocalClosingSigned = closingSignedMsg
                                 }]
-                                MaybeBestUnpublishedTx = None
                             }
                             return [
                                 AcceptedShutdownWhenNoPendingHTLCs(
@@ -966,7 +965,6 @@ module Channel =
                                 LocalShutdown = localShutdownScriptPubKey
                                 RemoteShutdown = msg.ScriptPubKey
                                 ClosingTxProposed = []
-                                MaybeBestUnpublishedTx = None
                             }
                             return [ AcceptedShutdownWhenNoPendingHTLCs(None, nextState) ]
                     else
@@ -1024,7 +1022,7 @@ module Channel =
                     return!
                         Closing.handleMutualClose
                             finalizedTx
-                            { state with MaybeBestUnpublishedTx = Some(finalizedTx) }
+                            state
                             state.RemoteNextCommitInfo
                             None
                 else
@@ -1046,7 +1044,7 @@ module Channel =
                         return!
                             Closing.handleMutualClose
                                 finalizedTx
-                                { state with MaybeBestUnpublishedTx = Some(finalizedTx) }
+                                state
                                 state.RemoteNextCommitInfo
                                 None
                     else if (nextClosingFee = msg.FeeSatoshis) then
@@ -1057,8 +1055,7 @@ module Channel =
                                 LocalClosingSigned = closingSignedMsg
                             }
                             newProposed :: state.ClosingTxProposed
-                        let negoData = { state with ClosingTxProposed = closingTxProposed1
-                                                    MaybeBestUnpublishedTx = Some(finalizedTx) }
+                        let negoData = { state with ClosingTxProposed = closingTxProposed1 }
                         return!
                             Closing.handleMutualClose
                                 finalizedTx
@@ -1082,7 +1079,7 @@ module Channel =
                                 LocalClosingSigned = closingSignedMsg
                             }
                             newProposed :: state.ClosingTxProposed
-                        let nextState = { state with ClosingTxProposed = closingTxProposed1; MaybeBestUnpublishedTx = Some(finalizedTx) }
+                        let nextState = { state with ClosingTxProposed = closingTxProposed1 }
                         return [ WeProposedNewClosingSigned(closingSignedMsg, nextState) ]
             }
         | Closing state, FulfillHTLC op ->

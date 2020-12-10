@@ -71,7 +71,6 @@ module Data =
         LocalShutdown: ShutdownScriptPubKey
         RemoteShutdown: ShutdownScriptPubKey
         ClosingTxProposed: List<ClosingTxProposed>
-        MaybeBestUnpublishedTx: Option<FinalizedTx>
     }
 
     type ClosingData = {
