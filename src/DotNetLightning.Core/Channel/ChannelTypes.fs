@@ -41,7 +41,6 @@ module Data =
             }
 
     type NormalData = {
-        ShortChannelId: Option<ShortChannelId>
         LocalShutdownState: Option<ShutdownState>
         RemoteShutdownState: Option<ShutdownState>
     } with

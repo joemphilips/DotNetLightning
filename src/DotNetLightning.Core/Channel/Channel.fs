@@ -78,7 +78,6 @@ type ChannelWaitingForFundingSigned = {
             RemotePerCommitmentSecrets = PerCommitmentSecretStore()
         }
         let nextState = ChannelState.Normal {
-            ShortChannelId = None
             LocalShutdownState = ShutdownState.ForNewChannel self.LocalShutdownScriptPubKey
             RemoteShutdownState = ShutdownState.ForNewChannel self.RemoteShutdownScriptPubKey
         }
@@ -88,6 +87,7 @@ type ChannelWaitingForFundingSigned = {
             FeeEstimator = self.FeeEstimator
             RemoteNodeId = self.RemoteNodeId
             NodeSecret = self.NodeSecret
+            ShortChannelId = None
             RemoteNextCommitInfo = None
             State = nextState
             Network = self.Network
@@ -189,7 +189,6 @@ and ChannelWaitingForFundingCreated = {
             Signature = !>localSigOfRemoteCommit.Signature
         }
         let nextState = ChannelState.Normal {
-            ShortChannelId = None
             LocalShutdownState = ShutdownState.ForNewChannel self.LocalShutdownScriptPubKey
             RemoteShutdownState = ShutdownState.ForNewChannel self.RemoteShutdownScriptPubKey
         }
@@ -201,6 +200,7 @@ and ChannelWaitingForFundingCreated = {
             NodeSecret = self.NodeSecret
             Network = self.Network
             RemoteNextCommitInfo = None
+            ShortChannelId = None
             State = nextState
             FundingTxMinimumDepth = self.FundingTxMinimumDepth
             Commitments = commitments
@@ -350,6 +350,7 @@ and Channel = {
     FeeEstimator: IFeeEstimator
     RemoteNodeId: NodeId
     NodeSecret: NodeSecret
+    ShortChannelId: Option<ShortChannelId>
     RemoteNextCommitInfo: Option<RemoteNextCommitInfo>
     State: ChannelState
     Network: Network
@@ -607,7 +608,7 @@ module Channel =
         // --------------- open channel procedure: case we are funder -------------
         | ChannelState.Normal _state, CreateChannelReestablish ->
             makeChannelReestablish cs.ChannelPrivKeys cs.Commitments
-        | ChannelState.Normal state, ApplyFundingLocked msg ->
+        | ChannelState.Normal _state, ApplyFundingLocked msg ->
             result {
                 do!
                     match cs.RemoteNextCommitInfo with
@@ -617,14 +618,14 @@ module Channel =
                             Error <| InvalidFundingLocked { NetworkMsg = msg }
                         else
                             Ok ()
-                match state.ShortChannelId with
+                match cs.ShortChannelId with
                 | None ->
                     return [ TheySentFundingLocked msg ]
                 | Some _shortChannelId ->
                     return [ BothFundingLocked(msg.NextPerCommitmentPoint) ]
             }
-        | ChannelState.Normal state, ApplyFundingConfirmedOnBC(height, txindex, depth) ->
-            match state.ShortChannelId with
+        | ChannelState.Normal _state, ApplyFundingConfirmedOnBC(height, txindex, depth) ->
+            match cs.ShortChannelId with
             | None -> 
                 if cs.FundingTxMinimumDepth > depth then
                     [] |> Ok
@@ -675,7 +676,7 @@ module Channel =
         | ChannelState.Normal state, AddHTLC op when state.HasEnteredShutdown() ->
             sprintf "Could not add new HTLC %A since shutdown is already in progress." op
             |> apiMisuse
-        | ChannelState.Normal state, AddHTLC op ->
+        | ChannelState.Normal _state, AddHTLC op ->
             result {
                 do! Validation.checkOperationAddHTLC cs.Commitments op
                 let add: UpdateAddHTLCMsg = {
@@ -701,7 +702,7 @@ module Channel =
                     }
 
                 let! remoteNextCommitInfo =
-                    remoteNextCommitInfoIfFundingLockedNormal state.ShortChannelId cs.RemoteNextCommitInfo "AddHTLC"
+                    remoteNextCommitInfoIfFundingLockedNormal cs.ShortChannelId cs.RemoteNextCommitInfo "AddHTLC"
                 // we need to base the next current commitment on the last sig we sent, even if we didn't yet receive their revocation
                 let remoteCommit1 =
                     match remoteNextCommitInfo with
@@ -727,68 +728,68 @@ module Channel =
                 return [ WeAcceptedUpdateAddHTLC commitments1 ]
             }
 
-        | ChannelState.Normal state, FulfillHTLC cmd ->
+        | ChannelState.Normal _state, FulfillHTLC cmd ->
             result {
                 let! remoteNextCommitInfo =
-                    remoteNextCommitInfoIfFundingLockedNormal state.ShortChannelId cs.RemoteNextCommitInfo "FulfillHTLC"
+                    remoteNextCommitInfoIfFundingLockedNormal cs.ShortChannelId cs.RemoteNextCommitInfo "FulfillHTLC"
                 let! t = Commitments.sendFulfill cmd cs.Commitments remoteNextCommitInfo
                 return [ WeAcceptedOperationFulfillHTLC t ]
             }
 
-        | ChannelState.Normal state, ChannelCommand.ApplyUpdateFulfillHTLC msg ->
+        | ChannelState.Normal _state, ChannelCommand.ApplyUpdateFulfillHTLC msg ->
             result {
                 let! remoteNextCommitInfo =
-                    remoteNextCommitInfoIfFundingLockedNormal state.ShortChannelId cs.RemoteNextCommitInfo "ApplyUpdateFulfullHTLC"
+                    remoteNextCommitInfoIfFundingLockedNormal cs.ShortChannelId cs.RemoteNextCommitInfo "ApplyUpdateFulfullHTLC"
                 return! Commitments.receiveFulfill msg cs.Commitments remoteNextCommitInfo
             }
 
-        | ChannelState.Normal state, FailHTLC op ->
+        | ChannelState.Normal _state, FailHTLC op ->
             result {
                 let! remoteNextCommitInfo =
-                    remoteNextCommitInfoIfFundingLockedNormal state.ShortChannelId cs.RemoteNextCommitInfo "FailHTLC"
+                    remoteNextCommitInfoIfFundingLockedNormal cs.ShortChannelId cs.RemoteNextCommitInfo "FailHTLC"
                 return! Commitments.sendFail cs.NodeSecret op cs.Commitments remoteNextCommitInfo
             }
 
-        | ChannelState.Normal state, FailMalformedHTLC op ->
+        | ChannelState.Normal _state, FailMalformedHTLC op ->
             result {
                 let! remoteNextCommitInfo =
-                    remoteNextCommitInfoIfFundingLockedNormal state.ShortChannelId cs.RemoteNextCommitInfo "FailMalformedHTLC"
+                    remoteNextCommitInfoIfFundingLockedNormal cs.ShortChannelId cs.RemoteNextCommitInfo "FailMalformedHTLC"
                 return! Commitments.sendFailMalformed op cs.Commitments remoteNextCommitInfo
             }
 
-        | ChannelState.Normal state, ApplyUpdateFailHTLC msg ->
+        | ChannelState.Normal _state, ApplyUpdateFailHTLC msg ->
             result {
                 let! remoteNextCommitInfo =
-                    remoteNextCommitInfoIfFundingLockedNormal state.ShortChannelId cs.RemoteNextCommitInfo "ApplyUpdateFailHTLC"
+                    remoteNextCommitInfoIfFundingLockedNormal cs.ShortChannelId cs.RemoteNextCommitInfo "ApplyUpdateFailHTLC"
                 return! Commitments.receiveFail msg cs.Commitments remoteNextCommitInfo
             }
 
-        | ChannelState.Normal state, ApplyUpdateFailMalformedHTLC msg ->
+        | ChannelState.Normal _state, ApplyUpdateFailMalformedHTLC msg ->
             result {
                 let! remoteNextCommitInfo =
-                    remoteNextCommitInfoIfFundingLockedNormal state.ShortChannelId cs.RemoteNextCommitInfo "ApplyUpdateFailMalformedHTLC"
+                    remoteNextCommitInfoIfFundingLockedNormal cs.ShortChannelId cs.RemoteNextCommitInfo "ApplyUpdateFailMalformedHTLC"
                 return! Commitments.receiveFailMalformed msg cs.Commitments remoteNextCommitInfo
             }
 
-        | ChannelState.Normal state, UpdateFee op ->
+        | ChannelState.Normal _state, UpdateFee op ->
             result {
                 let! _remoteNextCommitInfo =
-                    remoteNextCommitInfoIfFundingLockedNormal state.ShortChannelId cs.RemoteNextCommitInfo "UpdateFee"
+                    remoteNextCommitInfoIfFundingLockedNormal cs.ShortChannelId cs.RemoteNextCommitInfo "UpdateFee"
                 return! cs.Commitments |> Commitments.sendFee op
             }
-        | ChannelState.Normal state, ApplyUpdateFee msg ->
+        | ChannelState.Normal _state, ApplyUpdateFee msg ->
             result {
                 let! _remoteNextCommitInfo =
-                    remoteNextCommitInfoIfFundingLockedNormal state.ShortChannelId cs.RemoteNextCommitInfo "ApplyUpdateFee"
+                    remoteNextCommitInfoIfFundingLockedNormal cs.ShortChannelId cs.RemoteNextCommitInfo "ApplyUpdateFee"
                 let localFeerate = cs.FeeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority)
                 return! cs.Commitments |> Commitments.receiveFee cs.ChannelOptions localFeerate msg
             }
 
-        | ChannelState.Normal state, SignCommitment ->
+        | ChannelState.Normal _state, SignCommitment ->
             let cm = cs.Commitments
             result {
                 let! remoteNextCommitInfo =
-                    remoteNextCommitInfoIfFundingLockedNormal state.ShortChannelId cs.RemoteNextCommitInfo "SignCommit"
+                    remoteNextCommitInfoIfFundingLockedNormal cs.ShortChannelId cs.RemoteNextCommitInfo "SignCommit"
                 match remoteNextCommitInfo with
                 | _ when (cm.LocalHasChanges() |> not) ->
                     // Ignore SignCommitment Command (nothing to sign)
@@ -800,17 +801,17 @@ module Channel =
                     return []
             }
 
-        | ChannelState.Normal state, ApplyCommitmentSigned msg ->
+        | ChannelState.Normal _state, ApplyCommitmentSigned msg ->
             result {
                 let! _remoteNextCommitInfo =
-                    remoteNextCommitInfoIfFundingLockedNormal state.ShortChannelId cs.RemoteNextCommitInfo "ApplyCommitmentSigned"
+                    remoteNextCommitInfoIfFundingLockedNormal cs.ShortChannelId cs.RemoteNextCommitInfo "ApplyCommitmentSigned"
                 return! cs.Commitments |> Commitments.receiveCommit cs.ChannelPrivKeys msg cs.Network
             }
 
-        | ChannelState.Normal state, ApplyRevokeAndACK msg ->
+        | ChannelState.Normal _state, ApplyRevokeAndACK msg ->
             result {
                 let! remoteNextCommitInfo =
-                    remoteNextCommitInfoIfFundingLockedNormal state.ShortChannelId cs.RemoteNextCommitInfo "ApplyRevokeAndACK"
+                    remoteNextCommitInfoIfFundingLockedNormal cs.ShortChannelId cs.RemoteNextCommitInfo "ApplyRevokeAndACK"
                 let cm = cs.Commitments
                 match remoteNextCommitInfo with
                 | RemoteNextCommitInfo.Waiting _ when (msg.PerCommitmentSecret.PerCommitmentPoint() <> cm.RemoteCommit.RemotePerCommitmentPoint) ->
@@ -1090,13 +1091,10 @@ module Channel =
     let applyEvent c (e: ChannelEvent): Channel =
         match e, c.State with
         // --------- init both ------
-        | FundingConfirmed (_ourFundingLockedMsg, shortChannelId), ChannelState.Normal normalData ->
+        | FundingConfirmed (_ourFundingLockedMsg, shortChannelId), ChannelState.Normal _normalData ->
             {
                 c with
-                    State = ChannelState.Normal {
-                        normalData with
-                            ShortChannelId = Some shortChannelId
-                    }
+                    ShortChannelId = Some shortChannelId
             }
         | TheySentFundingLocked msg, ChannelState.Normal _normalData ->
             {
