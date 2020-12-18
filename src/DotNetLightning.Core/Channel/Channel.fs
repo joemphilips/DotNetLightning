@@ -539,18 +539,6 @@ module Channel =
             ((localClosingFee.Satoshi + remoteClosingFee.Satoshi) / 4L) * 2L
             |> Money.Satoshis
 
-        let claimCurrentLocalCommitTxOutputs (channelPrivKeys: ChannelPrivKeys,
-                                              commitments: Commitments,
-                                              commitTx: CommitTx
-                                             ) =
-            result {
-                let commitmentSeed = channelPrivKeys.CommitmentSeed
-                do! check (commitments.LocalCommit.PublishableTxs.CommitTx.Value.GetTxId()) (=) (commitTx.Value.GetTxId()) "txid mismatch. provided txid (%A) does not match current local commit tx (%A)"
-                let _localPerCommitmentPoint =
-                    commitmentSeed.DerivePerCommitmentPoint commitments.LocalCommit.Index
-                failwith "TODO"
-            }
-
     let makeChannelReestablish (channelPrivKeys: ChannelPrivKeys)
                                (commitments: Commitments)
                                    : Result<ChannelEvent list, ChannelError> =
