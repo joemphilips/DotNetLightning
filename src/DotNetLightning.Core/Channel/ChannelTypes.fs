@@ -44,7 +44,6 @@ module Data =
         ShortChannelId: Option<ShortChannelId>
         LocalShutdownState: Option<ShutdownState>
         RemoteShutdownState: Option<ShutdownState>
-        RemoteNextCommitInfo: Option<RemoteNextCommitInfo>
     } with
         member self.HasEnteredShutdown(): bool =
             let localEnteredShutdown =
@@ -58,20 +57,11 @@ module Data =
             localEnteredShutdown || remoteEnteredShutdown
 
     type NegotiatingData = {
-        RemoteNextCommitInfo: Option<RemoteNextCommitInfo>
         LocalShutdown: ShutdownScriptPubKey
         RemoteShutdown: ShutdownScriptPubKey
         LocalClosingFeesProposed: List<Money>
         RemoteClosingFeeProposed: Option<Money * LNECDSASignature>
     }
-
-    type ClosingData = {
-        RemoteNextCommitInfo: Option<RemoteNextCommitInfo>
-    } with
-        static member Create (remoteNextCommitInfo: Option<RemoteNextCommitInfo>)
-                                 : ClosingData = {
-            RemoteNextCommitInfo = remoteNextCommitInfo
-        }
 
 //     8888888888 888     888 8888888888 888b    888 88888888888 .d8888b.
 //     888        888     888 888        8888b   888     888    d88P  Y88b
@@ -90,7 +80,7 @@ type ChannelEvent =
     | FundingConfirmed of FundingLockedMsg * shortChannelId: ShortChannelId
     | TheySentFundingLocked of msg: FundingLockedMsg
     | WeResumedDelayedFundingLocked of remoteNextPerCommitmentPoint: PerCommitmentPoint
-    | BothFundingLocked of nextState: Data.NormalData
+    | BothFundingLocked of remoteNextPerCommitmentPoint: PerCommitmentPoint
 
     // -------- normal operation ------
     | WeAcceptedOperationAddHTLC of msg: UpdateAddHTLCMsg * newCommitments: Commitments
@@ -120,7 +110,7 @@ type ChannelEvent =
     | AcceptedShutdownWhenWeHavePendingHTLCs of localShutdown: ShutdownMsg * nextState: NormalData
 
     // ------ closing ------
-    | MutualClosePerformed of txToPublish: FinalizedTx * nextState : ClosingData * nextMsgToSend: Option<ClosingSignedMsg>
+    | MutualClosePerformed of txToPublish: FinalizedTx *  nextMsgToSend: Option<ClosingSignedMsg>
     | WeProposedNewClosingSigned of msgToSend: ClosingSignedMsg * nextState: NegotiatingData
     // -------- else ---------
     | Closed
@@ -150,7 +140,7 @@ type ChannelState =
 
     /// Closing
     | Negotiating of NegotiatingData
-    | Closing of ClosingData
+    | Closing
     with
         interface IState 
 
@@ -161,15 +151,3 @@ type ChannelState =
             (fun v cc -> match cc with
                          | Normal _ -> Normal v
                          | _ -> cc )
-        member this.Phase =
-            match this with
-            | Normal normalData ->
-                if normalData.HasEnteredShutdown() then
-                    ChannelStatePhase.Closing
-                else
-                    if normalData.ShortChannelId.IsNone || normalData.RemoteNextCommitInfo.IsNone then
-                        ChannelStatePhase.Opening
-                    else
-                        ChannelStatePhase.Normal
-            | Negotiating _
-            | Closing _ -> ChannelStatePhase.Closing
