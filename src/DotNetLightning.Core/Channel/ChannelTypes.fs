@@ -61,7 +61,8 @@ module Data =
         RemoteNextCommitInfo: Option<RemoteNextCommitInfo>
         LocalShutdown: ShutdownScriptPubKey
         RemoteShutdown: ShutdownScriptPubKey
-        ClosingFeesProposed: List<Money>
+        LocalClosingFeesProposed: List<Money>
+        RemoteClosingFeeProposed: Option<Money * LNECDSASignature>
     }
 
     type ClosingData = {

@@ -944,7 +944,8 @@ module Channel =
                                 RemoteNextCommitInfo = state.RemoteNextCommitInfo
                                 LocalShutdown = localShutdownScriptPubKey
                                 RemoteShutdown = msg.ScriptPubKey
-                                ClosingFeesProposed = [ closingFee ]
+                                LocalClosingFeesProposed = [ closingFee ]
+                                RemoteClosingFeeProposed = None
                             }
                             return [
                                 AcceptedShutdownWhenNoPendingHTLCs(
@@ -957,7 +958,8 @@ module Channel =
                                 RemoteNextCommitInfo = state.RemoteNextCommitInfo
                                 LocalShutdown = localShutdownScriptPubKey
                                 RemoteShutdown = msg.ScriptPubKey
-                                ClosingFeesProposed = []
+                                LocalClosingFeesProposed = []
+                                RemoteClosingFeeProposed = None
                             }
                             return [ AcceptedShutdownWhenNoPendingHTLCs(None, nextState) ]
                     else
@@ -984,7 +986,13 @@ module Channel =
                 let remoteChannelKeys = cm.RemoteChannelPubKeys
                 let lastCommitFeeSatoshi =
                     cm.FundingScriptCoin.TxOut.Value - (cm.LocalCommit.PublishableTxs.CommitTx.Value.TotalOut)
-                do! checkRemoteProposedHigherFeeThanBefore lastCommitFeeSatoshi msg.FeeSatoshis
+                do! checkRemoteProposedHigherFeeThanBaseFee lastCommitFeeSatoshi msg.FeeSatoshis
+                do!
+                    checkRemoteProposedFeeWithinNegotiatedRange
+                        (List.tryHead state.LocalClosingFeesProposed)
+                        (Option.map (fun (fee, _sig) -> fee) state.RemoteClosingFeeProposed)
+                        msg.FeeSatoshis
+
                 let! closingTx, closingSignedMsg =
                     Closing.makeClosingTx (
                         cs.ChannelPrivKeys,
@@ -1005,11 +1013,11 @@ module Channel =
                         ])
                     |> expectTransactionError
                 let maybeLocalFee =
-                    state.ClosingFeesProposed
+                    state.LocalClosingFeesProposed
                     |> List.tryHead
                 let areWeInDeal = Some(msg.FeeSatoshis) = maybeLocalFee
                 let hasTooManyNegotiationDone =
-                    (state.ClosingFeesProposed |> List.length) >= cs.ChannelOptions.MaxClosingNegotiationIterations
+                    (state.LocalClosingFeesProposed |> List.length) >= cs.ChannelOptions.MaxClosingNegotiationIterations
                 if (areWeInDeal || hasTooManyNegotiationDone) then
                     return!
                         Closing.handleMutualClose
@@ -1018,7 +1026,7 @@ module Channel =
                             state.RemoteNextCommitInfo
                             None
                 else
-                    let lastLocalClosingFee = state.ClosingFeesProposed |> List.tryHead
+                    let lastLocalClosingFee = state.LocalClosingFeesProposed |> List.tryHead
                     let! localF = 
                         match lastLocalClosingFee with
                         | Some v -> Ok v
@@ -1043,7 +1051,9 @@ module Channel =
                         // we have reached on agreement!
                         let negoData = {
                             state with
-                                ClosingFeesProposed = nextClosingFee :: state.ClosingFeesProposed
+                                LocalClosingFeesProposed =
+                                    nextClosingFee :: state.LocalClosingFeesProposed
+                                RemoteClosingFeeProposed = Some (msg.FeeSatoshis, msg.Signature)
                         }
                         return!
                             Closing.handleMutualClose
@@ -1064,7 +1074,9 @@ module Channel =
                             |> expectTransactionError
                         let nextState = {
                             state with
-                                ClosingFeesProposed = nextClosingFee :: state.ClosingFeesProposed
+                                LocalClosingFeesProposed =
+                                    nextClosingFee :: state.LocalClosingFeesProposed
+                                RemoteClosingFeeProposed = Some (msg.FeeSatoshis, msg.Signature)
                         }
                         return [ WeProposedNewClosingSigned(closingSignedMsg, nextState) ]
             }

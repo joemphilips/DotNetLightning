@@ -49,7 +49,8 @@ type ChannelError =
     | OnceConfirmedFundingTxHasBecomeUnconfirmed of height: BlockHeight * depth: BlockHeightOffset32
     | CannotCloseChannel of msg: string
     | UndefinedStateAndCmdPair of state: ChannelState * cmd: ChannelCommand
-    | RemoteProposedHigherFeeThanBefore of previous: Money * current: Money
+    | RemoteProposedHigherFeeThanBaseFee of baseFee: Money * proposedFee: Money
+    | RemoteProposedFeeOutOfNegotiatedRange of ourPreviousFee: Money * theirPreviousFee: Money * theirNextFee: Money
     // ---- invalid command ----
     | InvalidOperationAddHTLC of InvalidOperationAddHTLCError
     // -------------------------
@@ -81,7 +82,8 @@ type ChannelError =
         | CannotCloseChannel _ -> Ignore
         | UndefinedStateAndCmdPair _ -> Ignore
         | InvalidOperationAddHTLC _ -> Ignore
-        | RemoteProposedHigherFeeThanBefore(_, _) -> Close
+        | RemoteProposedHigherFeeThanBaseFee(_, _) -> Close
+        | RemoteProposedFeeOutOfNegotiatedRange(_, _, _) -> Close
     
     member this.Message =
         match this with
@@ -112,9 +114,15 @@ type ChannelError =
             sprintf "They sent shutdown msg (%A) while they have pending unsigned HTLCs, this is protocol violation" msg
         | UndefinedStateAndCmdPair (state, cmd) ->
             sprintf "DotNetLightning does not know how to handle command (%A) while in state (%A)" cmd state
-        | RemoteProposedHigherFeeThanBefore(prev, current) ->
-            "remote proposed a commitment fee higher than the last commitment fee in the course of fee negotiation"
-            + sprintf "previous fee=%A; fee remote proposed=%A;" prev current
+        | RemoteProposedHigherFeeThanBaseFee(baseFee, proposedFee) ->
+            "remote proposed a closing fee higher than commitment fee of the final commitment transaction. "
+            + sprintf "commitment fee=%A; fee remote proposed=%A;" baseFee proposedFee
+        | RemoteProposedFeeOutOfNegotiatedRange(ourPreviousFee, theirPreviousFee, theirNextFee) ->
+            "remote proposed a closing fee which was not strictly between the previous fee that \
+            we proposed and the previous fee that they proposed. "
+            + sprintf
+                "our previous fee = %A; their previous fee = %A; their next fee = %A"
+                ourPreviousFee theirPreviousFee theirNextFee
         | CryptoError cryptoError ->
             sprintf "Crypto error: %s" cryptoError.Message
         | TransactionRelatedErrors transactionErrors ->
@@ -307,11 +315,30 @@ module internal ChannelError =
     let undefinedStateAndCmdPair state cmd =
         UndefinedStateAndCmdPair (state, cmd) |> Error
         
-    let checkRemoteProposedHigherFeeThanBefore prev curr =
-        if (prev < curr) then
-            RemoteProposedHigherFeeThanBefore(prev, curr) |> Error
+    let checkRemoteProposedHigherFeeThanBaseFee baseFee proposedFee =
+        if (baseFee < proposedFee) then
+            RemoteProposedHigherFeeThanBaseFee(baseFee, proposedFee) |> Error
         else
             Ok()
+
+    let checkRemoteProposedFeeWithinNegotiatedRange (ourPreviousFeeOpt: Option<Money>)
+                                                    (theirPreviousFeeOpt: Option<Money>)
+                                                    (theirNextFee: Money) =
+        match (ourPreviousFeeOpt, theirPreviousFeeOpt) with
+        | (Some ourPreviousFee, Some theirPreviousFee) ->
+            let feeWithinRange =
+                ((theirNextFee < theirPreviousFee) && (theirNextFee > ourPreviousFee)) ||
+                ((theirNextFee < ourPreviousFee) && (theirNextFee > theirPreviousFee))
+            if feeWithinRange then
+                Ok ()
+            else
+                RemoteProposedFeeOutOfNegotiatedRange(
+                    ourPreviousFee,
+                    theirPreviousFee,
+                    theirNextFee
+                ) |> Error
+        | _ -> Ok ()
+
 module internal OpenChannelMsgValidation =
     let checkMaxAcceptedHTLCs (msg: OpenChannelMsg) =
         if (msg.MaxAcceptedHTLCs < 1us) || (msg.MaxAcceptedHTLCs > 483us) then
