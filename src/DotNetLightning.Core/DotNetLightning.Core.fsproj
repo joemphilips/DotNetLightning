@@ -27,6 +27,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Utils/SeqConsumer.fs" />
     <Compile Include="Utils/LNMoney.fs" />
     <Compile Include="Utils\Extensions.fs" />
     <Compile Include="Utils/UInt48.fs" />
