@@ -62,6 +62,9 @@ type RevocationPubKey =
         let (RevocationPubKey pubKey) = this
         pubKey
 
+    static member FromBytes(bytes: array<byte>): RevocationPubKey =
+        RevocationPubKey <| PubKey bytes
+
     member this.ToBytes(): array<byte> =
         this.RawPubKey().ToBytes()
 
@@ -153,6 +156,9 @@ type DelayedPaymentPubKey =
     member this.RawPubKey(): PubKey =
         let (DelayedPaymentPubKey pubKey) = this
         pubKey
+
+    static member FromBytes(bytes: array<byte>): DelayedPaymentPubKey =
+        DelayedPaymentPubKey <| PubKey bytes
 
     member this.ToBytes(): array<byte> =
         this.RawPubKey().ToBytes()
