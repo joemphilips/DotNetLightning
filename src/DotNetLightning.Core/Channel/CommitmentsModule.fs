@@ -415,3 +415,97 @@ module internal Commitments =
                               OriginChannels = originChannels1 }
                 return [ WeAcceptedCommitmentSigned(nextMsg, nextCommitments) ;]
             }
+
+module ForceCloseFundsRecovery =
+    // The lightning spec specifies that commitment txs use version 2 bitcoin transactions.
+    let TxVersionNumberOfCommitmentTxs = 2u
+
+    let check(thing: bool): Option<unit> =
+        if thing then
+            Some ()
+        else
+            None
+
+    let tryGetObscuredCommitmentNumber (fundingOutPoint: OutPoint)
+                                       (transaction: Transaction)
+                                           : Option<ObscuredCommitmentNumber> = option {
+        do! check (transaction.Version = TxVersionNumberOfCommitmentTxs)
+        let! txIn = Seq.tryExactlyOne transaction.Inputs
+        do! check (fundingOutPoint = txIn.PrevOut)
+        let! obscuredCommitmentNumber =
+            ObscuredCommitmentNumber.TryFromLockTimeAndSequence transaction.LockTime txIn.Sequence
+        return obscuredCommitmentNumber
+    }
+
+    let tryGetFundsFromLocalCommitmentTx (commitments: Commitments)
+                                         (localChannelPrivKeys: ChannelPrivKeys)
+                                         (network: Network)
+                                         (transaction: Transaction)
+                                         (targetAddress: IDestination)
+                                         (feeRate: FeeRatePerKw)
+                                             : Option<Transaction> = option {
+        let! obscuredCommitmentNumber =
+            tryGetObscuredCommitmentNumber
+                commitments.FundingScriptCoin.Outpoint
+                transaction
+        let localChannelPubKeys = commitments.LocalParams.ChannelPubKeys
+        let remoteChannelPubKeys = commitments.RemoteParams.ChannelPubKeys
+        let commitmentNumber =
+            obscuredCommitmentNumber.Unobscure
+                true
+                localChannelPubKeys.PaymentBasepoint
+                remoteChannelPubKeys.PaymentBasepoint
+
+        let perCommitmentPoint =
+            localChannelPrivKeys.CommitmentSeed.DerivePerCommitmentPoint commitmentNumber
+        let localCommitmentPubKeys =
+            perCommitmentPoint.DeriveCommitmentPubKeys localChannelPubKeys
+        let remoteCommitmentPubKeys =
+            perCommitmentPoint.DeriveCommitmentPubKeys remoteChannelPubKeys
+
+        let transactionBuilder = network.CreateTransactionBuilder()
+
+        let toLocalScriptPubKey =
+            Scripts.toLocalDelayed
+                remoteCommitmentPubKeys.RevocationPubKey
+                commitments.LocalParams.ToSelfDelay
+                localCommitmentPubKeys.DelayedPaymentPubKey
+        let! toLocalIndex =
+            let toLocalWitScriptPubKey = toLocalScriptPubKey.WitHash.ScriptPubKey
+            Seq.tryFindIndex
+                (fun (txOut: TxOut) -> txOut.ScriptPubKey = toLocalWitScriptPubKey)
+                transaction.Outputs
+
+        let delayedPaymentPrivKey =
+            perCommitmentPoint.DeriveDelayedPaymentPrivKey
+                localChannelPrivKeys.DelayedPaymentBasepointSecret
+        transactionBuilder.Extensions.Add (CommitmentToLocalExtension())
+        transactionBuilder.AddKeys (delayedPaymentPrivKey.RawKey()) |> ignore
+        transactionBuilder.AddCoins (ScriptCoin(transaction, uint32 toLocalIndex, toLocalScriptPubKey)) |> ignore
+        transactionBuilder.SendAll targetAddress |> ignore
+        let fee =
+            let feeRate = feeRate.AsNBitcoinFeeRate()
+            let spendingTxFee = transactionBuilder.EstimateFees feeRate
+            let requiredCommitmentTxFee = feeRate.GetFee transaction
+            let actualCommitmentTxFee =
+                let output =
+                    Seq.fold
+                        (fun (total: Money) (txOut: TxOut) -> total + txOut.Value)
+                        (Money(0m, MoneyUnit.BTC))
+                        transaction.Outputs
+                let input = commitments.FundingScriptCoin.Amount
+                input - output
+            if requiredCommitmentTxFee > actualCommitmentTxFee then
+                spendingTxFee + requiredCommitmentTxFee - actualCommitmentTxFee
+            else
+                spendingTxFee
+        transactionBuilder.SendFees fee |> ignore
+
+        let spendingTransaction = transactionBuilder.BuildTransaction false
+        spendingTransaction.Version <- TxVersionNumberOfCommitmentTxs
+        spendingTransaction.Inputs.[0].Sequence <- Sequence(uint32 commitments.LocalParams.ToSelfDelay.Value)
+        let signedTransaction = transactionBuilder.SignTransaction spendingTransaction
+
+        return signedTransaction
+    }
+
