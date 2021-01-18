@@ -175,7 +175,7 @@ module Data =
                             Commitments: Commitments;
                             LocalShutdown: ShutdownMsg;
                             RemoteShutdown: ShutdownMsg;
-                            ClosingTxProposed: List<Option<ClosingTxProposed>>
+                            ClosingTxProposed: List<ClosingTxProposed>
                             MaybeBestUnpublishedTx: FinalizedTx option
                             ChannelId: ChannelId
                           }

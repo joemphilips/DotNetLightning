@@ -112,7 +112,7 @@ module Channel =
 
         let handleMutualClose (closingTx: FinalizedTx, d: NegotiatingData) =
             let nextData =
-                ClosingData.Create (d.ChannelId, d.Commitments, None, DateTime.Now, (d.ClosingTxProposed |> List.choose id |> List.map (fun tx -> tx.UnsignedTx)), closingTx)
+                ClosingData.Create (d.ChannelId, d.Commitments, None, DateTime.Now, (d.ClosingTxProposed |> List.map (fun tx -> tx.UnsignedTx)), closingTx)
             [ MutualClosePerformed (closingTx, nextData) ]
             |> Ok
 
@@ -649,7 +649,7 @@ module Channel =
                                               Commitments = cm
                                               LocalShutdown = localShutdown
                                               RemoteShutdown = msg
-                                              ClosingTxProposed = [ Some { ClosingTxProposed.UnsignedTx = closingTx; Fee = closingSignedMsg.FeeSatoshis } ]
+                                              ClosingTxProposed = [ { ClosingTxProposed.UnsignedTx = closingTx; Fee = closingSignedMsg.FeeSatoshis } ]
                                               MaybeBestUnpublishedTx = None }
                             return [ AcceptedShutdownWhenNoPendingHTLCs(closingSignedMsg |> Some, nextState) ]
                         else
@@ -657,7 +657,7 @@ module Channel =
                                               Commitments = cm
                                               LocalShutdown = localShutdown
                                               RemoteShutdown = msg
-                                              ClosingTxProposed = [ None ]
+                                              ClosingTxProposed = [ ]
                                               MaybeBestUnpublishedTx = None }
                             return [ AcceptedShutdownWhenNoPendingHTLCs(None, nextState) ]
                     else
@@ -732,15 +732,14 @@ module Channel =
                 let maybeLocalFee =
                     state.ClosingTxProposed
                     |> List.tryHead
-                    |> Option.bind id
                     |> Option.map (fun v -> v.Fee)
                 let areWeInDeal = Some(msg.FeeSatoshis) = maybeLocalFee
                 let hasTooManyNegotiationDone =
-                    (state.ClosingTxProposed |> List.choose (id) |> List.length) >= cs.Config.PeerChannelConfigLimits.MaxClosingNegotiationIterations
+                    (state.ClosingTxProposed |> List.length) >= cs.Config.PeerChannelConfigLimits.MaxClosingNegotiationIterations
                 if (areWeInDeal || hasTooManyNegotiationDone) then
                     return! Closing.handleMutualClose (finalizedTx, { state with MaybeBestUnpublishedTx = Some(finalizedTx) })
                 else
-                    let lastLocalClosingFee = state.ClosingTxProposed |> List.tryHead |> Option.bind id |> Option.map (fun txp -> txp.Fee)
+                    let lastLocalClosingFee = state.ClosingTxProposed |> List.tryHead |> Option.map (fun txp -> txp.Fee)
                     let! localF = 
                         match lastLocalClosingFee with
                         | Some v -> Ok v
@@ -758,7 +757,7 @@ module Channel =
                     else if (nextClosingFee = msg.FeeSatoshis) then
                         // we have reached on agreement!
                         let closingTxProposed1 =
-                            let newProposed = Some {
+                            let newProposed = {
                                 ClosingTxProposed.UnsignedTx = closingTx
                                 Fee = closingSignedMsg.FeeSatoshis
                             }
@@ -779,7 +778,7 @@ module Channel =
                             )
                             |> expectTransactionError
                         let closingTxProposed1 =
-                            let newProposed = Some {
+                            let newProposed = {
                                 ClosingTxProposed.UnsignedTx = closingTx
                                 Fee = closingSignedMsg.FeeSatoshis
                             }
