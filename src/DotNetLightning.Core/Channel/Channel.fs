@@ -246,33 +246,39 @@ module Channel =
                     let remoteSigPairOfLocalTx = (theirFundingPk,  TransactionSignature(msg.Signature.Value, SigHash.All))
                     let sigPairs = seq [ remoteSigPairOfLocalTx; ]
                     Transactions.checkTxFinalized signedLocalCommitTx state.LocalCommitTx.WhichInput sigPairs |> expectTransactionError
-                let commitments = { Commitments.LocalParams = state.LocalParams
-                                    RemoteParams = state.RemoteParams
-                                    ChannelFlags = state.ChannelFlags
-                                    FundingScriptCoin =
-                                        let amount = state.FundingTx.Value.Outputs.[int state.LastSent.FundingOutputIndex.Value].Value
-                                        ChannelHelpers.getFundingScriptCoin
-                                            state.LocalParams.ChannelPubKeys.FundingPubKey
-                                            remoteChannelKeys.FundingPubKey
-                                            state.LastSent.FundingTxId
-                                            state.LastSent.FundingOutputIndex
-                                            amount
-                                    LocalCommit = { Index = CommitmentNumber.FirstCommitment;
-                                                    Spec = state.LocalSpec;
-                                                    PublishableTxs = { PublishableTxs.CommitTx = finalizedLocalCommitTx
-                                                                       HTLCTxs = [] }
-                                                    PendingHTLCSuccessTxs = [] }
-                                    RemoteCommit = state.RemoteCommit
-                                    LocalChanges = LocalChanges.Zero
-                                    RemoteChanges = RemoteChanges.Zero
-                                    LocalNextHTLCId = HTLCId.Zero
-                                    RemoteNextHTLCId = HTLCId.Zero
-                                    OriginChannels = Map.empty
-                                    // we will receive their next per-commitment point in the next msg, so we temporarily put a random byte array
-                                    RemoteNextCommitInfo = DataEncoders.HexEncoder().DecodeData("0101010101010101010101010101010101010101010101010101010101010101") |> fun h -> new Key(h) |> fun k -> k.PubKey |> PerCommitmentPoint |> RemoteNextCommitInfo.Revoked
-                                    RemotePerCommitmentSecrets = PerCommitmentSecretStore()
-                                    ChannelId =
-                                        msg.ChannelId }
+                let commitments = {
+                    Commitments.LocalParams = state.LocalParams
+                    RemoteParams = state.RemoteParams
+                    ChannelFlags = state.ChannelFlags
+                    FundingScriptCoin =
+                        let amount = state.FundingTx.Value.Outputs.[int state.LastSent.FundingOutputIndex.Value].Value
+                        ChannelHelpers.getFundingScriptCoin
+                            state.LocalParams.ChannelPubKeys.FundingPubKey
+                            remoteChannelKeys.FundingPubKey
+                            state.LastSent.FundingTxId
+                            state.LastSent.FundingOutputIndex
+                            amount
+                    LocalCommit = {
+                        Index = CommitmentNumber.FirstCommitment
+                        Spec = state.LocalSpec
+                        PublishableTxs = {
+                            PublishableTxs.CommitTx = finalizedLocalCommitTx
+                            HTLCTxs = []
+                        }
+                        PendingHTLCSuccessTxs = []
+                    }
+                    RemoteCommit = state.RemoteCommit
+                    LocalChanges = LocalChanges.Zero
+                    RemoteChanges = RemoteChanges.Zero
+                    LocalNextHTLCId = HTLCId.Zero
+                    RemoteNextHTLCId = HTLCId.Zero
+                    OriginChannels = Map.empty
+                    // we will receive their next per-commitment point in the next msg, so we temporarily put a random byte array
+                    RemoteNextCommitInfo = DataEncoders.HexEncoder().DecodeData("0101010101010101010101010101010101010101010101010101010101010101") |> fun h -> new Key(h) |> fun k -> k.PubKey |> PerCommitmentPoint |> RemoteNextCommitInfo.Revoked
+                    RemotePerCommitmentSecrets = PerCommitmentSecretStore()
+                    ChannelId = msg.ChannelId
+                    LocalSignaturesOfRemoteCommitments = [ state.LastSent.Signature ]
+                }
                 let nextState = { WaitForFundingConfirmedData.Commitments = commitments
                                   Deferred = None
                                   LastSent = Choice1Of2 state.LastSent
@@ -346,33 +352,42 @@ module Channel =
                     cs.ChannelPrivKeys.SignWithFundingPrivKey remoteCommitTx.Value
                 let channelId = OutPoint(msg.FundingTxId.Value, uint32 msg.FundingOutputIndex.Value).ToChannelId()
                 let msgToSend: FundingSignedMsg = { ChannelId = channelId; Signature = !>localSigOfRemoteCommit.Signature }
-                let commitments = { Commitments.LocalParams = state.LocalParams
-                                    RemoteParams = state.RemoteParams
-                                    ChannelFlags = state.ChannelFlags
-                                    FundingScriptCoin =
-                                        ChannelHelpers.getFundingScriptCoin
-                                            state.LocalParams.ChannelPubKeys.FundingPubKey
-                                            remoteChannelKeys.FundingPubKey
-                                            msg.FundingTxId
-                                            msg.FundingOutputIndex
-                                            state.FundingSatoshis
-                                    LocalCommit = { LocalCommit.Index = CommitmentNumber.FirstCommitment
-                                                    Spec = localSpec
-                                                    PublishableTxs = { PublishableTxs.CommitTx = finalizedCommitTx;
-                                                                       HTLCTxs = [] }
-                                                    PendingHTLCSuccessTxs = [] }
-                                    RemoteCommit = { RemoteCommit.Index = CommitmentNumber.FirstCommitment
-                                                     Spec = remoteSpec
-                                                     TxId = remoteCommitTx.Value.GetGlobalTransaction().GetTxId()
-                                                     RemotePerCommitmentPoint = state.RemoteFirstPerCommitmentPoint }
-                                    LocalChanges = LocalChanges.Zero
-                                    RemoteChanges = RemoteChanges.Zero
-                                    LocalNextHTLCId = HTLCId.Zero
-                                    RemoteNextHTLCId = HTLCId.Zero
-                                    OriginChannels = Map.empty
-                                    RemoteNextCommitInfo = DataEncoders.HexEncoder().DecodeData("0101010101010101010101010101010101010101010101010101010101010101") |> fun h -> new Key(h) |> fun k -> k.PubKey |> PerCommitmentPoint |> RemoteNextCommitInfo.Revoked
-                                    RemotePerCommitmentSecrets = PerCommitmentSecretStore()
-                                    ChannelId = channelId }
+                let commitments = {
+                    Commitments.LocalParams = state.LocalParams
+                    RemoteParams = state.RemoteParams
+                    ChannelFlags = state.ChannelFlags
+                    FundingScriptCoin =
+                        ChannelHelpers.getFundingScriptCoin
+                            state.LocalParams.ChannelPubKeys.FundingPubKey
+                            remoteChannelKeys.FundingPubKey
+                            msg.FundingTxId
+                            msg.FundingOutputIndex
+                            state.FundingSatoshis
+                    LocalCommit = {
+                        LocalCommit.Index = CommitmentNumber.FirstCommitment
+                        Spec = localSpec
+                        PublishableTxs = {
+                            PublishableTxs.CommitTx = finalizedCommitTx
+                            HTLCTxs = []
+                        }
+                        PendingHTLCSuccessTxs = []
+                    }
+                    RemoteCommit = {
+                        RemoteCommit.Index = CommitmentNumber.FirstCommitment
+                        Spec = remoteSpec
+                        TxId = remoteCommitTx.Value.GetGlobalTransaction().GetTxId()
+                        RemotePerCommitmentPoint = state.RemoteFirstPerCommitmentPoint
+                    }
+                    LocalChanges = LocalChanges.Zero
+                    RemoteChanges = RemoteChanges.Zero
+                    LocalNextHTLCId = HTLCId.Zero
+                    RemoteNextHTLCId = HTLCId.Zero
+                    OriginChannels = Map.empty
+                    RemoteNextCommitInfo = DataEncoders.HexEncoder().DecodeData("0101010101010101010101010101010101010101010101010101010101010101") |> fun h -> new Key(h) |> fun k -> k.PubKey |> PerCommitmentPoint |> RemoteNextCommitInfo.Revoked
+                    RemotePerCommitmentSecrets = PerCommitmentSecretStore()
+                    ChannelId = channelId
+                    LocalSignaturesOfRemoteCommitments = [ !>localSigOfRemoteCommit.Signature ]
+                }
                 let nextState = { WaitForFundingConfirmedData.Commitments = commitments
                                   Deferred = None
                                   LastSent = msgToSend |> Choice2Of2

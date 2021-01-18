@@ -130,6 +130,7 @@ type Commitments = {
     RemoteNextCommitInfo: RemoteNextCommitInfo
     RemotePerCommitmentSecrets: PerCommitmentSecretStore
     ChannelId: ChannelId
+    LocalSignaturesOfRemoteCommitments: List<LNECDSASignature>
 }
     with
         static member LocalChanges_: Lens<_, _> =

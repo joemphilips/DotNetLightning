@@ -303,9 +303,24 @@ module internal Commitments =
                         SentAfterLocalCommitmentIndex = cm.LocalCommit.Index
                         ReSignASAP = false
                     }
-                    { cm with RemoteNextCommitInfo = RemoteNextCommitInfo.Waiting(nextRemoteCommitInfo)
-                              LocalChanges = { cm.LocalChanges with Proposed = []; Signed = cm.LocalChanges.Proposed }
-                              RemoteChanges = { cm.RemoteChanges with ACKed = []; Signed = cm.RemoteChanges.ACKed } }
+                    {
+                        cm with
+                        RemoteNextCommitInfo = RemoteNextCommitInfo.Waiting(nextRemoteCommitInfo)
+                        LocalChanges = {
+                            cm.LocalChanges with
+                            Proposed = []
+                            Signed = cm.LocalChanges.Proposed
+                        }
+                        RemoteChanges = {
+                            cm.RemoteChanges with
+                            ACKed = []
+                            Signed = cm.RemoteChanges.ACKed
+                        }
+                        LocalSignaturesOfRemoteCommitments =
+                            List.append
+                                cm.LocalSignaturesOfRemoteCommitments
+                                [ !> signature.Signature ]
+                    }
                 return [ WeAcceptedOperationSign (msg, nextCommitments) ]
             }
         | RemoteNextCommitInfo.Waiting _ ->
@@ -409,10 +424,13 @@ module internal Commitments =
                                  |> Map.toSeq |> Seq.map (fun (k, _) -> k) |> Set.ofSeq
                         Set.difference t1 t2
                     let originChannels1 = cm.OriginChannels |> Map.filter(fun k _ -> Set.contains k completedOutgoingHTLCs)
-                    { cm with LocalCommit = localCommit1
-                              LocalChanges = ourChanges1
-                              RemoteChanges = theirChanges1
-                              OriginChannels = originChannels1 }
+                    {
+                        cm with
+                        LocalCommit = localCommit1
+                        LocalChanges = ourChanges1
+                        RemoteChanges = theirChanges1
+                        OriginChannels = originChannels1
+                    }
                 return [ WeAcceptedCommitmentSigned(nextMsg, nextCommitments) ;]
             }
 
