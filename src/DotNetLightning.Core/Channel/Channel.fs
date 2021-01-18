@@ -759,7 +759,7 @@ module Channel =
                         let closingTxProposed1 =
                             let newProposed = {
                                 ClosingTxProposed.UnsignedTx = closingTx
-                                Fee = closingSignedMsg.FeeSatoshis
+                                Fee = nextClosingFee
                             }
                             newProposed :: state.ClosingTxProposed
                         let negoData = { state with ClosingTxProposed = closingTxProposed1
@@ -780,7 +780,7 @@ module Channel =
                         let closingTxProposed1 =
                             let newProposed = {
                                 ClosingTxProposed.UnsignedTx = closingTx
-                                Fee = closingSignedMsg.FeeSatoshis
+                                Fee = nextClosingFee
                             }
                             newProposed :: state.ClosingTxProposed
                         let nextState = { state with ClosingTxProposed = closingTxProposed1; MaybeBestUnpublishedTx = Some(finalizedTx) }
