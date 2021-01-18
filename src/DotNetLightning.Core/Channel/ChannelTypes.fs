@@ -25,12 +25,8 @@ open NBitcoin
 module Data =
     type ClosingTxProposed = {
         UnsignedTx: ClosingTx
-        LocalClosingSigned: ClosingSignedMsg
+        Fee: Money
     }
-    with
-        static member LocalClosingSigned_: Lens<_ ,_> =
-            (fun p -> p.LocalClosingSigned),
-            (fun v p -> { p with LocalClosingSigned = v })
 
     type LocalCommitPublished = {
         CommitTx: CommitTx
