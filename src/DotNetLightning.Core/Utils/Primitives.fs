@@ -490,3 +490,18 @@ module Primitives =
         member self.ToBytes(): array<byte> =
             self.ShutdownScript.ToBytes()
 
+    type ChannelFlags = {
+        AnnounceChannel: bool
+    } with
+        static member private AnnounceChannelMask: uint8 = 1uy
+
+        static member FromUInt8(flags: uint8): ChannelFlags = {
+            AnnounceChannel = (flags &&& ChannelFlags.AnnounceChannelMask) = ChannelFlags.AnnounceChannelMask
+        }
+
+        member self.IntoUInt8(): uint8 =
+            if self.AnnounceChannel then
+                ChannelFlags.AnnounceChannelMask
+            else
+                0uy
+

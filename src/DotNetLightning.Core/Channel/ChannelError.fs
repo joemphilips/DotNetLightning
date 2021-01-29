@@ -435,7 +435,7 @@ module internal OpenChannelMsgValidation =
     let checkChannelAnnouncementPreferenceAcceptable (channelHandshakeLimits: ChannelHandshakeLimits)
                                                      (channelOptions: ChannelOptions)
                                                      (msg: OpenChannelMsg) =
-        let theirAnnounce = (msg.ChannelFlags &&& 1uy) = 1uy
+        let theirAnnounce = msg.ChannelFlags.AnnounceChannel
         if (channelHandshakeLimits.ForceChannelAnnouncementPreference) && channelOptions.AnnounceChannel <> theirAnnounce then
             "Peer tried to open channel but their announcement preference is different from ours"
             |> Error

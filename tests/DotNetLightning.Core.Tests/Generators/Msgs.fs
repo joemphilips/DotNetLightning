@@ -114,7 +114,7 @@ let openChannelGen =
         <*> delayedPaymentBasepointGen
         <*> htlcBasepointGen
         <*> perCommitmentPointGen
-        <*> Arb.generate<uint8>
+        <*> channelFlagsGen
         <*> Gen.oneof [
             gen {
                 let! genericTLV = genericTLVGen [0UL]

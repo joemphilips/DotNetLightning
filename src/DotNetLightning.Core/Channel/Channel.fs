@@ -30,7 +30,7 @@ type ChannelWaitingForFundingSigned = {
     LocalSpec: CommitmentSpec
     LocalCommitTx: CommitTx
     RemoteCommit: RemoteCommit
-    ChannelFlags: uint8
+    ChannelFlags: ChannelFlags
     LastSent: FundingCreatedMsg
     LocalShutdownScriptPubKey: Option<ShutdownScriptPubKey>
     RemoteShutdownScriptPubKey: Option<ShutdownScriptPubKey>
@@ -115,7 +115,7 @@ and ChannelWaitingForFundingCreated = {
     PushMSat: LNMoney
     InitialFeeRatePerKw: FeeRatePerKw
     RemoteFirstPerCommitmentPoint: PerCommitmentPoint
-    ChannelFlags: uint8
+    ChannelFlags: ChannelFlags
 } with
     member self.ApplyFundingCreated (msg: FundingCreatedMsg)
                                         : Result<FundingSignedMsg * Channel, ChannelError> = result {
@@ -225,7 +225,7 @@ and ChannelWaitingForFundingTx = {
     InitFeeRatePerKw: FeeRatePerKw
     LocalParams: LocalParams
     RemoteInit: InitMsg
-    ChannelFlags: uint8
+    ChannelFlags: ChannelFlags
 } with
     member self.CreateFundingTx (fundingTx: FinalizedTx)
                                 (outIndex: TxOutIndex)
@@ -304,7 +304,7 @@ and ChannelWaitingForAcceptChannel = {
     InitFeeRatePerKw: FeeRatePerKw
     LocalParams: LocalParams
     RemoteInit: InitMsg
-    ChannelFlags: uint8
+    ChannelFlags: ChannelFlags
 } with
     member self.ApplyAcceptChannel (msg: AcceptChannelMsg)
                                        : Result<IDestination * Money * ChannelWaitingForFundingTx, ChannelError> = result {
@@ -372,7 +372,7 @@ and Channel = {
                                   initFeeRatePerKw: FeeRatePerKw,
                                   localParams: LocalParams,
                                   remoteInit: InitMsg,
-                                  channelFlags: uint8,
+                                  channelFlags: ChannelFlags,
                                   channelPrivKeys: ChannelPrivKeys
                                  ): Result<OpenChannelMsg * ChannelWaitingForAcceptChannel, ChannelError> =
             let openChannelMsgToSend: OpenChannelMsg = {

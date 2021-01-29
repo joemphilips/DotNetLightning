@@ -323,6 +323,10 @@ type LightningReaderStream(inner: Stream) =
         let len = this.ReadUInt16(false)
         this.ReadBytes(int32 len)
 
+    member this.ReadChannelFlags(): ChannelFlags =
+        let flags = this.ReadUInt8()
+        ChannelFlags.FromUInt8 flags
+
     member this.ReadKey(): Key =
         let bytes: array<byte> = this.ReadBytes Key.BytesLength
         new Key(bytes)
