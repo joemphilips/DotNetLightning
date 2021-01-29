@@ -45,10 +45,12 @@ type ChannelError =
     // ------------------
     
     /// Consumer of the api (usually, that is wallet) failed to give an funding tx
+    | ReceivedClosingSignedBeforeReceivingShutdown
+    | ReceivedClosingSignedBeforeSendingShutdown
+    | ReceivedClosingSignedBeforeSendingOrReceivingShutdown
     | FundingTxNotGiven of msg: string
     | OnceConfirmedFundingTxHasBecomeUnconfirmed of height: BlockHeight * depth: BlockHeightOffset32
     | CannotCloseChannel of msg: string
-    | UndefinedStateAndCmdPair of state: ChannelState * cmd: ChannelCommand
     | RemoteProposedHigherFeeThanBaseFee of baseFee: Money * proposedFee: Money
     | RemoteProposedFeeOutOfNegotiatedRange of ourPreviousFee: Money * theirPreviousFee: Money * theirNextFee: Money
     // ---- invalid command ----
@@ -77,10 +79,12 @@ type ChannelError =
         | InvalidUpdateAddHTLC _ -> Close
         | InvalidRevokeAndACK _ -> Close
         | InvalidUpdateFee _ -> Close
+        | ReceivedClosingSignedBeforeReceivingShutdown -> Close
+        | ReceivedClosingSignedBeforeSendingShutdown -> Close
+        | ReceivedClosingSignedBeforeSendingOrReceivingShutdown -> Close
         | FundingTxNotGiven _ -> Ignore
         | OnceConfirmedFundingTxHasBecomeUnconfirmed _ -> Close
         | CannotCloseChannel _ -> Ignore
-        | UndefinedStateAndCmdPair _ -> Ignore
         | InvalidOperationAddHTLC _ -> Ignore
         | RemoteProposedHigherFeeThanBaseFee(_, _) -> Close
         | RemoteProposedFeeOutOfNegotiatedRange(_, _, _) -> Close
@@ -112,8 +116,6 @@ type ChannelError =
             sprintf "once confirmed funding tx has become less confirmed than threshold %A! This is probably caused by reorg. current depth is: %A " height depth
         | ReceivedShutdownWhenRemoteHasUnsignedOutgoingHTLCs msg ->
             sprintf "They sent shutdown msg (%A) while they have pending unsigned HTLCs, this is protocol violation" msg
-        | UndefinedStateAndCmdPair (state, cmd) ->
-            sprintf "DotNetLightning does not know how to handle command (%A) while in state (%A)" cmd state
         | RemoteProposedHigherFeeThanBaseFee(baseFee, proposedFee) ->
             "remote proposed a closing fee higher than commitment fee of the final commitment transaction. "
             + sprintf "commitment fee=%A; fee remote proposed=%A;" baseFee proposedFee
@@ -147,6 +149,12 @@ type ChannelError =
             sprintf "Invalid revoke_and_ack msg: %s" invalidRevokeAndACKError.Message
         | InvalidUpdateFee invalidUpdateFeeError ->
             sprintf "Invalid update_fee msg: %s" invalidUpdateFeeError.Message
+        | ReceivedClosingSignedBeforeReceivingShutdown ->
+            sprintf "received closing_signed before receiving shutdown"
+        | ReceivedClosingSignedBeforeSendingShutdown ->
+            sprintf "received closing_signed before sending shutdown"
+        | ReceivedClosingSignedBeforeSendingOrReceivingShutdown ->
+            sprintf "received closing_signed before sending or receiving shutdown"
         | FundingTxNotGiven msg ->
             sprintf "Funding tx not given: %s" msg
         | CannotCloseChannel msg ->
@@ -312,8 +320,6 @@ module internal ChannelError =
 
     let receivedShutdownWhenRemoteHasUnsignedOutgoingHTLCs msg =
         msg |> ReceivedShutdownWhenRemoteHasUnsignedOutgoingHTLCs |> Error
-    let undefinedStateAndCmdPair state cmd =
-        UndefinedStateAndCmdPair (state, cmd) |> Error
         
     let checkRemoteProposedHigherFeeThanBaseFee baseFee proposedFee =
         if (baseFee < proposedFee) then
