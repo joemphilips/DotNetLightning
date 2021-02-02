@@ -317,7 +317,7 @@ module Primitives =
     type FeeRatePerKw = | FeeRatePerKw of uint32 with
         member x.Value = let (FeeRatePerKw v) = x in v
         static member FromFee(fee: Money, weight: uint64) =
-            (((uint64 fee.Satoshi) * weight) / 1000UL)
+            (((uint64 fee.Satoshi) * 1000UL) / weight)
             |> uint32
             |> FeeRatePerKw
             
