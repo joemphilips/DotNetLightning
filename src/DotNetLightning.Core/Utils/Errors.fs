@@ -101,7 +101,9 @@ module OnionError =
     let CHANNEL_DISABLED = UPDATE ||| 20us
 
     [<Flags>]
+#if !NoDUsAsStructs
     [<Struct>]
+#endif
     type FailureCode = | FailureCode of uint16 with
 
         member this.Value = let (FailureCode v) = this in v

@@ -1,6 +1,5 @@
 namespace DotNetLightning.Channel
 
-open ResultUtils
 open NBitcoin
 
 open DotNetLightning.Chain
@@ -9,6 +8,9 @@ open DotNetLightning.Utils
 open DotNetLightning.Utils.NBitcoinExtensions
 open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Transactions
+
+open ResultUtils
+open ResultUtils.Portability
 
 exception ChannelException of ChannelError
 module internal ChannelHelpers =

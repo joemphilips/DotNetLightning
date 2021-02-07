@@ -1,5 +1,7 @@
 namespace ResultUtils
 
+open ResultUtils.Portability
+
 [<RequireQualifiedAccess>]
 module List =
     let rec private traverseResultM' (state: Result<_, _>) (f: _ -> Result<_, _>) xs =

@@ -1,7 +1,29 @@
+namespace ResultUtils.Portability
+
+#if NoDUsAsStructs
+[<StructuralEquality; StructuralComparison>]
+[<CompiledName("FSharpResult`2")>]
+type Result<'T,'TError> =
+    | Ok of ResultValue: 'T
+    | Error of ErrorValue: 'TError
+#endif
+
+
 namespace ResultUtils
+
+open ResultUtils.Portability
 
 [<RequireQualifiedAccess>]
 module Result =
+
+  let ToFSharpCoreResult res =
+#if NoDUsAsStructs
+    match res with
+    | Ok o -> FSharp.Core.Result.Ok o
+    | Error e -> FSharp.Core.Result.Error e
+#else
+    res
+#endif
 
   let isOk x =
     match x with
@@ -17,11 +39,20 @@ module Result =
     | Error err -> errorF err
 
   let eitherMap okF errorF x =
-    either (okF >> Result.Ok) (errorF >> Result.Error) x
+    either (okF >> Ok) (errorF >> Error) x
+
+  let bind binder result =
+    match result with Error e -> Error e | Ok x -> binder x
+
+  let map mapping result =
+    match result with Error e -> Error e | Ok x -> Ok (mapping x)
+
+  let mapError mapping result =
+    match result with Error x -> Error (mapping x) | Ok v -> Ok v
 
   let apply f x =
-    Result.bind (fun f' ->
-      Result.bind (fun x' -> Ok (f' x')) x) f
+    bind (fun f' ->
+      bind (fun x' -> Ok (f' x')) x) f
 
   let map2 f x y =
     (apply (apply (Ok f) x) y)
@@ -43,11 +74,11 @@ module Result =
     let tryCreate' x =
       (^b : (static member TryCreate : 'a -> Result< ^b, 'c>) x)
     tryCreate' x
-    |> Result.mapError (fun z -> (fieldName, z))
+    |> mapError (fun z -> (fieldName, z))
 
   /// Replaces the wrapped value with unit
   let ignore result =
-    result |> Result.map ignore
+    result |> map ignore
 
   /// Returns the specified error if the value is false.
   let requireTrue error value =
@@ -104,12 +135,12 @@ module Result =
 
   /// Replaces an error value with a custom error value.
   let setError error result =
-    result |> Result.mapError (fun _ -> error)
+    result |> mapError (fun _ -> error)
 
   /// Replaces a unit error value with a custom error value. Safer than setError
   /// since you're not losing any information.
   let withError error result =
-    result |> Result.mapError (fun () -> error)
+    result |> mapError (fun () -> error)
 
   /// Returns the contained value if Ok, otherwise returns ifError.
   let defaultValue ifError result =

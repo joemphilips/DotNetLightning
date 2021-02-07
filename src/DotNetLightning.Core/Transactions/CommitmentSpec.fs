@@ -1,11 +1,12 @@
 namespace DotNetLightning.Transactions
 
-open ResultUtils
-
 open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils
 open DotNetLightning.Utils.Aether
+
+open ResultUtils
+open ResultUtils.Portability
 
 type internal Direction =
     | In

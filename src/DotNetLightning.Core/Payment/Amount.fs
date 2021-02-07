@@ -3,6 +3,9 @@ namespace DotNetLightning.Payment
 open System
 open DotNetLightning.Utils
 
+open ResultUtils
+open ResultUtils.Portability
+
 [<RequireQualifiedAccess>]
 module Amount =
     let unit (amount: LNMoney): char =

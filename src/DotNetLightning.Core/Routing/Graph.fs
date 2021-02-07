@@ -6,6 +6,9 @@ open DotNetLightning.Utils
 open DotNetLightning.Serialization.Msgs
 open NBitcoin
 
+open ResultUtils
+open ResultUtils.Portability
+
 // Graph algorithms are based on eclair
 
 module Graph =

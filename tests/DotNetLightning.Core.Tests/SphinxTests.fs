@@ -82,7 +82,7 @@ let bolt4Tests1 =
             let { Payload = payload0; NextPacket = nextPacket0; SharedSecret = _ss0 }: ParsedPacket =
                 Sphinx.parsePacket (privKeys.[0]) (associatedData) (onion.ToBytes())
                 |> fun rr -> 
-                    Expect.isOk(rr) ""
+                    Expect.isOk (Result.ToFSharpCoreResult rr) ""
                     Result.defaultWith (fun _ -> failwith "Unreachable") rr
             let { Payload = payload1; NextPacket = nextPacket1; }: ParsedPacket =
                 Sphinx.parsePacket (privKeys.[1]) (associatedData) (nextPacket0.ToBytes())
@@ -113,7 +113,7 @@ let bolt4Tests1 =
             let { NextPacket = packet1; SharedSecret = ss0 }: ParsedPacket =
                 Sphinx.parsePacket (privKeys.[0]) (associatedData) (onion.ToBytes())
                 |> fun r -> 
-                    Expect.isOk(r) ""
+                    Expect.isOk (Result.ToFSharpCoreResult r) ""
                     Result.defaultWith(fun _ -> failwith "Fail: bolt4 last node replies with err msg defaultClosure0") r
             let { NextPacket = packet2; SharedSecret = ss1 }: ParsedPacket =
                 Sphinx.parsePacket (privKeys.[1]) (associatedData) (packet1.ToBytes())

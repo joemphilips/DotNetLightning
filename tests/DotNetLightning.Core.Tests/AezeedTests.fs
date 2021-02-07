@@ -3,13 +3,14 @@ module AezeedTests
 open System
 open NBitcoin
 
-open ResultUtils
 open DotNetLightning.Crypto
 open System.Text
 open Expecto
 open FsCheck
 open PrimitiveGenerators
 
+open ResultUtils
+open ResultUtils.Portability
 
 type TestVector = {
     Version: byte

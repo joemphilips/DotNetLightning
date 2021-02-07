@@ -5,13 +5,13 @@ open System
 open NBitcoin
 open NBitcoin.Crypto
 
-open ResultUtils
-
 open DotNetLightning.Utils
 open DotNetLightning.Utils.Aether
 open DotNetLightning.Utils.Aether.Operators
 open DotNetLightning.Crypto
 
+open ResultUtils
+open ResultUtils.Portability
 
 [<AutoOpen>]
 module PeerChannelEncryptor =

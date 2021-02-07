@@ -2,13 +2,14 @@ namespace DotNetLightning.Channel
 
 open NBitcoin
 
-open ResultUtils
-
 open DotNetLightning.Utils
 open DotNetLightning.Transactions
 open DotNetLightning.Crypto
 open DotNetLightning.Chain
 open DotNetLightning.Serialization.Msgs
+
+open ResultUtils
+open ResultUtils.Portability
 
 [<RequireQualifiedAccess; CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module internal Commitments =

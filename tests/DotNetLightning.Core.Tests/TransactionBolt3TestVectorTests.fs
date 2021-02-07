@@ -1,6 +1,5 @@
 module TransactionBolt3TestVectorTests
 
-open ResultUtils
 open System
 open System.Text.Json
 open DotNetLightning.Crypto
@@ -12,6 +11,9 @@ open System.IO
 open Expecto
 open GeneratorsTests
 open NBitcoin
+
+open ResultUtils
+open ResultUtils.Portability
 
 // let logger = Log.create "bolt3-transaction tests"
 let log =

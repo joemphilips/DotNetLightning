@@ -13,6 +13,9 @@ open DotNetLightning.Core.Utils.Extensions
 open DotNetLightning.Serialization
 open DotNetLightning.Utils
 
+open ResultUtils
+open ResultUtils.Portability
+
 type O = OptionalArgumentAttribute
 type D = System.Runtime.InteropServices.DefaultParameterValueAttribute
 

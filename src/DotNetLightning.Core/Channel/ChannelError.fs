@@ -1,6 +1,5 @@
 namespace DotNetLightning.Channel
 
-open ResultUtils
 open DotNetLightning.Utils
 open NBitcoinExtensions
 open DotNetLightning.Utils.OnionError
@@ -10,6 +9,9 @@ open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Transactions
 
 open NBitcoin
+
+open ResultUtils
+open ResultUtils.Portability
 
 type ChannelError =
     | CryptoError of CryptoError
