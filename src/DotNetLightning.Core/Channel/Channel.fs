@@ -13,12 +13,10 @@ open System
 open ResultUtils
 open ResultUtils.Portability
 
-type ProvideFundingTx = IDestination * Money * FeeRatePerKw -> Result<FinalizedTx * TxOutIndex, string> 
 type Channel = {
     Config: ChannelConfig
     ChannelPrivKeys: ChannelPrivKeys
     FeeEstimator: IFeeEstimator
-    FundingTxProvider:ProvideFundingTx
     RemoteNodeId: NodeId
     NodeSecret: NodeSecret
     State: ChannelState
@@ -29,7 +27,6 @@ type Channel = {
                               nodeMasterPrivKey: NodeMasterPrivKey,
                               channelIndex: int,
                               feeEstimator: IFeeEstimator,
-                              fundingTxProvider: ProvideFundingTx,
                               n: Network,
                               remoteNodeId: NodeId
                              ) =
@@ -39,13 +36,12 @@ type Channel = {
                 Config = config
                 ChannelPrivKeys = channelPrivKeys
                 FeeEstimator = feeEstimator
-                FundingTxProvider = fundingTxProvider
                 RemoteNodeId = remoteNodeId
                 NodeSecret = nodeSecret
                 State = WaitForInitInternal
                 Network = n
             }
-        static member CreateCurried = curry7 (Channel.Create)
+        static member CreateCurried = curry6 (Channel.Create)
 
 module Channel =
 
@@ -192,10 +188,19 @@ module Channel =
                     Scripts.funding
                         (state.InputInitFunder.ChannelPrivKeys.ToChannelPubKeys().FundingPubKey)
                         msg.FundingPubKey
-                let! fundingTx, outIndex =
-                    cs.FundingTxProvider (redeem.WitHash :> IDestination, state.InputInitFunder.FundingSatoshis, state.InputInitFunder.FundingTxFeeRatePerKw)
-                    |> expectFundingTxError
-                let remoteParams = RemoteParams.FromAcceptChannel cs.RemoteNodeId (state.InputInitFunder.RemoteInit) msg
+                let destination = redeem.WitHash :> IDestination
+                let amount = state.InputInitFunder.FundingSatoshis
+                let nextState = {
+                    InputInitFunder = state.InputInitFunder
+                    LastSent = state.LastSent
+                    LastReceived = msg
+                }
+
+                return [ WeAcceptedAcceptChannel(destination, amount, nextState) ]
+            }
+        | WaitForFundingTx state, CreateFundingTx(fundingTx, outIndex) ->
+            result {
+                let remoteParams = RemoteParams.FromAcceptChannel cs.RemoteNodeId (state.InputInitFunder.RemoteInit) state.LastReceived
                 let localParams = state.InputInitFunder.LocalParams
                 assert (state.LastSent.FundingPubKey = localParams.ChannelPubKeys.FundingPubKey)
                 let commitmentSpec = state.InputInitFunder.DeriveCommitmentSpec()
@@ -210,12 +215,12 @@ module Channel =
                                                outIndex
                                                fundingTxId
                                                (commitmentSeed.DerivePerCommitmentPoint CommitmentNumber.FirstCommitment)
-                                               msg.FirstPerCommitmentPoint
+                                               state.LastReceived.FirstPerCommitmentPoint
                                                cs.Network
                 let localSigOfRemoteCommit, _ =
                     cs.ChannelPrivKeys.SignWithFundingPrivKey remoteCommitTx.Value
                 let nextMsg: FundingCreatedMsg = {
-                    TemporaryChannelId = msg.TemporaryChannelId
+                    TemporaryChannelId = state.LastReceived.TemporaryChannelId
                     FundingTxId = fundingTxId
                     FundingOutputIndex = outIndex
                     Signature = !>localSigOfRemoteCommit.Signature
@@ -230,11 +235,11 @@ module Channel =
                              RemoteCommit = { RemoteCommit.Index = CommitmentNumber.FirstCommitment
                                               Spec = remoteSpec
                                               TxId = remoteCommitTx.Value.GetGlobalTransaction().GetTxId()
-                                              RemotePerCommitmentPoint = msg.FirstPerCommitmentPoint }
+                                              RemotePerCommitmentPoint = state.LastReceived.FirstPerCommitmentPoint }
                              ChannelFlags = state.InputInitFunder.ChannelFlags
                              LastSent = nextMsg
                              InitialFeeRatePerKw = state.InputInitFunder.InitFeeRatePerKw }
-                return [ WeAcceptedAcceptChannel(nextMsg, data) ]
+                return [ WeCreatedFundingTx(nextMsg, data) ]
             }
         | WaitForFundingSigned state, ApplyFundingSigned msg ->
             result {
@@ -791,7 +796,9 @@ module Channel =
             { c with State = state }
 
         // --------- init funder -----
-        | WeAcceptedAcceptChannel(_, data), WaitForAcceptChannel _ ->
+        | WeAcceptedAcceptChannel(_, _, data), WaitForAcceptChannel _ ->
+            { c with State = WaitForFundingTx data }
+        | WeCreatedFundingTx(_, data), WaitForFundingTx _ ->
             { c with State = WaitForFundingSigned data }
         | WeAcceptedFundingSigned(_, data), WaitForFundingSigned _ ->
             { c with State = WaitForFundingConfirmed data }
