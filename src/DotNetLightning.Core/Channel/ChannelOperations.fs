@@ -190,6 +190,7 @@ type ChannelCommand =
     // open: funder
     | CreateOutbound of InputInitFunder
     | ApplyAcceptChannel of AcceptChannelMsg
+    | CreateFundingTx of fundingTx: FinalizedTx * outIndex: TxOutIndex
     | ApplyFundingSigned of FundingSignedMsg
     | ApplyFundingLocked of FundingLockedMsg
     | ApplyFundingConfirmedOnBC of height: BlockHeight * txIndex: TxIndexInBlock * depth: BlockHeightOffset32

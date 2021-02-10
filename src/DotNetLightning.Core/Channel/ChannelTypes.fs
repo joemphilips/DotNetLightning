@@ -71,6 +71,12 @@ module Data =
         }
         with interface IChannelStateData
 
+    type WaitForFundingTxData = {
+        InputInitFunder: InputInitFunder
+        LastSent: OpenChannelMsg
+        LastReceived: AcceptChannelMsg
+    }
+
     type WaitForFundingInternalData = {
                                             TemporaryChannelId: ChannelId
                                             LocalParams: LocalParams
@@ -258,7 +264,8 @@ type ChannelEvent =
 
     // --------- init fender --------
     | NewOutboundChannelStarted of nextMsg: OpenChannelMsg * nextState: Data.WaitForAcceptChannelData
-    | WeAcceptedAcceptChannel of nextMsg: FundingCreatedMsg * nextState: Data.WaitForFundingSignedData
+    | WeAcceptedAcceptChannel of fundingDestination: IDestination * fundingAmount: Money * nextState: Data.WaitForFundingTxData
+    | WeCreatedFundingTx of nextMsg: FundingCreatedMsg * nextState: Data.WaitForFundingSignedData
     | WeAcceptedFundingSigned of txToPublish: FinalizedTx * nextState: Data.WaitForFundingConfirmedData
 
     /// -------- init both -----
@@ -327,6 +334,7 @@ type ChannelState =
     | WaitForInitInternal
     | WaitForOpenChannel of WaitForOpenChannelData
     | WaitForAcceptChannel of WaitForAcceptChannelData
+    | WaitForFundingTx of WaitForFundingTxData
     | WaitForFundingCreated of WaitForFundingCreatedData
     | WaitForFundingSigned of WaitForFundingSignedData
     | WaitForFundingConfirmed of WaitForFundingConfirmedData
@@ -365,6 +373,7 @@ type ChannelState =
             | WaitForInitInternal
             | WaitForOpenChannel _ 
             | WaitForAcceptChannel _
+            | WaitForFundingTx _
             | WaitForFundingCreated _
             | WaitForFundingSigned _
             | WaitForFundingConfirmed _
