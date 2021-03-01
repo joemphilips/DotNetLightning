@@ -491,6 +491,12 @@ module Primitives =
             self.ShutdownScript.ToBytes()
 
     type ChannelFlags = {
+        // Set to announce the channel publicly and notify all nodes that they
+        // can route via this channel. This should only be set to true for
+        // nodes which expect to be online reliably. As the node which funds a
+        // channel picks this value this will only apply for new outbound
+        // channels unless
+        // `ChannelHandshakeLimits.ForceAnnouncedChannelPreferences` is set.
         AnnounceChannel: bool
     } with
         static member private AnnounceChannelMask: uint8 = 1uy

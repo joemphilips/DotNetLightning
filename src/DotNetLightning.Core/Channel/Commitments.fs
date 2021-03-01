@@ -109,11 +109,6 @@ type Amounts =
     }
 
 type Commitments = {
-    LocalParams: LocalParams
-    RemoteParams: RemoteParams
-    ChannelFlags: ChannelFlags
-    FundingScriptCoin: ScriptCoin
-    IsFunder: bool
     LocalCommit: LocalCommit
     RemoteCommit: RemoteCommit
     LocalChanges: LocalChanges
@@ -121,7 +116,6 @@ type Commitments = {
     LocalNextHTLCId: HTLCId
     RemoteNextHTLCId: HTLCId
     OriginChannels: Map<HTLCId, HTLCSource>
-    RemoteChannelPubKeys: ChannelPubKeys
     RemotePerCommitmentSecrets: PerCommitmentSecretStore
 }
     with
@@ -131,9 +125,6 @@ type Commitments = {
         static member RemoteChanges_: Lens<_, _> =
             (fun c -> c.RemoteChanges),
             (fun v c -> { c with RemoteChanges = v })
-
-        member this.ChannelId(): ChannelId =
-            this.FundingScriptCoin.Outpoint.ToChannelId()
 
         member this.AddLocalProposal(proposal: IUpdateMsg) =
             let lens = Commitments.LocalChanges_ >-> LocalChanges.Proposed_

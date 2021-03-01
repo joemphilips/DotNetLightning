@@ -176,6 +176,7 @@ module internal Validation =
     let internal checkOpenChannelMsgAcceptable (feeEstimator: IFeeEstimator)
                                                (channelHandshakeLimits: ChannelHandshakeLimits)
                                                (channelOptions: ChannelOptions)
+                                               (announceChannel: bool)
                                                (msg: OpenChannelMsg) =
         let feeRate = feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background)
         Validation.ofResult(OpenChannelMsgValidation.checkFundingSatoshisLessThanMax msg)
@@ -186,7 +187,7 @@ module internal Validation =
         *^> OpenChannelMsgValidation.checkToSelfDelayIsInAcceptableRange msg
         *^> OpenChannelMsgValidation.checkMaxAcceptedHTLCs msg
         *> OpenChannelMsgValidation.checkConfigPermits channelHandshakeLimits msg
-        *^> OpenChannelMsgValidation.checkChannelAnnouncementPreferenceAcceptable channelHandshakeLimits channelOptions msg
+        *^> OpenChannelMsgValidation.checkChannelAnnouncementPreferenceAcceptable channelHandshakeLimits announceChannel msg
         *> OpenChannelMsgValidation.checkIsAcceptableByCurrentFeeRate feeEstimator msg
         *^> OpenChannelMsgValidation.checkFunderCanAffordFee feeRate msg
         |> Result.mapError((@)["rejected received open_channel msg"] >> InvalidOpenChannelError.Create msg >> InvalidOpenChannel)
@@ -207,29 +208,41 @@ module internal Validation =
         |> Result.mapError(InvalidAcceptChannelError.Create acceptChannelMsg >> InvalidAcceptChannel)
 
 
-    let checkOperationAddHTLC (commitments: Commitments) (op: OperationAddHTLC) =
+    let checkOperationAddHTLC (remoteParams: RemoteParams) (op: OperationAddHTLC) =
         Validation.ofResult(UpdateAddHTLCValidation.checkExpiryIsNotPast op.CurrentHeight op.Expiry)
         *> UpdateAddHTLCValidation.checkExpiryIsInAcceptableRange op.CurrentHeight op.Expiry
-        *^> UpdateAddHTLCValidation.checkAmountIsLargerThanMinimum commitments.RemoteParams.HTLCMinimumMSat op.Amount
+        *^> UpdateAddHTLCValidation.checkAmountIsLargerThanMinimum remoteParams.HTLCMinimumMSat op.Amount
         |> Result.mapError(InvalidOperationAddHTLCError.Create op >> InvalidOperationAddHTLC)
 
-    let checkOurUpdateAddHTLCIsAcceptableWithCurrentSpec (currentSpec) (state: Commitments) (add: UpdateAddHTLCMsg) =
-        Validation.ofResult(UpdateAddHTLCValidationWithContext.checkLessThanHTLCValueInFlightLimit currentSpec state.RemoteParams.MaxHTLCValueInFlightMSat add)
-        *^> UpdateAddHTLCValidationWithContext.checkLessThanMaxAcceptedHTLC currentSpec state.RemoteParams.MaxAcceptedHTLCs
-        *^> UpdateAddHTLCValidationWithContext.checkWeHaveSufficientFunds state currentSpec
+    let checkOurUpdateAddHTLCIsAcceptableWithCurrentSpec (currentSpec)
+                                                         (staticChannelConfig: StaticChannelConfig)
+                                                         (add: UpdateAddHTLCMsg) =
+        Validation.ofResult(
+            UpdateAddHTLCValidationWithContext.checkLessThanHTLCValueInFlightLimit
+                currentSpec
+                staticChannelConfig.RemoteParams.MaxHTLCValueInFlightMSat
+                add
+        )
+        *^> UpdateAddHTLCValidationWithContext.checkLessThanMaxAcceptedHTLC currentSpec staticChannelConfig.RemoteParams.MaxAcceptedHTLCs
+        *^> UpdateAddHTLCValidationWithContext.checkWeHaveSufficientFunds staticChannelConfig currentSpec
         |> Result.mapError(InvalidUpdateAddHTLCError.Create add >> InvalidUpdateAddHTLC)
 
-    let checkTheirUpdateAddHTLCIsAcceptable (state: Commitments) (add: UpdateAddHTLCMsg) (currentHeight: BlockHeight) =
+    let checkTheirUpdateAddHTLCIsAcceptable (state: Commitments)
+                                            (localParams: LocalParams)
+                                            (add: UpdateAddHTLCMsg)
+                                            (currentHeight: BlockHeight) =
         Validation.ofResult(ValidationHelper.check add.HTLCId (<>) state.RemoteNextHTLCId "Received Unexpected HTLCId (%A). Must be (%A)")
             *^> UpdateAddHTLCValidation.checkExpiryIsNotPast currentHeight add.CLTVExpiry
             *> UpdateAddHTLCValidation.checkExpiryIsInAcceptableRange currentHeight add.CLTVExpiry
-            *^> UpdateAddHTLCValidation.checkAmountIsLargerThanMinimum state.LocalParams.HTLCMinimumMSat add.Amount
+            *^> UpdateAddHTLCValidation.checkAmountIsLargerThanMinimum localParams.HTLCMinimumMSat add.Amount
             |> Result.mapError(InvalidUpdateAddHTLCError.Create add >> InvalidUpdateAddHTLC)
 
-    let checkTheirUpdateAddHTLCIsAcceptableWithCurrentSpec (currentSpec) (state: Commitments) (add: UpdateAddHTLCMsg) =
-        Validation.ofResult(UpdateAddHTLCValidationWithContext.checkLessThanHTLCValueInFlightLimit currentSpec state.LocalParams.MaxHTLCValueInFlightMSat add)
-        *^> UpdateAddHTLCValidationWithContext.checkLessThanMaxAcceptedHTLC currentSpec state.LocalParams.MaxAcceptedHTLCs
-        *^> UpdateAddHTLCValidationWithContext.checkWeHaveSufficientFunds state currentSpec
+    let checkTheirUpdateAddHTLCIsAcceptableWithCurrentSpec (currentSpec)
+                                                           (staticChannelConfig: StaticChannelConfig)
+                                                           (add: UpdateAddHTLCMsg) =
+        Validation.ofResult(UpdateAddHTLCValidationWithContext.checkLessThanHTLCValueInFlightLimit currentSpec staticChannelConfig.LocalParams.MaxHTLCValueInFlightMSat add)
+        *^> UpdateAddHTLCValidationWithContext.checkLessThanMaxAcceptedHTLC currentSpec staticChannelConfig.LocalParams.MaxAcceptedHTLCs
+        *^> UpdateAddHTLCValidationWithContext.checkWeHaveSufficientFunds staticChannelConfig currentSpec
         |> Result.mapError(InvalidUpdateAddHTLCError.Create add >> InvalidUpdateAddHTLC)
 
     let checkShutdownScriptPubKeyAcceptable (staticShutdownScriptPubKey: Option<ShutdownScriptPubKey>)

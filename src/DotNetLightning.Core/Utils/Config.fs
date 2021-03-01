@@ -3,7 +3,6 @@ open System
 open NBitcoin
 open Aether
 
-
 /// Optional Channel limits which are applied during channel creation.
 /// These limits are only applied to our counterparty's limits, not our own
 type ChannelHandshakeLimits = {
@@ -61,12 +60,6 @@ type ChannelOptions = {
     // This may be allowed to change at runtime in a later update, however doing so must result in
     // update messages sent to notify all nodes of our updated relay fee.
     FeeProportionalMillionths: uint32
-    // Set to announce the channel publicly and notify all nodes that they can route via this channel.
-    // This should only be set to true for nodes which expect to be online reliably.
-    // As the node which funds a channel picks this value this will only apply for new outbound channels unless
-    // `ChannelHandshakeLimits.ForceAnnouncedChannelPreferences` is set.
-    AnnounceChannel: bool
-    
     /// We don't exchange more than this many signatures when negotiating the closing fee
     MaxClosingNegotiationIterations: int32
  }
@@ -75,7 +68,6 @@ type ChannelOptions = {
     static member Zero =
         {
             FeeProportionalMillionths = 0u
-            AnnounceChannel = false
             MaxFeeRateMismatchRatio = 0.
             MaxClosingNegotiationIterations = 20
         }
@@ -83,10 +75,6 @@ type ChannelOptions = {
     static member FeeProportionalMillionths_: Lens<_, _> =
         (fun cc -> cc.FeeProportionalMillionths),
         (fun v cc -> { cc with FeeProportionalMillionths = v })
-
-    static member AnnouncedChannel_: Lens<_, _> =
-        (fun cc -> cc.AnnounceChannel),
-        (fun v cc -> { cc with AnnounceChannel = v })
         
 type RouterConfig() =
     member val RandomizeRouteSelection: bool = true with get, set

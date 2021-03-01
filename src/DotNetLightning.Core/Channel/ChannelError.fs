@@ -439,10 +439,10 @@ module internal OpenChannelMsgValidation =
                 "dust_limit_satoshis is greater than the user specified limit. received: %A; limit: %A"
         Validation.ofResult(check1) *^> check2 *^> check3 *^> check4 *^> check5 *^> check6 *^> check7
     let checkChannelAnnouncementPreferenceAcceptable (channelHandshakeLimits: ChannelHandshakeLimits)
-                                                     (channelOptions: ChannelOptions)
+                                                     (announceChannel: bool)
                                                      (msg: OpenChannelMsg) =
         let theirAnnounce = msg.ChannelFlags.AnnounceChannel
-        if (channelHandshakeLimits.ForceChannelAnnouncementPreference) && channelOptions.AnnounceChannel <> theirAnnounce then
+        if (channelHandshakeLimits.ForceChannelAnnouncementPreference) && announceChannel <> theirAnnounce then
             "Peer tried to open channel but their announcement preference is different from ours"
             |> Error
         else
@@ -586,13 +586,19 @@ module internal UpdateAddHTLCValidationWithContext =
         let acceptedHTLCs = currentSpec.HTLCs |> Map.toSeq |> Seq.filter (fun kv -> (snd kv).Direction = In) |> Seq.length
         check acceptedHTLCs (>) (int limit) "We have much number of HTLCs (%A). Limit specified by remote is (%A). So not going to relay"
 
-    let checkWeHaveSufficientFunds (state: Commitments) (currentSpec) =
-        let fees = if (state.IsFunder) then (Transactions.commitTxFee (state.RemoteParams.DustLimitSatoshis) currentSpec) else Money.Zero
-        let missing = currentSpec.ToRemote.ToMoney() - state.RemoteParams.ChannelReserveSatoshis - fees
+    let checkWeHaveSufficientFunds (staticChannelConfig: StaticChannelConfig) (currentSpec) =
+        let fees =
+            if staticChannelConfig.IsFunder then
+                Transactions.commitTxFee
+                    staticChannelConfig.RemoteParams.DustLimitSatoshis
+                    currentSpec
+            else
+                Money.Zero
+        let missing = currentSpec.ToRemote.ToMoney() - staticChannelConfig.RemoteParams.ChannelReserveSatoshis - fees
         if (missing < Money.Zero) then
             sprintf "We don't have sufficient funds to send HTLC. current to_remote amount is: %A. Remote Channel Reserve is: %A. and fee is %A"
                     (currentSpec.ToRemote.ToMoney())
-                    (state.RemoteParams.ChannelReserveSatoshis)
+                    (staticChannelConfig.RemoteParams.ChannelReserveSatoshis)
                     (fees)
             |> Error
         else

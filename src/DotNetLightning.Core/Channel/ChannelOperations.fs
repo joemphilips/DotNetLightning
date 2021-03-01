@@ -147,3 +147,25 @@ type ChannelCommand =
     | ForceClose
     | GetState
     | GetStateData
+
+
+/// Channel config which is static, ie. config parameters which are established
+/// during the channel handshake and persist unchagned through the lifetime of
+/// the channel.
+type StaticChannelConfig = {
+    AnnounceChannel: bool
+    RemoteNodeId: NodeId
+    Network: Network
+    FundingTxMinimumDepth: BlockHeightOffset32
+    LocalStaticShutdownScriptPubKey: Option<ShutdownScriptPubKey>
+    RemoteStaticShutdownScriptPubKey: Option<ShutdownScriptPubKey>
+    IsFunder: bool
+    FundingScriptCoin: ScriptCoin
+    LocalParams: LocalParams
+    RemoteParams: RemoteParams
+    RemoteChannelPubKeys: ChannelPubKeys
+}
+    with
+        member this.ChannelId(): ChannelId =
+            this.FundingScriptCoin.Outpoint.ToChannelId()
+
