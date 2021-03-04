@@ -65,10 +65,10 @@ module Data =
 
 
     type WaitForAcceptChannelData = {
-            InputInitFunder: InputInitFunder;
+            InputInitFunder: InputInitFunder
             LastSent: OpenChannelMsg
-        }
-        with interface IChannelStateData
+    } with
+        interface IChannelStateData
 
     type WaitForFundingTxData = {
         InputInitFunder: InputInitFunder
@@ -77,148 +77,162 @@ module Data =
     }
 
     type WaitForFundingCreatedData = {
-                                            TemporaryFailure: ChannelId
-                                            LocalParams: LocalParams
-                                            RemoteParams: RemoteParams
-                                            FundingSatoshis: Money
-                                            PushMSat: LNMoney
-                                            InitialFeeRatePerKw: FeeRatePerKw
-                                            RemoteFirstPerCommitmentPoint: PerCommitmentPoint
-                                            ChannelFlags: uint8
-                                            LastSent: AcceptChannelMsg
-                                      }
-        with
-            interface IChannelStateData
-            static member Create (localParams) (remoteParams) (msg: OpenChannelMsg) acceptChannelMsg =
-                { ChannelFlags = msg.ChannelFlags
-                  TemporaryFailure = msg.TemporaryChannelId
-                  LocalParams = localParams
-                  RemoteParams = remoteParams
-                  FundingSatoshis = msg.FundingSatoshis
-                  PushMSat = msg.PushMSat
-                  InitialFeeRatePerKw = msg.FeeRatePerKw
-                  RemoteFirstPerCommitmentPoint = msg.FirstPerCommitmentPoint
-                  LastSent = acceptChannelMsg }
+        TemporaryFailure: ChannelId
+        LocalParams: LocalParams
+        RemoteParams: RemoteParams
+        FundingSatoshis: Money
+        PushMSat: LNMoney
+        InitialFeeRatePerKw: FeeRatePerKw
+        RemoteFirstPerCommitmentPoint: PerCommitmentPoint
+        ChannelFlags: uint8
+        LastSent: AcceptChannelMsg
+    } with
+        interface IChannelStateData
+
+        static member Create (localParams: LocalParams)
+                             (remoteParams: RemoteParams)
+                             (msg: OpenChannelMsg)
+                             (acceptChannelMsg: AcceptChannelMsg)
+                                 : WaitForFundingCreatedData = {
+            ChannelFlags = msg.ChannelFlags
+            TemporaryFailure = msg.TemporaryChannelId
+            LocalParams = localParams
+            RemoteParams = remoteParams
+            FundingSatoshis = msg.FundingSatoshis
+            PushMSat = msg.PushMSat
+            InitialFeeRatePerKw = msg.FeeRatePerKw
+            RemoteFirstPerCommitmentPoint = msg.FirstPerCommitmentPoint
+            LastSent = acceptChannelMsg
+        }
+
     type WaitForFundingSignedData = {
-                                            ChannelId: ChannelId
-                                            LocalParams: LocalParams
-                                            RemoteParams: RemoteParams
-                                            FundingTx: FinalizedTx
-                                            LocalSpec: CommitmentSpec
-                                            LocalCommitTx: CommitTx
-                                            RemoteCommit: RemoteCommit
-                                            ChannelFlags: uint8
-                                            LastSent: FundingCreatedMsg
-                                            InitialFeeRatePerKw: FeeRatePerKw
-                                       }
-        with interface IChannelStateData
+        ChannelId: ChannelId
+        LocalParams: LocalParams
+        RemoteParams: RemoteParams
+        FundingTx: FinalizedTx
+        LocalSpec: CommitmentSpec
+        LocalCommitTx: CommitTx
+        RemoteCommit: RemoteCommit
+        ChannelFlags: uint8
+        LastSent: FundingCreatedMsg
+        InitialFeeRatePerKw: FeeRatePerKw
+    } with
+        interface IChannelStateData
 
     type WaitForFundingConfirmedData = {
-                                            Commitments: Commitments
-                                            Deferred: FundingLockedMsg option
-                                            LastSent: Choice<FundingCreatedMsg, FundingSignedMsg>
-                                            InitialFeeRatePerKw: FeeRatePerKw
-                                            ChannelId: ChannelId
-                                          }
-        with
-            interface IHasCommitments with
-                member this.ChannelId: ChannelId = 
-                    this.ChannelId
-                member this.Commitments: Commitments = 
-                    this.Commitments
+        Commitments: Commitments
+        Deferred: Option<FundingLockedMsg>
+        LastSent: Choice<FundingCreatedMsg, FundingSignedMsg>
+        InitialFeeRatePerKw: FeeRatePerKw
+        ChannelId: ChannelId
+    } with
+        interface IHasCommitments with
+            member this.ChannelId: ChannelId = 
+                this.ChannelId
+            member this.Commitments: Commitments = 
+                this.Commitments
 
+    type WaitForFundingLockedData = {
+        Commitments: Commitments
+        ShortChannelId: ShortChannelId
+        OurMessage: FundingLockedMsg
+        TheirMessage: Option<FundingLockedMsg>
+        InitialFeeRatePerKw: FeeRatePerKw
+        HaveWeSentFundingLocked: bool
+        ChannelId: ChannelId
+    } with
+        interface IHasCommitments with
+            member this.ChannelId: ChannelId = 
+                this.ChannelId
+            member this.Commitments: Commitments = 
+                this.Commitments
 
-    type WaitForFundingLockedData = { Commitments: Commitments;
-                                      ShortChannelId: ShortChannelId;
-                                      OurMessage: FundingLockedMsg
-                                      TheirMessage: FundingLockedMsg option
-                                      InitialFeeRatePerKw: FeeRatePerKw
-                                      HaveWeSentFundingLocked:bool
-                                      ChannelId: ChannelId }
-        with interface IHasCommitments with
-                member this.ChannelId: ChannelId = 
-                    this.ChannelId
-                member this.Commitments: Commitments = 
-                    this.Commitments
+    type NormalData = {
+        Commitments: Commitments
+        ShortChannelId: ShortChannelId
+        Buried: bool
+        ChannelAnnouncement: Option<ChannelAnnouncementMsg>
+        ChannelUpdate: ChannelUpdateMsg
+        LocalShutdown: Option<ShutdownMsg>
+        RemoteShutdown: Option<ShutdownMsg>
+        ChannelId: ChannelId
+    } with
+        static member Commitments_: Lens<_, _> =
+            (fun nd -> nd.Commitments), (fun v nd -> { nd with Commitments = v })
 
-    type NormalData =   {
-                            Commitments: Commitments;
-                            ShortChannelId: ShortChannelId;
-                            Buried: bool;
-                            ChannelAnnouncement: ChannelAnnouncementMsg option
-                            ChannelUpdate: ChannelUpdateMsg
-                            LocalShutdown: ShutdownMsg option
-                            RemoteShutdown: ShutdownMsg option
-                            ChannelId: ChannelId
-                        }
-        with
-            static member Commitments_: Lens<_, _> =
-                (fun nd -> nd.Commitments), (fun v nd -> { nd with Commitments = v })
+        interface IHasCommitments with
+            member this.ChannelId: ChannelId = 
+                this.ChannelId
+            member this.Commitments: Commitments = 
+                this.Commitments
 
-            interface IHasCommitments with
-                member this.ChannelId: ChannelId = 
-                    this.ChannelId
-                member this.Commitments: Commitments = 
-                    this.Commitments
-
-    type ShutdownData = { Commitments: Commitments; LocalShutdown: ShutdownMsg; RemoteShutdown: ShutdownMsg; ChannelId: ChannelId }
-        with interface IHasCommitments with
-                member this.ChannelId: ChannelId = 
-                    this.ChannelId
-                member this.Commitments: Commitments = 
-                    this.Commitments
+    type ShutdownData = {
+        Commitments: Commitments
+        LocalShutdown: ShutdownMsg
+        RemoteShutdown: ShutdownMsg
+        ChannelId: ChannelId
+    } with
+        interface IHasCommitments with
+            member this.ChannelId: ChannelId = 
+                this.ChannelId
+            member this.Commitments: Commitments = 
+                this.Commitments
 
     type NegotiatingData = {
-                            Commitments: Commitments;
-                            LocalShutdown: ShutdownMsg;
-                            RemoteShutdown: ShutdownMsg;
-                            ClosingTxProposed: ClosingTxProposed list list
-                            MaybeBestUnpublishedTx: FinalizedTx option
-                            ChannelId: ChannelId
-                          }
-        with
-            interface IHasCommitments with
-                member this.ChannelId: ChannelId = 
-                    this.ChannelId
-                member this.Commitments: Commitments = 
-                    this.Commitments
+        Commitments: Commitments
+        LocalShutdown: ShutdownMsg
+        RemoteShutdown: ShutdownMsg
+        ClosingTxProposed: List<List<ClosingTxProposed>>
+        MaybeBestUnpublishedTx: Option<FinalizedTx>
+        ChannelId: ChannelId
+    } with
+        interface IHasCommitments with
+            member this.ChannelId: ChannelId = 
+                this.ChannelId
+            member this.Commitments: Commitments = 
+                this.Commitments
 
     type ClosingData = {
-                        ChannelId: ChannelId
-                        Commitments: Commitments
-                        MaybeFundingTx: Transaction option
-                        WaitingSince: System.DateTime
-                        MutualCloseProposed: ClosingTx list
-                        MutualClosePublished: FinalizedTx
-                        LocalCommitPublished: LocalCommitPublished option
-                        RemoteCommitPublished: RemoteCommitPublished option
-                        NextRemoteCommitPublished: RemoteCommitPublished option
-                        FutureRemoteCommitPublished: RemoteCommitPublished option
-                        RevokedCommitPublished: RevokedCommitPublished list
-                      }
-        with
-            interface IHasCommitments with
-                member this.ChannelId: ChannelId = 
-                    this.ChannelId
-                member this.Commitments: Commitments = 
-                    this.Commitments
+        ChannelId: ChannelId
+        Commitments: Commitments
+        MaybeFundingTx: Option<Transaction>
+        WaitingSince: System.DateTime
+        MutualCloseProposed: List<ClosingTx>
+        MutualClosePublished: FinalizedTx
+        LocalCommitPublished: Option<LocalCommitPublished>
+        RemoteCommitPublished: Option<RemoteCommitPublished>
+        NextRemoteCommitPublished: Option<RemoteCommitPublished>
+        FutureRemoteCommitPublished: Option<RemoteCommitPublished>
+        RevokedCommitPublished: List<RevokedCommitPublished>
+    } with
+        interface IHasCommitments with
+            member this.ChannelId: ChannelId = 
+                this.ChannelId
+            member this.Commitments: Commitments = 
+                this.Commitments
                     
-            member this.FinalizedTx =
-                this.MutualClosePublished
-            static member Create(channelId, commitments, maybeFundingTx, waitingSince, mutualCloseProposed, mutualClosePublished) =
-                {
-                    ChannelId = channelId
-                    Commitments = commitments
-                    MaybeFundingTx = maybeFundingTx
-                    WaitingSince = waitingSince
-                    MutualCloseProposed = mutualCloseProposed
-                    MutualClosePublished = mutualClosePublished
-                    LocalCommitPublished = None
-                    RemoteCommitPublished = None
-                    NextRemoteCommitPublished = None
-                    FutureRemoteCommitPublished = None
-                    RevokedCommitPublished = []
-                }
+        member this.FinalizedTx =
+            this.MutualClosePublished
+        
+        static member Create (channelId: ChannelId)
+                             (commitments: Commitments)
+                             (maybeFundingTx: Option<Transaction>)
+                             (waitingSince: System.DateTime)
+                             (mutualCloseProposed: List<ClosingTx>)
+                             (mutualClosePublished: FinalizedTx)
+                                 : ClosingData = {
+            ChannelId = channelId
+            Commitments = commitments
+            MaybeFundingTx = maybeFundingTx
+            WaitingSince = waitingSince
+            MutualCloseProposed = mutualCloseProposed
+            MutualClosePublished = mutualClosePublished
+            LocalCommitPublished = None
+            RemoteCommitPublished = None
+            NextRemoteCommitPublished = None
+            FutureRemoteCommitPublished = None
+            RevokedCommitPublished = []
+        }
 
 //     8888888888 888     888 8888888888 888b    888 88888888888 .d8888b.
 //     888        888     888 888        8888b   888     888    d88P  Y88b
