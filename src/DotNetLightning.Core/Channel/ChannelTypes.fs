@@ -64,9 +64,6 @@ module Data =
         abstract member Commitments: Commitments
 
 
-    type WaitForOpenChannelData = { InitFundee: InputInitFundee }
-        with interface IChannelStateData
-
     type WaitForAcceptChannelData = {
             InputInitFunder: InputInitFunder;
             LastSent: OpenChannelMsg
@@ -78,18 +75,6 @@ module Data =
         LastSent: OpenChannelMsg
         LastReceived: AcceptChannelMsg
     }
-
-    type WaitForFundingInternalData = {
-                                            TemporaryChannelId: ChannelId
-                                            LocalParams: LocalParams
-                                            RemoteParams:RemoteParams
-                                            FundingSatoshis: Money
-                                            PushMsat: LNMoney
-                                            InitialFeeRatePerKw: FeeRatePerKw
-                                            RemoteFirstPerCommitmentPoint: PerCommitmentPoint
-                                            LastSent: OpenChannelMsg
-                                        }
-        with interface IChannelStateData
 
     type WaitForFundingCreatedData = {
                                             TemporaryFailure: ChannelId
@@ -234,17 +219,6 @@ module Data =
                     FutureRemoteCommitPublished = None
                     RevokedCommitPublished = []
                 }
-
-    type WaitForRemotePublishFutureCommitmentData = {
-                                                    Commitments: Commitments;
-                                                    RemoteChannelReestablish: ChannelReestablishMsg
-                                                    ChannelId: ChannelId
-                                                   }
-        with interface IHasCommitments with
-                member this.ChannelId: ChannelId = 
-                    this.ChannelId
-                member this.Commitments: Commitments = 
-                    this.Commitments
 
 //     8888888888 888     888 8888888888 888b    888 88888888888 .d8888b.
 //     888        888     888 888        8888b   888     888    d88P  Y88b
