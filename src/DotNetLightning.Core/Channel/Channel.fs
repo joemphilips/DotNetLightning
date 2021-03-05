@@ -18,7 +18,6 @@ type ChannelWaitingForFundingSigned = {
     StaticChannelConfig: StaticChannelConfig
     ChannelOptions: ChannelOptions
     ChannelPrivKeys: ChannelPrivKeys
-    FeeEstimator: IFeeEstimator
     NodeSecret: NodeSecret
     ChannelId: ChannelId
     FundingTx: FinalizedTx
@@ -58,7 +57,6 @@ type ChannelWaitingForFundingSigned = {
             StaticChannelConfig = self.StaticChannelConfig
             ChannelOptions = self.ChannelOptions
             ChannelPrivKeys = self.ChannelPrivKeys
-            FeeEstimator = self.FeeEstimator
             NodeSecret = self.NodeSecret
             ShortChannelId = None
             RemoteNextCommitInfo = None
@@ -78,7 +76,6 @@ and ChannelWaitingForFundingCreated = {
     IsFunder: bool
     ChannelOptions: ChannelOptions
     ChannelPrivKeys: ChannelPrivKeys
-    FeeEstimator: IFeeEstimator
     NodeSecret: NodeSecret
     TemporaryFailure: ChannelId
     LocalParams: LocalParams
@@ -172,7 +169,6 @@ and ChannelWaitingForFundingCreated = {
             StaticChannelConfig = staticChannelConfig
             ChannelOptions = self.ChannelOptions
             ChannelPrivKeys = self.ChannelPrivKeys
-            FeeEstimator = self.FeeEstimator
             NodeSecret = self.NodeSecret
             RemoteNextCommitInfo = None
             ShortChannelId = None
@@ -186,7 +182,6 @@ and ChannelWaitingForFundingTx = {
     AnnounceChannel: bool
     ChannelOptions: ChannelOptions
     ChannelPrivKeys: ChannelPrivKeys
-    FeeEstimator: IFeeEstimator
     RemoteNodeId: NodeId
     NodeSecret: NodeSecret
     Network: Network
@@ -256,7 +251,6 @@ and ChannelWaitingForFundingTx = {
             }
             ChannelOptions = self.ChannelOptions
             ChannelPrivKeys = self.ChannelPrivKeys
-            FeeEstimator = self.FeeEstimator
             NodeSecret = self.NodeSecret
             ChannelId = channelId
             FundingTx = fundingTx
@@ -279,7 +273,6 @@ and ChannelWaitingForAcceptChannel = {
     ChannelOptions: ChannelOptions
     ChannelHandshakeLimits: ChannelHandshakeLimits
     ChannelPrivKeys: ChannelPrivKeys
-    FeeEstimator: IFeeEstimator
     RemoteNodeId: NodeId
     NodeSecret: NodeSecret
     Network: Network
@@ -311,7 +304,6 @@ and ChannelWaitingForAcceptChannel = {
             AnnounceChannel = self.AnnounceChannel
             ChannelOptions = self.ChannelOptions
             ChannelPrivKeys = self.ChannelPrivKeys
-            FeeEstimator = self.FeeEstimator
             RemoteNodeId = self.RemoteNodeId
             NodeSecret = self.NodeSecret
             Network = self.Network
@@ -333,7 +325,6 @@ and Channel = {
     StaticChannelConfig: StaticChannelConfig
     ChannelOptions: ChannelOptions
     ChannelPrivKeys: ChannelPrivKeys
-    FeeEstimator: IFeeEstimator
     NodeSecret: NodeSecret
     ShortChannelId: Option<ShortChannelId>
     RemoteNextCommitInfo: Option<RemoteNextCommitInfo>
@@ -346,7 +337,6 @@ and Channel = {
                                   announceChannel: bool,
                                   nodeMasterPrivKey: NodeMasterPrivKey,
                                   channelIndex: int,
-                                  feeEstimator: IFeeEstimator,
                                   network: Network,
                                   remoteNodeId: NodeId,
                                   shutdownScriptPubKey: Option<ShutdownScriptPubKey>,
@@ -390,7 +380,6 @@ and Channel = {
                     ChannelHandshakeLimits = channelHandshakeLimits
                     ChannelOptions = channelOptions
                     ChannelPrivKeys = channelPrivKeys
-                    FeeEstimator = feeEstimator
                     RemoteNodeId = remoteNodeId
                     NodeSecret = nodeSecret
                     Network = network
@@ -410,7 +399,6 @@ and Channel = {
                                   announceChannel: bool,
                                   nodeMasterPrivKey: NodeMasterPrivKey,
                                   channelIndex: int,
-                                  feeEstimator: IFeeEstimator,
                                   network: Network,
                                   remoteNodeId: NodeId,
                                   minimumDepth: BlockHeightOffset32,
@@ -421,7 +409,12 @@ and Channel = {
                                   channelPrivKeys: ChannelPrivKeys
                                  ): Result<AcceptChannelMsg * ChannelWaitingForFundingCreated, ChannelError> =
             result {
-                do! Validation.checkOpenChannelMsgAcceptable feeEstimator channelHandshakeLimits channelOptions announceChannel openChannelMsg
+                do!
+                    Validation.checkOpenChannelMsgAcceptable
+                        channelHandshakeLimits
+                        channelOptions
+                        announceChannel
+                        openChannelMsg
                 let firstPerCommitmentPoint = channelPrivKeys.CommitmentSeed.DerivePerCommitmentPoint CommitmentNumber.FirstCommitment
                 let acceptChannelMsg: AcceptChannelMsg = {
                     TemporaryChannelId = openChannelMsg.TemporaryChannelId
@@ -460,7 +453,6 @@ and Channel = {
                     IsFunder = false
                     ChannelOptions = channelOptions
                     ChannelPrivKeys = channelPrivKeys
-                    FeeEstimator = feeEstimator
                     NodeSecret = nodeSecret
                     TemporaryFailure = openChannelMsg.TemporaryChannelId
                     LocalParams = localParams
@@ -769,7 +761,7 @@ module Channel =
             result {
                 let! _remoteNextCommitInfo =
                     remoteNextCommitInfoIfFundingLockedNormal cs.ShortChannelId cs.RemoteNextCommitInfo "ApplyUpdateFee"
-                let localFeerate = cs.FeeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority)
+                let localFeerate = cs.ChannelOptions.FeeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority)
                 return!
                     Commitments.receiveFee
                         cs.ChannelOptions
@@ -922,7 +914,7 @@ module Channel =
                                     cm
                                     localShutdownScriptPubKey
                                     remoteShutdownScriptPubKey
-                                    cs.FeeEstimator
+                                    cs.ChannelOptions.FeeEstimator
                                     cs.StaticChannelConfig
                                 |> expectTransactionError
                             let! (_closingTx, closingSignedMsg) =
@@ -1027,7 +1019,7 @@ module Channel =
                                 cs.Commitments
                                 localShutdownScriptPubKey
                                 remoteShutdownScriptPubKey
-                                cs.FeeEstimator
+                                cs.ChannelOptions.FeeEstimator
                                 cs.StaticChannelConfig
                             |> expectTransactionError
                     let nextClosingFee =

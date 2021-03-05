@@ -173,22 +173,21 @@ module internal Validation =
         *^> OpenChannelMsgValidation.checkFunderCanAffordFee (msg.FeeRatePerKw) msg
         |> Result.mapError((@)["open_channel msg is invalid"] >> InvalidOpenChannelError.Create msg >> InvalidOpenChannel)
 
-    let internal checkOpenChannelMsgAcceptable (feeEstimator: IFeeEstimator)
-                                               (channelHandshakeLimits: ChannelHandshakeLimits)
+    let internal checkOpenChannelMsgAcceptable (channelHandshakeLimits: ChannelHandshakeLimits)
                                                (channelOptions: ChannelOptions)
                                                (announceChannel: bool)
                                                (msg: OpenChannelMsg) =
-        let feeRate = feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background)
+        let feeRate = channelOptions.FeeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background)
         Validation.ofResult(OpenChannelMsgValidation.checkFundingSatoshisLessThanMax msg)
         *^> OpenChannelMsgValidation.checkChannelReserveSatohisLessThanFundingSatoshis msg
         *^> OpenChannelMsgValidation.checkPushMSatLesserThanFundingValue msg
         *^> OpenChannelMsgValidation.checkFundingSatoshisLessThanDustLimitSatoshis msg
-        *^> OpenChannelMsgValidation.checkRemoteFee feeEstimator msg.FeeRatePerKw channelOptions.MaxFeeRateMismatchRatio
+        *^> OpenChannelMsgValidation.checkRemoteFee channelOptions.FeeEstimator msg.FeeRatePerKw channelOptions.MaxFeeRateMismatchRatio
         *^> OpenChannelMsgValidation.checkToSelfDelayIsInAcceptableRange msg
         *^> OpenChannelMsgValidation.checkMaxAcceptedHTLCs msg
         *> OpenChannelMsgValidation.checkConfigPermits channelHandshakeLimits msg
         *^> OpenChannelMsgValidation.checkChannelAnnouncementPreferenceAcceptable channelHandshakeLimits announceChannel msg
-        *> OpenChannelMsgValidation.checkIsAcceptableByCurrentFeeRate feeEstimator msg
+        *> OpenChannelMsgValidation.checkIsAcceptableByCurrentFeeRate channelOptions.FeeEstimator msg
         *^> OpenChannelMsgValidation.checkFunderCanAffordFee feeRate msg
         |> Result.mapError((@)["rejected received open_channel msg"] >> InvalidOpenChannelError.Create msg >> InvalidOpenChannel)
 

@@ -54,28 +54,6 @@ type ChannelHandshakeLimits = {
         }
 
 
-type ChannelOptions = {
-    MaxFeeRateMismatchRatio: float
-    // Amount (in millionth of a satoshi) the channel will charge per transferred satoshi.
-    // This may be allowed to change at runtime in a later update, however doing so must result in
-    // update messages sent to notify all nodes of our updated relay fee.
-    FeeProportionalMillionths: uint32
-    /// We don't exchange more than this many signatures when negotiating the closing fee
-    MaxClosingNegotiationIterations: int32
- }
-    with
-
-    static member Zero =
-        {
-            FeeProportionalMillionths = 0u
-            MaxFeeRateMismatchRatio = 0.
-            MaxClosingNegotiationIterations = 20
-        }
-
-    static member FeeProportionalMillionths_: Lens<_, _> =
-        (fun cc -> cc.FeeProportionalMillionths),
-        (fun v cc -> { cc with FeeProportionalMillionths = v })
-        
 type RouterConfig() =
     member val RandomizeRouteSelection: bool = true with get, set
     member val ChannelExcludeDuration: DateTimeOffset = Unchecked.defaultof<DateTimeOffset> with get, set
