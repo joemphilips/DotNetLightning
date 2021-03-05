@@ -96,5 +96,4 @@ type ChannelEvent =
     | Closed
     | Disconnected
     | ChannelStateRequestedSignCommitment
-    | WeSentChannelReestablish of msg: ChannelReestablishMsg
 

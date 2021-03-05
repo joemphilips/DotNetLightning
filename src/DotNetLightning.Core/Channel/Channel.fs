@@ -464,6 +464,23 @@ and Channel = {
             return (acceptChannelMsg, channelWaitingForFundingCreated)
         }
 
+    member self.CreateChannelReestablish (): ChannelReestablishMsg =
+        let commitmentSeed = self.ChannelPrivKeys.CommitmentSeed
+        let ourChannelReestablish = {
+            ChannelId = self.StaticChannelConfig.ChannelId()
+            NextCommitmentNumber =
+                (self.Commitments.RemotePerCommitmentSecrets.NextCommitmentNumber().NextCommitment())
+            NextRevocationNumber =
+                self.Commitments.RemotePerCommitmentSecrets.NextCommitmentNumber()
+            DataLossProtect = OptionalField.Some <| {
+                YourLastPerCommitmentSecret =
+                    self.Commitments.RemotePerCommitmentSecrets.MostRecentPerCommitmentSecret()
+                MyCurrentPerCommitmentPoint =
+                    commitmentSeed.DerivePerCommitmentPoint self.Commitments.RemoteCommit.Index
+            }
+        }
+        ourChannelReestablish
+
 module Channel =
 
     let private hex = NBitcoin.DataEncoders.HexEncoder()
@@ -515,27 +532,6 @@ module Channel =
             ((localClosingFee.Satoshi + remoteClosingFee.Satoshi) / 4L) * 2L
             |> Money.Satoshis
 
-    let makeChannelReestablish (channelPrivKeys: ChannelPrivKeys)
-                               (commitments: Commitments)
-                               (staticChannelConfig: StaticChannelConfig)
-                                   : Result<ChannelEvent list, ChannelError> =
-        let commitmentSeed = channelPrivKeys.CommitmentSeed
-        let ourChannelReestablish =
-            {
-                ChannelId = staticChannelConfig.ChannelId()
-                NextCommitmentNumber =
-                    (commitments.RemotePerCommitmentSecrets.NextCommitmentNumber().NextCommitment())
-                NextRevocationNumber =
-                    commitments.RemotePerCommitmentSecrets.NextCommitmentNumber()
-                DataLossProtect = OptionalField.Some <| {
-                    YourLastPerCommitmentSecret =
-                        commitments.RemotePerCommitmentSecrets.MostRecentPerCommitmentSecret()
-                    MyCurrentPerCommitmentPoint =
-                        commitmentSeed.DerivePerCommitmentPoint commitments.RemoteCommit.Index
-                }
-            }
-        [ WeSentChannelReestablish ourChannelReestablish ] |> Ok
-
     let remoteNextCommitInfoIfFundingLocked (remoteNextCommitInfoOpt: Option<RemoteNextCommitInfo>)
                                             (operation: string)
                                                 : Result<RemoteNextCommitInfo, ChannelError> =
@@ -562,8 +558,6 @@ module Channel =
 
     let executeCommand (cs: Channel) (command: ChannelCommand): Result<ChannelEvent list, ChannelError> =
         match command with
-        | CreateChannelReestablish ->
-            makeChannelReestablish cs.ChannelPrivKeys cs.Commitments cs.StaticChannelConfig
         | ApplyFundingLocked msg ->
             result {
                 do!
