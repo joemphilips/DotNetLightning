@@ -234,24 +234,24 @@ type TaggedField =
         | FallbackAddressTaggedField _ -> 9uy
         | RoutingInfoTaggedField _ -> 3uy
         | FeaturesTaggedField _ -> 5uy
-        
+
     member private this.WriteField(writer: BinaryWriter, data: byte[]) =
         let mutable dataLengthInBase32 = Helpers.uint64ToBase32(data.Length |> uint64)
         // data length must be exactly 10 bits
         if (dataLengthInBase32.Length < 2) then
             dataLengthInBase32 <- Array.append ([|0uy|]) dataLengthInBase32
         Debug.Assert(dataLengthInBase32.Length = 2)
-        
+
         writer.Write([|this.Type|])
         writer.Write(dataLengthInBase32)
         writer.Write(data)
-        
+
     member internal this.WriteTo(writer: BinaryWriter, timestamp) =
         match this with
         | PaymentHashTaggedField p ->
             this.WriteField(writer, Helpers.convert8BitsTo5(p.ToBytes()))
         | PaymentSecretTaggedField p  ->
-            this.WriteField(writer, Helpers.convert8BitsTo5(p.ToBytes()))
+            this.WriteField(writer, Helpers.convert8BitsTo5(p.ToBytes(false)))
         | DescriptionTaggedField d ->
             let dBase32 = d |> Helpers.utf8.GetBytes |> Helpers.convert8BitsTo5
             this.WriteField(writer, dBase32)
@@ -307,7 +307,9 @@ type TaggedFields = {
         
     member this.FeatureBits =
         this.Fields |> Seq.choose(function FeaturesTaggedField fb -> Some fb | _ -> None) |> Seq.tryExactlyOne
-        
+
+    member this.PaymentSecret =
+        this.Fields |> Seq.choose(function PaymentSecretTaggedField ps -> Some ps | _ -> None) |> Seq.tryExactlyOne
     member this.CheckSanity() =
         let pHashes = this.Fields |> List.choose(function PaymentHashTaggedField x -> Some x | _ -> None)
         if (pHashes.Length > 1) then "duplicate 'p' field" |> Error else

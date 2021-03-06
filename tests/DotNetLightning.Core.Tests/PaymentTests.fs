@@ -232,4 +232,18 @@ let unitTest =
             let expectedHash = PaymentHash.PaymentHash (uint256.Parse "b1d9fa54b693576947e3b78eaf8a2595b5b6288b283c7c75f51ee0fe5bb82cba")
             Expect.equal expectedHash h ""
             ()
+
+        testCase "encode/decode invoice with payment_secret" <| fun _ ->
+          let invoice = "lnbcrt1m1psy8qzcpp5az829pxjk7dxmaa080vjgstjanr7lqcrthxunqw5e985cpyvmyhsdql2djkuepqw3hjqsj5gvsxzerywfjhxuccqzptsp5zt5m0yv2hk5lkjcdu36a0r2mt2wtten7zp5xt47px26dxqdlaggq9qyyssqrqxsvhqvd6aynuyv0vsds6kxktg5kg60m68qdv87mu38290cfgzrxrqtntl5n29c57dt2man6parlgl9ua945e4yfehdsttgs7hqlpsphcn7uy"
+          let expected = PubKey("0268692bc886c37a10ef4990f1ad1538bd9c50f0d74a80b9498e7b8a152ee2355b")
+          let p = PaymentRequest.Parse(invoice) |> Result.deref
+          Expect.equal p.NodeIdValue.Value expected ""
+          Expect.isNone p.TagsValue.ExplicitNodeId ""
+          let expectedPaymentSecret = "12e9b7918abda9fb4b0de475d78d5b5a9cb5e67e106865d7c132b4d301bfea10"
+          Expect.equal p.TagsValue.PaymentSecret.Value (uint256(expectedPaymentSecret)) ""
+          Expect.isSome p.SignatureValue ""
+          let p2 = p.ToString() |> PaymentRequest.Parse |> Result.deref
+          Expect.equal p.SignatureValue p2.SignatureValue ""
+          Expect.equal p.NodeIdValue p2.NodeIdValue ""
+          ()
     ]
