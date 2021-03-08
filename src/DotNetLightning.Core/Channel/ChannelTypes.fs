@@ -57,8 +57,6 @@ module Data =
 type ChannelEvent =
     // --- ln events ---
     // -------- normal operation ------
-    | WeAcceptedCommitmentSigned of msg: RevokeAndACKMsg * nextCommitments: Commitments
-
     | WeAcceptedRevokeAndACK of nextCommitments: Commitments * remoteNextPerCommitmentPoint: PerCommitmentPoint
 
     | AcceptedOperationShutdown of msg: ShutdownMsg * localShutdownScriptPubKey: ShutdownScriptPubKey

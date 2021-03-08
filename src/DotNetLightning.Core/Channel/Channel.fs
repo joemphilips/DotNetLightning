@@ -794,6 +794,23 @@ and Channel = {
             return self, None
     }
 
+    member self.ApplyCommitmentSigned (msg: CommitmentSignedMsg)
+                                          : Result<Channel * RevokeAndACKMsg, ChannelError> = result {
+        let! _remoteNextCommitInfo =
+            self.RemoteNextCommitInfoIfFundingLockedNormal "ApplyCommitmentSigned"
+        let! revokeAndACKMsg, newCommitments =
+            Commitments.receiveCommit
+                self.ChannelPrivKeys
+                msg
+                self.StaticChannelConfig
+                self.Commitments
+        let channel = {
+            self with
+                Commitments = newCommitments
+        }
+        return channel, revokeAndACKMsg
+    }
+
 module Channel =
 
     let private hex = NBitcoin.DataEncoders.HexEncoder()
@@ -847,17 +864,6 @@ module Channel =
 
     let executeCommand (cs: Channel) (command: ChannelCommand): Result<ChannelEvent list, ChannelError> =
         match command with
-        | ApplyCommitmentSigned msg ->
-            result {
-                let! _remoteNextCommitInfo =
-                    cs.RemoteNextCommitInfoIfFundingLockedNormal "ApplyCommitmentSigned"
-                return!
-                    Commitments.receiveCommit
-                        cs.ChannelPrivKeys
-                        msg
-                        cs.StaticChannelConfig
-                        cs.Commitments
-            }
         | ApplyRevokeAndACK msg ->
             result {
                 let! remoteNextCommitInfo =
@@ -1110,9 +1116,6 @@ module Channel =
     let applyEvent c (e: ChannelEvent): Channel =
         match e with
         // ----- normal operation --------
-        | WeAcceptedCommitmentSigned(_msg, newCommitments) ->
-            { c with Commitments = newCommitments }
-
         | WeAcceptedRevokeAndACK(newCommitments, remoteNextPerCommitmentPoint) ->
             {
                 c with
