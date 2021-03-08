@@ -570,6 +570,56 @@ and Channel = {
                 return! Error <| OnceConfirmedFundingTxHasBecomeUnconfirmed(height, depth)
     }
 
+    member self.AddHTLC (op: OperationAddHTLC)
+                            : Result<Channel * UpdateAddHTLCMsg, ChannelError> = result {
+        if self.NegotiatingState.HasEnteredShutdown() then
+            return!
+                sprintf "Could not add new HTLC %A since shutdown is already in progress." op
+                |> apiMisuse
+        else
+            do! Validation.checkOperationAddHTLC self.StaticChannelConfig.RemoteParams op
+            let add: UpdateAddHTLCMsg = {
+                ChannelId = self.StaticChannelConfig.ChannelId()
+                HTLCId = self.Commitments.LocalNextHTLCId
+                Amount = op.Amount
+                PaymentHash = op.PaymentHash
+                CLTVExpiry = op.Expiry
+                OnionRoutingPacket = op.Onion
+            }
+            let commitments1 =
+                let commitments = {
+                    self.Commitments.AddLocalProposal(add) with
+                        LocalNextHTLCId = self.Commitments.LocalNextHTLCId + 1UL
+                }
+                match op.Origin with
+                | None -> commitments
+                | Some origin -> {
+                    commitments with
+                        OriginChannels =
+                            self.Commitments.OriginChannels
+                            |> Map.add add.HTLCId origin
+                }
+
+            let! remoteNextCommitInfo =
+                self.RemoteNextCommitInfoIfFundingLockedNormal "AddHTLC"
+            // we need to base the next current commitment on the last sig we sent, even if we didn't yet receive their revocation
+            let remoteCommit1 =
+                match remoteNextCommitInfo with
+                | Waiting nextRemoteCommit -> nextRemoteCommit
+                | Revoked _info -> commitments1.RemoteCommit
+            let! reduced = remoteCommit1.Spec.Reduce(commitments1.RemoteChanges.ACKed, commitments1.LocalChanges.Proposed) |> expectTransactionError
+            do!
+                Validation.checkOurUpdateAddHTLCIsAcceptableWithCurrentSpec
+                    reduced
+                    self.StaticChannelConfig
+                    add
+            let channel = {
+                self with
+                    Commitments = commitments1
+            }
+            return channel, add
+    }
+
 module Channel =
 
     let private hex = NBitcoin.DataEncoders.HexEncoder()
@@ -623,50 +673,6 @@ module Channel =
 
     let executeCommand (cs: Channel) (command: ChannelCommand): Result<ChannelEvent list, ChannelError> =
         match command with
-        // ---------- normal operation ---------
-        | AddHTLC op when cs.NegotiatingState.HasEnteredShutdown() ->
-            sprintf "Could not add new HTLC %A since shutdown is already in progress." op
-            |> apiMisuse
-        | AddHTLC op ->
-            result {
-                do! Validation.checkOperationAddHTLC cs.StaticChannelConfig.RemoteParams op
-                let add: UpdateAddHTLCMsg = {
-                    ChannelId = cs.StaticChannelConfig.ChannelId()
-                    HTLCId = cs.Commitments.LocalNextHTLCId
-                    Amount = op.Amount
-                    PaymentHash = op.PaymentHash
-                    CLTVExpiry = op.Expiry
-                    OnionRoutingPacket = op.Onion
-                }
-                let commitments1 =
-                    let commitments = {
-                        cs.Commitments.AddLocalProposal(add) with
-                            LocalNextHTLCId = cs.Commitments.LocalNextHTLCId + 1UL
-                    }
-                    match op.Origin with
-                    | None -> commitments
-                    | Some origin -> {
-                        commitments with
-                            OriginChannels =
-                                cs.Commitments.OriginChannels
-                                |> Map.add add.HTLCId origin
-                    }
-
-                let! remoteNextCommitInfo =
-                    cs.RemoteNextCommitInfoIfFundingLockedNormal "AddHTLC"
-                // we need to base the next current commitment on the last sig we sent, even if we didn't yet receive their revocation
-                let remoteCommit1 =
-                    match remoteNextCommitInfo with
-                    | Waiting nextRemoteCommit -> nextRemoteCommit
-                    | Revoked _info -> commitments1.RemoteCommit
-                let! reduced = remoteCommit1.Spec.Reduce(commitments1.RemoteChanges.ACKed, commitments1.LocalChanges.Proposed) |> expectTransactionError
-                do!
-                    Validation.checkOurUpdateAddHTLCIsAcceptableWithCurrentSpec
-                        reduced
-                        cs.StaticChannelConfig
-                        add
-                return [ WeAcceptedOperationAddHTLC(add, commitments1) ]
-            }
         | ApplyUpdateAddHTLC (msg, height) ->
             result {
                 do!
@@ -1046,8 +1052,6 @@ module Channel =
     let applyEvent c (e: ChannelEvent): Channel =
         match e with
         // ----- normal operation --------
-        | WeAcceptedOperationAddHTLC(_, newCommitments) ->
-            { c with Commitments = newCommitments }
         | WeAcceptedUpdateAddHTLC(newCommitments) ->
             { c with Commitments = newCommitments }
 

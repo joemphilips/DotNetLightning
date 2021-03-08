@@ -120,7 +120,6 @@ type ChannelCommand =
     | ApplyFundingCreated of FundingCreatedMsg
 
     // normal
-    | AddHTLC of OperationAddHTLC
     | ApplyUpdateAddHTLC of msg: UpdateAddHTLCMsg * currentHeight: BlockHeight
     | FulfillHTLC of OperationFulfillHTLC
     | ApplyUpdateFulfillHTLC of UpdateFulfillHTLCMsg
