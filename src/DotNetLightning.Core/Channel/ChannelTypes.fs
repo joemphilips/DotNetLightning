@@ -57,8 +57,6 @@ module Data =
 type ChannelEvent =
     // --- ln events ---
     // -------- normal operation ------
-    | WeAcceptedUpdateFee of msg: UpdateFeeMsg * newCommitments: Commitments
-
     | WeAcceptedOperationSign of msg: CommitmentSignedMsg * nextCommitments: Commitments * nextRemoteCommit: RemoteCommit
     | WeAcceptedCommitmentSigned of msg: RevokeAndACKMsg * nextCommitments: Commitments
 

@@ -749,6 +749,24 @@ and Channel = {
         return channel, updateFeeMsg
     }
 
+    member self.ApplyUpdateFee (msg: UpdateFeeMsg)
+                                   : Result<Channel, ChannelError> = result {
+        let! _remoteNextCommitInfo =
+            self.RemoteNextCommitInfoIfFundingLockedNormal "ApplyUpdateFee"
+        let localFeerate = self.ChannelOptions.FeeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority)
+        let! newCommitments =
+            Commitments.receiveFee
+                self.ChannelOptions
+                localFeerate
+                msg
+                self.StaticChannelConfig
+                self.Commitments
+        return {
+            self with
+                Commitments = newCommitments
+        }
+    }
+
 module Channel =
 
     let private hex = NBitcoin.DataEncoders.HexEncoder()
@@ -802,19 +820,6 @@ module Channel =
 
     let executeCommand (cs: Channel) (command: ChannelCommand): Result<ChannelEvent list, ChannelError> =
         match command with
-        | ApplyUpdateFee msg ->
-            result {
-                let! _remoteNextCommitInfo =
-                    cs.RemoteNextCommitInfoIfFundingLockedNormal "ApplyUpdateFee"
-                let localFeerate = cs.ChannelOptions.FeeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority)
-                return!
-                    Commitments.receiveFee
-                        cs.ChannelOptions
-                        localFeerate
-                        msg
-                        cs.StaticChannelConfig
-                        cs.Commitments
-            }
         | SignCommitment ->
             let cm = cs.Commitments
             result {
@@ -1098,9 +1103,6 @@ module Channel =
     let applyEvent c (e: ChannelEvent): Channel =
         match e with
         // ----- normal operation --------
-        | WeAcceptedUpdateFee(_msg, newCommitments) ->
-            { c with Commitments = newCommitments }
-
         | WeAcceptedOperationSign(_msg, newCommitments, waitingForRevocation) ->
             {
                 c with
