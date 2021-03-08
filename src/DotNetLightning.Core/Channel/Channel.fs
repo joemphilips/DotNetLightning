@@ -1104,14 +1104,3 @@ and Channel = {
                 return channel, NewClosingSigned closingSignedMsg
     }
 
-module Channel =
-
-    let executeCommand (_cs: Channel) (command: ChannelCommand): Result<ChannelEvent list, ChannelError> =
-        match command with
-        | _cmd ->
-            failwith "not implemented"
-
-    let applyEvent c (e: ChannelEvent): Channel =
-        match e with
-        // ----- else -----
-        | _otherEvent -> c
