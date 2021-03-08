@@ -853,6 +853,30 @@ and Channel = {
                 }
     }
 
+    member self.Close (localShutdownScriptPubKey: ShutdownScriptPubKey)
+                          : Result<Channel * ShutdownMsg, ChannelError> = result {
+        if self.NegotiatingState.LocalRequestedShutdown.IsSome then
+            do! Error <| cannotCloseChannel "shutdown is already in progress"
+        do!
+            Validation.checkShutdownScriptPubKeyAcceptable
+                self.StaticChannelConfig.LocalStaticShutdownScriptPubKey
+                localShutdownScriptPubKey
+        if (self.Commitments.LocalHasUnsignedOutgoingHTLCs()) then
+            do! Error <| cannotCloseChannel "Cannot close with unsigned outgoing htlcs"
+        let shutdownMsg: ShutdownMsg = {
+            ChannelId = self.StaticChannelConfig.ChannelId()
+            ScriptPubKey = localShutdownScriptPubKey
+        }
+        let channel = {
+            self with
+                NegotiatingState = {
+                    self.NegotiatingState with
+                        LocalRequestedShutdown = Some localShutdownScriptPubKey
+                }
+        }
+        return channel, shutdownMsg
+    }
+
 module Channel =
 
     let private hex = NBitcoin.DataEncoders.HexEncoder()
@@ -906,22 +930,6 @@ module Channel =
 
     let executeCommand (cs: Channel) (command: ChannelCommand): Result<ChannelEvent list, ChannelError> =
         match command with
-        | ChannelCommand.Close localShutdownScriptPubKey ->
-            result {
-                if cs.NegotiatingState.LocalRequestedShutdown.IsSome then
-                    do! Error <| cannotCloseChannel "shutdown is already in progress"
-                do!
-                    Validation.checkShutdownScriptPubKeyAcceptable
-                        cs.StaticChannelConfig.LocalStaticShutdownScriptPubKey
-                        localShutdownScriptPubKey
-                if (cs.Commitments.LocalHasUnsignedOutgoingHTLCs()) then
-                    do! Error <| cannotCloseChannel "Cannot close with unsigned outgoing htlcs"
-                let shutdownMsg: ShutdownMsg = {
-                    ChannelId = cs.StaticChannelConfig.ChannelId()
-                    ScriptPubKey = localShutdownScriptPubKey
-                }
-                return [ AcceptedOperationShutdown(shutdownMsg, localShutdownScriptPubKey) ]
-            }
         | RemoteShutdown(msg, localShutdownScriptPubKey) ->
             result {
                 let remoteShutdownScriptPubKey = msg.ScriptPubKey
@@ -1122,14 +1130,6 @@ module Channel =
     let applyEvent c (e: ChannelEvent): Channel =
         match e with
         // -----  closing ------
-        | AcceptedOperationShutdown(_msg, shutdownScriptPubKey) ->
-            {
-                c with
-                    NegotiatingState = {
-                        c.NegotiatingState with
-                            LocalRequestedShutdown = Some shutdownScriptPubKey
-                    }
-            }
         | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs remoteShutdownScriptPubKey ->
             { 
                 c with
