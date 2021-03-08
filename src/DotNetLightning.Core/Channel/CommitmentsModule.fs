@@ -263,8 +263,7 @@ module internal Commitments =
                             (staticChannelConfig.LocalParams.ChannelReserveSatoshis, fees,  (-1 * missing))
                             |> cannotAffordFee
                     else
-                        return
-                            [ WeAcceptedOperationUpdateFee(fee, c1) ]
+                        return fee, c1
                 }
 
     let receiveFee (channelOptions: ChannelOptions)

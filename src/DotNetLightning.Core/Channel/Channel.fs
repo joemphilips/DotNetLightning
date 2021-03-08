@@ -736,6 +736,19 @@ and Channel = {
         }
     }
 
+    member self.UpdateFee (op: OperationUpdateFee)
+                              : Result<Channel * UpdateFeeMsg, ChannelError> = result {
+        let! _remoteNextCommitInfo =
+            self.RemoteNextCommitInfoIfFundingLockedNormal "UpdateFee"
+        let! updateFeeMsg, newCommitments =
+            Commitments.sendFee op self.StaticChannelConfig self.Commitments
+        let channel = {
+            self with
+                Commitments = newCommitments
+        }
+        return channel, updateFeeMsg
+    }
+
 module Channel =
 
     let private hex = NBitcoin.DataEncoders.HexEncoder()
@@ -789,12 +802,6 @@ module Channel =
 
     let executeCommand (cs: Channel) (command: ChannelCommand): Result<ChannelEvent list, ChannelError> =
         match command with
-        | UpdateFee op ->
-            result {
-                let! _remoteNextCommitInfo =
-                    cs.RemoteNextCommitInfoIfFundingLockedNormal "UpdateFee"
-                return! Commitments.sendFee op cs.StaticChannelConfig cs.Commitments
-            }
         | ApplyUpdateFee msg ->
             result {
                 let! _remoteNextCommitInfo =
@@ -1091,8 +1098,6 @@ module Channel =
     let applyEvent c (e: ChannelEvent): Channel =
         match e with
         // ----- normal operation --------
-        | WeAcceptedOperationUpdateFee(_msg, newCommitments) ->
-            { c with Commitments = newCommitments }
         | WeAcceptedUpdateFee(_msg, newCommitments) ->
             { c with Commitments = newCommitments }
 
