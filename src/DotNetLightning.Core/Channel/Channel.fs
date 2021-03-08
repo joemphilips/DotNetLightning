@@ -1020,100 +1020,98 @@ and Channel = {
                 return channel, Some localShutdownMsg, None
     }
 
-module Channel =
+    member self.ApplyClosingSigned (msg: ClosingSignedMsg)
+                                       : Result<Channel * ClosingSignedResponse, ChannelError> = result {
+        let! localShutdownScriptPubKey, remoteShutdownScriptPubKey =
+            match (self.NegotiatingState.LocalRequestedShutdown, self.NegotiatingState.RemoteRequestedShutdown) with
+            | (Some localShutdownScriptPubKey, Some remoteShutdownScriptPubKey) ->
+                Ok (localShutdownScriptPubKey, remoteShutdownScriptPubKey)
+            // FIXME: these should be new channel errors
+            | (Some _, None) ->
+                Error ReceivedClosingSignedBeforeReceivingShutdown
+            | (None, Some _) ->
+                Error ReceivedClosingSignedBeforeSendingShutdown
+            | (None, None) ->
+                Error ReceivedClosingSignedBeforeSendingOrReceivingShutdown
+        let cm = self.Commitments
+        let remoteChannelKeys = self.StaticChannelConfig.RemoteChannelPubKeys
+        let lastCommitFeeSatoshi =
+            self.StaticChannelConfig.FundingScriptCoin.TxOut.Value - (cm.LocalCommit.PublishableTxs.CommitTx.Value.TotalOut)
+        do! checkRemoteProposedHigherFeeThanBaseFee lastCommitFeeSatoshi msg.FeeSatoshis
+        do!
+            checkRemoteProposedFeeWithinNegotiatedRange
+                (List.tryHead self.NegotiatingState.LocalClosingFeesProposed)
+                (Option.map (fun (fee, _sig) -> fee) self.NegotiatingState.RemoteClosingFeeProposed)
+                msg.FeeSatoshis
 
-    let executeCommand (cs: Channel) (command: ChannelCommand): Result<ChannelEvent list, ChannelError> =
-        match command with
-        | ApplyClosingSigned msg ->
-            result {
-                let! localShutdownScriptPubKey, remoteShutdownScriptPubKey =
-                    match (cs.NegotiatingState.LocalRequestedShutdown, cs.NegotiatingState.RemoteRequestedShutdown) with
-                    | (Some localShutdownScriptPubKey, Some remoteShutdownScriptPubKey) ->
-                        Ok (localShutdownScriptPubKey, remoteShutdownScriptPubKey)
-                    // FIXME: these should be new channel errors
-                    | (Some _, None) ->
-                        Error ReceivedClosingSignedBeforeReceivingShutdown
-                    | (None, Some _) ->
-                        Error ReceivedClosingSignedBeforeSendingShutdown
-                    | (None, None) ->
-                        Error ReceivedClosingSignedBeforeSendingOrReceivingShutdown
-                let cm = cs.Commitments
-                let remoteChannelKeys = cs.StaticChannelConfig.RemoteChannelPubKeys
-                let lastCommitFeeSatoshi =
-                    cs.StaticChannelConfig.FundingScriptCoin.TxOut.Value - (cm.LocalCommit.PublishableTxs.CommitTx.Value.TotalOut)
-                do! checkRemoteProposedHigherFeeThanBaseFee lastCommitFeeSatoshi msg.FeeSatoshis
-                do!
-                    checkRemoteProposedFeeWithinNegotiatedRange
-                        (List.tryHead cs.NegotiatingState.LocalClosingFeesProposed)
-                        (Option.map (fun (fee, _sig) -> fee) cs.NegotiatingState.RemoteClosingFeeProposed)
-                        msg.FeeSatoshis
-
-                let! closingTx, closingSignedMsg =
-                    cs.MakeClosingTx
+        let! closingTx, closingSignedMsg =
+            self.MakeClosingTx
+                localShutdownScriptPubKey
+                remoteShutdownScriptPubKey
+                msg.FeeSatoshis
+            |> expectTransactionError
+        let! finalizedTx =
+            Transactions.checkTxFinalized
+                closingTx.Value
+                closingTx.WhichInput
+                (seq [
+                    remoteChannelKeys.FundingPubKey.RawPubKey(),
+                    TransactionSignature(msg.Signature.Value, SigHash.All)
+                ])
+            |> expectTransactionError
+        let maybeLocalFee =
+            self.NegotiatingState.LocalClosingFeesProposed
+            |> List.tryHead
+        let areWeInDeal = Some(msg.FeeSatoshis) = maybeLocalFee
+        let hasTooManyNegotiationDone =
+            (self.NegotiatingState.LocalClosingFeesProposed |> List.length) >= self.ChannelOptions.MaxClosingNegotiationIterations
+        if (areWeInDeal || hasTooManyNegotiationDone) then
+            return self, MutualClose (finalizedTx, None)
+        else
+            let lastLocalClosingFee = self.NegotiatingState.LocalClosingFeesProposed |> List.tryHead
+            let! localF = 
+                match lastLocalClosingFee with
+                | Some v -> Ok v
+                | None ->
+                    self.FirstClosingFee
                         localShutdownScriptPubKey
                         remoteShutdownScriptPubKey
-                        msg.FeeSatoshis
                     |> expectTransactionError
-                let! finalizedTx =
-                    Transactions.checkTxFinalized
-                        closingTx.Value
-                        closingTx.WhichInput
-                        (seq [
-                            remoteChannelKeys.FundingPubKey.RawPubKey(),
-                            TransactionSignature(msg.Signature.Value, SigHash.All)
-                        ])
+            let nextClosingFee =
+                Channel.NextClosingFee (localF, msg.FeeSatoshis)
+            if (Some nextClosingFee = lastLocalClosingFee) then
+                return self, MutualClose (finalizedTx, None)
+            else if (nextClosingFee = msg.FeeSatoshis) then
+                // we have reached on agreement!
+                return self, MutualClose (finalizedTx, Some closingSignedMsg)
+            else
+                let! _closingTx, closingSignedMsg =
+                    self.MakeClosingTx
+                        localShutdownScriptPubKey
+                        remoteShutdownScriptPubKey
+                        nextClosingFee
                     |> expectTransactionError
-                let maybeLocalFee =
-                    cs.NegotiatingState.LocalClosingFeesProposed
-                    |> List.tryHead
-                let areWeInDeal = Some(msg.FeeSatoshis) = maybeLocalFee
-                let hasTooManyNegotiationDone =
-                    (cs.NegotiatingState.LocalClosingFeesProposed |> List.length) >= cs.ChannelOptions.MaxClosingNegotiationIterations
-                if (areWeInDeal || hasTooManyNegotiationDone) then
-                    return [ MutualClosePerformed (finalizedTx, None) ]
-                else
-                    let lastLocalClosingFee = cs.NegotiatingState.LocalClosingFeesProposed |> List.tryHead
-                    let! localF = 
-                        match lastLocalClosingFee with
-                        | Some v -> Ok v
-                        | None ->
-                            cs.FirstClosingFee
-                                localShutdownScriptPubKey
-                                remoteShutdownScriptPubKey
-                            |> expectTransactionError
-                    let nextClosingFee =
-                        Channel.NextClosingFee (localF, msg.FeeSatoshis)
-                    if (Some nextClosingFee = lastLocalClosingFee) then
-                        return [ MutualClosePerformed (finalizedTx, None) ]
-                    else if (nextClosingFee = msg.FeeSatoshis) then
-                        // we have reached on agreement!
-                        return [ MutualClosePerformed (finalizedTx, Some closingSignedMsg) ]
-                    else
-                        let! _closingTx, closingSignedMsg =
-                            cs.MakeClosingTx
-                                localShutdownScriptPubKey
-                                remoteShutdownScriptPubKey
-                                nextClosingFee
-                            |> expectTransactionError
-                        let nextState = {
-                            cs.NegotiatingState with
-                                LocalClosingFeesProposed =
-                                    nextClosingFee :: cs.NegotiatingState.LocalClosingFeesProposed
-                                RemoteClosingFeeProposed = Some (msg.FeeSatoshis, msg.Signature)
-                        }
-                        return [ WeProposedNewClosingSigned(closingSignedMsg, nextState) ]
-            }
+                let nextState = {
+                    self.NegotiatingState with
+                        LocalClosingFeesProposed =
+                            nextClosingFee :: self.NegotiatingState.LocalClosingFeesProposed
+                        RemoteClosingFeeProposed = Some (msg.FeeSatoshis, msg.Signature)
+                }
+                let channel = {
+                    self with
+                        NegotiatingState = nextState
+                }
+                return channel, NewClosingSigned closingSignedMsg
+    }
+
+module Channel =
+
+    let executeCommand (_cs: Channel) (command: ChannelCommand): Result<ChannelEvent list, ChannelError> =
+        match command with
         | _cmd ->
             failwith "not implemented"
 
     let applyEvent c (e: ChannelEvent): Channel =
         match e with
-        // -----  closing ------
-        | MutualClosePerformed (_txToPublish, _) -> c
-        | WeProposedNewClosingSigned(_msg, nextNegotiatingState) ->
-            {
-                c with
-                    NegotiatingState = nextNegotiatingState
-            }
         // ----- else -----
         | _otherEvent -> c

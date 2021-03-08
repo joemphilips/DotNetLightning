@@ -42,6 +42,9 @@ module Data =
         member self.HasEnteredShutdown(): bool =
             self.LocalRequestedShutdown.IsSome && self.RemoteRequestedShutdown.IsSome
 
+type ClosingSignedResponse =
+    | NewClosingSigned of ClosingSignedMsg
+    | MutualClose of FinalizedTx * Option<ClosingSignedMsg>
 
 //     8888888888 888     888 8888888888 888b    888 88888888888 .d8888b.
 //     888        888     888 888        8888b   888     888    d88P  Y88b
@@ -56,9 +59,6 @@ module Data =
 /// The one that includes `Operation` in its name is the event which we are the initiator
 type ChannelEvent =
     // --- ln events ---
-    // ------ closing ------
-    | MutualClosePerformed of txToPublish: FinalizedTx * nextMsgToSend: Option<ClosingSignedMsg>
-    | WeProposedNewClosingSigned of msgToSend: ClosingSignedMsg * nextState: NegotiatingState
     // -------- else ---------
     | Closed
     | Disconnected
