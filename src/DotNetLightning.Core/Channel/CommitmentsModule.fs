@@ -215,8 +215,7 @@ module internal Commitments =
                     FailureCode = op.FailureCode
                 }
                 let nextCommitments = cm.AddLocalProposal(msg)
-                [ WeAcceptedOperationFailMalformedHTLC(msg, nextCommitments) ]
-                |> Ok
+                Ok (msg, nextCommitments)
             | None ->
                 op.Id |> unknownHTLCId
 

@@ -59,7 +59,6 @@ type ChannelEvent =
     // -------- normal operation ------
     | WeAcceptedFailHTLC of origin: HTLCSource * msg: UpdateAddHTLCMsg * nextCommitments: Commitments
 
-    | WeAcceptedOperationFailMalformedHTLC of msg: UpdateFailMalformedHTLCMsg * newCommitments: Commitments
     | WeAcceptedFailMalformedHTLC of origin: HTLCSource * msg: UpdateAddHTLCMsg * newCommitments: Commitments
 
     | WeAcceptedOperationUpdateFee of msg: UpdateFeeMsg  * nextCommitments: Commitments

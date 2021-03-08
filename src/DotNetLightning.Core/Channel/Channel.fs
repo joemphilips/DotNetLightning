@@ -696,6 +696,23 @@ and Channel = {
         return channel, updateFailHTLCMsg
     }
 
+    member self.FailMalformedHTLC (op: OperationFailMalformedHTLC)
+                                      : Result<Channel * UpdateFailMalformedHTLCMsg, ChannelError> = result {
+        let! remoteNextCommitInfo =
+            self.RemoteNextCommitInfoIfFundingLockedNormal "FailMalformedHTLC"
+        let! updateFailMalformedHTLCMsg, newCommitments =
+            Commitments.sendFailMalformed
+                op
+                self.Commitments
+                self.StaticChannelConfig
+                remoteNextCommitInfo
+        let channel = {
+            self with
+                Commitments = newCommitments
+        }
+        return channel, updateFailMalformedHTLCMsg
+    }
+
 module Channel =
 
     let private hex = NBitcoin.DataEncoders.HexEncoder()
@@ -749,17 +766,6 @@ module Channel =
 
     let executeCommand (cs: Channel) (command: ChannelCommand): Result<ChannelEvent list, ChannelError> =
         match command with
-        | FailMalformedHTLC op ->
-            result {
-                let! remoteNextCommitInfo =
-                    cs.RemoteNextCommitInfoIfFundingLockedNormal "FailMalformedHTLC"
-                return!
-                    Commitments.sendFailMalformed
-                        op
-                        cs.Commitments
-                        cs.StaticChannelConfig
-                        remoteNextCommitInfo
-            }
         | ApplyUpdateFailHTLC msg ->
             result {
                 let! remoteNextCommitInfo =
@@ -1077,8 +1083,6 @@ module Channel =
         | WeAcceptedFailHTLC(_origin, _msg, newCommitments) ->
             { c with Commitments = newCommitments }
 
-        | WeAcceptedOperationFailMalformedHTLC(_msg, newCommitments) ->
-            { c with Commitments = newCommitments }
         | WeAcceptedFailMalformedHTLC(_origin, _msg, newCommitments) ->
             { c with Commitments = newCommitments }
 

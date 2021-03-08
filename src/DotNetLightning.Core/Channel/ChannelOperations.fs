@@ -121,7 +121,6 @@ type ChannelCommand =
 
     // normal
     | ApplyUpdateFailHTLC of UpdateFailHTLCMsg
-    | FailMalformedHTLC of OperationFailMalformedHTLC
     | ApplyUpdateFailMalformedHTLC of UpdateFailMalformedHTLCMsg
     | UpdateFee of OperationUpdateFee
     | ApplyUpdateFee of UpdateFeeMsg
