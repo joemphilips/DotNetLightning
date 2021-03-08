@@ -767,6 +767,33 @@ and Channel = {
         }
     }
 
+    member self.SignCommitment(): Result<Channel * Option<CommitmentSignedMsg>, ChannelError> = result {
+        let cm = self.Commitments
+        let! remoteNextCommitInfo =
+            self.RemoteNextCommitInfoIfFundingLockedNormal "SignCommit"
+        match remoteNextCommitInfo with
+        | _ when (cm.LocalHasChanges() |> not) ->
+            // Ignore SignCommitment Command (nothing to sign)
+            return self, None
+        | RemoteNextCommitInfo.Revoked _ ->
+            let! commitmentSignedMsg, newCommitments, newRemoteCommit =
+                Commitments.sendCommit
+                    self.ChannelPrivKeys
+                    cm
+                    self.StaticChannelConfig
+                    remoteNextCommitInfo
+            let channel = {
+                self with
+                    Commitments = newCommitments
+                    RemoteNextCommitInfo =
+                        Some <| RemoteNextCommitInfo.Waiting newRemoteCommit
+            }
+            return channel, Some commitmentSignedMsg
+        | RemoteNextCommitInfo.Waiting _ ->
+            // Already in the process of signing
+            return self, None
+    }
+
 module Channel =
 
     let private hex = NBitcoin.DataEncoders.HexEncoder()
@@ -820,26 +847,6 @@ module Channel =
 
     let executeCommand (cs: Channel) (command: ChannelCommand): Result<ChannelEvent list, ChannelError> =
         match command with
-        | SignCommitment ->
-            let cm = cs.Commitments
-            result {
-                let! remoteNextCommitInfo =
-                    cs.RemoteNextCommitInfoIfFundingLockedNormal "SignCommit"
-                match remoteNextCommitInfo with
-                | _ when (cm.LocalHasChanges() |> not) ->
-                    // Ignore SignCommitment Command (nothing to sign)
-                    return []
-                | RemoteNextCommitInfo.Revoked _ ->
-                    return!
-                        Commitments.sendCommit
-                            cs.ChannelPrivKeys
-                            cm
-                            cs.StaticChannelConfig
-                            remoteNextCommitInfo
-                | RemoteNextCommitInfo.Waiting _ ->
-                    // Already in the process of signing
-                    return []
-            }
         | ApplyCommitmentSigned msg ->
             result {
                 let! _remoteNextCommitInfo =
@@ -1103,13 +1110,6 @@ module Channel =
     let applyEvent c (e: ChannelEvent): Channel =
         match e with
         // ----- normal operation --------
-        | WeAcceptedOperationSign(_msg, newCommitments, waitingForRevocation) ->
-            {
-                c with
-                    Commitments = newCommitments
-                    RemoteNextCommitInfo =
-                        Some <| RemoteNextCommitInfo.Waiting waitingForRevocation
-            }
         | WeAcceptedCommitmentSigned(_msg, newCommitments) ->
             { c with Commitments = newCommitments }
 
