@@ -56,10 +56,6 @@ module Data =
 /// The one that includes `Operation` in its name is the event which we are the initiator
 type ChannelEvent =
     // --- ln events ---
-    /// -------- init both -----
-    | FundingConfirmed of FundingLockedMsg * shortChannelId: ShortChannelId
-    | WeResumedDelayedFundingLocked of remoteNextPerCommitmentPoint: PerCommitmentPoint
-
     // -------- normal operation ------
     | WeAcceptedOperationAddHTLC of msg: UpdateAddHTLCMsg * newCommitments: Commitments
     | WeAcceptedUpdateAddHTLC of newCommitments: Commitments

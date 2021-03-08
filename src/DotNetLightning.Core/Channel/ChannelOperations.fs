@@ -114,7 +114,6 @@ type ChannelCommand =
     | ApplyAcceptChannel of AcceptChannelMsg
     | CreateFundingTx of fundingTx: FinalizedTx * outIndex: TxOutIndex
     | ApplyFundingSigned of FundingSignedMsg
-    | ApplyFundingConfirmedOnBC of height: BlockHeight * txIndex: TxIndexInBlock * depth: BlockHeightOffset32
 
     // open: fundee
     | ApplyOpenChannel of OpenChannelMsg

@@ -504,6 +504,50 @@ and Channel = {
             return self
     }
 
+    member self.ApplyFundingConfirmedOnBC (height: BlockHeight)
+                                          (txindex: TxIndexInBlock)
+                                          (depth: BlockHeightOffset32)
+                                              : Result<Channel * Option<FundingLockedMsg>, ChannelError> = result {
+        match self.ShortChannelId with
+        | None ->
+            if self.StaticChannelConfig.FundingTxMinimumDepth > depth then
+                // TODO: this should probably be an error (?)
+                return self, None
+            else
+                let nextPerCommitmentPoint =
+                    self.ChannelPrivKeys.CommitmentSeed.DerivePerCommitmentPoint
+                        (CommitmentNumber.FirstCommitment.NextCommitment())
+                let msgToSend: FundingLockedMsg = {
+                    ChannelId = self.StaticChannelConfig.ChannelId()
+                    NextPerCommitmentPoint = nextPerCommitmentPoint
+                }
+
+                // This is temporary channel id that we will use in our
+                // channel_update message, the goal is to be able to use our
+                // channel as soon as it reaches NORMAL state, and before it is
+                // announced on the network (this id might be updated when the
+                // funding tx gets deeply buried, if there was a reorg in the
+                // meantime) this is not specified in BOLT.
+                let shortChannelId = {
+                    ShortChannelId.BlockHeight = height;
+                    BlockIndex = txindex
+                    TxOutIndex =
+                        self.StaticChannelConfig.FundingScriptCoin.Outpoint.N
+                        |> uint16
+                        |> TxOutIndex
+                }
+                let channel = {
+                    self with
+                        ShortChannelId = Some shortChannelId
+                }
+                return channel, Some msgToSend
+        | Some _shortChannelId ->
+            if (self.StaticChannelConfig.FundingTxMinimumDepth <= depth) then
+                return self, None
+            else
+                return! Error <| OnceConfirmedFundingTxHasBecomeUnconfirmed(height, depth)
+    }
+
 module Channel =
 
     let private hex = NBitcoin.DataEncoders.HexEncoder()
@@ -581,54 +625,6 @@ module Channel =
 
     let executeCommand (cs: Channel) (command: ChannelCommand): Result<ChannelEvent list, ChannelError> =
         match command with
-        | ApplyFundingConfirmedOnBC(height, txindex, depth) ->
-            match cs.ShortChannelId with
-            | None -> 
-                if cs.StaticChannelConfig.FundingTxMinimumDepth > depth then
-                    [] |> Ok
-                else
-                    let nextPerCommitmentPoint =
-                        cs.ChannelPrivKeys.CommitmentSeed.DerivePerCommitmentPoint
-                            (CommitmentNumber.FirstCommitment.NextCommitment())
-                    let msgToSend: FundingLockedMsg = {
-                        ChannelId = cs.StaticChannelConfig.ChannelId()
-                        NextPerCommitmentPoint = nextPerCommitmentPoint
-                    }
-
-                    // This is temporary channel id that we will use in our channel_update message, the goal is to be able to use our channel
-                    // as soon as it reaches NORMAL state, and before it is announced on the network
-                    // (this id might be updated when the funding tx gets deeply buried, if there was a reorg in the meantime)
-                    // this is not specified in BOLT.
-                    let shortChannelId = {
-                        ShortChannelId.BlockHeight = height;
-                        BlockIndex = txindex
-                        TxOutIndex =
-                            cs.StaticChannelConfig.FundingScriptCoin.Outpoint.N
-                            |> uint16
-                            |> TxOutIndex
-                    }
-                    match cs.RemoteNextCommitInfo with
-                    | None ->
-                        [ FundingConfirmed (msgToSend, shortChannelId) ] |> Ok
-                    | Some remoteNextCommitInfo ->
-                        let remoteNextPerCommitmentPoint =
-                            match remoteNextCommitInfo with
-                            | Revoked remoteNextPerCommitmentPoint -> remoteNextPerCommitmentPoint
-                            // Note:
-                            // We should never actually reach this line because we
-                            // never send a commit before the funding is
-                            // confirmed.
-                            | Waiting remoteCommit -> remoteCommit.RemotePerCommitmentPoint
-                        Ok [
-                            FundingConfirmed (msgToSend, shortChannelId)
-                            WeResumedDelayedFundingLocked remoteNextPerCommitmentPoint
-                        ]
-            | Some _shortChannelId ->
-                if (cs.StaticChannelConfig.FundingTxMinimumDepth <= depth) then
-                    [] |> Ok
-                else
-                    onceConfirmedFundingTxHasBecomeUnconfirmed(height, depth)
-
         // ---------- normal operation ---------
         | AddHTLC op when cs.NegotiatingState.HasEnteredShutdown() ->
             sprintf "Could not add new HTLC %A since shutdown is already in progress." op
@@ -1051,12 +1047,6 @@ module Channel =
 
     let applyEvent c (e: ChannelEvent): Channel =
         match e with
-        // --------- init both ------
-        | FundingConfirmed (_ourFundingLockedMsg, shortChannelId) ->
-            {
-                c with
-                    ShortChannelId = Some shortChannelId
-            }
         // ----- normal operation --------
         | WeAcceptedOperationAddHTLC(_, newCommitments) ->
             { c with Commitments = newCommitments }
