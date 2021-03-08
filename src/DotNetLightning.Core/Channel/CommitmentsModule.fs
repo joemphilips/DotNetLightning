@@ -173,9 +173,8 @@ module internal Commitments =
                     HTLCId = op.Id
                     Reason = { Data = reason }
                 }
-                let nextComitments = cm.AddLocalProposal(f)
-                [ WeAcceptedOperationFailHTLC(f, nextComitments) ]
-                |> Ok
+                let nextCommitments = cm.AddLocalProposal(f)
+                Ok (f, nextCommitments)
         | None ->
             op.Id |> unknownHTLCId
 
