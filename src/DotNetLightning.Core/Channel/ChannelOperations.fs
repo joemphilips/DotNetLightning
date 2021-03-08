@@ -121,7 +121,6 @@ type ChannelCommand =
 
     // close
     | ApplyClosingSigned of ClosingSignedMsg
-    | RemoteShutdown of ShutdownMsg * ShutdownScriptPubKey
 
     // else
     | ForceClose

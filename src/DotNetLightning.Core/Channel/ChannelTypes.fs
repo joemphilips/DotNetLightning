@@ -56,17 +56,10 @@ module Data =
 /// The one that includes `Operation` in its name is the event which we are the initiator
 type ChannelEvent =
     // --- ln events ---
-    // -------- normal operation ------
-    | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs of remoteShutdownScriptPubKey: ShutdownScriptPubKey
-    /// We have to send closing_signed to initiate the negotiation only when if we are the funder
-    | AcceptedShutdownWhenNoPendingHTLCs of msgToSend: ClosingSignedMsg option * nextState: NegotiatingState
-    | AcceptedShutdownWhenWeHavePendingHTLCs of localShutdown: ShutdownMsg * localShutdownScript: ShutdownScriptPubKey * remoteShutdownScript: ShutdownScriptPubKey
-
     // ------ closing ------
     | MutualClosePerformed of txToPublish: FinalizedTx * nextMsgToSend: Option<ClosingSignedMsg>
     | WeProposedNewClosingSigned of msgToSend: ClosingSignedMsg * nextState: NegotiatingState
     // -------- else ---------
     | Closed
     | Disconnected
-    | ChannelStateRequestedSignCommitment
 

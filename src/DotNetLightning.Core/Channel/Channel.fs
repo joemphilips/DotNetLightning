@@ -877,165 +877,153 @@ and Channel = {
         return channel, shutdownMsg
     }
 
-module Channel =
-
-    let private hex = NBitcoin.DataEncoders.HexEncoder()
-    let private ascii = System.Text.ASCIIEncoding.ASCII
-    let private dummyPrivKey = new Key(hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101"))
-    let private dummyPubKey = dummyPrivKey.PubKey
-    let private dummySig =
-        "01010101010101010101010101010101" |> ascii.GetBytes
+    static member private Hex = NBitcoin.DataEncoders.HexEncoder()
+    static member private Ascii = System.Text.ASCIIEncoding.ASCII
+    static member private DummyPrivKey = new Key(Channel.Hex.DecodeData("0101010101010101010101010101010101010101010101010101010101010101"))
+    static member private DummySig =
+        "01010101010101010101010101010101" |> Channel.Ascii.GetBytes
         |> uint256
-        |> fun m -> dummyPrivKey.SignCompact(m)
+        |> fun m -> Channel.DummyPrivKey.SignCompact(m)
         |> fun d -> LNECDSASignature.FromBytesCompact(d, true)
         |> fun ecdsaSig -> TransactionSignature(ecdsaSig.Value, SigHash.All)
 
-    module Closing =
-        let makeClosingTx (channelPrivKeys: ChannelPrivKeys)
-                          (cm: Commitments)
-                          (localSpk: ShutdownScriptPubKey)
-                          (remoteSpk: ShutdownScriptPubKey)
-                          (closingFee: Money)
-                          (staticChannelConfig: StaticChannelConfig) =
-            let dustLimitSatoshis = Money.Max(staticChannelConfig.LocalParams.DustLimitSatoshis, staticChannelConfig.RemoteParams.DustLimitSatoshis)
-            result {
-                let! closingTx = Transactions.makeClosingTx staticChannelConfig.FundingScriptCoin (localSpk) (remoteSpk) staticChannelConfig.IsFunder (dustLimitSatoshis) (closingFee) (cm.LocalCommit.Spec) staticChannelConfig.Network
-                let localSignature, psbtUpdated = channelPrivKeys.SignWithFundingPrivKey closingTx.Value
-                let msg: ClosingSignedMsg = {
-                    ChannelId = staticChannelConfig.ChannelId()
-                    FeeSatoshis = closingFee
-                    Signature = localSignature.Signature |> LNECDSASignature
+    member internal self.MakeClosingTx (localSpk: ShutdownScriptPubKey)
+                                       (remoteSpk: ShutdownScriptPubKey)
+                                       (closingFee: Money) = result {
+        let channelPrivKeys = self.ChannelPrivKeys
+        let cm = self.Commitments
+        let staticChannelConfig = self.StaticChannelConfig
+        let dustLimitSatoshis = Money.Max(staticChannelConfig.LocalParams.DustLimitSatoshis, staticChannelConfig.RemoteParams.DustLimitSatoshis)
+        let! closingTx = Transactions.makeClosingTx staticChannelConfig.FundingScriptCoin (localSpk) (remoteSpk) staticChannelConfig.IsFunder (dustLimitSatoshis) (closingFee) (cm.LocalCommit.Spec) staticChannelConfig.Network
+        let localSignature, psbtUpdated = channelPrivKeys.SignWithFundingPrivKey closingTx.Value
+        let msg: ClosingSignedMsg = {
+            ChannelId = staticChannelConfig.ChannelId()
+            FeeSatoshis = closingFee
+            Signature = localSignature.Signature |> LNECDSASignature
+        }
+        return (ClosingTx psbtUpdated, msg)
+    }
+
+    member internal self.FirstClosingFee (localSpk: ShutdownScriptPubKey)
+                                         (remoteSpk: ShutdownScriptPubKey) = result {
+        let cm = self.Commitments
+        let feeEst = self.ChannelOptions.FeeEstimator
+        let staticChannelConfig = self.StaticChannelConfig
+        let! dummyClosingTx = Transactions.makeClosingTx staticChannelConfig.FundingScriptCoin localSpk remoteSpk staticChannelConfig.IsFunder Money.Zero Money.Zero cm.LocalCommit.Spec staticChannelConfig.Network
+        let tx = dummyClosingTx.Value.GetGlobalTransaction()
+        tx.Inputs.[0].WitScript <-
+            let witness = seq [ Channel.DummySig.ToBytes(); Channel.DummySig.ToBytes(); dummyClosingTx.Value.Inputs.[0].WitnessScript.ToBytes() ]
+            WitScript(witness)
+        let feeRatePerKw = FeeRatePerKw.Max (feeEst.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority), cm.LocalCommit.Spec.FeeRatePerKw)
+        return feeRatePerKw.CalculateFeeFromVirtualSize(tx)
+    }
+
+    static member internal NextClosingFee (localClosingFee: Money, remoteClosingFee: Money) =
+        ((localClosingFee.Satoshi + remoteClosingFee.Satoshi) / 4L) * 2L
+        |> Money.Satoshis
+
+    member self.RemoteShutdown (msg: ShutdownMsg)
+                               (localShutdownScriptPubKey: ShutdownScriptPubKey)
+                                   : Result<Channel * Option<ShutdownMsg> * Option<ClosingSignedMsg>, ChannelError> = result {
+        let remoteShutdownScriptPubKey = msg.ScriptPubKey
+        do!
+            Validation.checkShutdownScriptPubKeyAcceptable
+                self.StaticChannelConfig.LocalStaticShutdownScriptPubKey
+                localShutdownScriptPubKey
+        do!
+            Validation.checkShutdownScriptPubKeyAcceptable
+                self.StaticChannelConfig.RemoteStaticShutdownScriptPubKey
+                remoteShutdownScriptPubKey
+        let cm = self.Commitments
+        // They have pending unsigned htlcs => they violated the spec, close the channel
+        // they don't have pending unsigned htlcs
+        //      We have pending unsigned htlcs
+        //          We already sent a shutdown msg => spec violation (we can't send htlcs after having sent shutdown)
+        //          We did not send a shutdown msg
+        //              We are ready to sign => we stop sending further htlcs, we initiate a signature
+        //              We are waiting for a rev => we stop sending further htlcs, we wait for their revocation, will resign immediately after, and then we will send our shutdown msg
+        //      We have no pending unsigned htlcs
+        //          we already sent a shutdown msg
+        //              There are pending signed htlcs => send our shutdown msg, go to SHUTDOWN state
+        //              there are no htlcs => send our shutdown msg, goto NEGOTIATING state
+        //          We did not send a shutdown msg
+        //              There are pending signed htlcs => go to SHUTDOWN state
+        //              there are no HTLCs => go to NEGOTIATING state
+        
+        if (cm.RemoteHasUnsignedOutgoingHTLCs()) then
+            return! receivedShutdownWhenRemoteHasUnsignedOutgoingHTLCs msg
+        // Do we have Unsigned Outgoing HTLCs?
+        else if (cm.LocalHasUnsignedOutgoingHTLCs()) then
+            let channel = {
+                self with
+                    NegotiatingState = {
+                        self.NegotiatingState with
+                            RemoteRequestedShutdown = Some remoteShutdownScriptPubKey
+                    }
+            }
+            return channel, None, None
+        else
+            let hasNoPendingHTLCs =
+                match self.RemoteNextCommitInfo with
+                | None -> true
+                | Some remoteNextCommitInfo -> cm.HasNoPendingHTLCs remoteNextCommitInfo
+            if hasNoPendingHTLCs then
+                // we have to send first closing_signed msg iif we are the funder
+                if self.StaticChannelConfig.IsFunder then
+                    let! closingFee =
+                        self.FirstClosingFee
+                            localShutdownScriptPubKey
+                            remoteShutdownScriptPubKey
+                        |> expectTransactionError
+                    let! (_closingTx, closingSignedMsg) =
+                        self.MakeClosingTx
+                            localShutdownScriptPubKey
+                            remoteShutdownScriptPubKey
+                            closingFee
+                        |> expectTransactionError
+                    let nextState = {
+                        LocalRequestedShutdown = Some localShutdownScriptPubKey
+                        RemoteRequestedShutdown = Some remoteShutdownScriptPubKey
+                        LocalClosingFeesProposed = [ closingFee ]
+                        RemoteClosingFeeProposed = None
+                    }
+                    let channel = {
+                        self with
+                            NegotiatingState = nextState
+                    }
+                    return channel, None, Some closingSignedMsg
+                else
+                    let nextState = {
+                        LocalRequestedShutdown = Some localShutdownScriptPubKey
+                        RemoteRequestedShutdown = Some remoteShutdownScriptPubKey
+                        LocalClosingFeesProposed = []
+                        RemoteClosingFeeProposed = None
+                    }
+                    let channel = {
+                        self with
+                            NegotiatingState = nextState
+                    }
+                    return channel, None, None
+            else
+                let localShutdownMsg: ShutdownMsg = {
+                    ChannelId = self.StaticChannelConfig.ChannelId()
+                    ScriptPubKey = localShutdownScriptPubKey
                 }
-                return (ClosingTx psbtUpdated, msg)
-            }
+                let channel = {
+                    self with
+                        NegotiatingState = {
+                            self.NegotiatingState with
+                                LocalRequestedShutdown = Some localShutdownScriptPubKey
+                                RemoteRequestedShutdown = Some remoteShutdownScriptPubKey
+                        }
+                }
+                return channel, Some localShutdownMsg, None
+    }
 
-        let firstClosingFee (cm: Commitments)
-                            (localSpk: ShutdownScriptPubKey)
-                            (remoteSpk: ShutdownScriptPubKey)
-                            (feeEst: IFeeEstimator)
-                            (staticChannelConfig: StaticChannelConfig) =
-            result {
-                let! dummyClosingTx = Transactions.makeClosingTx staticChannelConfig.FundingScriptCoin localSpk remoteSpk staticChannelConfig.IsFunder Money.Zero Money.Zero cm.LocalCommit.Spec staticChannelConfig.Network
-                let tx = dummyClosingTx.Value.GetGlobalTransaction()
-                tx.Inputs.[0].WitScript <-
-                    let witness = seq [ dummySig.ToBytes(); dummySig.ToBytes(); dummyClosingTx.Value.Inputs.[0].WitnessScript.ToBytes() ]
-                    WitScript(witness)
-                let feeRatePerKw = FeeRatePerKw.Max (feeEst.GetEstSatPer1000Weight(ConfirmationTarget.HighPriority), cm.LocalCommit.Spec.FeeRatePerKw)
-                return feeRatePerKw.CalculateFeeFromVirtualSize(tx)
-            }
-
-        let nextClosingFee (localClosingFee: Money, remoteClosingFee: Money) =
-            ((localClosingFee.Satoshi + remoteClosingFee.Satoshi) / 4L) * 2L
-            |> Money.Satoshis
+module Channel =
 
     let executeCommand (cs: Channel) (command: ChannelCommand): Result<ChannelEvent list, ChannelError> =
         match command with
-        | RemoteShutdown(msg, localShutdownScriptPubKey) ->
-            result {
-                let remoteShutdownScriptPubKey = msg.ScriptPubKey
-                do!
-                    Validation.checkShutdownScriptPubKeyAcceptable
-                        cs.StaticChannelConfig.LocalStaticShutdownScriptPubKey
-                        localShutdownScriptPubKey
-                do!
-                    Validation.checkShutdownScriptPubKeyAcceptable
-                        cs.StaticChannelConfig.RemoteStaticShutdownScriptPubKey
-                        remoteShutdownScriptPubKey
-                let cm = cs.Commitments
-                // They have pending unsigned htlcs => they violated the spec, close the channel
-                // they don't have pending unsigned htlcs
-                //      We have pending unsigned htlcs
-                //          We already sent a shutdown msg => spec violation (we can't send htlcs after having sent shutdown)
-                //          We did not send a shutdown msg
-                //              We are ready to sign => we stop sending further htlcs, we initiate a signature
-                //              We are waiting for a rev => we stop sending further htlcs, we wait for their revocation, will resign immediately after, and then we will send our shutdown msg
-                //      We have no pending unsigned htlcs
-                //          we already sent a shutdown msg
-                //              There are pending signed htlcs => send our shutdown msg, go to SHUTDOWN state
-                //              there are no htlcs => send our shutdown msg, goto NEGOTIATING state
-                //          We did not send a shutdown msg
-                //              There are pending signed htlcs => go to SHUTDOWN state
-                //              there are no HTLCs => go to NEGOTIATING state
-                
-                if (cm.RemoteHasUnsignedOutgoingHTLCs()) then
-                    return! receivedShutdownWhenRemoteHasUnsignedOutgoingHTLCs msg
-                // Do we have Unsigned Outgoing HTLCs?
-                else if (cm.LocalHasUnsignedOutgoingHTLCs()) then
-                    let remoteNextCommitInfo =
-                        match cs.RemoteNextCommitInfo with
-                        | None -> failwith "can't have unsigned outgoing htlcs if we haven't recieved funding_locked. this should never happen"
-                        | Some remoteNextCommitInfo -> remoteNextCommitInfo
-                    // Are we in the middle of a signature?
-                    match remoteNextCommitInfo with
-                    // yes.
-                    | RemoteNextCommitInfo.Waiting _waitingForRevocation ->
-                        return [
-                            AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs remoteShutdownScriptPubKey
-                        ]
-                    // No. let's sign right away.
-                    | RemoteNextCommitInfo.Revoked _ ->
-                        return [
-                            ChannelStateRequestedSignCommitment;
-                            AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs remoteShutdownScriptPubKey
-                        ]
-                else
-                    let hasNoPendingHTLCs =
-                        match cs.RemoteNextCommitInfo with
-                        | None -> true
-                        | Some remoteNextCommitInfo -> cm.HasNoPendingHTLCs remoteNextCommitInfo
-                    if hasNoPendingHTLCs then
-                        // we have to send first closing_signed msg iif we are the funder
-                        if cs.StaticChannelConfig.IsFunder then
-                            let! closingFee =
-                                Closing.firstClosingFee
-                                    cm
-                                    localShutdownScriptPubKey
-                                    remoteShutdownScriptPubKey
-                                    cs.ChannelOptions.FeeEstimator
-                                    cs.StaticChannelConfig
-                                |> expectTransactionError
-                            let! (_closingTx, closingSignedMsg) =
-                                Closing.makeClosingTx
-                                    cs.ChannelPrivKeys
-                                    cm
-                                    localShutdownScriptPubKey
-                                    remoteShutdownScriptPubKey
-                                    closingFee
-                                    cs.StaticChannelConfig
-                                |> expectTransactionError
-                            let nextState = {
-                                LocalRequestedShutdown = Some localShutdownScriptPubKey
-                                RemoteRequestedShutdown = Some remoteShutdownScriptPubKey
-                                LocalClosingFeesProposed = [ closingFee ]
-                                RemoteClosingFeeProposed = None
-                            }
-                            return [
-                                AcceptedShutdownWhenNoPendingHTLCs(
-                                    closingSignedMsg |> Some,
-                                    nextState
-                                )
-                            ]
-                        else
-                            let nextState = {
-                                LocalRequestedShutdown = Some localShutdownScriptPubKey
-                                RemoteRequestedShutdown = Some remoteShutdownScriptPubKey
-                                LocalClosingFeesProposed = []
-                                RemoteClosingFeeProposed = None
-                            }
-                            return [ AcceptedShutdownWhenNoPendingHTLCs(None, nextState) ]
-                    else
-                        let localShutdownMsg: ShutdownMsg = {
-                            ChannelId = cs.StaticChannelConfig.ChannelId()
-                            ScriptPubKey = localShutdownScriptPubKey
-                        }
-                        return [
-                            AcceptedShutdownWhenWeHavePendingHTLCs(
-                                localShutdownMsg,
-                                localShutdownScriptPubKey,
-                                remoteShutdownScriptPubKey
-                            )
-                        ]
-            }
         | ApplyClosingSigned msg ->
             result {
                 let! localShutdownScriptPubKey, remoteShutdownScriptPubKey =
@@ -1061,13 +1049,10 @@ module Channel =
                         msg.FeeSatoshis
 
                 let! closingTx, closingSignedMsg =
-                    Closing.makeClosingTx
-                        cs.ChannelPrivKeys
-                        cm
+                    cs.MakeClosingTx
                         localShutdownScriptPubKey
                         remoteShutdownScriptPubKey
                         msg.FeeSatoshis
-                        cs.StaticChannelConfig
                     |> expectTransactionError
                 let! finalizedTx =
                     Transactions.checkTxFinalized
@@ -1092,15 +1077,12 @@ module Channel =
                         match lastLocalClosingFee with
                         | Some v -> Ok v
                         | None ->
-                            Closing.firstClosingFee
-                                cs.Commitments
+                            cs.FirstClosingFee
                                 localShutdownScriptPubKey
                                 remoteShutdownScriptPubKey
-                                cs.ChannelOptions.FeeEstimator
-                                cs.StaticChannelConfig
                             |> expectTransactionError
                     let nextClosingFee =
-                        Closing.nextClosingFee (localF, msg.FeeSatoshis)
+                        Channel.NextClosingFee (localF, msg.FeeSatoshis)
                     if (Some nextClosingFee = lastLocalClosingFee) then
                         return [ MutualClosePerformed (finalizedTx, None) ]
                     else if (nextClosingFee = msg.FeeSatoshis) then
@@ -1108,13 +1090,10 @@ module Channel =
                         return [ MutualClosePerformed (finalizedTx, Some closingSignedMsg) ]
                     else
                         let! _closingTx, closingSignedMsg =
-                            Closing.makeClosingTx
-                                cs.ChannelPrivKeys
-                                cm
+                            cs.MakeClosingTx
                                 localShutdownScriptPubKey
                                 remoteShutdownScriptPubKey
                                 nextClosingFee
-                                cs.StaticChannelConfig
                             |> expectTransactionError
                         let nextState = {
                             cs.NegotiatingState with
@@ -1130,28 +1109,6 @@ module Channel =
     let applyEvent c (e: ChannelEvent): Channel =
         match e with
         // -----  closing ------
-        | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs remoteShutdownScriptPubKey ->
-            { 
-                c with
-                    NegotiatingState = {
-                        c.NegotiatingState with
-                            RemoteRequestedShutdown = Some remoteShutdownScriptPubKey
-                    }
-            }
-        | AcceptedShutdownWhenNoPendingHTLCs(_maybeMsg, nextNegotiatingState) ->
-            {
-                c with
-                    NegotiatingState = nextNegotiatingState
-            }
-        | AcceptedShutdownWhenWeHavePendingHTLCs(_localShutdownMsg, localShutdownScriptPubKey, remoteShutdownScriptPubKey) ->
-            {
-                c with
-                    NegotiatingState = {
-                        c.NegotiatingState with
-                            LocalRequestedShutdown = Some localShutdownScriptPubKey
-                            RemoteRequestedShutdown = Some remoteShutdownScriptPubKey
-                    }
-            }
         | MutualClosePerformed (_txToPublish, _) -> c
         | WeProposedNewClosingSigned(_msg, nextNegotiatingState) ->
             {
