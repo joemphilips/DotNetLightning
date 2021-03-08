@@ -811,6 +811,48 @@ and Channel = {
         return channel, revokeAndACKMsg
     }
 
+    member self.ApplyRevokeAndACK (msg: RevokeAndACKMsg)
+                                      : Result<Channel, ChannelError> = result {
+        let! remoteNextCommitInfo =
+            self.RemoteNextCommitInfoIfFundingLockedNormal "ApplyRevokeAndACK"
+        let cm = self.Commitments
+        match remoteNextCommitInfo with
+        | RemoteNextCommitInfo.Waiting _ when (msg.PerCommitmentSecret.PerCommitmentPoint() <> cm.RemoteCommit.RemotePerCommitmentPoint) ->
+            let errorMsg = sprintf "Invalid revoke_and_ack %A; must be %A" msg.PerCommitmentSecret cm.RemoteCommit.RemotePerCommitmentPoint
+            return! Error <| invalidRevokeAndACK msg errorMsg
+        | RemoteNextCommitInfo.Revoked _ ->
+            let errorMsg = sprintf "Unexpected revocation"
+            return! Error <| invalidRevokeAndACK msg errorMsg
+        | RemoteNextCommitInfo.Waiting theirNextCommit ->
+            let remotePerCommitmentSecretsOpt =
+                cm.RemotePerCommitmentSecrets.InsertPerCommitmentSecret
+                    cm.RemoteCommit.Index
+                    msg.PerCommitmentSecret
+            match remotePerCommitmentSecretsOpt with
+            | Error err -> return! Error <| invalidRevokeAndACK msg err.Message
+            | Ok remotePerCommitmentSecrets ->
+                let commitments1 = {
+                    cm with
+                        LocalChanges = {
+                            cm.LocalChanges with
+                                Signed = [];
+                                ACKed = cm.LocalChanges.ACKed @ cm.LocalChanges.Signed
+                        }
+                        RemoteChanges = {
+                            cm.RemoteChanges with
+                                Signed = []
+                        }
+                        RemoteCommit = theirNextCommit
+                        RemotePerCommitmentSecrets = remotePerCommitmentSecrets
+                }
+                return {
+                    self with
+                        Commitments = commitments1
+                        RemoteNextCommitInfo =
+                            Some <| RemoteNextCommitInfo.Revoked msg.NextPerCommitmentPoint
+                }
+    }
+
 module Channel =
 
     let private hex = NBitcoin.DataEncoders.HexEncoder()
@@ -864,42 +906,6 @@ module Channel =
 
     let executeCommand (cs: Channel) (command: ChannelCommand): Result<ChannelEvent list, ChannelError> =
         match command with
-        | ApplyRevokeAndACK msg ->
-            result {
-                let! remoteNextCommitInfo =
-                    cs.RemoteNextCommitInfoIfFundingLockedNormal "ApplyRevokeAndACK"
-                let cm = cs.Commitments
-                match remoteNextCommitInfo with
-                | RemoteNextCommitInfo.Waiting _ when (msg.PerCommitmentSecret.PerCommitmentPoint() <> cm.RemoteCommit.RemotePerCommitmentPoint) ->
-                    let errorMsg = sprintf "Invalid revoke_and_ack %A; must be %A" msg.PerCommitmentSecret cm.RemoteCommit.RemotePerCommitmentPoint
-                    return! Error <| invalidRevokeAndACK msg errorMsg
-                | RemoteNextCommitInfo.Revoked _ ->
-                    let errorMsg = sprintf "Unexpected revocation"
-                    return! Error <| invalidRevokeAndACK msg errorMsg
-                | RemoteNextCommitInfo.Waiting theirNextCommit ->
-                    let remotePerCommitmentSecretsOpt =
-                        cm.RemotePerCommitmentSecrets.InsertPerCommitmentSecret
-                            cm.RemoteCommit.Index
-                            msg.PerCommitmentSecret
-                    match remotePerCommitmentSecretsOpt with
-                    | Error err -> return! Error <| invalidRevokeAndACK msg err.Message
-                    | Ok remotePerCommitmentSecrets ->
-                        let commitments1 = {
-                            cm with
-                                LocalChanges = {
-                                    cm.LocalChanges with
-                                        Signed = [];
-                                        ACKed = cm.LocalChanges.ACKed @ cm.LocalChanges.Signed
-                                }
-                                RemoteChanges = {
-                                    cm.RemoteChanges with
-                                        Signed = []
-                                }
-                                RemoteCommit = theirNextCommit
-                                RemotePerCommitmentSecrets = remotePerCommitmentSecrets
-                        }
-                        return [ WeAcceptedRevokeAndACK(commitments1, msg.NextPerCommitmentPoint) ]
-            }
         | ChannelCommand.Close localShutdownScriptPubKey ->
             result {
                 if cs.NegotiatingState.LocalRequestedShutdown.IsSome then
@@ -1115,15 +1121,6 @@ module Channel =
 
     let applyEvent c (e: ChannelEvent): Channel =
         match e with
-        // ----- normal operation --------
-        | WeAcceptedRevokeAndACK(newCommitments, remoteNextPerCommitmentPoint) ->
-            {
-                c with
-                    Commitments = newCommitments
-                    RemoteNextCommitInfo =
-                        Some <| RemoteNextCommitInfo.Revoked remoteNextPerCommitmentPoint
-            }
-
         // -----  closing ------
         | AcceptedOperationShutdown(_msg, shutdownScriptPubKey) ->
             {

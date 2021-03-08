@@ -119,9 +119,6 @@ type ChannelCommand =
     | ApplyOpenChannel of OpenChannelMsg
     | ApplyFundingCreated of FundingCreatedMsg
 
-    // normal
-    | ApplyRevokeAndACK of RevokeAndACKMsg
-
     // close
     | Close of ShutdownScriptPubKey
     | ApplyClosingSigned of ClosingSignedMsg

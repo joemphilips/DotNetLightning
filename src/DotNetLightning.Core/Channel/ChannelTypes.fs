@@ -57,8 +57,6 @@ module Data =
 type ChannelEvent =
     // --- ln events ---
     // -------- normal operation ------
-    | WeAcceptedRevokeAndACK of nextCommitments: Commitments * remoteNextPerCommitmentPoint: PerCommitmentPoint
-
     | AcceptedOperationShutdown of msg: ShutdownMsg * localShutdownScriptPubKey: ShutdownScriptPubKey
     | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs of remoteShutdownScriptPubKey: ShutdownScriptPubKey
     /// We have to send closing_signed to initiate the negotiation only when if we are the funder
