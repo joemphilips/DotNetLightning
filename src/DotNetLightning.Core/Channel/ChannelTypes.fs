@@ -57,7 +57,6 @@ module Data =
 type ChannelEvent =
     // --- ln events ---
     // -------- normal operation ------
-    | WeAcceptedOperationFulfillHTLC of msg: UpdateFulfillHTLCMsg * newCommitments: Commitments
     | WeAcceptedFulfillHTLC of msg: UpdateFulfillHTLCMsg * origin: HTLCSource * htlc: UpdateAddHTLCMsg * newCommitments: Commitments
 
     | WeAcceptedOperationFailHTLC of msg: UpdateFailHTLCMsg * newCommitments: Commitments
