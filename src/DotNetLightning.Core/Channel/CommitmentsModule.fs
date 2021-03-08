@@ -182,15 +182,15 @@ module internal Commitments =
                     (cm: Commitments)
                     (remoteNextCommitInfo: RemoteNextCommitInfo) =
         match cm.GetHTLCCrossSigned remoteNextCommitInfo Direction.Out msg.HTLCId with
-        | Some htlc ->
+        | Some _htlc ->
             result {
-                let! o =
+                let! _origin =
                     match cm.OriginChannels.TryGetValue(msg.HTLCId) with
                     | true, origin -> Ok origin
                     | false, _ ->
                         msg.HTLCId |> htlcOriginNowKnown
                 let nextC = cm.AddRemoteProposal(msg)
-                return [WeAcceptedFailHTLC(o, htlc, nextC)]
+                return nextC
             }
         | None ->
             msg.HTLCId |> unknownHTLCId
