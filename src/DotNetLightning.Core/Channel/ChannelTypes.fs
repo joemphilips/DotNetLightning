@@ -58,9 +58,7 @@ type ChannelEvent =
     // --- ln events ---
     /// -------- init both -----
     | FundingConfirmed of FundingLockedMsg * shortChannelId: ShortChannelId
-    | TheySentFundingLocked of msg: FundingLockedMsg
     | WeResumedDelayedFundingLocked of remoteNextPerCommitmentPoint: PerCommitmentPoint
-    | BothFundingLocked of remoteNextPerCommitmentPoint: PerCommitmentPoint
 
     // -------- normal operation ------
     | WeAcceptedOperationAddHTLC of msg: UpdateAddHTLCMsg * newCommitments: Commitments
