@@ -620,6 +620,35 @@ and Channel = {
             return channel, add
     }
 
+    member self.ApplyUpdateAddHTLC (msg: UpdateAddHTLCMsg)
+                                   (height: BlockHeight)
+                                       : Result<Channel, ChannelError> = result {
+        do!
+            Validation.checkTheirUpdateAddHTLCIsAcceptable
+                self.Commitments
+                self.StaticChannelConfig.LocalParams
+                msg
+                height
+        let commitments1 = {
+            self.Commitments.AddRemoteProposal(msg) with
+                RemoteNextHTLCId = self.Commitments.LocalNextHTLCId + 1UL
+        }
+        let! reduced =
+            commitments1.LocalCommit.Spec.Reduce (
+                commitments1.LocalChanges.ACKed,
+                commitments1.RemoteChanges.Proposed
+            ) |> expectTransactionError
+        do!
+            Validation.checkTheirUpdateAddHTLCIsAcceptableWithCurrentSpec
+                reduced
+                self.StaticChannelConfig
+                msg
+        return {
+            self with
+                Commitments = commitments1
+        }
+    }
+
 module Channel =
 
     let private hex = NBitcoin.DataEncoders.HexEncoder()
@@ -673,30 +702,6 @@ module Channel =
 
     let executeCommand (cs: Channel) (command: ChannelCommand): Result<ChannelEvent list, ChannelError> =
         match command with
-        | ApplyUpdateAddHTLC (msg, height) ->
-            result {
-                do!
-                    Validation.checkTheirUpdateAddHTLCIsAcceptable
-                        cs.Commitments
-                        cs.StaticChannelConfig.LocalParams
-                        msg
-                        height
-                let commitments1 = {
-                    cs.Commitments.AddRemoteProposal(msg) with
-                        RemoteNextHTLCId = cs.Commitments.LocalNextHTLCId + 1UL
-                }
-                let! reduced =
-                    commitments1.LocalCommit.Spec.Reduce (
-                        commitments1.LocalChanges.ACKed,
-                        commitments1.RemoteChanges.Proposed
-                    ) |> expectTransactionError
-                do!
-                    Validation.checkTheirUpdateAddHTLCIsAcceptableWithCurrentSpec
-                        reduced
-                        cs.StaticChannelConfig
-                        msg
-                return [ WeAcceptedUpdateAddHTLC commitments1 ]
-            }
         | FulfillHTLC cmd ->
             result {
                 let! remoteNextCommitInfo =
@@ -1052,9 +1057,6 @@ module Channel =
     let applyEvent c (e: ChannelEvent): Channel =
         match e with
         // ----- normal operation --------
-        | WeAcceptedUpdateAddHTLC(newCommitments) ->
-            { c with Commitments = newCommitments }
-
         | WeAcceptedOperationFulfillHTLC(_, newCommitments) ->
             { c with Commitments = newCommitments }
         | WeAcceptedFulfillHTLC(_msg, _origin, _htlc, newCommitments) ->
