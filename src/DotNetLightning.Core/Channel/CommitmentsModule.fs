@@ -143,8 +143,7 @@ module internal Commitments =
         match cm.GetHTLCCrossSigned remoteNextCommitInfo Direction.Out msg.HTLCId with
         | Some htlc when htlc.PaymentHash = msg.PaymentPreimage.Hash ->
             let commitments = cm.AddRemoteProposal(msg)
-            let origin = cm.OriginChannels |> Map.find(msg.HTLCId)
-            [WeAcceptedFulfillHTLC(msg, origin, htlc, commitments)] |> Ok
+            commitments |> Ok
         | Some htlc ->
             (htlc.PaymentHash, msg.PaymentPreimage)
             |> invalidPaymentPreimage

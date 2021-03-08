@@ -667,6 +667,17 @@ and Channel = {
         return channel, updateFulfillHTLCMsg
     }
 
+    member self.ApplyUpdateFulfillHTLC (msg: UpdateFulfillHTLCMsg)
+                                           : Result<Channel, ChannelError> = result {
+        let! remoteNextCommitInfo =
+            self.RemoteNextCommitInfoIfFundingLockedNormal "ApplyUpdateFulfullHTLC"
+        let! newCommitments = Commitments.receiveFulfill msg self.Commitments remoteNextCommitInfo
+        return {
+            self with
+                Commitments = newCommitments
+        }
+    }
+
 module Channel =
 
     let private hex = NBitcoin.DataEncoders.HexEncoder()
@@ -720,12 +731,6 @@ module Channel =
 
     let executeCommand (cs: Channel) (command: ChannelCommand): Result<ChannelEvent list, ChannelError> =
         match command with
-        | ChannelCommand.ApplyUpdateFulfillHTLC msg ->
-            result {
-                let! remoteNextCommitInfo =
-                    cs.RemoteNextCommitInfoIfFundingLockedNormal "ApplyUpdateFulfullHTLC"
-                return! Commitments.receiveFulfill msg cs.Commitments remoteNextCommitInfo
-            }
         | FailHTLC op ->
             result {
                 let! remoteNextCommitInfo =
@@ -1063,9 +1068,6 @@ module Channel =
     let applyEvent c (e: ChannelEvent): Channel =
         match e with
         // ----- normal operation --------
-        | WeAcceptedFulfillHTLC(_msg, _origin, _htlc, newCommitments) ->
-            { c with Commitments = newCommitments }
-
         | WeAcceptedOperationFailHTLC(_msg, newCommitments) ->
             { c with Commitments = newCommitments }
         | WeAcceptedFailHTLC(_origin, _msg, newCommitments) ->
