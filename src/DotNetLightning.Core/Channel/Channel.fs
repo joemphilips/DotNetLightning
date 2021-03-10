@@ -33,7 +33,7 @@ type ChannelWaitingForFundingSigned = {
                 self.ChannelPrivKeys.SignWithFundingPrivKey self.LocalCommitTx.Value
             let remoteSigPairOfLocalTx = (theirFundingPk,  TransactionSignature(msg.Signature.Value, SigHash.All))
             let sigPairs = seq [ remoteSigPairOfLocalTx; ]
-            Transactions.checkTxFinalized signedLocalCommitTx self.LocalCommitTx.WhichInput sigPairs |> expectTransactionError
+            Transactions.checkTxFinalized signedLocalCommitTx CommitTx.WhichInput sigPairs |> expectTransactionError
         let commitments = {
             LocalCommit = {
                 Index = CommitmentNumber.FirstCommitment
@@ -111,7 +111,7 @@ and ChannelWaitingForFundingCreated = {
         let theirSigPair = (self.RemoteChannelPubKeys.FundingPubKey.RawPubKey(), remoteTxSig)
         let sigPairs = seq [ theirSigPair ]
         let! finalizedCommitTx =
-            Transactions.checkTxFinalized (signedLocalCommitTx) (localCommitTx.WhichInput) sigPairs
+            Transactions.checkTxFinalized (signedLocalCommitTx) CommitTx.WhichInput sigPairs
             |> expectTransactionError
         let localSigOfRemoteCommit, _ =
             self.ChannelPrivKeys.SignWithFundingPrivKey remoteCommitTx.Value

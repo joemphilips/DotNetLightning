@@ -384,7 +384,7 @@ module internal Commitments =
                     let remoteSigPair = seq[ (remoteChannelKeys.FundingPubKey.RawPubKey(), TransactionSignature(msg.Signature.Value, SigHash.All)) ]
                     Seq.append localSigPair remoteSigPair
                 let tmp =
-                    Transactions.checkTxFinalized signedCommitTx localCommitTx.WhichInput sigPair
+                    Transactions.checkTxFinalized signedCommitTx CommitTx.WhichInput sigPair
                     |> expectTransactionError
                 let! finalizedCommitTx = tmp
                 let sortedHTLCTXs = Helpers.sortBothHTLCs htlcTimeoutTxs htlcSuccessTxs

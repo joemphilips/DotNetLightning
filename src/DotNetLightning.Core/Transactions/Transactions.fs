@@ -31,15 +31,14 @@ type IHTLCTx =
 
 type CommitTx = {
     Value: PSBT
-    WhichInput: int
 }
     with    
         interface ILightningTx with
             member this.Value: PSBT = 
                 this.Value
-            member this.WhichInput: int = 
-                this.WhichInput
+            member this.WhichInput: int = 0
 
+        static member WhichInput: int = 0
         member this.GetTxId() =
             this.Value.GetGlobalTransaction().GetTxId()
 
@@ -84,16 +83,17 @@ module private HTLCHelper =
         
 type HTLCSuccessTx = {
     Value: PSBT
-    WhichInput: int
     PaymentHash: PaymentHash
 }
     with
+        static member WhichInput: int = 0
+
         member this.GetRedeem() =
-            this.Value.Inputs.[this.WhichInput].WitnessScript
+            this.Value.Inputs.[HTLCSuccessTx.WhichInput].WitnessScript
             
         member this.Finalize(localPubkey, remotePubKey, paymentPreimage) =
-            let localSig = this.Value.Inputs.[this.WhichInput].PartialSigs.[localPubkey]
-            let remoteSig = this.Value.Inputs.[this.WhichInput].PartialSigs.[remotePubKey]
+            let localSig = this.Value.Inputs.[HTLCSuccessTx.WhichInput].PartialSigs.[localPubkey]
+            let remoteSig = this.Value.Inputs.[HTLCSuccessTx.WhichInput].PartialSigs.[remotePubKey]
             this.Finalize(localSig, remoteSig, paymentPreimage)
             
         member this.Finalize(localSig, remoteSig, paymentPreimage: PaymentPreimage) =
@@ -102,20 +102,21 @@ type HTLCSuccessTx = {
         interface IHTLCTx
             with
                 member this.Value = this.Value
-                member this.WhichInput = this.WhichInput
+                member this.WhichInput = HTLCSuccessTx.WhichInput
 
 type HTLCTimeoutTx = {
     Value: PSBT
-    WhichInput: int
 }
     with
+        static member WhichInput: int = 0
+
         member this.Finalize(localSig: TransactionSignature, remoteSig: TransactionSignature) =
             HTLCHelper.finalize(this, localSig, remoteSig, None)
             
         interface IHTLCTx
             with
                 member this.Value = this.Value
-                member this.WhichInput = this.WhichInput
+                member this.WhichInput = HTLCTimeoutTx.WhichInput
 
 
 type ClaimHTLCSuccessTx = ClaimHTLCSuccessTx of PSBT
@@ -440,7 +441,7 @@ module Transactions =
         let psbt =
             let p = PSBT.FromTransaction(tx, network)
             p.AddCoins(inputInfo)
-        { CommitTx.Value = psbt; WhichInput = 0 }
+        { CommitTx.Value = psbt }
 
 
     let private findScriptPubKeyIndex(tx: Transaction) (spk: Script) =
@@ -559,8 +560,7 @@ module Transactions =
 
                 PSBT.FromTransaction(tx, network)
                     .AddCoins scriptCoin
-            let whichInput = psbt.Inputs |> Seq.findIndex(fun i -> not (isNull i.WitnessScript))
-            { HTLCTimeoutTx.Value = psbt; WhichInput = whichInput } |> Ok
+            { HTLCTimeoutTx.Value = psbt } |> Ok
 
     let makeHTLCSuccessTx (commitTx: Transaction)
                           (localDustLimit: Money)
@@ -602,8 +602,7 @@ module Transactions =
 
                 PSBT.FromTransaction(tx, network)
                     .AddCoins scriptCoin
-            let whichInput = psbt.Inputs |> Seq.findIndex(fun i -> not (isNull i.WitnessScript))
-            { HTLCSuccessTx.Value = psbt; WhichInput = whichInput; PaymentHash = htlc.PaymentHash } |> Ok
+            { HTLCSuccessTx.Value = psbt; PaymentHash = htlc.PaymentHash } |> Ok
 
     let makeHTLCTxs (commitTx: Transaction)
                     (localDustLimit: Money)
