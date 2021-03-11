@@ -150,37 +150,40 @@ type Commitments = {
             this.RemoteChanges.Proposed |> List.exists(fun p -> match p with | :? UpdateAddHTLCMsg -> true | _ -> false)
 
         member internal this.HasNoPendingHTLCs (remoteNextCommitInfo: RemoteNextCommitInfo) =
-            this.LocalCommit.Spec.HTLCs.IsEmpty
-            && this.RemoteCommit.Spec.HTLCs.IsEmpty
+            this.LocalCommit.Spec.OutgoingHTLCs.IsEmpty
+            && this.LocalCommit.Spec.IncomingHTLCs.IsEmpty
+            && this.RemoteCommit.Spec.OutgoingHTLCs.IsEmpty
+            && this.RemoteCommit.Spec.IncomingHTLCs.IsEmpty
             && (remoteNextCommitInfo |> function Waiting _ -> false | Revoked _ -> true)
 
-        member internal this.GetHTLCCrossSigned (remoteNextCommitInfo: RemoteNextCommitInfo)
-                                                (directionRelativeToLocal: Direction)
-                                                (htlcId: HTLCId)
-                                                    : Option<UpdateAddHTLCMsg> =
+        member internal this.GetOutgoingHTLCCrossSigned (remoteNextCommitInfo: RemoteNextCommitInfo)
+                                                        (htlcId: HTLCId)
+                                                            : Option<UpdateAddHTLCMsg> =
             let remoteSigned =
-                this.LocalCommit.Spec.HTLCs
-                |> Map.tryPick (fun _k v ->
-                    if v.Direction = directionRelativeToLocal && v.Add.HTLCId = htlcId then
-                        Some v
-                    else None
-                )
-
+                Map.tryFind htlcId this.LocalCommit.Spec.OutgoingHTLCs
             let localSigned =
                 let remoteCommit =
                     match remoteNextCommitInfo with
                     | Revoked _ -> this.RemoteCommit
                     | Waiting nextRemoteCommit -> nextRemoteCommit
-                remoteCommit.Spec.HTLCs
-                |> Map.tryPick(fun _k v ->
-                    if v.Direction = directionRelativeToLocal.Opposite && v.Add.HTLCId = htlcId then
-                        Some v
-                    else
-                        None
-                )
-
+                Map.tryFind htlcId remoteCommit.Spec.IncomingHTLCs
             match remoteSigned, localSigned with
-            | Some _, Some htlcIn -> htlcIn.Add |> Some
+            | Some _, Some htlcIn -> htlcIn |> Some
+            | _ -> None
+
+        member internal this.GetIncomingHTLCCrossSigned (remoteNextCommitInfo: RemoteNextCommitInfo)
+                                                        (htlcId: HTLCId)
+                                                            : Option<UpdateAddHTLCMsg> =
+            let remoteSigned =
+                Map.tryFind htlcId this.LocalCommit.Spec.IncomingHTLCs
+            let localSigned =
+                let remoteCommit =
+                    match remoteNextCommitInfo with
+                    | Revoked _ -> this.RemoteCommit
+                    | Waiting nextRemoteCommit -> nextRemoteCommit
+                Map.tryFind htlcId remoteCommit.Spec.OutgoingHTLCs
+            match remoteSigned, localSigned with
+            | Some _, Some htlcIn -> htlcIn |> Some
             | _ -> None
 
         static member RemoteCommitAmount (isLocalFunder: bool)

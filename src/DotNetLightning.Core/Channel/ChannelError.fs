@@ -572,7 +572,15 @@ module UpdateAddHTLCValidation =
     
 module internal UpdateAddHTLCValidationWithContext =
     let checkLessThanHTLCValueInFlightLimit (currentSpec: CommitmentSpec) (limit) (add: UpdateAddHTLCMsg) =
-        let htlcValueInFlight = currentSpec.HTLCs |> Map.toSeq |> Seq.sumBy (fun (_, v) -> v.Add.Amount)
+        let outgoingValue =
+            currentSpec.OutgoingHTLCs
+            |> Map.toSeq
+            |> Seq.sumBy (fun (_, v) -> v.Amount)
+        let incomingValue =
+            currentSpec.IncomingHTLCs
+            |> Map.toSeq
+            |> Seq.sumBy (fun (_, v) -> v.Amount)
+        let htlcValueInFlight = outgoingValue + incomingValue
         if (htlcValueInFlight > limit) then
             sprintf "Too much HTLC value is in flight. Current: %A. Limit: %A \n Could not add new one with value: %A"
                     htlcValueInFlight
@@ -583,7 +591,7 @@ module internal UpdateAddHTLCValidationWithContext =
             Ok()
 
     let checkLessThanMaxAcceptedHTLC (currentSpec: CommitmentSpec) (limit: uint16) =
-        let acceptedHTLCs = currentSpec.HTLCs |> Map.toSeq |> Seq.filter (fun kv -> (snd kv).Direction = In) |> Seq.length
+        let acceptedHTLCs = currentSpec.IncomingHTLCs |> Map.count
         check acceptedHTLCs (>) (int limit) "We have much number of HTLCs (%A). Limit specified by remote is (%A). So not going to relay"
 
     let checkWeHaveSufficientFunds (staticChannelConfig: StaticChannelConfig) (currentSpec) =

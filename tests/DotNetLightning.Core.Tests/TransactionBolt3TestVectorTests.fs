@@ -179,60 +179,74 @@ let paymentPreImages =
 type h = DirectedHTLC
 
 log (sprintf "first payment hash is %A" paymentPreImages.[0].Hash)
-let htlcs = [
-    { DirectedHTLC.Direction = In;
-      Add = { UpdateAddHTLCMsg.ChannelId = ChannelId.Zero;
-              HTLCId = HTLCId.Zero;
-              Amount = LNMoney.MilliSatoshis 1000000L
-              PaymentHash = paymentPreImages.[0].Hash
-              CLTVExpiry = 500u |> BlockHeight;
-              OnionRoutingPacket = OnionPacket.LastPacket } }
-    { DirectedHTLC.Direction = In;
-      Add = { UpdateAddHTLCMsg.ChannelId = ChannelId.Zero;
-              HTLCId = HTLCId(1UL);
-              Amount = LNMoney.MilliSatoshis 2000000L
-              PaymentHash = paymentPreImages.[1].Hash
-              CLTVExpiry = 501u |> BlockHeight;
-              OnionRoutingPacket = OnionPacket.LastPacket } }
-    { DirectedHTLC.Direction = Out;
-      Add = { UpdateAddHTLCMsg.ChannelId = ChannelId.Zero;
-              HTLCId = HTLCId(2UL);
-              Amount = LNMoney.MilliSatoshis 2000000L
-              PaymentHash = paymentPreImages.[2].Hash
-              CLTVExpiry = 502u |> BlockHeight;
-              OnionRoutingPacket = OnionPacket.LastPacket } }
-    { DirectedHTLC.Direction = Out;
-      Add = { UpdateAddHTLCMsg.ChannelId = ChannelId.Zero;
-              HTLCId = HTLCId(3UL);
-              Amount = LNMoney.MilliSatoshis 3000000L
-              PaymentHash = paymentPreImages.[3].Hash
-              CLTVExpiry = 503u |> BlockHeight;
-              OnionRoutingPacket = OnionPacket.LastPacket } }
-    { DirectedHTLC.Direction = In;
-      Add = { UpdateAddHTLCMsg.ChannelId = ChannelId.Zero;
-              HTLCId = HTLCId(4UL);
-              Amount = LNMoney.MilliSatoshis 4000000L
-              PaymentHash = paymentPreImages.[4].Hash
-              CLTVExpiry = 504u |> BlockHeight;
-              OnionRoutingPacket = OnionPacket.LastPacket } }
+let incomingHtlcs = [
+    {
+        UpdateAddHTLCMsg.ChannelId = ChannelId.Zero;
+        HTLCId = HTLCId.Zero;
+        Amount = LNMoney.MilliSatoshis 1000000L
+        PaymentHash = paymentPreImages.[0].Hash
+        CLTVExpiry = 500u |> BlockHeight;
+        OnionRoutingPacket = OnionPacket.LastPacket
+    }
+    {
+        UpdateAddHTLCMsg.ChannelId = ChannelId.Zero;
+        HTLCId = HTLCId(1UL);
+        Amount = LNMoney.MilliSatoshis 2000000L
+        PaymentHash = paymentPreImages.[1].Hash
+        CLTVExpiry = 501u |> BlockHeight;
+        OnionRoutingPacket = OnionPacket.LastPacket
+    }
+    {
+        UpdateAddHTLCMsg.ChannelId = ChannelId.Zero;
+        HTLCId = HTLCId(4UL);
+        Amount = LNMoney.MilliSatoshis 4000000L
+        PaymentHash = paymentPreImages.[4].Hash
+        CLTVExpiry = 504u |> BlockHeight;
+        OnionRoutingPacket = OnionPacket.LastPacket
+    }
 ]
+let outgoingHtlcs = [
+    {
+        UpdateAddHTLCMsg.ChannelId = ChannelId.Zero;
+        HTLCId = HTLCId(2UL);
+        Amount = LNMoney.MilliSatoshis 2000000L
+        PaymentHash = paymentPreImages.[2].Hash
+        CLTVExpiry = 502u |> BlockHeight;
+        OnionRoutingPacket = OnionPacket.LastPacket
+    }
+    {
+        UpdateAddHTLCMsg.ChannelId = ChannelId.Zero;
+        HTLCId = HTLCId(3UL);
+        Amount = LNMoney.MilliSatoshis 3000000L
+        PaymentHash = paymentPreImages.[3].Hash
+        CLTVExpiry = 503u |> BlockHeight;
+        OnionRoutingPacket = OnionPacket.LastPacket
+    }
+]
+let incomingHtlcScripts =
+    incomingHtlcs
+    |> List.map
+        (fun htlc ->
+            Scripts.htlcReceived
+                // FIXME: payment keys being used as htlc keys??
+                (HtlcPubKey <| local.PaymentPrivKey.PaymentPubKey().RawPubKey())
+                (HtlcPubKey <| remote.PaymentPrivKey.PaymentPubKey().RawPubKey())
+                (local.RevocationPubKey)
+                (htlc.PaymentHash)
+                (htlc.CLTVExpiry.Value)
+        )
+let outgoingHtlcScripts =
+    outgoingHtlcs
+    |> List.map
+        (fun htlc ->
+            Scripts.htlcOffered
+                // FIXME: payment keys being used as htlc keys??
+                (HtlcPubKey <| local.PaymentPrivKey.PaymentPubKey().RawPubKey())
+                (HtlcPubKey <| remote.PaymentPrivKey.PaymentPubKey().RawPubKey())
+                (local.RevocationPubKey)
+                (htlc.PaymentHash)
+        )
 
-let htlcScripts =
-    htlcs
-    |> List.map(fun htlc -> match htlc.Direction with
-                            | Out -> Scripts.htlcOffered
-                                        // FIXME: payment keys being used as htlc keys??
-                                        (HtlcPubKey <| local.PaymentPrivKey.PaymentPubKey().RawPubKey())
-                                        (HtlcPubKey <| remote.PaymentPrivKey.PaymentPubKey().RawPubKey())
-                                        (local.RevocationPubKey)
-                                        (htlc.Add.PaymentHash)
-                            | In -> Scripts.htlcReceived
-                                        // FIXME: payment keys being used as htlc keys??
-                                        (HtlcPubKey <| local.PaymentPrivKey.PaymentPubKey().RawPubKey())
-                                        (HtlcPubKey <| remote.PaymentPrivKey.PaymentPubKey().RawPubKey())
-                                        (local.RevocationPubKey)
-                                        (htlc.Add.PaymentHash)
-                                        (htlc.Add.CLTVExpiry.Value))
 let run (spec: CommitmentSpec): (Transaction * _) =
     let local = getLocal()
     log (sprintf "to_local_msat %A" spec.ToLocal)
@@ -273,8 +287,11 @@ let run (spec: CommitmentSpec): (Transaction * _) =
         |> List.iter(fun txOut -> match txOut.ScriptPubKey.Length with
                                   | 22 -> log(sprintf "to-remote amount %A P2WPKH(%A)" (txOut.Value) (remote.PaymentPrivKey.PaymentPubKey()))
                                   | 34 ->
-                                      let maybeIndex = htlcScripts |> List.tryFindIndex(fun s -> s.WitHash.ScriptPubKey = txOut.ScriptPubKey)
-                                      match maybeIndex with
+                                      let htlcScriptOpt =
+                                          Option.orElse
+                                            (incomingHtlcScripts |> List.tryFind(fun s -> s.WitHash.ScriptPubKey = txOut.ScriptPubKey))
+                                            (outgoingHtlcScripts |> List.tryFind(fun s -> s.WitHash.ScriptPubKey = txOut.ScriptPubKey))
+                                      match htlcScriptOpt with
                                       | None ->
                                           (sprintf "to-local amount %A. \n to-local wscript (%A)"
                                                txOut.Value
@@ -282,8 +299,8 @@ let run (spec: CommitmentSpec): (Transaction * _) =
                                                                       (local.ToSelfDelay)
                                                                       (local.DelayedPaymentPrivKey.DelayedPaymentPubKey())))
                                           |> log
-                                      | Some i ->
-                                          (sprintf "to-local amount %A \n to-local wscript (%A)" txOut.Value htlcScripts.[i])
+                                      | Some htlcScript ->
+                                          (sprintf "to-local amount %A \n to-local wscript (%A)" txOut.Value htlcScript)
                                           |> log
                                   | x -> failwithf "unexpected scriptPubKey length %A" x)
     let actualCommitTxNumOpt =
@@ -338,7 +355,10 @@ let run (spec: CommitmentSpec): (Transaction * _) =
 
 let testVectors = data1.RootElement.GetProperty("test_vectors").EnumerateArray() |> Seq.toArray
 
-let htlcMap = htlcs |> List.map(fun htlc ->  htlc.Add.HTLCId, htlc) |> Map.ofList
+let incomingHtlcMap =
+    incomingHtlcs |> List.map(fun htlc -> htlc.HTLCId, htlc) |> Map.ofList
+let outgoingHtlcMap =
+    outgoingHtlcs |> List.map(fun htlc -> htlc.HTLCId, htlc) |> Map.ofList
 
 let runTest(testCase: JsonElement) (spec) (expectedOutputCount) =
     log (sprintf "testing %A" (testCase.GetProperty("name").GetString()))
@@ -352,14 +372,25 @@ let runTest(testCase: JsonElement) (spec) (expectedOutputCount) =
             Expect.equal (htlcTxs.[i].ToHex()) (htlc.GetProperty("value").GetString()) ""
         )
 
-let specBase = { CommitmentSpec.HTLCs = htlcMap; FeeRatePerKw = 15000u |> FeeRatePerKw;
-                 ToLocal = LNMoney.MilliSatoshis(6988000000L); ToRemote =  3000000000L |> LNMoney.MilliSatoshis}
+let specBase = {
+    CommitmentSpec.IncomingHTLCs = incomingHtlcMap
+    CommitmentSpec.OutgoingHTLCs = outgoingHtlcMap
+    FeeRatePerKw = 15000u |> FeeRatePerKw
+    ToLocal = LNMoney.MilliSatoshis(6988000000L)
+    ToRemote = 3000000000L |> LNMoney.MilliSatoshis
+}
+
 [<Tests>]
 let tests =
     testList "Transaction test vectors" [
         testCase "simple commitment tx with no HTLCs" <| fun _ ->
-            let spec = { CommitmentSpec.HTLCs = Map.empty; FeeRatePerKw = 15000u |> FeeRatePerKw;
-                         ToLocal = LNMoney.MilliSatoshis(7000000000L); ToRemote =  3000000000L |> LNMoney.MilliSatoshis}
+            let spec = {
+                CommitmentSpec.OutgoingHTLCs = Map.empty
+                CommitmentSpec.IncomingHTLCs = Map.empty
+                FeeRatePerKw = 15000u |> FeeRatePerKw
+                ToLocal = LNMoney.MilliSatoshis(7000000000L)
+                ToRemote = 3000000000L |> LNMoney.MilliSatoshis
+            }
             let commitTx, _htlcTxs = run(spec)
             let testCase = testVectors.[0]
             Expect.equal(commitTx.Outputs.Count) (2) ""
@@ -369,18 +400,24 @@ let tests =
             
         testCase "commitment tx with all 5 htlcs untrimmed (minimum feerate)"  <| fun _ ->
             let testCase = testVectors.[1]
-            let spec = { CommitmentSpec.HTLCs = htlcMap
-                         FeeRatePerKw = 0u |> FeeRatePerKw
-                         ToLocal = 6988000000L |> LNMoney.MilliSatoshis
-                         ToRemote = 3000000000L |> LNMoney.MilliSatoshis }
+            let spec = {
+                CommitmentSpec.IncomingHTLCs = incomingHtlcMap
+                CommitmentSpec.OutgoingHTLCs = outgoingHtlcMap
+                FeeRatePerKw = 0u |> FeeRatePerKw
+                ToLocal = 6988000000L |> LNMoney.MilliSatoshis
+                ToRemote = 3000000000L |> LNMoney.MilliSatoshis
+            }
             runTest (testCase) (spec) (7)
             
         testCase "commitment tx with seven outputs untrimmed (maximum feerate)" <| fun _ ->
             let testCase = testVectors.[2]
-            let spec = { CommitmentSpec.HTLCs = htlcMap
-                         FeeRatePerKw = (454999UL / Constants.HTLC_SUCCESS_WEIGHT) |> uint32 |> FeeRatePerKw
-                         ToLocal = 6988000000L |> LNMoney.MilliSatoshis
-                         ToRemote = 3000000000L |> LNMoney.MilliSatoshis }
+            let spec = {
+                CommitmentSpec.IncomingHTLCs = incomingHtlcMap
+                CommitmentSpec.OutgoingHTLCs = outgoingHtlcMap
+                FeeRatePerKw = (454999UL / Constants.HTLC_SUCCESS_WEIGHT) |> uint32 |> FeeRatePerKw
+                ToLocal = 6988000000L |> LNMoney.MilliSatoshis
+                ToRemote = 3000000000L |> LNMoney.MilliSatoshis
+            }
             runTest (testCase) (spec) (7)
             
         testCase "commitment tx with six outputs untrimmed (minimum feerate)" <| fun _ ->
@@ -427,36 +464,48 @@ let tests =
             
         testCase "commitment tx with three outputs untrimmed (minimum feerate)" <| fun _ ->
             let feeRate = 2454999UL / Constants.HTLC_TIMEOUT_WEIGHT
-            let spec = { CommitmentSpec.HTLCs = htlcMap
-                         FeeRatePerKw = feeRate + 1UL |> uint32 |> FeeRatePerKw
-                         ToLocal = 6988000000L |> LNMoney.MilliSatoshis
-                         ToRemote = 3000000000L |> LNMoney.MilliSatoshis }
+            let spec = {
+                CommitmentSpec.IncomingHTLCs = incomingHtlcMap
+                CommitmentSpec.OutgoingHTLCs = outgoingHtlcMap
+                FeeRatePerKw = feeRate + 1UL |> uint32 |> FeeRatePerKw
+                ToLocal = 6988000000L |> LNMoney.MilliSatoshis
+                ToRemote = 3000000000L |> LNMoney.MilliSatoshis
+            }
             let testCase = testVectors.[9]
             runTest (testCase) (spec) (3)
             
         testCase "commitment tx with three outputs untrimmed (maximum feerate)" <| fun _ ->
             let feeRate = 3454999UL / Constants.HTLC_SUCCESS_WEIGHT
-            let spec = { CommitmentSpec.HTLCs = htlcMap
-                         FeeRatePerKw = feeRate |> uint32 |> FeeRatePerKw
-                         ToLocal = 6988000000L |> LNMoney.MilliSatoshis
-                         ToRemote = 3000000000L |> LNMoney.MilliSatoshis }
+            let spec = {
+                CommitmentSpec.IncomingHTLCs = incomingHtlcMap
+                CommitmentSpec.OutgoingHTLCs = outgoingHtlcMap
+                FeeRatePerKw = feeRate |> uint32 |> FeeRatePerKw
+                ToLocal = 6988000000L |> LNMoney.MilliSatoshis
+                ToRemote = 3000000000L |> LNMoney.MilliSatoshis
+            }
             let testCase = testVectors.[10]
             runTest (testCase) (spec) (3)
             
         testCase "commitment tx with two outputs untrimmed (minimum feerate)" <| fun _ ->
             let feeRate = 3454999UL / Constants.HTLC_SUCCESS_WEIGHT
-            let spec = { CommitmentSpec.HTLCs = htlcMap
-                         FeeRatePerKw = feeRate + 1UL |> uint32 |> FeeRatePerKw
-                         ToLocal = 6988000000L |> LNMoney.MilliSatoshis
-                         ToRemote = 3000000000L |> LNMoney.MilliSatoshis }
+            let spec = {
+                CommitmentSpec.IncomingHTLCs = incomingHtlcMap
+                CommitmentSpec.OutgoingHTLCs = outgoingHtlcMap
+                FeeRatePerKw = feeRate + 1UL |> uint32 |> FeeRatePerKw
+                ToLocal = 6988000000L |> LNMoney.MilliSatoshis
+                ToRemote = 3000000000L |> LNMoney.MilliSatoshis
+            }
             let testCase = testVectors.[11]
             runTest (testCase) (spec) (2)
             
         testCase "commitment tx with two outputs untrimmed (maximum feerate)" <| fun _ ->
-            let spec = { CommitmentSpec.HTLCs = htlcMap
-                         FeeRatePerKw = 9651180u |> FeeRatePerKw
-                         ToLocal = 6988000000L |> LNMoney.MilliSatoshis
-                         ToRemote = 3000000000L |> LNMoney.MilliSatoshis }
+            let spec = {
+                CommitmentSpec.IncomingHTLCs = incomingHtlcMap
+                CommitmentSpec.OutgoingHTLCs = outgoingHtlcMap
+                FeeRatePerKw = 9651180u |> FeeRatePerKw
+                ToLocal = 6988000000L |> LNMoney.MilliSatoshis
+                ToRemote = 3000000000L |> LNMoney.MilliSatoshis
+            }
             let testCase = testVectors.[12]
             runTest (testCase) (spec) (2)
             
@@ -467,10 +516,13 @@ let tests =
             runTest (testCase) (spec) (1)
             
         testCase "commitment tx with fee greater than funder amount" <| fun _ ->
-            let spec = { CommitmentSpec.HTLCs = htlcMap;
-                         FeeRatePerKw = 9651936u |> FeeRatePerKw;
-                         ToLocal = 6988000000L |> LNMoney.MilliSatoshis
-                         ToRemote = 3000000000L |> LNMoney.MilliSatoshis }
+            let spec = {
+                CommitmentSpec.IncomingHTLCs = incomingHtlcMap
+                CommitmentSpec.OutgoingHTLCs = outgoingHtlcMap
+                FeeRatePerKw = 9651936u |> FeeRatePerKw;
+                ToLocal = 6988000000L |> LNMoney.MilliSatoshis
+                ToRemote = 3000000000L |> LNMoney.MilliSatoshis
+            }
             let testCase = testVectors.[14]
             runTest(testCase) (spec) (1)
             

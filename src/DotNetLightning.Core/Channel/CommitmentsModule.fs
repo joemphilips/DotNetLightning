@@ -119,7 +119,7 @@ module internal Commitments =
                     (cm: Commitments)
                     (staticChannelConfig: StaticChannelConfig)
                     (remoteNextCommitInfo: RemoteNextCommitInfo) =
-        match cm.GetHTLCCrossSigned remoteNextCommitInfo Direction.In op.Id with
+        match cm.GetIncomingHTLCCrossSigned remoteNextCommitInfo op.Id with
         | Some htlc when (cm.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
             htlc.HTLCId |> htlcAlreadySent
         | Some htlc when (htlc.PaymentHash = op.PaymentPreimage.Hash) ->
@@ -140,7 +140,7 @@ module internal Commitments =
     let receiveFulfill (msg: UpdateFulfillHTLCMsg)
                        (cm: Commitments)
                        (remoteNextCommitInfo: RemoteNextCommitInfo) =
-        match cm.GetHTLCCrossSigned remoteNextCommitInfo Direction.Out msg.HTLCId with
+        match cm.GetOutgoingHTLCCrossSigned remoteNextCommitInfo msg.HTLCId with
         | Some htlc when htlc.PaymentHash = msg.PaymentPreimage.Hash ->
             let commitments = cm.AddRemoteProposal(msg)
             commitments |> Ok
@@ -156,7 +156,7 @@ module internal Commitments =
                  (cm: Commitments)
                  (staticChannelConfig: StaticChannelConfig)
                  (remoteNextCommitInfo: RemoteNextCommitInfo) =
-        match cm.GetHTLCCrossSigned remoteNextCommitInfo Direction.In op.Id with
+        match cm.GetIncomingHTLCCrossSigned remoteNextCommitInfo op.Id with
         | Some htlc when  (cm.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
             htlc.HTLCId |> htlcAlreadySent
         | Some htlc ->
@@ -181,7 +181,7 @@ module internal Commitments =
     let receiveFail (msg: UpdateFailHTLCMsg)
                     (cm: Commitments)
                     (remoteNextCommitInfo: RemoteNextCommitInfo) =
-        match cm.GetHTLCCrossSigned remoteNextCommitInfo Direction.Out msg.HTLCId with
+        match cm.GetOutgoingHTLCCrossSigned remoteNextCommitInfo msg.HTLCId with
         | Some _htlc ->
             result {
                 let! _origin =
@@ -204,7 +204,7 @@ module internal Commitments =
         if (op.FailureCode.Value &&& OnionError.BADONION) = 0us then
             op.FailureCode |> invalidFailureCode
         else
-            match cm.GetHTLCCrossSigned remoteNextCommitInfo Direction.In op.Id with
+            match cm.GetIncomingHTLCCrossSigned remoteNextCommitInfo op.Id with
             | Some htlc when (cm.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
                 htlc.HTLCId |> htlcAlreadySent
             | Some _htlc ->
@@ -225,7 +225,7 @@ module internal Commitments =
         if msg.FailureCode.Value &&& OnionError.BADONION = 0us then
             msg.FailureCode |> invalidFailureCode
         else
-            match cm.GetHTLCCrossSigned remoteNextCommitInfo Direction.Out msg.HTLCId with
+            match cm.GetOutgoingHTLCCrossSigned remoteNextCommitInfo msg.HTLCId with
             | Some _htlc ->
                 result {
                     let! _origin =
@@ -451,10 +451,9 @@ module internal Commitments =
                     let ourChanges1 = { cm.LocalChanges with ACKed = []}
                     let theirChanges1 = { cm.RemoteChanges with Proposed = []; ACKed = (cm.RemoteChanges.ACKed @ cm.RemoteChanges.Proposed) }
                     let completedOutgoingHTLCs =
-                        let t1 = cm.LocalCommit.Spec.HTLCs
-                                 |> Map.filter(fun _ v -> v.Direction = Out)
+                        let t1 = cm.LocalCommit.Spec.OutgoingHTLCs
                                  |> Map.toSeq |> Seq.map (fun (k, _) -> k) |> Set.ofSeq
-                        let t2 = localCommit1.Spec.HTLCs |> Map.filter(fun _ v -> v.Direction = Out)
+                        let t2 = localCommit1.Spec.OutgoingHTLCs
                                  |> Map.toSeq |> Seq.map (fun (k, _) -> k) |> Set.ofSeq
                         Set.difference t1 t2
                     let originChannels1 = cm.OriginChannels |> Map.filter(fun k _ -> Set.contains k completedOutgoingHTLCs)
