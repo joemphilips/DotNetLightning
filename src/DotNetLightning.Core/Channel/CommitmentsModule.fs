@@ -117,14 +117,14 @@ module internal Commitments =
 
     let sendFulfill (op: OperationFulfillHTLC)
                     (cm: Commitments)
-                    (staticChannelConfig: StaticChannelConfig)
+                    (savedChannelState: SavedChannelState)
                     (remoteNextCommitInfo: RemoteNextCommitInfo) =
-        match cm.GetIncomingHTLCCrossSigned remoteNextCommitInfo op.Id with
+        match savedChannelState.GetIncomingHTLCCrossSigned remoteNextCommitInfo op.Id with
         | Some htlc when (cm.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
             htlc.HTLCId |> htlcAlreadySent
         | Some htlc when (htlc.PaymentHash = op.PaymentPreimage.Hash) ->
             let msgToSend: UpdateFulfillHTLCMsg = {
-                ChannelId = staticChannelConfig.ChannelId()
+                ChannelId = savedChannelState.StaticChannelConfig.ChannelId()
                 HTLCId = op.Id
                 PaymentPreimage = op.PaymentPreimage
             }
@@ -139,8 +139,9 @@ module internal Commitments =
 
     let receiveFulfill (msg: UpdateFulfillHTLCMsg)
                        (cm: Commitments)
+                       (savedChannelState: SavedChannelState)
                        (remoteNextCommitInfo: RemoteNextCommitInfo) =
-        match cm.GetOutgoingHTLCCrossSigned remoteNextCommitInfo msg.HTLCId with
+        match savedChannelState.GetOutgoingHTLCCrossSigned remoteNextCommitInfo msg.HTLCId with
         | Some htlc when htlc.PaymentHash = msg.PaymentPreimage.Hash ->
             let commitments = cm.AddRemoteProposal(msg)
             commitments |> Ok
@@ -154,9 +155,9 @@ module internal Commitments =
     let sendFail (nodeSecret: NodeSecret)
                  (op: OperationFailHTLC)
                  (cm: Commitments)
-                 (staticChannelConfig: StaticChannelConfig)
+                 (savedChannelState: SavedChannelState)
                  (remoteNextCommitInfo: RemoteNextCommitInfo) =
-        match cm.GetIncomingHTLCCrossSigned remoteNextCommitInfo op.Id with
+        match savedChannelState.GetIncomingHTLCCrossSigned remoteNextCommitInfo op.Id with
         | Some htlc when  (cm.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
             htlc.HTLCId |> htlcAlreadySent
         | Some htlc ->
@@ -169,7 +170,7 @@ module internal Commitments =
                     op.Reason
                     |> function Choice1Of2 b -> Sphinx.forwardErrorPacket(b, ss) | Choice2Of2 f -> Sphinx.ErrorPacket.Create(ss, f)
                 let f = {
-                    UpdateFailHTLCMsg.ChannelId = staticChannelConfig.ChannelId()
+                    UpdateFailHTLCMsg.ChannelId = savedChannelState.StaticChannelConfig.ChannelId()
                     HTLCId = op.Id
                     Reason = { Data = reason }
                 }
@@ -180,8 +181,9 @@ module internal Commitments =
 
     let receiveFail (msg: UpdateFailHTLCMsg)
                     (cm: Commitments)
+                    (savedChannelState: SavedChannelState)
                     (remoteNextCommitInfo: RemoteNextCommitInfo) =
-        match cm.GetOutgoingHTLCCrossSigned remoteNextCommitInfo msg.HTLCId with
+        match savedChannelState.GetOutgoingHTLCCrossSigned remoteNextCommitInfo msg.HTLCId with
         | Some _htlc ->
             result {
                 let! _origin =
@@ -198,18 +200,18 @@ module internal Commitments =
 
     let sendFailMalformed (op: OperationFailMalformedHTLC)
                           (cm: Commitments)
-                          (staticChannelConfig: StaticChannelConfig)
+                          (savedChannelState: SavedChannelState)
                           (remoteNextCommitInfo: RemoteNextCommitInfo) =
         // BADONION bit must be set in failure code
         if (op.FailureCode.Value &&& OnionError.BADONION) = 0us then
             op.FailureCode |> invalidFailureCode
         else
-            match cm.GetIncomingHTLCCrossSigned remoteNextCommitInfo op.Id with
+            match savedChannelState.GetIncomingHTLCCrossSigned remoteNextCommitInfo op.Id with
             | Some htlc when (cm.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
                 htlc.HTLCId |> htlcAlreadySent
             | Some _htlc ->
                 let msg = {
-                    UpdateFailMalformedHTLCMsg.ChannelId = staticChannelConfig.ChannelId()
+                    UpdateFailMalformedHTLCMsg.ChannelId = savedChannelState.StaticChannelConfig.ChannelId()
                     HTLCId = op.Id
                     Sha256OfOnion = op.Sha256OfOnion
                     FailureCode = op.FailureCode
@@ -221,11 +223,12 @@ module internal Commitments =
 
     let receiveFailMalformed (msg: UpdateFailMalformedHTLCMsg)
                              (cm: Commitments)
+                             (savedChannelState: SavedChannelState)
                              (remoteNextCommitInfo: RemoteNextCommitInfo) =
         if msg.FailureCode.Value &&& OnionError.BADONION = 0us then
             msg.FailureCode |> invalidFailureCode
         else
-            match cm.GetOutgoingHTLCCrossSigned remoteNextCommitInfo msg.HTLCId with
+            match savedChannelState.GetOutgoingHTLCCrossSigned remoteNextCommitInfo msg.HTLCId with
             | Some _htlc ->
                 result {
                     let! _origin =
@@ -240,27 +243,27 @@ module internal Commitments =
                 msg.HTLCId |> unknownHTLCId
 
     let sendFee (op: OperationUpdateFee)
-                (staticChannelConfig: StaticChannelConfig)
+                (savedChannelState: SavedChannelState)
                 (cm: Commitments) =
-            if (not staticChannelConfig.IsFunder) then
+            if (not savedChannelState.StaticChannelConfig.IsFunder) then
                 "Local is Fundee so it cannot send update fee" |> apiMisuse
             else
                 let fee = {
-                    UpdateFeeMsg.ChannelId = staticChannelConfig.ChannelId()
+                    UpdateFeeMsg.ChannelId = savedChannelState.StaticChannelConfig.ChannelId()
                     FeeRatePerKw = op.FeeRatePerKw
                 }
                 let c1 = cm.AddLocalProposal(fee)
                 result {
                     let! reduced =
-                        c1.RemoteCommit.Spec.Reduce(c1.RemoteChanges.ACKed, c1.LocalChanges.Proposed) |> expectTransactionError
+                        savedChannelState.RemoteCommit.Spec.Reduce(c1.RemoteChanges.ACKed, c1.LocalChanges.Proposed) |> expectTransactionError
                     // A node cannot spend pending incoming htlcs, and need to keep funds above the reserve required by
                     // the counter party, after paying the fee, we look from remote's point of view, so if local is funder
                     // remote doesn't pay the fees.
-                    let fees = Transactions.commitTxFee(staticChannelConfig.RemoteParams.DustLimitSatoshis) reduced
-                    let missing = reduced.ToRemote.ToMoney() - staticChannelConfig.RemoteParams.ChannelReserveSatoshis - fees
+                    let fees = Transactions.commitTxFee(savedChannelState.StaticChannelConfig.RemoteParams.DustLimitSatoshis) reduced
+                    let missing = reduced.ToRemote.ToMoney() - savedChannelState.StaticChannelConfig.RemoteParams.ChannelReserveSatoshis - fees
                     if (missing < Money.Zero) then
                         return!
-                            (staticChannelConfig.LocalParams.ChannelReserveSatoshis, fees,  (-1 * missing))
+                            (savedChannelState.StaticChannelConfig.LocalParams.ChannelReserveSatoshis, fees,  (-1 * missing))
                             |> cannotAffordFee
                     else
                         return fee, c1
@@ -269,25 +272,25 @@ module internal Commitments =
     let receiveFee (channelOptions: ChannelOptions)
                    (localFeerate)
                    (msg: UpdateFeeMsg)
-                   (staticChannelConfig: StaticChannelConfig)
+                   (savedChannelState: SavedChannelState)
                    (cm: Commitments) =
-        if staticChannelConfig.IsFunder then
+        if savedChannelState.StaticChannelConfig.IsFunder then
             "Remote is Fundee so it cannot send update fee" |> apiMisuse
         else
             result {
                 do! Helpers.checkUpdateFee channelOptions msg localFeerate
                 let nextCommitments = cm.AddRemoteProposal(msg)
                 let! reduced =
-                    nextCommitments.LocalCommit.Spec.Reduce(
+                    savedChannelState.LocalCommit.Spec.Reduce(
                         nextCommitments.LocalChanges.ACKed,
                         nextCommitments.RemoteChanges.Proposed
                     ) |> expectTransactionError
                 
-                let fees = Transactions.commitTxFee(staticChannelConfig.RemoteParams.DustLimitSatoshis) reduced
-                let missing = reduced.ToRemote.ToMoney() - staticChannelConfig.RemoteParams.ChannelReserveSatoshis - fees
+                let fees = Transactions.commitTxFee(savedChannelState.StaticChannelConfig.RemoteParams.DustLimitSatoshis) reduced
+                let missing = reduced.ToRemote.ToMoney() - savedChannelState.StaticChannelConfig.RemoteParams.ChannelReserveSatoshis - fees
                 if (missing < Money.Zero) then
                     return!
-                        (staticChannelConfig.LocalParams.ChannelReserveSatoshis, fees,  (-1 * missing))
+                        (savedChannelState.StaticChannelConfig.LocalParams.ChannelReserveSatoshis, fees,  (-1 * missing))
                         |> cannotAffordFee
                 else
                     return nextCommitments
@@ -295,16 +298,16 @@ module internal Commitments =
 
     let sendCommit (channelPrivKeys: ChannelPrivKeys)
                    (cm: Commitments)
-                   (staticChannelConfig: StaticChannelConfig)
+                   (savedChannelState: SavedChannelState)
                    (remoteNextCommitInfo: RemoteNextCommitInfo) =
         match remoteNextCommitInfo with
         | RemoteNextCommitInfo.Revoked remoteNextPerCommitmentPoint ->
             result {
                 // remote commitment will include all local changes + remote acked changes
-                let! spec = cm.RemoteCommit.Spec.Reduce(cm.RemoteChanges.ACKed, cm.LocalChanges.Proposed) |> expectTransactionError
+                let! spec = savedChannelState.RemoteCommit.Spec.Reduce(cm.RemoteChanges.ACKed, cm.LocalChanges.Proposed) |> expectTransactionError
                 let! (remoteCommitTx, htlcTimeoutTxs, htlcSuccessTxs) =
-                    Helpers.makeRemoteTxs staticChannelConfig
-                                          (cm.RemoteCommit.Index.NextCommitment())
+                    Helpers.makeRemoteTxs savedChannelState.StaticChannelConfig
+                                          (savedChannelState.RemoteCommit.Index.NextCommitment())
                                           (channelPrivKeys.ToChannelPubKeys())
                                           (remoteNextPerCommitmentPoint)
                                           (spec)
@@ -319,14 +322,14 @@ module internal Commitments =
                             >> (fun txSig -> txSig.Signature)
                             )
                 let msg = {
-                    CommitmentSignedMsg.ChannelId = staticChannelConfig.ChannelId()
+                    CommitmentSignedMsg.ChannelId = savedChannelState.StaticChannelConfig.ChannelId()
                     Signature = !> signature.Signature
                     HTLCSignatures = htlcSigs |> List.map (!>)
                 }
                 let nextRemoteCommitInfo = {
-                    cm.RemoteCommit
+                    savedChannelState.RemoteCommit
                     with
-                        Index = cm.RemoteCommit.Index.NextCommitment()
+                        Index = savedChannelState.RemoteCommit.Index.NextCommitment()
                         Spec = spec
                         RemotePerCommitmentPoint = remoteNextPerCommitmentPoint
                         TxId = remoteCommitTx.GetTxId()
@@ -354,24 +357,25 @@ module internal Commitments =
             signatureCountMismatch (sortedHTLCTXs.Length, msg.HTLCSignatures.Length)
         else
             Ok()
+
     let receiveCommit (channelPrivKeys: ChannelPrivKeys)
                       (msg: CommitmentSignedMsg)
-                      (staticChannelConfig: StaticChannelConfig)
                       (cm: Commitments)
-                          : Result<RevokeAndACKMsg * Commitments, ChannelError> =
+                      (savedChannelState: SavedChannelState)
+                          : Result<RevokeAndACKMsg * SavedChannelState * Commitments, ChannelError> =
         if cm.RemoteHasChanges() |> not then
             ReceivedCommitmentSignedWhenWeHaveNoPendingChanges |> Error
         else
             let commitmentSeed = channelPrivKeys.CommitmentSeed
             let localChannelKeys = channelPrivKeys.ToChannelPubKeys()
-            let remoteChannelKeys = staticChannelConfig.RemoteChannelPubKeys
-            let nextI = cm.LocalCommit.Index.NextCommitment()
+            let remoteChannelKeys = savedChannelState.StaticChannelConfig.RemoteChannelPubKeys
+            let nextI = savedChannelState.LocalCommit.Index.NextCommitment()
             result {
-                let! spec = cm.LocalCommit.Spec.Reduce(cm.LocalChanges.ACKed, cm.RemoteChanges.Proposed) |> expectTransactionError
+                let! spec = savedChannelState.LocalCommit.Spec.Reduce(cm.LocalChanges.ACKed, cm.RemoteChanges.Proposed) |> expectTransactionError
                 let localPerCommitmentPoint = commitmentSeed.DerivePerCommitmentPoint nextI
                 let! (localCommitTx, htlcTimeoutTxs, htlcSuccessTxs) =
                     Helpers.makeLocalTXs
-                        staticChannelConfig
+                        savedChannelState.StaticChannelConfig
                         nextI
                         (channelPrivKeys.ToChannelPubKeys())
                         localPerCommitmentPoint
@@ -429,39 +433,45 @@ module internal Commitments =
                         | _ -> None
                     )
                 let localPerCommitmentSecret =
-                    channelPrivKeys.CommitmentSeed.DerivePerCommitmentSecret cm.LocalCommit.Index
+                    channelPrivKeys.CommitmentSeed.DerivePerCommitmentSecret savedChannelState.LocalCommit.Index
                 let localNextPerCommitmentPoint =
                     let perCommitmentSecret =
                         channelPrivKeys.CommitmentSeed.DerivePerCommitmentSecret
-                            (cm.LocalCommit.Index.NextCommitment().NextCommitment())
+                            (savedChannelState.LocalCommit.Index.NextCommitment().NextCommitment())
                     perCommitmentSecret.PerCommitmentPoint()
 
                 let nextMsg = {
-                    RevokeAndACKMsg.ChannelId = staticChannelConfig.ChannelId()
+                    RevokeAndACKMsg.ChannelId = savedChannelState.StaticChannelConfig.ChannelId()
                     PerCommitmentSecret = localPerCommitmentSecret
                     NextPerCommitmentPoint = localNextPerCommitmentPoint
                 }
                 
+                let localCommit1 = { LocalCommit.Index = savedChannelState.LocalCommit.Index.NextCommitment()
+                                     Spec = spec
+                                     PublishableTxs = { PublishableTxs.CommitTx = finalizedCommitTx
+                                                        HTLCTxs = finalizedTxs }
+                                     PendingHTLCSuccessTxs = successTxs }
+                let nextSavedChannelState = {
+                    savedChannelState with
+                        LocalCommit = localCommit1
+                }
                 let nextCommitments =
-                    let localCommit1 = { LocalCommit.Index = cm.LocalCommit.Index.NextCommitment()
-                                         Spec = spec
-                                         PublishableTxs = { PublishableTxs.CommitTx = finalizedCommitTx
-                                                            HTLCTxs = finalizedTxs }
-                                         PendingHTLCSuccessTxs = successTxs }
                     let ourChanges1 = { cm.LocalChanges with ACKed = []}
                     let theirChanges1 = { cm.RemoteChanges with Proposed = []; ACKed = (cm.RemoteChanges.ACKed @ cm.RemoteChanges.Proposed) }
                     let completedOutgoingHTLCs =
-                        let t1 = cm.LocalCommit.Spec.OutgoingHTLCs
+                        let t1 = savedChannelState.LocalCommit.Spec.OutgoingHTLCs
                                  |> Map.toSeq |> Seq.map (fun (k, _) -> k) |> Set.ofSeq
                         let t2 = localCommit1.Spec.OutgoingHTLCs
                                  |> Map.toSeq |> Seq.map (fun (k, _) -> k) |> Set.ofSeq
                         Set.difference t1 t2
                     let originChannels1 = cm.OriginChannels |> Map.filter(fun k _ -> Set.contains k completedOutgoingHTLCs)
-                    { cm with LocalCommit = localCommit1
-                              LocalChanges = ourChanges1
-                              RemoteChanges = theirChanges1
-                              OriginChannels = originChannels1 }
-                return nextMsg, nextCommitments
+                    {
+                        cm with
+                            LocalChanges = ourChanges1
+                            RemoteChanges = theirChanges1
+                            OriginChannels = originChannels1
+                    }
+                return nextMsg, nextSavedChannelState, nextCommitments
             }
 
 module ForceCloseFundsRecovery =
@@ -510,13 +520,9 @@ module ForceCloseFundsRecovery =
             return obscuredCommitmentNumber
     }
 
-    let createPenaltyTx (isLocalFunder: bool)
-                        (remoteParams: RemoteParams)
-                        (perCommitmentSecret: PerCommitmentSecret)
-                        (remoteCommit: RemoteCommit)
+    let createPenaltyTx (perCommitmentSecret: PerCommitmentSecret)
+                        (savedChannelState: SavedChannelState)
                         (localChannelPrivKeys: ChannelPrivKeys)
-                        (remoteChannelPubKeys: ChannelPubKeys)
-                        (network: Network) 
                             : TransactionBuilder =
         let localChannelPubKeys = localChannelPrivKeys.ToChannelPubKeys()
 
@@ -526,9 +532,15 @@ module ForceCloseFundsRecovery =
             perCommitmentPoint.DeriveCommitmentPubKeys localChannelPubKeys
 
         let remoteCommitmentPubKeys =
-            perCommitmentPoint.DeriveCommitmentPubKeys remoteChannelPubKeys
+            perCommitmentPoint.DeriveCommitmentPubKeys savedChannelState.StaticChannelConfig.RemoteChannelPubKeys
 
-        let transactionBuilder = createDeterministicTransactionBuilder network
+        let remoteParams = 
+            savedChannelState.StaticChannelConfig.RemoteParams
+        
+        let remoteCommit = 
+            savedChannelState.RemoteCommit
+
+        let transactionBuilder = createDeterministicTransactionBuilder savedChannelState.StaticChannelConfig.Network
 
         let toRemoteScriptPubKey =
             localCommitmentPubKeys
@@ -544,7 +556,7 @@ module ForceCloseFundsRecovery =
 
         let toLocalWitScriptPubKey = toLocalScriptPubKey.WitHash.ScriptPubKey
 
-        let amounts = Commitments.RemoteCommitAmount isLocalFunder remoteParams remoteCommit
+        let amounts = Commitments.RemoteCommitAmount savedChannelState.StaticChannelConfig.IsFunder remoteParams remoteCommit
 
         let toLocalTxOut = 
             TxOut(amounts.ToLocal, toLocalWitScriptPubKey)
@@ -627,32 +639,30 @@ module ForceCloseFundsRecovery =
     /// added to the transaction to reclaim the funds from the supplied
     /// commitment transaction. It is the caller's responsibility to add outputs
     /// and fees to the TransactionBuilder before building the transaction.
-    let tryGetFundsFromRemoteCommitmentTx (remotePerCommitmentSecrets: PerCommitmentSecretStore)
-                                          (remoteCommit: RemoteCommit)
-                                          (localChannelPrivKeys: ChannelPrivKeys)
-                                          (staticChannelConfig: StaticChannelConfig)
+    let tryGetFundsFromRemoteCommitmentTx (localChannelPrivKeys: ChannelPrivKeys)
+                                          (savedChannelState: SavedChannelState)
                                           (transaction: Transaction)
                                               : Result<TransactionBuilder, RemoteCommitmentTxRecoveryError> = result {
         let! obscuredCommitmentNumber =
             tryGetObscuredCommitmentNumber
-                staticChannelConfig.FundingScriptCoin.Outpoint
+                savedChannelState.StaticChannelConfig.FundingScriptCoin.Outpoint
                 transaction
             |> Result.mapError InvalidCommitmentTx
         let localChannelPubKeys = localChannelPrivKeys.ToChannelPubKeys()
-        let remoteChannelPubKeys = staticChannelConfig.RemoteChannelPubKeys
+        let remoteChannelPubKeys = savedChannelState.StaticChannelConfig.RemoteChannelPubKeys
         let commitmentNumber =
             obscuredCommitmentNumber.Unobscure
-                staticChannelConfig.IsFunder
+                savedChannelState.StaticChannelConfig.IsFunder
                 localChannelPubKeys.PaymentBasepoint
                 remoteChannelPubKeys.PaymentBasepoint
         let perCommitmentSecretOpt =
-            remotePerCommitmentSecrets.GetPerCommitmentSecret commitmentNumber
+            savedChannelState.RemotePerCommitmentSecrets.GetPerCommitmentSecret commitmentNumber
         let! perCommitmentPoint =
             match perCommitmentSecretOpt with
             | Some perCommitmentSecret -> Ok <| perCommitmentSecret.PerCommitmentPoint()
             | None ->
-                if remoteCommit.Index = commitmentNumber then
-                    Ok <| remoteCommit.RemotePerCommitmentPoint
+                if savedChannelState.RemoteCommit.Index = commitmentNumber then
+                    Ok <| savedChannelState.RemoteCommit.RemotePerCommitmentPoint
                 else
                     Error <| CommitmentNumberFromTheFuture commitmentNumber
 
@@ -674,7 +684,7 @@ module ForceCloseFundsRecovery =
                 localChannelPrivKeys.PaymentBasepointSecret
 
         return
-            (createDeterministicTransactionBuilder staticChannelConfig.Network)
+            (createDeterministicTransactionBuilder savedChannelState.StaticChannelConfig.Network)
                 .SetVersion(TxVersionNumberOfCommitmentTxs)
                 .AddKeys(localPaymentPrivKey.RawKey())
                 .AddCoins(Coin(transaction, uint32 toRemoteIndex))

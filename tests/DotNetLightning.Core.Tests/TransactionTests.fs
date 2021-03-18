@@ -207,12 +207,36 @@ let testList = testList "transaction tests" [
                 RemoteChannelPubKeys = localChannelPubKeys
             }
 
+        let remoteCommitmentSpec = {
+            IncomingHTLCs = Map.empty
+            OutgoingHTLCs = Map.empty
+            FeeRatePerKw = feeRate
+            ToLocal = remoteAmount
+            ToRemote = localAmount
+        }
+        let remoteLocalCommit : LocalCommit =
+            {
+                Index = commitmentNumber
+                Spec = remoteCommitmentSpec
+                PublishableTxs = {
+                    CommitTx = FinalizedTx commitmentTx
+                    HTLCTxs = List.Empty
+                }
+                PendingHTLCSuccessTxs = List.Empty
+            }
+
+        let remoteSavedChannelState : SavedChannelState = {
+            StaticChannelConfig = staticRemoteChannelConfig
+            RemotePerCommitmentSecrets = remoteRemotePerCommitmentSecrets
+            ShortChannelId = None
+            LocalCommit = remoteLocalCommit
+            RemoteCommit = remoteRemoteCommit 
+        }
+
         let transactionBuilder =
             ForceCloseFundsRecovery.tryGetFundsFromRemoteCommitmentTx
-                remoteRemotePerCommitmentSecrets
-                remoteRemoteCommit
                 remoteChannelPrivKeys
-                staticRemoteChannelConfig
+                remoteSavedChannelState
                 commitmentTx
             |> Result.deref
 
@@ -231,13 +255,9 @@ let testList = testList "transaction tests" [
 
         let transactionBuilder =
             ForceCloseFundsRecovery.createPenaltyTx
-                false
-                remoteRemoteParams
                 perCommitmentSecret
-                remoteRemoteCommit
+                remoteSavedChannelState
                 remoteChannelPrivKeys
-                localChannelPubKeys
-                Network.RegTest
         let penaltyTransaction =
             transactionBuilder
                 .SendAll(remoteDestPubKey)
