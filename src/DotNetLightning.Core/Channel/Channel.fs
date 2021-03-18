@@ -55,11 +55,11 @@ type ChannelWaitingForFundingSigned = {
             SavedChannelState = {
                 StaticChannelConfig = self.StaticChannelConfig
                 RemotePerCommitmentSecrets = PerCommitmentSecretStore()
+                ShortChannelId = None
             }
             ChannelOptions = self.ChannelOptions
             ChannelPrivKeys = self.ChannelPrivKeys
             NodeSecret = self.NodeSecret
-            ShortChannelId = None
             RemoteNextCommitInfo = None
             NegotiatingState = NegotiatingState.New()
             Commitments = commitments
@@ -168,12 +168,12 @@ and ChannelWaitingForFundingCreated = {
             SavedChannelState = {
                 StaticChannelConfig = staticChannelConfig
                 RemotePerCommitmentSecrets = PerCommitmentSecretStore()
+                ShortChannelId = None
             }
             ChannelOptions = self.ChannelOptions
             ChannelPrivKeys = self.ChannelPrivKeys
             NodeSecret = self.NodeSecret
             RemoteNextCommitInfo = None
-            ShortChannelId = None
             NegotiatingState = NegotiatingState.New()
             Commitments = commitments
         }
@@ -328,12 +328,10 @@ and ChannelWaitingForAcceptChannel = {
     }
 
 and Channel = {
-    //StaticChannelConfig: StaticChannelConfig
     SavedChannelState: SavedChannelState
     ChannelOptions: ChannelOptions
     ChannelPrivKeys: ChannelPrivKeys
     NodeSecret: NodeSecret
-    ShortChannelId: Option<ShortChannelId>
     RemoteNextCommitInfo: Option<RemoteNextCommitInfo>
     NegotiatingState: NegotiatingState
     Commitments: Commitments
@@ -352,7 +350,7 @@ and Channel = {
 
     member internal self.RemoteNextCommitInfoIfFundingLockedNormal (operation: string)
                                                                        : Result<RemoteNextCommitInfo, ChannelError> =
-        match self.ShortChannelId with
+        match self.SavedChannelState.ShortChannelId with
         | None ->
             sprintf
                 "cannot perform operation %s because funding is not confirmed"
@@ -520,7 +518,7 @@ and Channel = {
                     Error <| InvalidFundingLocked { NetworkMsg = fundingLockedMsg }
                 else
                     Ok ()
-        match self.ShortChannelId with
+        match self.SavedChannelState.ShortChannelId with
         | None ->
             return {
                 self with
@@ -536,7 +534,7 @@ and Channel = {
                                           (txindex: TxIndexInBlock)
                                           (depth: BlockHeightOffset32)
                                               : Result<Channel * Option<FundingLockedMsg>, ChannelError> = result {
-        match self.ShortChannelId with
+        match self.SavedChannelState.ShortChannelId with
         | None ->
             if self.SavedChannelState.StaticChannelConfig.FundingTxMinimumDepth > depth then
                 // TODO: this should probably be an error (?)
@@ -564,9 +562,13 @@ and Channel = {
                         |> uint16
                         |> TxOutIndex
                 }
+                let savedChannelState = {
+                    self.SavedChannelState with
+                        ShortChannelId = Some shortChannelId
+                }
                 let channel = {
                     self with
-                        ShortChannelId = Some shortChannelId
+                        SavedChannelState = savedChannelState
                 }
                 return channel, Some msgToSend
         | Some _shortChannelId ->
