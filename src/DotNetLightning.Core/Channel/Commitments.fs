@@ -116,7 +116,6 @@ type Commitments = {
     LocalNextHTLCId: HTLCId
     RemoteNextHTLCId: HTLCId
     OriginChannels: Map<HTLCId, HTLCSource>
-    RemotePerCommitmentSecrets: PerCommitmentSecretStore
 }
     with
         static member LocalChanges_: Lens<_, _> =

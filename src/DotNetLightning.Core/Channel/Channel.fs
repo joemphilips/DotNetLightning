@@ -50,11 +50,11 @@ type ChannelWaitingForFundingSigned = {
             LocalNextHTLCId = HTLCId.Zero
             RemoteNextHTLCId = HTLCId.Zero
             OriginChannels = Map.empty
-            RemotePerCommitmentSecrets = PerCommitmentSecretStore()
         }
         let channel = {
             SavedChannelState = {
                 StaticChannelConfig = self.StaticChannelConfig
+                RemotePerCommitmentSecrets = PerCommitmentSecretStore()
             }
             ChannelOptions = self.ChannelOptions
             ChannelPrivKeys = self.ChannelPrivKeys
@@ -145,7 +145,6 @@ and ChannelWaitingForFundingCreated = {
             LocalNextHTLCId = HTLCId.Zero
             RemoteNextHTLCId = HTLCId.Zero
             OriginChannels = Map.empty
-            RemotePerCommitmentSecrets = PerCommitmentSecretStore()
         }
         let staticChannelConfig = {
             AnnounceChannel = self.AnnounceChannel
@@ -168,6 +167,7 @@ and ChannelWaitingForFundingCreated = {
         let channel = {
             SavedChannelState = {
                 StaticChannelConfig = staticChannelConfig
+                RemotePerCommitmentSecrets = PerCommitmentSecretStore()
             }
             ChannelOptions = self.ChannelOptions
             ChannelPrivKeys = self.ChannelPrivKeys
@@ -497,12 +497,12 @@ and Channel = {
         let ourChannelReestablish = {
             ChannelId = self.SavedChannelState.StaticChannelConfig.ChannelId()
             NextCommitmentNumber =
-                (self.Commitments.RemotePerCommitmentSecrets.NextCommitmentNumber().NextCommitment())
+                (self.SavedChannelState.RemotePerCommitmentSecrets.NextCommitmentNumber().NextCommitment())
             NextRevocationNumber =
-                self.Commitments.RemotePerCommitmentSecrets.NextCommitmentNumber()
+                self.SavedChannelState.RemotePerCommitmentSecrets.NextCommitmentNumber()
             DataLossProtect = OptionalField.Some <| {
                 YourLastPerCommitmentSecret =
-                    self.Commitments.RemotePerCommitmentSecrets.MostRecentPerCommitmentSecret()
+                    self.SavedChannelState.RemotePerCommitmentSecrets.MostRecentPerCommitmentSecret()
                 MyCurrentPerCommitmentPoint =
                     commitmentSeed.DerivePerCommitmentPoint self.Commitments.RemoteCommit.Index
             }
@@ -831,7 +831,7 @@ and Channel = {
             return! Error <| invalidRevokeAndACK msg errorMsg
         | RemoteNextCommitInfo.Waiting theirNextCommit ->
             let remotePerCommitmentSecretsOpt =
-                cm.RemotePerCommitmentSecrets.InsertPerCommitmentSecret
+                self.SavedChannelState.RemotePerCommitmentSecrets.InsertPerCommitmentSecret
                     cm.RemoteCommit.Index
                     msg.PerCommitmentSecret
             match remotePerCommitmentSecretsOpt with
@@ -849,10 +849,14 @@ and Channel = {
                                 Signed = []
                         }
                         RemoteCommit = theirNextCommit
+                }
+                let savedChannelState = {
+                    self.SavedChannelState with
                         RemotePerCommitmentSecrets = remotePerCommitmentSecrets
                 }
                 return {
                     self with
+                        SavedChannelState = savedChannelState
                         Commitments = commitments1
                         RemoteNextCommitInfo =
                             Some <| RemoteNextCommitInfo.Revoked msg.NextPerCommitmentPoint

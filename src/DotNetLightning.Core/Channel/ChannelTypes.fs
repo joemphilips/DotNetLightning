@@ -48,5 +48,6 @@ type ClosingSignedResponse =
 
 type SavedChannelState = {
     StaticChannelConfig: StaticChannelConfig
+    RemotePerCommitmentSecrets: PerCommitmentSecretStore
 }
 
