@@ -35,6 +35,7 @@
     <Compile Include="PaymentTests.fs" />
     <Compile Include="LSATTests.fs" />
     <Compile Include="PaymentPropertyTests.fs" />
+    <Compile Include="CommitmentToLocalExtensionTests.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
   <ItemGroup>
