@@ -16,7 +16,7 @@ let n = Network.RegTest
 
 [<Tests>]
 let testList = testList "transaction tests" [
-    testCase "check tryGetFundsFromLocalCommitmentTx" <| fun _ ->
+    testCase "check fund recovery from local/remote commitment txs" <| fun _ ->
         let rand = Random()
 
         let localNodeMasterPrivKey =
@@ -136,6 +136,84 @@ let testList = testList "transaction tests" [
             let fullAmount = commitmentSpec.ToLocal.ToMoney()
             let fee = commitmentTx.GetFee [| fundingScriptCoin |]
             fullAmount - fee
+        let actualAmount =
+            commitmentTx.Outputs.[input.PrevOut.N].Value
+        Expect.equal actualAmount expectedAmount "wrong prevout amount"
+
+        let remoteDestPrivKey = new Key()
+        let remoteDestPubKey = remoteDestPrivKey.PubKey
+        let remoteRemotePerCommitmentSecrets =
+            let rec addKeys (remoteRemotePerCommitmentSecrets: PerCommitmentSecretStore)
+                            (currentCommitmentNumber: CommitmentNumber)
+                                : PerCommitmentSecretStore =
+                if currentCommitmentNumber = commitmentNumber then
+                    remoteRemotePerCommitmentSecrets
+                else
+                    let currentPerCommitmentSecret =
+                        localChannelPrivKeys.CommitmentSeed.DerivePerCommitmentSecret
+                            currentCommitmentNumber
+                    let nextLocalPerCommitmentSecretsRes =
+                        remoteRemotePerCommitmentSecrets.InsertPerCommitmentSecret
+                            currentCommitmentNumber
+                            currentPerCommitmentSecret
+                    addKeys
+                        (Result.deref nextLocalPerCommitmentSecretsRes)
+                        (currentCommitmentNumber.NextCommitment())
+            addKeys (PerCommitmentSecretStore()) CommitmentNumber.FirstCommitment
+
+        let remoteRemoteCommit = {
+            Index = commitmentNumber
+            Spec = commitmentSpec
+            TxId = TxId <| commitmentTx.GetHash()
+            RemotePerCommitmentPoint = perCommitmentPoint
+        }
+        let remoteLocalParams: LocalParams = {
+            NodeId = remoteParams.NodeId
+            ChannelPubKeys = remoteParams.ChannelPubKeys
+            DustLimitSatoshis = remoteParams.DustLimitSatoshis
+            MaxHTLCValueInFlightMSat = remoteParams.MaxHTLCValueInFlightMSat
+            ChannelReserveSatoshis = remoteParams.ChannelReserveSatoshis
+            HTLCMinimumMSat = remoteParams.HTLCMinimumMSat
+            ToSelfDelay = remoteParams.ToSelfDelay
+            MaxAcceptedHTLCs = remoteParams.MaxAcceptedHTLCs
+            IsFunder = false
+            DefaultFinalScriptPubKey = remoteDestPubKey.ScriptPubKey
+            Features = remoteParams.Features
+        }
+        let remoteRemoteParams = {
+            NodeId = localParams.NodeId
+            DustLimitSatoshis = localParams.DustLimitSatoshis
+            MaxHTLCValueInFlightMSat = localParams.MaxHTLCValueInFlightMSat
+            ChannelReserveSatoshis = localParams.ChannelReserveSatoshis
+            HTLCMinimumMSat = localParams.HTLCMinimumMSat
+            ToSelfDelay = localParams.ToSelfDelay
+            MaxAcceptedHTLCs = localParams.MaxAcceptedHTLCs
+            ChannelPubKeys = localParams.ChannelPubKeys
+            Features = localParams.Features
+            MinimumDepth = 6u |> BlockHeightOffset32
+        }
+
+        let transactionBuilderOpt =
+            ForceCloseFundsRecovery.tryGetFundsFromRemoteCommitmentTx
+                remoteLocalParams
+                remoteRemoteParams
+                fundingScriptCoin
+                remoteRemotePerCommitmentSecrets
+                remoteRemoteCommit
+                remoteChannelPrivKeys
+                Network.RegTest
+                commitmentTx
+        let transactionBuilder = transactionBuilderOpt.Value
+
+        let recoveryTransaction =
+            transactionBuilder
+                .SendAll(remoteDestPubKey)
+                .BuildTransaction(true)
+        let inputs = recoveryTransaction.Inputs
+        Expect.equal inputs.Count 1 "wrong number of inputs"
+        let input = inputs.[0]
+        Expect.equal input.PrevOut.Hash (commitmentTx.GetHash()) "wrong prevout hash"
+        let expectedAmount = commitmentSpec.ToRemote.ToMoney()
         let actualAmount =
             commitmentTx.Outputs.[input.PrevOut.N].Value
         Expect.equal actualAmount expectedAmount "wrong prevout amount"
