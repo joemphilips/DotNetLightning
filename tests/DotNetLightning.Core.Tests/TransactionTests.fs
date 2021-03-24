@@ -12,7 +12,8 @@ open NBitcoin
 let n = Network.RegTest
 
 [<Tests>]
-let testList = [
+let testList = testList "transaction tests" []
+    (*
     testCase "check pre-computed transaction weights" <| fun _ ->
         let localPaymentPriv = [| for _ in 0..31 -> 0xdduy |] |> fun b -> new Key(b)
         let finalSpk =
@@ -49,4 +50,4 @@ let testList = [
             ()
             
         ()
-]
+    *)
