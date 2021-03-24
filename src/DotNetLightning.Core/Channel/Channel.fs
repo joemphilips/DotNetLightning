@@ -62,7 +62,6 @@ module Channel =
                            localSpk: Script,
                            remoteSpk: Script,
                            closingFee: Money,
-                           localFundingPk: FundingPubKey,
                            network: Network
                           ) =
             assert (Scripts.isValidFinalScriptPubKey (remoteSpk) && Scripts.isValidFinalScriptPubKey (localSpk))
@@ -94,12 +93,11 @@ module Channel =
                                 localSpk: Script,
                                 remoteSpk: Script,
                                 feeEst: IFeeEstimator,
-                                localFundingPk: FundingPubKey,
                                 network: Network
                                ) =
             result {
                 let! closingFee = firstClosingFee (commitments, localSpk, remoteSpk, feeEst, network)
-                return! makeClosingTx (channelPrivKeys, commitments, localSpk, remoteSpk, closingFee, localFundingPk, network)
+                return! makeClosingTx (channelPrivKeys, commitments, localSpk, remoteSpk, closingFee, network)
             } |> expectTransactionError
 
         let nextClosingFee (localClosingFee: Money, remoteClosingFee: Money) =
@@ -622,7 +620,6 @@ module Channel =
                                                             localShutdown.ScriptPubKey,
                                                             msg.ScriptPubKey,
                                                             cs.FeeEstimator,
-                                                            cm.LocalParams.ChannelPubKeys.FundingPubKey,
                                                             cs.Network)
                             let nextState = { NegotiatingData.ChannelId = cm.ChannelId
                                               Commitments = cm
@@ -695,7 +692,6 @@ module Channel =
                         state.LocalShutdown.ScriptPubKey,
                         state.RemoteShutdown.ScriptPubKey,
                         msg.FeeSatoshis,
-                        cm.LocalParams.ChannelPubKeys.FundingPubKey,
                         cs.Network
                     )
                     |> expectTransactionError
@@ -751,7 +747,6 @@ module Channel =
                                 state.LocalShutdown.ScriptPubKey,
                                 state.RemoteShutdown.ScriptPubKey,
                                 nextClosingFee,
-                                cm.LocalParams.ChannelPubKeys.FundingPubKey,
                                 cs.Network
                             )
                             |> expectTransactionError

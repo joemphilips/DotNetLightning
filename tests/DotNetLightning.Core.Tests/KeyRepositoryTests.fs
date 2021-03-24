@@ -132,9 +132,9 @@ let tests =
                                           n
             
             let _remoteSigForRemoteCommit, remoteCommitTx2 = remotePrivKeys.SignWithFundingPrivKey remoteCommitTx.Value
-            let localSigForRemoteCommit, commitTx3 = localPrivKeys.SignWithFundingPrivKey remoteCommitTx2
+            let localSigForRemoteCommit, _commitTx3 = localPrivKeys.SignWithFundingPrivKey remoteCommitTx2
             
             let localSigs = seq [(localPubKeys.FundingPubKey.RawPubKey(), TransactionSignature(localSigForRemoteCommit.Signature, SigHash.All))]
-            let finalizedTx = Transactions.checkTxFinalized remoteCommitTx2 0 localSigs |> Result.deref
+            let _finalizedTx = Transactions.checkTxFinalized remoteCommitTx2 0 localSigs |> Result.deref
             ()
     ]

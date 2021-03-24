@@ -14,14 +14,14 @@ let tests =
       let mutable eventWasRaised = false
       let agg: IEventAggregator = ReactiveEventAggregator() :> IEventAggregator
 
-      agg.GetObservable<SampleEvent>() |> Observable.subscribe(fun se -> eventWasRaised <- true) |> ignore
+      agg.GetObservable<SampleEvent>() |> Observable.subscribe(fun _se -> eventWasRaised <- true) |> ignore
       agg.Publish<SampleEvent>({ Status = 1 })
       Expect.isTrue eventWasRaised ""
 
     testCase "Unsubscribe" <| fun _ ->
       let mutable eventWasRaised = false
       let agg = ReactiveEventAggregator() :> IEventAggregator
-      let subscription = agg.GetObservable<SampleEvent>() |> Observable.subscribe(fun se -> eventWasRaised <- true)
+      let subscription = agg.GetObservable<SampleEvent>() |> Observable.subscribe(fun _se -> eventWasRaised <- true)
       subscription.Dispose() |> ignore
       agg.Publish<SampleEvent>({ Status = 1})
       Expect.isFalse eventWasRaised ""
@@ -31,7 +31,8 @@ let tests =
       let agg = ReactiveEventAggregator() :> IEventAggregator
       agg.GetObservable<SampleEvent>()
         |> Observable.filter(fun se -> se.Status = 1)
-        |> Observable.subscribe(fun se -> eventWasRaised <- true)
+        |> Observable.subscribe(fun _se -> eventWasRaised <- true)
+        |> ignore
 
       agg.Publish<SampleEvent>({ Status = 0 })
       Expect.isFalse eventWasRaised ""
