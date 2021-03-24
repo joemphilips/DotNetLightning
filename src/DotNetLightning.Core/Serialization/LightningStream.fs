@@ -326,7 +326,7 @@ type LightningReaderStream(inner: Stream) =
 
     member this.ReadKey(): Key =
         let bytes: array<byte> = this.ReadBytes Key.BytesLength
-        Key bytes
+        new Key(bytes)
 
     member this.ReadPubKey(): PubKey =
         let bytes = this.ReadBytes PubKey.BytesLength
