@@ -11,8 +11,8 @@ let tests =
              (script0: array<byte>)
              (script1: array<byte>)
              (expected: int) =
-        let txOut0 = TxOut(Money amount0, Script script0)
-        let txOut1 = TxOut(Money amount1, Script script1)
+        let txOut0 = TxOut(Money (int64 amount0), Script script0)
+        let txOut1 = TxOut(Money (int64 amount1), Script script1)
         let result = TxOut.LexicographicCompare txOut0 txOut1
         Expect.equal
             result
