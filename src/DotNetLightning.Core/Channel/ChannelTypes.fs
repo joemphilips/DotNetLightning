@@ -52,6 +52,8 @@ type SavedChannelState = {
     ShortChannelId: Option<ShortChannelId>
     LocalCommit: LocalCommit
     RemoteCommit: RemoteCommit
+    LocalChanges: LocalChanges
+    RemoteChanges: RemoteChanges
 } with
     member internal this.HasNoPendingHTLCs (remoteNextCommitInfo: RemoteNextCommitInfo) =
         this.LocalCommit.Spec.OutgoingHTLCs.IsEmpty

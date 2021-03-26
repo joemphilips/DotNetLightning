@@ -101,20 +101,11 @@ type Amounts =
 type Commitments = {
     ProposedLocalChanges: list<IUpdateMsg>
     ProposedRemoteChanges: list<IUpdateMsg>
-    LocalChanges: LocalChanges
-    RemoteChanges: RemoteChanges
     LocalNextHTLCId: HTLCId
     RemoteNextHTLCId: HTLCId
     OriginChannels: Map<HTLCId, HTLCSource>
 }
     with
-        static member LocalChanges_: Lens<_, _> =
-            (fun c -> c.LocalChanges),
-            (fun v c -> { c with LocalChanges = v })
-        static member RemoteChanges_: Lens<_, _> =
-            (fun c -> c.RemoteChanges),
-            (fun v c -> { c with RemoteChanges = v })
-
         member this.AddLocalProposal(proposal: IUpdateMsg) =
             {
                 this with
@@ -129,12 +120,6 @@ type Commitments = {
 
         member this.IncrLocalHTLCId() = { this with LocalNextHTLCId = this.LocalNextHTLCId + 1UL }
         member this.IncrRemoteHTLCId() = { this with RemoteNextHTLCId = this.RemoteNextHTLCId + 1UL }
-
-        member this.LocalHasChanges() =
-            (not this.RemoteChanges.ACKed.IsEmpty) || (not this.ProposedLocalChanges.IsEmpty)
-
-        member this.RemoteHasChanges() =
-            (not this.LocalChanges.ACKed.IsEmpty) || (not this.ProposedRemoteChanges.IsEmpty)
 
         member internal this.LocalHasUnsignedOutgoingHTLCs() =
             this.ProposedLocalChanges |> List.exists(fun p -> match p with | :? UpdateAddHTLCMsg -> true | _ -> false)

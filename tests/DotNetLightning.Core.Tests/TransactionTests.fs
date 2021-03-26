@@ -231,6 +231,8 @@ let testList = testList "transaction tests" [
             ShortChannelId = None
             LocalCommit = remoteLocalCommit
             RemoteCommit = remoteRemoteCommit 
+            LocalChanges = LocalChanges.Zero
+            RemoteChanges = RemoteChanges.Zero
         }
 
         let transactionBuilder =
