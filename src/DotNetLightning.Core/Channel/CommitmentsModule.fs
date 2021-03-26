@@ -283,7 +283,7 @@ module internal Commitments =
                 let! reduced =
                     savedChannelState.LocalCommit.Spec.Reduce(
                         nextCommitments.LocalChanges.ACKed,
-                        nextCommitments.RemoteChanges.Proposed
+                        nextCommitments.ProposedRemoteChanges
                     ) |> expectTransactionError
                 
                 let fees = Transactions.commitTxFee(savedChannelState.StaticChannelConfig.RemoteParams.DustLimitSatoshis) reduced
@@ -371,7 +371,7 @@ module internal Commitments =
             let remoteChannelKeys = savedChannelState.StaticChannelConfig.RemoteChannelPubKeys
             let nextI = savedChannelState.LocalCommit.Index.NextCommitment()
             result {
-                let! spec = savedChannelState.LocalCommit.Spec.Reduce(cm.LocalChanges.ACKed, cm.RemoteChanges.Proposed) |> expectTransactionError
+                let! spec = savedChannelState.LocalCommit.Spec.Reduce(cm.LocalChanges.ACKed, cm.ProposedRemoteChanges) |> expectTransactionError
                 let localPerCommitmentPoint = commitmentSeed.DerivePerCommitmentPoint nextI
                 let! (localCommitTx, htlcTimeoutTxs, htlcSuccessTxs) =
                     Helpers.makeLocalTXs
@@ -457,7 +457,7 @@ module internal Commitments =
                 }
                 let nextCommitments =
                     let ourChanges1 = { cm.LocalChanges with ACKed = []}
-                    let theirChanges1 = { cm.RemoteChanges with Proposed = []; ACKed = (cm.RemoteChanges.ACKed @ cm.RemoteChanges.Proposed) }
+                    let theirChanges1 = { cm.RemoteChanges with ACKed = (cm.RemoteChanges.ACKed @ cm.ProposedRemoteChanges) }
                     let completedOutgoingHTLCs =
                         let t1 = savedChannelState.LocalCommit.Spec.OutgoingHTLCs
                                  |> Map.toSeq |> Seq.map (fun (k, _) -> k) |> Set.ofSeq
@@ -468,6 +468,7 @@ module internal Commitments =
                     {
                         cm with
                             LocalChanges = ourChanges1
+                            ProposedRemoteChanges = []
                             RemoteChanges = theirChanges1
                             OriginChannels = originChannels1
                     }

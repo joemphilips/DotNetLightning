@@ -29,15 +29,12 @@ type LocalChanges = {
             (fun v lc -> { lc with ACKed = v })
 
 type RemoteChanges = { 
-    Proposed: IUpdateMsg list
     Signed: IUpdateMsg list
     ACKed: IUpdateMsg list
 }
     with
-        static member Zero = { Proposed = []; Signed = []; ACKed = [] }
-        static member Proposed_: Lens<_, _> =
-            (fun lc -> lc.Proposed),
-            (fun ps lc -> { lc with Proposed = ps })
+        static member Zero = { Signed = []; ACKed = [] }
+
         static member Signed_: Lens<_, _> =
             (fun lc -> lc.Signed),
             (fun v lc -> { lc with Signed = v })
@@ -103,6 +100,7 @@ type Amounts =
 
 type Commitments = {
     ProposedLocalChanges: list<IUpdateMsg>
+    ProposedRemoteChanges: list<IUpdateMsg>
     LocalChanges: LocalChanges
     RemoteChanges: RemoteChanges
     LocalNextHTLCId: HTLCId
@@ -124,8 +122,10 @@ type Commitments = {
             }
 
         member this.AddRemoteProposal(proposal: IUpdateMsg) =
-            let lens = Commitments.RemoteChanges_ >-> RemoteChanges.Proposed_
-            Optic.map lens (fun proposalList -> proposal :: proposalList) this
+            {
+                this with
+                    ProposedRemoteChanges = proposal :: this.ProposedRemoteChanges
+            }
 
         member this.IncrLocalHTLCId() = { this with LocalNextHTLCId = this.LocalNextHTLCId + 1UL }
         member this.IncrRemoteHTLCId() = { this with RemoteNextHTLCId = this.RemoteNextHTLCId + 1UL }
@@ -134,13 +134,13 @@ type Commitments = {
             (not this.RemoteChanges.ACKed.IsEmpty) || (not this.ProposedLocalChanges.IsEmpty)
 
         member this.RemoteHasChanges() =
-            (not this.LocalChanges.ACKed.IsEmpty) || (not this.RemoteChanges.Proposed.IsEmpty)
+            (not this.LocalChanges.ACKed.IsEmpty) || (not this.ProposedRemoteChanges.IsEmpty)
 
         member internal this.LocalHasUnsignedOutgoingHTLCs() =
             this.ProposedLocalChanges |> List.exists(fun p -> match p with | :? UpdateAddHTLCMsg -> true | _ -> false)
 
         member internal this.RemoteHasUnsignedOutgoingHTLCs() =
-            this.RemoteChanges.Proposed |> List.exists(fun p -> match p with | :? UpdateAddHTLCMsg -> true | _ -> false)
+            this.ProposedRemoteChanges |> List.exists(fun p -> match p with | :? UpdateAddHTLCMsg -> true | _ -> false)
 
 
         static member RemoteCommitAmount (isLocalFunder: bool)

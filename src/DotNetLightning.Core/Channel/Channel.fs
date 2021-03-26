@@ -36,6 +36,7 @@ type ChannelWaitingForFundingSigned = {
             Transactions.checkTxFinalized signedLocalCommitTx CommitTx.WhichInput sigPairs |> expectTransactionError
         let commitments = {
             ProposedLocalChanges = List.empty
+            ProposedRemoteChanges = List.empty
             LocalChanges = LocalChanges.Zero
             RemoteChanges = RemoteChanges.Zero
             LocalNextHTLCId = HTLCId.Zero
@@ -127,6 +128,7 @@ and ChannelWaitingForFundingCreated = {
                 self.FundingSatoshis
         let commitments = {
             ProposedLocalChanges = List.empty
+            ProposedRemoteChanges = List.empty
             LocalChanges = LocalChanges.Zero
             RemoteChanges = RemoteChanges.Zero
             LocalNextHTLCId = HTLCId.Zero
@@ -646,7 +648,7 @@ and Channel = {
         let! reduced =
             self.SavedChannelState.LocalCommit.Spec.Reduce (
                 commitments1.LocalChanges.ACKed,
-                commitments1.RemoteChanges.Proposed
+                commitments1.ProposedRemoteChanges
             ) |> expectTransactionError
         do!
             Validation.checkTheirUpdateAddHTLCIsAcceptableWithCurrentSpec
