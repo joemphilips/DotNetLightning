@@ -120,7 +120,7 @@ module internal Commitments =
                     (savedChannelState: SavedChannelState)
                     (remoteNextCommitInfo: RemoteNextCommitInfo) =
         match savedChannelState.GetIncomingHTLCCrossSigned remoteNextCommitInfo op.Id with
-        | Some htlc when (cm.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
+        | Some htlc when (cm.ProposedLocalChanges |> Helpers.isAlreadySent htlc) ->
             htlc.HTLCId |> htlcAlreadySent
         | Some htlc when (htlc.PaymentHash = op.PaymentPreimage.Hash) ->
             let msgToSend: UpdateFulfillHTLCMsg = {
@@ -158,7 +158,7 @@ module internal Commitments =
                  (savedChannelState: SavedChannelState)
                  (remoteNextCommitInfo: RemoteNextCommitInfo) =
         match savedChannelState.GetIncomingHTLCCrossSigned remoteNextCommitInfo op.Id with
-        | Some htlc when  (cm.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
+        | Some htlc when  (cm.ProposedLocalChanges |> Helpers.isAlreadySent htlc) ->
             htlc.HTLCId |> htlcAlreadySent
         | Some htlc ->
             let ad = htlc.PaymentHash.ToBytes()
@@ -207,7 +207,7 @@ module internal Commitments =
             op.FailureCode |> invalidFailureCode
         else
             match savedChannelState.GetIncomingHTLCCrossSigned remoteNextCommitInfo op.Id with
-            | Some htlc when (cm.LocalChanges.Proposed |> Helpers.isAlreadySent htlc) ->
+            | Some htlc when (cm.ProposedLocalChanges |> Helpers.isAlreadySent htlc) ->
                 htlc.HTLCId |> htlcAlreadySent
             | Some _htlc ->
                 let msg = {
@@ -255,7 +255,7 @@ module internal Commitments =
                 let c1 = cm.AddLocalProposal(fee)
                 result {
                     let! reduced =
-                        savedChannelState.RemoteCommit.Spec.Reduce(c1.RemoteChanges.ACKed, c1.LocalChanges.Proposed) |> expectTransactionError
+                        savedChannelState.RemoteCommit.Spec.Reduce(c1.RemoteChanges.ACKed, c1.ProposedLocalChanges) |> expectTransactionError
                     // A node cannot spend pending incoming htlcs, and need to keep funds above the reserve required by
                     // the counter party, after paying the fee, we look from remote's point of view, so if local is funder
                     // remote doesn't pay the fees.
@@ -304,7 +304,7 @@ module internal Commitments =
         | RemoteNextCommitInfo.Revoked remoteNextPerCommitmentPoint ->
             result {
                 // remote commitment will include all local changes + remote acked changes
-                let! spec = savedChannelState.RemoteCommit.Spec.Reduce(cm.RemoteChanges.ACKed, cm.LocalChanges.Proposed) |> expectTransactionError
+                let! spec = savedChannelState.RemoteCommit.Spec.Reduce(cm.RemoteChanges.ACKed, cm.ProposedLocalChanges) |> expectTransactionError
                 let! (remoteCommitTx, htlcTimeoutTxs, htlcSuccessTxs) =
                     Helpers.makeRemoteTxs savedChannelState.StaticChannelConfig
                                           (savedChannelState.RemoteCommit.Index.NextCommitment())
@@ -336,10 +336,10 @@ module internal Commitments =
                 }
                 let nextCommitments = {
                     cm with
+                        ProposedLocalChanges = []
                         LocalChanges = {
                             cm.LocalChanges with
-                                Proposed = []
-                                Signed = cm.LocalChanges.Proposed
+                                Signed = cm.ProposedLocalChanges
                         }
                         RemoteChanges = {
                             cm.RemoteChanges with
