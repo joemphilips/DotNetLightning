@@ -1,5 +1,6 @@
 namespace DotNetLightning.Channel
 
+open System
 open NBitcoin
 
 open DotNetLightning.Utils
@@ -415,3 +416,83 @@ module internal Commitments =
                               OriginChannels = originChannels1 }
                 return [ WeAcceptedCommitmentSigned(nextMsg, nextCommitments) ;]
             }
+
+module ForceCloseFundsRecovery =
+    // The lightning spec specifies that commitment txs use version 2 bitcoin transactions.
+    [<Literal>]
+    let TxVersionNumberOfCommitmentTxs = 2u
+
+    let private check(thing: bool): Option<unit> =
+        if thing then
+            Some ()
+        else
+            None
+
+    let private tryGetObscuredCommitmentNumber (fundingOutPoint: OutPoint)
+                                               (transaction: Transaction)
+                                                   : Option<ObscuredCommitmentNumber> = option {
+        do! check (transaction.Version = TxVersionNumberOfCommitmentTxs)
+        let! txIn = Seq.tryExactlyOne transaction.Inputs
+        do! check (fundingOutPoint = txIn.PrevOut)
+        let! obscuredCommitmentNumber =
+            ObscuredCommitmentNumber.TryFromLockTimeAndSequence transaction.LockTime txIn.Sequence
+        return obscuredCommitmentNumber
+    }
+
+    let tryGetFundsFromLocalCommitmentTx (localParams: LocalParams)
+                                         (remoteParams: RemoteParams)
+                                         (fundingScriptCoin: ScriptCoin)
+                                         (localChannelPrivKeys: ChannelPrivKeys)
+                                         (network: Network)
+                                         (transaction: Transaction)
+                                             : Option<TransactionBuilder> = option {
+        let! obscuredCommitmentNumber =
+            tryGetObscuredCommitmentNumber
+                fundingScriptCoin.Outpoint
+                transaction
+        let localChannelPubKeys = localParams.ChannelPubKeys
+        let remoteChannelPubKeys = remoteParams.ChannelPubKeys
+        let commitmentNumber =
+            obscuredCommitmentNumber.Unobscure
+                localParams.IsFunder
+                localChannelPubKeys.PaymentBasepoint
+                remoteChannelPubKeys.PaymentBasepoint
+
+        let perCommitmentPoint =
+            localChannelPrivKeys.CommitmentSeed.DerivePerCommitmentPoint commitmentNumber
+        let localCommitmentPubKeys =
+            perCommitmentPoint.DeriveCommitmentPubKeys localChannelPubKeys
+        let remoteCommitmentPubKeys =
+            perCommitmentPoint.DeriveCommitmentPubKeys remoteChannelPubKeys
+
+        let transactionBuilder = network.CreateTransactionBuilder()
+
+        let toLocalScriptPubKey =
+            Scripts.toLocalDelayed
+                remoteCommitmentPubKeys.RevocationPubKey
+                localParams.ToSelfDelay
+                localCommitmentPubKeys.DelayedPaymentPubKey
+        let! toLocalIndex =
+            let toLocalWitScriptPubKey = toLocalScriptPubKey.WitHash.ScriptPubKey
+            Seq.tryFindIndex
+                (fun (txOut: TxOut) -> txOut.ScriptPubKey = toLocalWitScriptPubKey)
+                transaction.Outputs
+
+        let delayedPaymentPrivKey =
+            perCommitmentPoint.DeriveDelayedPaymentPrivKey
+                localChannelPrivKeys.DelayedPaymentBasepointSecret
+
+        transactionBuilder
+            .SetVersion(TxVersionNumberOfCommitmentTxs)
+            .Extensions.Add(CommitmentToLocalExtension())
+        return
+            transactionBuilder
+                .AddKeys(delayedPaymentPrivKey.RawKey())
+                .AddCoin(
+                    ScriptCoin(transaction, uint32 toLocalIndex, toLocalScriptPubKey),
+                    CoinOptions(
+                        Sequence = (Nullable <| Sequence(uint32 localParams.ToSelfDelay.Value))
+                    )
+                )
+    }
+

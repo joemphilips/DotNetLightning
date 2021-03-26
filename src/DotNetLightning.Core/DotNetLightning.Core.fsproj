@@ -31,6 +31,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Utils/SeqParser.fs" />
     <Compile Include="Utils/LNMoney.fs" />
     <Compile Include="Utils\Extensions.fs" />
     <Compile Include="Utils/UInt48.fs" />
@@ -72,6 +73,7 @@
     <Compile Include="Peer\PeerChannelEncryptor.fs" />
     <Compile Include="Peer\PeerTypes.fs" />
     <Compile Include="Peer\Peer.fs" />
+    <Compile Include="Channel\CommitmentToLocalExtension.fs" />
     <Compile Include="Channel\HTLCChannelType.fs" />
     <Compile Include="Channel\ChannelConstants.fs" />
     <Compile Include="Channel\ChannelOperations.fs" />
