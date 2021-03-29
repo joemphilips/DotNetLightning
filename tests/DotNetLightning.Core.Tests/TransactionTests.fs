@@ -121,6 +121,7 @@ let testList = testList "transaction tests" [
                 localChannelPrivKeys
                 Network.RegTest
                 commitmentTx
+        Expect.isSome transactionBuilderOpt "failed to create recovery tx"
         let transactionBuilder = transactionBuilderOpt.Value
 
         let recoveryTransaction =
@@ -203,6 +204,7 @@ let testList = testList "transaction tests" [
                 remoteChannelPrivKeys
                 Network.RegTest
                 commitmentTx
+        Expect.isSome transactionBuilderOpt "failed to create recovery tx"
         let transactionBuilder = transactionBuilderOpt.Value
 
         let recoveryTransaction =
