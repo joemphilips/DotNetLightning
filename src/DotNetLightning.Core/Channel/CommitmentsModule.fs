@@ -439,6 +439,66 @@ module ForceCloseFundsRecovery =
         return obscuredCommitmentNumber
     }
 
+    /// This function returns a TransactionBuilder with the necessary inputs
+    /// added to the transaction to reclaim the funds from the supplied
+    /// commitment transaction. It is the caller's responsibility to add outputs
+    /// and fees to the TransactionBuilder before building the transaction.
+    let tryGetFundsFromRemoteCommitmentTx (localParams: LocalParams)
+                                          (remoteParams: RemoteParams)
+                                          (fundingScriptCoin: ScriptCoin)
+                                          (remotePerCommitmentSecrets: PerCommitmentSecretStore)
+                                          (remoteCommit: RemoteCommit)
+                                          (localChannelPrivKeys: ChannelPrivKeys)
+                                          (network: Network)
+                                          (transaction: Transaction)
+                                              : Option<TransactionBuilder> = option {
+        let! obscuredCommitmentNumber =
+            tryGetObscuredCommitmentNumber
+                fundingScriptCoin.Outpoint
+                transaction
+        let localChannelPubKeys = localParams.ChannelPubKeys
+        let remoteChannelPubKeys = remoteParams.ChannelPubKeys
+        let commitmentNumber =
+            obscuredCommitmentNumber.Unobscure
+                localParams.IsFunder
+                localChannelPubKeys.PaymentBasepoint
+                remoteChannelPubKeys.PaymentBasepoint
+        let perCommitmentSecretOpt =
+            remotePerCommitmentSecrets.GetPerCommitmentSecret commitmentNumber
+        let! perCommitmentPoint =
+            match perCommitmentSecretOpt with
+            | Some perCommitmentSecret -> Some <| perCommitmentSecret.PerCommitmentPoint()
+            | None ->
+                if remoteCommit.Index = commitmentNumber then
+                    Some remoteCommit.RemotePerCommitmentPoint
+                else
+                    None
+
+        let localCommitmentPubKeys =
+            perCommitmentPoint.DeriveCommitmentPubKeys localChannelPubKeys
+
+        let toRemoteScriptPubKey =
+            localCommitmentPubKeys.PaymentPubKey.RawPubKey().WitHash.ScriptPubKey
+        let! toRemoteIndex =
+            Seq.tryFindIndex
+                (fun (txOut: TxOut) -> txOut.ScriptPubKey = toRemoteScriptPubKey)
+                transaction.Outputs
+        let localPaymentPrivKey =
+            perCommitmentPoint.DerivePaymentPrivKey
+                localChannelPrivKeys.PaymentBasepointSecret
+
+        return
+            network
+                .CreateTransactionBuilder()
+                .SetVersion(TxVersionNumberOfCommitmentTxs)
+                .AddKeys(localPaymentPrivKey.RawKey())
+                .AddCoins(Coin(transaction, uint32 toRemoteIndex))
+    }
+
+    /// This function returns a TransactionBuilder with the necessary inputs
+    /// added to the transaction to reclaim the funds from the supplied
+    /// commitment transaction. It is the caller's responsibility to add outputs
+    /// and fees to the TransactionBuilder before building the transaction.
     let tryGetFundsFromLocalCommitmentTx (localParams: LocalParams)
                                          (remoteParams: RemoteParams)
                                          (fundingScriptCoin: ScriptCoin)
