@@ -439,6 +439,10 @@ module ForceCloseFundsRecovery =
         return obscuredCommitmentNumber
     }
 
+    /// This function returns a TransactionBuilder with the necessary inputs
+    /// added to the transaction to reclaim the funds from the supplied
+    /// commitment transaction. It is the caller's responsibility to add outputs
+    /// and fees to the TransactionBuilder before building the transaction.
     let tryGetFundsFromRemoteCommitmentTx (localParams: LocalParams)
                                           (remoteParams: RemoteParams)
                                           (fundingScriptCoin: ScriptCoin)
@@ -491,6 +495,10 @@ module ForceCloseFundsRecovery =
                 .AddCoins(Coin(transaction, uint32 toRemoteIndex))
     }
 
+    /// This function returns a TransactionBuilder with the necessary inputs
+    /// added to the transaction to reclaim the funds from the supplied
+    /// commitment transaction. It is the caller's responsibility to add outputs
+    /// and fees to the TransactionBuilder before building the transaction.
     let tryGetFundsFromLocalCommitmentTx (localParams: LocalParams)
                                          (remoteParams: RemoteParams)
                                          (fundingScriptCoin: ScriptCoin)
