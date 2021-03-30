@@ -6,7 +6,7 @@ on:
 
 jobs:
   create_release:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       # workaround for upload-release-asset does not support variable expansion.
       # see: https://github.com/actions/upload-release-asset/issues/17
@@ -42,9 +42,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04, macos-latest, windows-latest]
+        os: [ubuntu-20.04, macos-latest, windows-latest]
         include:
-          - os: ubuntu-18.04
+          - os: ubuntu-20.04
             RID: linux
           - os: macos-latest
             RID: osx
@@ -71,7 +71,7 @@ jobs:
 
       - name: pack and push to nuget (BouncyCastle)
         # we want to run only once.
-        if: startsWith(matrix.os, 'ubuntu-18')
+        if: startsWith(matrix.os, 'ubuntu-20')
         run: |
           echo "releasing BouncyCastle version to nuget..."
           dotnet pack -p:Configuration=Release src/DotNetLightning.Core -p:BouncyCastle=True
@@ -81,7 +81,7 @@ jobs:
 
       - name: upload release asset (BouncyCastle version)
         # we want to run only once.
-        if: startsWith(matrix.os, 'ubuntu-18')
+        if: startsWith(matrix.os, 'ubuntu-20')
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
