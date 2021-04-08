@@ -219,6 +219,42 @@ let testList = testList "transaction tests" [
             commitmentTx.Outputs.[input.PrevOut.N].Value
         Expect.equal actualAmount expectedAmount "wrong prevout amount"
 
+        let transactionBuilder =
+            ForceCloseFundsRecovery.createPenaltyTx
+                remoteLocalParams
+                remoteRemoteParams
+                perCommitmentSecret
+                remoteRemoteCommit
+                remoteChannelPrivKeys
+                Network.RegTest
+        let penaltyTransaction =
+            transactionBuilder
+                .SendAll(remoteDestPubKey)
+                .BuildTransaction(true)
+        let inputs = penaltyTransaction.Inputs
+        Expect.equal inputs.Count 2 "wrong number of inputs"
+        Expect.equal inputs.[0].PrevOut.Hash (commitmentTx.GetHash()) "wrong prevout hash on input 0"
+        Expect.equal inputs.[1].PrevOut.Hash (commitmentTx.GetHash()) "wrong prevout hash on input 1"
+
+        let expectedAmountFromToLocal =
+            let localAmount = commitmentSpec.ToLocal.ToMoney()
+            let fee = commitmentTx.GetFee [| fundingScriptCoin |]
+            localAmount - fee
+        let expectedAmountFromToRemote =
+            commitmentSpec.ToRemote.ToMoney()
+
+        let actualAmount0 =
+            commitmentTx.Outputs.[inputs.[0].PrevOut.N].Value
+        let actualAmount1 =
+            commitmentTx.Outputs.[inputs.[1].PrevOut.N].Value
+
+        if actualAmount0 = expectedAmountFromToLocal then
+            Expect.equal actualAmount1 expectedAmountFromToRemote "wrong prevout amount for to_remote"
+        elif actualAmount0 = expectedAmountFromToRemote then
+            Expect.equal actualAmount1 expectedAmountFromToLocal "wrong prevout amount for to_local"
+        else
+            failwith "amount of input 0 does not match either expected amount"
+
     (*
     testCase "check pre-computed transaction weights" <| fun _ ->
         let localPaymentPriv = [| for _ in 0..31 -> 0xdduy |] |> fun b -> new Key(b)
