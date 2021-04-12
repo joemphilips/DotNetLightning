@@ -5,6 +5,7 @@ open NBitcoin
 
 open DotNetLightning.Utils
 open DotNetLightning.Transactions
+open DotNetLightning.Transactions.Transactions
 open DotNetLightning.Crypto
 open DotNetLightning.Chain
 open DotNetLightning.Serialization.Msgs
@@ -466,6 +467,121 @@ module ForceCloseFundsRecovery =
         | Some obscuredCommitmentNumber ->
             return obscuredCommitmentNumber
     }
+
+    let createPenaltyTx (localParams: LocalParams)
+                        (remoteParams: RemoteParams)
+                        (perCommitmentSecret: PerCommitmentSecret)
+                        (remoteCommit: RemoteCommit)
+                        (localChannelPrivKeys: ChannelPrivKeys)
+                        (network: Network) 
+                            : TransactionBuilder =
+        let localChannelPubKeys = localParams.ChannelPubKeys
+        let remoteChannelPubKeys = remoteParams.ChannelPubKeys
+
+        let perCommitmentPoint = perCommitmentSecret.PerCommitmentPoint()
+
+        let localCommitmentPubKeys =
+            perCommitmentPoint.DeriveCommitmentPubKeys localChannelPubKeys
+
+        let remoteCommitmentPubKeys =
+            perCommitmentPoint.DeriveCommitmentPubKeys remoteChannelPubKeys
+
+        let transactionBuilder = createTransactionBuilder network
+
+        let toRemoteScriptPubKey =
+            localCommitmentPubKeys
+                .PaymentPubKey
+                .RawPubKey()
+                .WitHash.ScriptPubKey
+
+        let toLocalScriptPubKey =
+            Scripts.toLocalDelayed
+                localCommitmentPubKeys.RevocationPubKey
+                remoteParams.ToSelfDelay
+                remoteCommitmentPubKeys.DelayedPaymentPubKey
+
+        let toLocalWitScriptPubKey = toLocalScriptPubKey.WitHash.ScriptPubKey
+
+        let commitFee =
+            commitTxFee 
+                remoteParams.DustLimitSatoshis 
+                remoteCommit.Spec
+
+        let (toLocalAmount, toRemoteAmount) =
+            if (localParams.IsFunder) then
+                (remoteCommit.Spec.ToLocal.Satoshi
+                 |> Money.Satoshis),
+                (remoteCommit.Spec.ToRemote.Satoshi
+                 |> Money.Satoshis) - commitFee
+            else
+                (remoteCommit.Spec.ToLocal.Satoshi
+                 |> Money.Satoshis) - commitFee,
+                (remoteCommit.Spec.ToRemote.Satoshi
+                 |> Money.Satoshis)
+
+        let toLocalTxOut = 
+            TxOut(toLocalAmount, toLocalWitScriptPubKey)
+        let toRemoteTxOut = 
+            TxOut(toRemoteAmount, toRemoteScriptPubKey)
+
+        let outputs = 
+            seq {
+                if toLocalAmount > remoteParams.DustLimitSatoshis then
+                    yield toLocalTxOut
+
+                if toRemoteAmount > remoteParams.DustLimitSatoshis then
+                    yield toRemoteTxOut
+            }
+            |> Seq.sortWith TxOut.LexicographicCompare
+
+        let toRemoteIndexOpt =
+            outputs
+            |> Seq.tryFindIndex (fun out -> out.ScriptPubKey = toRemoteScriptPubKey)
+
+        toRemoteIndexOpt
+        |> Option.iter(fun toRemoteIndex ->
+            let localPaymentPrivKey =
+                perCommitmentPoint.DerivePaymentPrivKey localChannelPrivKeys.PaymentBasepointSecret
+
+            transactionBuilder
+                .AddKeys(localPaymentPrivKey.RawKey())
+                .AddCoins(
+                    Coin(
+                        remoteCommit.TxId.Value,
+                        toRemoteIndex |> uint32,
+                        toRemoteTxOut.Value,
+                        toRemoteTxOut.ScriptPubKey
+                    )
+                )
+            |> ignore
+        )
+
+        let toLocalIndexOpt =
+            outputs
+            |> Seq.tryFindIndex (fun out -> out.ScriptPubKey = toLocalWitScriptPubKey)
+
+        toLocalIndexOpt
+        |> Option.iter(fun toLocalIndex ->
+            let revocationPrivKey =
+                perCommitmentSecret.DeriveRevocationPrivKey
+                    localChannelPrivKeys.RevocationBasepointSecret
+
+            transactionBuilder.Extensions.Add(CommitmentToLocalExtension())
+            transactionBuilder
+                .AddKeys(revocationPrivKey.RawKey())
+                .AddCoins(
+                    ScriptCoin(
+                        remoteCommit.TxId.Value,
+                        toLocalIndex |> uint32,
+                        toLocalTxOut.Value,
+                        toLocalWitScriptPubKey,
+                        toLocalScriptPubKey
+                    )
+                )
+            |> ignore
+        )
+
+        transactionBuilder
 
     type RemoteCommitmentTxRecoveryError =
         | InvalidCommitmentTx of ValidateCommitmentTxError

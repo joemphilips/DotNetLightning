@@ -10,6 +10,7 @@ open ResultUtils
 open ResultUtils.Portability
 
 type CommitmentToLocalParameters = {
+    RevocationPubKey: RevocationPubKey
     ToSelfDelay: BlockHeightOffset16
     LocalDelayedPubKey: DelayedPaymentPubKey
 }
@@ -33,7 +34,7 @@ type CommitmentToLocalParameters = {
             SeqParser.parseToCompletion ops <| seqParser {
                 do! checkOpCode OpcodeType.OP_IF
                 let! opRevocationPubKey = SeqParser.next()
-                let! _revocationPubKey = seqParser {
+                let! revocationPubKey = seqParser {
                     match opRevocationPubKey.PushData with
                     | null -> return! SeqParser.abort()
                     | bytes ->
@@ -69,6 +70,7 @@ type CommitmentToLocalParameters = {
                 do! checkOpCode OpcodeType.OP_ENDIF
                 do! checkOpCode OpcodeType.OP_CHECKSIG
                 return {
+                    RevocationPubKey = revocationPubKey
                     ToSelfDelay = toSelfDelay
                     LocalDelayedPubKey = localDelayedPubKey
                 }
@@ -96,6 +98,12 @@ type internal CommitmentToLocalExtension() =
             // could not be generated.
             match pubKey with
             | null -> null
+            | _ when pubKey = parameters.RevocationPubKey.RawPubKey() ->
+                let revocationSig = signer.Sign (parameters.RevocationPubKey.RawPubKey())
+                Script [
+                    Op.GetPushOp (revocationSig.ToBytes())
+                    Op.op_Implicit OpcodeType.OP_TRUE
+                ]
             | _ when pubKey = parameters.LocalDelayedPubKey.RawPubKey() ->
                 let localDelayedSig = signer.Sign (parameters.LocalDelayedPubKey.RawPubKey())
                 Script [
@@ -125,6 +133,8 @@ type internal CommitmentToLocalExtension() =
         override self.IsCompatibleKey(pubKey: PubKey, scriptPubKey: Script): bool =
             match CommitmentToLocalParameters.TryExtractParameters scriptPubKey with
             | None -> false
-            | Some parameters -> parameters.LocalDelayedPubKey.RawPubKey() = pubKey
+            | Some parameters ->
+                parameters.RevocationPubKey.RawPubKey() = pubKey
+                || parameters.LocalDelayedPubKey.RawPubKey() = pubKey
 
 

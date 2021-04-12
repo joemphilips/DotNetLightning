@@ -300,7 +300,7 @@ module Transactions =
         [<Literal>]
         let OFFERED_HTLC_SCRIPT_WEIGHT = 133uy
 
-    let private createTransactionBuilder (network: Network) =
+    let internal createTransactionBuilder (network: Network) =
         let txb = network.CreateTransactionBuilder()
         txb.ShuffleOutputs <- false
         txb.ShuffleInputs <- false
