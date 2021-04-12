@@ -1,10 +1,10 @@
-## DotNetLightning: The utility for working with the Bitcoin Lightning Network (LN) in C#, F#
+## DotNetLightning: The utility to work with the Bitcoin Lightning Network (LN) in .NET
 
-The main entry point is `DotNetLightning.Core`.
+The main API is in `DotNetLightning.Core` project/assembly.
 
 ## Installation
 
-The package is compiled and published with two variants
+The package is compiled and published with two variants:
 
 * [`DotNetLightning`](https://www.nuget.org/packages/DotNetLightning/)
   * This does not use native bindings for cryptographic operations.
@@ -14,7 +14,8 @@ The package is compiled and published with two variants
   * It only supports `windows`, `mac` and `linux` environments.
   * This is what you want if you need performance and the environments above are the only ones you are planning to support.
 
-run `dotnet add package` with the one you want.
+Run `dotnet add package` with the one you want.
+
 Currently it is in alpha, so you probably want to install a latest version by specifying it with `--version`.
 The version is prefixed with git commit hash and date. Please take a look at the nuget page.
 
@@ -36,56 +37,55 @@ Contains items for wire-protocol. FeatureBits, TLV, and P2P messages.
 
 Contains modules and types for working with Cryptographic operations.
 For example LN-onion network encoding, [aezeed](https://github.com/lightningnetwork/lnd/tree/master/aezeed) for seed
-backups
+backups.
 
 #### `DotNetLightning.Chain`
 
-Interface to inject I/O (e.g. Signing key and Blockchain-interaction)
+Interface to inject I/O (e.g. signing keys and Blockchain-interaction).
 
 #### `DotNetLightning.Transactions`
 
-This is a module for creating LN-specific Transactions. Mostly for internal usage.
+This is a module for creating LN-specific transactions. Mostly for internal usage.
 
 #### `DotNetLightning.Peer`
 
-Handles handshake and encryption against other peers
+Handles handshake and encryption against other peers.
 
 ####  `DotNetLightning.Channel`
 
 Handles channel state.
-This module is pretty much WIP. not sure if we can finish. (This is the most complex part in the LN protocol.)
+This module is pretty much WIP (not sure when it will be finished, as this is the most complex part in the LN protocol).
 
 #### `DotNetLightning.Payment`
 
-Contains primitives for Payment-related operation. The most important class is `PaymentRequest`,
-a.k.a bolt11-invoice, LN-invoice.
+Contains primitives for Payment-related operations. The most important class is `PaymentRequest`,
+a.k.a. bolt11-invoice, LN-invoice.
 
 It also contains primitives for [LSAT](https://github.com/lightninglabs/LSATI), the LN based http authentication mechanism.
 See [here](https://github.com/joemphilips/LSATAuthentication) for PoC of AspNetCore middleware for LSAT.
 
 #### `DotNetLightning.Routing`
 
-Module for calculating payment route. This is still much WIP.
+Module for calculating payment routes. (Very WIP.)
 
 ### Other features
 
-Some sibling packages come together when you install `DotNetLightning` or `DotNetLightning.Core`
-These are mostly for internal usages but some might be useful for you.
+Some sibling assemblies come together when you install `DotNetLightning` or `DotNetLightning.Core`. These are mostly for internal usages but some might be useful for you:
 
 #### `AEZ`
 
-which contains managed code for aez cipher scheme.
+Which contains managed code for aez cipher scheme.
 
 It may be useful if you want to secure your data before saving it to disk.
-See official page for the detail: https://www.cs.ucdavis.edu/~rogaway/aez/index.html
+See official page for more details: https://www.cs.ucdavis.edu/~rogaway/aez/index.html
 
 #### `Macaroon`
 
 Which contains macaroon authentication token.
 
-The api is mostly the same with [libmacaroon](https://github.com/rescrv/libmacaroons) See libmacaroon's readme for the
-usage.
+The API is mostly the same as [libmacaroon](https://github.com/rescrv/libmacaroons) (see libmacaroon's readme for the
+usage).
 
-Currently it is only supported in BouncyCastle build (which means not in `DotNetLightning.Core),
-see https://github.com/joemphilips/DotNetLightning/issues/153 For the detail.
+(Currently it is only supported in BouncyCastle build (which means not in `DotNetLightning.Core`),
+see https://github.com/joemphilips/DotNetLightning/issues/153 for more info.)
 
