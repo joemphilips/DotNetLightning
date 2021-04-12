@@ -2,6 +2,7 @@ module TransactionTests
 
 open System
 open ResultUtils
+open ResultUtils.Portability
 
 open DotNetLightning.Transactions
 open DotNetLightning.Transactions.Transactions
@@ -113,7 +114,7 @@ let testList = testList "transaction tests" [
                 .Finalize()
                 .ExtractTransaction()
 
-        let transactionBuilderOpt =
+        let transactionBuilder =
             ForceCloseFundsRecovery.tryGetFundsFromLocalCommitmentTx
                 localParams
                 remoteParams
@@ -121,8 +122,7 @@ let testList = testList "transaction tests" [
                 localChannelPrivKeys
                 Network.RegTest
                 commitmentTx
-        Expect.isSome transactionBuilderOpt "failed to create recovery tx"
-        let transactionBuilder = transactionBuilderOpt.Value
+            |> Result.deref
 
         let recoveryTransaction =
             transactionBuilder
@@ -194,7 +194,7 @@ let testList = testList "transaction tests" [
             MinimumDepth = 6u |> BlockHeightOffset32
         }
 
-        let transactionBuilderOpt =
+        let transactionBuilder =
             ForceCloseFundsRecovery.tryGetFundsFromRemoteCommitmentTx
                 remoteLocalParams
                 remoteRemoteParams
@@ -204,8 +204,7 @@ let testList = testList "transaction tests" [
                 remoteChannelPrivKeys
                 Network.RegTest
                 commitmentTx
-        Expect.isSome transactionBuilderOpt "failed to create recovery tx"
-        let transactionBuilder = transactionBuilderOpt.Value
+            |> Result.deref
 
         let recoveryTransaction =
             transactionBuilder

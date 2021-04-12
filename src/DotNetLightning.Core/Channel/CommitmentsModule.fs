@@ -422,22 +422,63 @@ module ForceCloseFundsRecovery =
     [<Literal>]
     let TxVersionNumberOfCommitmentTxs = 2u
 
-    let private check(thing: bool): Option<unit> =
-        if thing then
-            Some ()
-        else
-            None
+    type ValidateCommitmentTxError =
+        | InvalidTxVersionForCommitmentTx of uint32
+        | TxHasNoInputs
+        | TxHasMultipleInputs of int
+        | DoesNotSpendChannelFunds of OutPoint
+        | InvalidLockTimeAndSequenceForCommitmentTx of LockTime * Sequence
+        member this.Message: string =
+            match this with
+            | InvalidTxVersionForCommitmentTx version ->
+                sprintf "invalid tx version for commitment tx (%i)" version
+            | TxHasNoInputs ->
+                "tx has no inputs"
+            | TxHasMultipleInputs n ->
+                sprintf "tx has multiple inputs (%i)" n
+            | DoesNotSpendChannelFunds outPoint ->
+                sprintf
+                    "tx does not spend from the channel funds but spends from a different \
+                    outpoint (%s)"
+                    (outPoint.ToString())
+            | InvalidLockTimeAndSequenceForCommitmentTx(lockTime, sequence) ->
+                sprintf
+                    "invalid lock time and sequence for commitment tx \
+                    (locktime = %s, sequence = %s)"
+                    (lockTime.ToString())
+                    (sequence.ToString())
 
     let private tryGetObscuredCommitmentNumber (fundingOutPoint: OutPoint)
                                                (transaction: Transaction)
-                                                   : Option<ObscuredCommitmentNumber> = option {
-        do! check (transaction.Version = TxVersionNumberOfCommitmentTxs)
-        let! txIn = Seq.tryExactlyOne transaction.Inputs
-        do! check (fundingOutPoint = txIn.PrevOut)
-        let! obscuredCommitmentNumber =
-            ObscuredCommitmentNumber.TryFromLockTimeAndSequence transaction.LockTime txIn.Sequence
-        return obscuredCommitmentNumber
+                                                   : Result<ObscuredCommitmentNumber, ValidateCommitmentTxError> = result {
+        if transaction.Version <> TxVersionNumberOfCommitmentTxs then
+            return! Error <| InvalidTxVersionForCommitmentTx transaction.Version
+        if transaction.Inputs.Count = 0 then
+            return! Error <| TxHasNoInputs
+        if transaction.Inputs.Count > 1 then
+            return! Error <| TxHasMultipleInputs transaction.Inputs.Count
+        let txIn = Seq.exactlyOne transaction.Inputs
+        if fundingOutPoint <> txIn.PrevOut then
+            return! Error <| DoesNotSpendChannelFunds txIn.PrevOut
+        match ObscuredCommitmentNumber.TryFromLockTimeAndSequence transaction.LockTime txIn.Sequence with
+        | None ->
+            return! Error <| InvalidLockTimeAndSequenceForCommitmentTx(transaction.LockTime, txIn.Sequence)
+        | Some obscuredCommitmentNumber ->
+            return obscuredCommitmentNumber
     }
+
+    type RemoteCommitmentTxRecoveryError =
+        | InvalidCommitmentTx of ValidateCommitmentTxError
+        | CommitmentNumberFromTheFuture of CommitmentNumber
+        | BalanceBelowDustLimit
+        member this.Message: string =
+            match this with
+            | InvalidCommitmentTx validateCommitmentTxError ->
+                sprintf "invalid commitment tx: %s" (validateCommitmentTxError.Message)
+            | CommitmentNumberFromTheFuture commitmentNumber ->
+                sprintf "commitment number from the future (%s)" (commitmentNumber.ToString())
+            | BalanceBelowDustLimit ->
+                "balance below dust limit"
 
     /// This function returns a TransactionBuilder with the necessary inputs
     /// added to the transaction to reclaim the funds from the supplied
@@ -451,11 +492,12 @@ module ForceCloseFundsRecovery =
                                           (localChannelPrivKeys: ChannelPrivKeys)
                                           (network: Network)
                                           (transaction: Transaction)
-                                              : Option<TransactionBuilder> = option {
+                                              : Result<TransactionBuilder, RemoteCommitmentTxRecoveryError> = result {
         let! obscuredCommitmentNumber =
             tryGetObscuredCommitmentNumber
                 fundingScriptCoin.Outpoint
                 transaction
+            |> Result.mapError InvalidCommitmentTx
         let localChannelPubKeys = localParams.ChannelPubKeys
         let remoteChannelPubKeys = remoteParams.ChannelPubKeys
         let commitmentNumber =
@@ -467,22 +509,26 @@ module ForceCloseFundsRecovery =
             remotePerCommitmentSecrets.GetPerCommitmentSecret commitmentNumber
         let! perCommitmentPoint =
             match perCommitmentSecretOpt with
-            | Some perCommitmentSecret -> Some <| perCommitmentSecret.PerCommitmentPoint()
+            | Some perCommitmentSecret -> Ok <| perCommitmentSecret.PerCommitmentPoint()
             | None ->
                 if remoteCommit.Index = commitmentNumber then
-                    Some remoteCommit.RemotePerCommitmentPoint
+                    Ok <| remoteCommit.RemotePerCommitmentPoint
                 else
-                    None
+                    Error <| CommitmentNumberFromTheFuture commitmentNumber
 
         let localCommitmentPubKeys =
             perCommitmentPoint.DeriveCommitmentPubKeys localChannelPubKeys
 
         let toRemoteScriptPubKey =
             localCommitmentPubKeys.PaymentPubKey.RawPubKey().WitHash.ScriptPubKey
-        let! toRemoteIndex =
+        let toRemoteIndexOpt =
             Seq.tryFindIndex
                 (fun (txOut: TxOut) -> txOut.ScriptPubKey = toRemoteScriptPubKey)
                 transaction.Outputs
+        let! toRemoteIndex =
+            match toRemoteIndexOpt with
+            | Some toRemoteIndex -> Ok toRemoteIndex
+            | None -> Error BalanceBelowDustLimit
         let localPaymentPrivKey =
             perCommitmentPoint.DerivePaymentPrivKey
                 localChannelPrivKeys.PaymentBasepointSecret
@@ -495,6 +541,16 @@ module ForceCloseFundsRecovery =
                 .AddCoins(Coin(transaction, uint32 toRemoteIndex))
     }
 
+    type LocalCommitmentTxRecoveryError =
+        | InvalidCommitmentTx of ValidateCommitmentTxError
+        | BalanceBelowDustLimit
+        member this.Message: string =
+            match this with
+            | InvalidCommitmentTx validateCommitmentTxError ->
+                sprintf "invalid commitment tx: %s" (validateCommitmentTxError.Message)
+            | BalanceBelowDustLimit ->
+                "balance below dust limit"
+
     /// This function returns a TransactionBuilder with the necessary inputs
     /// added to the transaction to reclaim the funds from the supplied
     /// commitment transaction. It is the caller's responsibility to add outputs
@@ -505,11 +561,12 @@ module ForceCloseFundsRecovery =
                                          (localChannelPrivKeys: ChannelPrivKeys)
                                          (network: Network)
                                          (transaction: Transaction)
-                                             : Option<TransactionBuilder> = option {
+                                             : Result<TransactionBuilder, LocalCommitmentTxRecoveryError> = result {
         let! obscuredCommitmentNumber =
             tryGetObscuredCommitmentNumber
                 fundingScriptCoin.Outpoint
                 transaction
+            |> Result.mapError InvalidCommitmentTx
         let localChannelPubKeys = localParams.ChannelPubKeys
         let remoteChannelPubKeys = remoteParams.ChannelPubKeys
         let commitmentNumber =
@@ -532,11 +589,15 @@ module ForceCloseFundsRecovery =
                 remoteCommitmentPubKeys.RevocationPubKey
                 localParams.ToSelfDelay
                 localCommitmentPubKeys.DelayedPaymentPubKey
-        let! toLocalIndex =
+        let toLocalIndexOpt =
             let toLocalWitScriptPubKey = toLocalScriptPubKey.WitHash.ScriptPubKey
             Seq.tryFindIndex
                 (fun (txOut: TxOut) -> txOut.ScriptPubKey = toLocalWitScriptPubKey)
                 transaction.Outputs
+        let! toLocalIndex =
+            match toLocalIndexOpt with
+            | Some toLocalIndex -> Ok toLocalIndex
+            | None -> Error BalanceBelowDustLimit
 
         let delayedPaymentPrivKey =
             perCommitmentPoint.DeriveDelayedPaymentPrivKey
