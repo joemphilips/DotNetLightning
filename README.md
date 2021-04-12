@@ -13,7 +13,7 @@ The package is compiled and published with two variants
   * This uses a pre-compiled `libsodium` for cryptographic operations.
   * It only supports `windows`, `mac` and `linux` environments.
   * This is what you want if you need performance and the environments above are the only ones you are planning to support.
-  
+
 run `dotnet add package` with the one you want.
 Currently it is in alpha, so you probably want to install a latest version by specifying it with `--version`.
 The version is prefixed with git commit hash and date. Please take a look at the nuget page.
@@ -85,4 +85,7 @@ Which contains macaroon authentication token.
 
 The api is mostly the same with [libmacaroon](https://github.com/rescrv/libmacaroons) See libmacaroon's readme for the
 usage.
+
+Currently it is only supported in BouncyCastle build (which means not in `DotNetLightning.Core),
+see https://github.com/joemphilips/DotNetLightning/issues/153 For the detail.
 

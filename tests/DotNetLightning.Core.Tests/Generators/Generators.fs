@@ -16,12 +16,12 @@ type PrimitiveGenerators =
 
     static member UInt256(): Arbitrary<uint256> =
         Arb.fromGen(uint256Gen)
-        
+
     static member PubKey() = Arb.fromGen(pubKeyGen)
-    
+
     static member NodeId() = Arb.fromGen(NodeId <!> pubKeyGen)
-    
-    
+
+
 type P2PMsgGenerators =
     static member Init() : Arbitrary<InitMsg> =
         Arb.fromGen(initGen)
@@ -97,15 +97,15 @@ type P2PMsgGenerators =
 
     static member ChannelUpdate(): Arbitrary<ChannelUpdateMsg> =
         Arb.fromGen channelUpdateGen
-        
+
     static member QueryShortChannelIds(): Arbitrary<QueryShortChannelIdsMsg> =
         Arb.fromGen queryShortChannelIdsGen
 
     static member ReplyShortChannelIds() =
         Arb.fromGen(replyShortChannelIdsEndGen)
-        
+
     static member QueryChannelRange() = Arb.fromGen queryChannelRangeGen
-    
+
     static member ReplyChannelRange = Arb.fromGen replyChannelRangeGen
     static member GossipTimestampFilter = Arb.fromGen gossipTimestampFilterGen
     static member OnionPayload() = Arb.fromGen(onionPayloadGen)
@@ -142,8 +142,5 @@ type P2PMsgGenerators =
             gossipTimestampFilterGen |> Gen.map(fun i -> i :> ILightningMsg)
         ]
         |> Arb.fromGen
-        
-        
-type PaymentGenerators =
-    static member MacaroonIdentifier: Arbitrary<MacaroonIdentifier> =
-        macaroonIdGen |> Arb.fromGen
+
+

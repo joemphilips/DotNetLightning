@@ -5,13 +5,13 @@ open DotNetLightning.Payment.LSAT
 open DotNetLightning.Utils.Primitives
 open FsCheck
 open PrimitiveGenerators
-
+#if BouncyCastle
 
 let private macaroonIdV1Gen =
     (uint256Gen |> Gen.map(PaymentHash.PaymentHash), uint256Gen)
     ||> Gen.map2(fun p u -> { MacaroonIdentifierV0.PaymentHash = p
                               TokenId = u })
-    |> Gen.map(MacaroonIdentifier.V0)   
+    |> Gen.map(MacaroonIdentifier.V0)
 let private macaroonUnknownIdGen(knownVersions: uint16 seq) =
     gen {
         let! t =
@@ -26,3 +26,5 @@ let macaroonIdGen: Gen<MacaroonIdentifier> =
         macaroonIdV1Gen
         macaroonUnknownIdGen([0us])
     ]
+
+#endif
