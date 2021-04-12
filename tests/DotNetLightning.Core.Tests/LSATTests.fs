@@ -1,5 +1,6 @@
 module DotNetLightning.Tests.LSATTests
 
+#if BouncyCastle
 open System
 open System.Linq
 open Expecto
@@ -33,7 +34,7 @@ let lsatTests =
             let r = Service.ParseMany ",,"
             Expect.isError (Result.ToFSharpCoreResult r) "can not parse empty services"
             ()
-            
+
         testList "check macaroon verification works in LSAT compliant way" [
             testCase "successful verification" <| fun _ ->
                 let secret = "My secret key"
@@ -46,7 +47,7 @@ let lsatTests =
                 let v = m.VerifyLSATCaveats(caveats, satisfiers, secret)
                 Expect.isTrue(v.Success) (sprintf "%A" v.Messages)
                 ()
-                
+
             testCase "successful verification with unknown service name" <| fun _ ->
                 let secret = "My secret key"
                 let identifier = "my macaroon identifier"
@@ -58,7 +59,7 @@ let lsatTests =
                 satisfiers.Add(ServiceSatisfier("my-service-name") :> ISatisfier)
                 let v = m.VerifyLSATCaveats(caveats, satisfiers, secret)
                 Expect.isTrue(v.Success) (sprintf "%A" v.Messages)
-                
+
             testCase "successful verification with capabilities satisfier" <| fun _ ->
                 let secret = "My secret key"
                 let identifier = "my macaroon identifier"
@@ -71,7 +72,7 @@ let lsatTests =
                 satisfiers.Add(CapabilitiesSatisfier("my-service-name", "read") :> ISatisfier)
                 let v = m.VerifyLSATCaveats(caveats, satisfiers, secret)
                 Expect.isTrue(v.Success) (sprintf "%A" v.Messages)
-                
+
             testCase "verification succeeds when caveats includes required capabilities" <| fun _ ->
                 let secret = "My secret key"
                 let identifier = "my macaroon identifier"
@@ -82,7 +83,7 @@ let lsatTests =
                 satisfiers.Add(CapabilitiesSatisfier("my-service-name", "read") :> ISatisfier)
                 let v = m.VerifyLSATCaveats(caveats, satisfiers, secret)
                 Expect.isTrue(v.Success) (sprintf "%A" v.Messages)
-                
+
             testCase "failure case: different secret" <| fun _ ->
                 let secret = "My secret key"
                 let identifier = "my macaroon identifier"
@@ -93,7 +94,7 @@ let lsatTests =
                 satisfiers.Add(ServiceSatisfier("my-service-name") :> ISatisfier)
                 let v = m.VerifyLSATCaveats(caveats, satisfiers, "wrong secret key")
                 Expect.isFalse(v.Success) ""
-                
+
             testCase "failure case: different service name" <| fun _ ->
                 let secret = "My secret key"
                 let identifier = "my macaroon identifier"
@@ -104,22 +105,22 @@ let lsatTests =
                 satisfiers.Add(ServiceSatisfier("my-service-name") :> ISatisfier)
                 let v = m.VerifyLSATCaveats(caveats, satisfiers, secret)
                 Expect.isFalse(v.Success) ""
-                
+
             testCase "failure case: verification fails if restriction gets loose then before" <| fun _ ->
                 let secret = "My secret key"
                 let identifier = "my macaroon identifier"
                 let m = Macaroon("http://my.awesome.service", secret, identifier)
                 let satisfiers = ResizeArray()
                 satisfiers.Add(ServiceSatisfier("my-service-name") :> ISatisfier)
-                
+
                 let caveats = ResizeArray()
                 // latter caveats has more power here. which is invalid for lsat.
                 caveats.Add(Caveat("service=my-service-name:0"))
                 caveats.Add(Caveat("service=my-service-name:0,another-service-name:0"))
-                
+
                 let v = m.VerifyLSATCaveats(caveats, satisfiers, secret)
                 Expect.isFalse(v.Success) ""
-                
+
                 satisfiers.Add(CapabilitiesSatisfier("my-service-name", "read") :> ISatisfier)
                 let caveats = ResizeArray()
                 // latter caveats has more power here. which is invalid for lsat.
@@ -127,6 +128,8 @@ let lsatTests =
                 caveats.Add(Caveat("my-service-name_capabilities = read,write"))
                 let v = m.VerifyLSATCaveats(caveats, satisfiers, secret)
                 Expect.isFalse(v.Success) ""
-                
+
         ]
     ]
+
+#endif

@@ -30,7 +30,7 @@ jobs:
         dotnet run --project tests/DotNetLightning.Core.Tests
     - name: Run other tests
       run: |
-        dotnet test
+        dotnet test --filter "FullyQualifiedName!~Macaroon" # see https://github.com/joemphilips/DotNetLightning/issues/153
 
   build_with_fsharp_from_mono:
     runs-on: ubuntu-20.04
