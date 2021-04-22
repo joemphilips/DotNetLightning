@@ -1,5 +1,6 @@
 namespace DotNetLightning.Utils
 
+open System
 open System.IO
 open NBitcoin
 open NBitcoin.Crypto
@@ -12,7 +13,7 @@ module NBitcoinExtensions =
 
     type NBitcoin.Transaction with
         member this.GetTxId() = TxId (this.GetHash())
-        
+
     type Money with
         member this.ToLNMoney() = LNMoney.Satoshis(this.Satoshi)
 
@@ -68,3 +69,8 @@ module NBitcoinExtensions =
     type PubKey with
         static member BytesLength: int = 33
 
+    type DateTimeOffset with
+        member this.IsValidUnixTime(): bool =
+            let unixRef = DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
+            let dt = this.ToUniversalTime()
+            (unixRef <= dt) && ((dt - unixRef).TotalSeconds <= float UInt32.MaxValue)
