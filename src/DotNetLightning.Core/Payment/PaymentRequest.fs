@@ -264,7 +264,9 @@ type TaggedField =
         // data length must be exactly 10 bits
         if (dataLengthInBase32.Length < 2) then
             dataLengthInBase32 <- Array.append ([|0uy|]) dataLengthInBase32
-        Debug.Assert(dataLengthInBase32.Length = 2)
+
+        if (dataLengthInBase32.Length <> 2) then
+            raise <| FormatException (sprintf "data length too-big to fit in 10 bits. It was %d" dataLengthInBase32.Length)
 
         writer.Write([|this.Type|])
         writer.Write(dataLengthInBase32)
@@ -358,6 +360,11 @@ type TaggedFields = {
         if (this.Fields |> List.filter(function | TaggedField.RoutingInfoTaggedField _ -> true | _ -> false ) |> List.length > 2) then
             Error("Extra Routing hint information can not be longer than 2.")
         else
+        let features = this.Fields |> List.choose(function FeaturesTaggedField x -> Some x | _ -> None) |> Seq.tryExactlyOne
+        match features with
+        | Some x when x.BitArray.Length = 0 || x.ToByteArray() |> Seq.forall((=)0uy) ->
+            Error("Empty Features are not allowed for PaymentRequest")
+        | _ ->
         let maybeMinFinalExp =
             this.Fields
             |> List.choose(function | MinFinalCltvExpiryTaggedField x-> Some x | _ -> None)
@@ -703,6 +710,10 @@ type PaymentRequest = private {
                 Signature = (sigCompact, recv) |> Some
             }
         }
+    static member TryCreate(network: Network, amount: LNMoney option, timestamp, tags: TaggedFields, nodeSecret: Key) =
+        let prefix = Helpers.prefixes.[network.GenesisHash]
+        PaymentRequest.TryCreate(prefix, amount, timestamp, tags, nodeSecret)
+
     static member TryCreate(prefix: string, amount: LNMoney option, timestamp, tags: TaggedFields, nodeSecret: Key) =
         let nodeId = nodeSecret.PubKey |> NodeId
         PaymentRequest.TryCreate(prefix, amount, timestamp, nodeId, tags, nodeSecret)

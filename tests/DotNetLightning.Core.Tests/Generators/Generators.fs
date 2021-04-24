@@ -21,7 +21,6 @@ type PrimitiveGenerators =
 
     static member NodeId() = Arb.fromGen(NodeId <!> pubKeyGen)
 
-
 type P2PMsgGenerators =
     static member Init() : Arbitrary<InitMsg> =
         Arb.fromGen(initGen)

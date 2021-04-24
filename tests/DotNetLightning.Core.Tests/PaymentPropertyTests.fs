@@ -9,23 +9,23 @@ open FsCheck
 open Generators
 open ResultUtils
 type PaymentRequestGenerators =
-  static member PaymentRequest() =
-    paymentRequestGen
-    |> Arb.fromGen
+    static member PaymentRequest() =
+        paymentRequestGen
+        |> Arb.fromGen
 
 
 [<Tests>]
 let tests =
-  let config = {
-    FsCheckConfig.defaultConfig with
-      arbitrary = [ typeof<PaymentRequestGenerators> ]
-      maxTest = 100
-  }
-  testList "PaymentRequest property tests" [
-    testPropertyWithConfig config "PaymentRequest Serialization" <| fun (p: PaymentRequest) ->
-      let p2 = p.ToString() |> PaymentRequest.Parse |> Result.deref
-      Expect.equal p (p2) (sprintf "PaymentRequest before/after serialization is not equal %A" p)
-  ]
+    let config = {
+        FsCheckConfig.defaultConfig with
+            arbitrary = [ typeof<PaymentRequestGenerators> ]
+            maxTest = 100
+    }
+    testList "PaymentRequest property tests" [
+        testPropertyWithConfig config "PaymentRequest Serialization" <| fun (p: PaymentRequest) ->
+            let p2 = p.ToString() |> PaymentRequest.Parse |> Result.deref
+            Expect.equal p (p2) (sprintf "PaymentRequest before/after serialization is not equal %A" p)
+    ]
 
 #if BouncyCastle
 open DotNetLightning.Payment.LSAT

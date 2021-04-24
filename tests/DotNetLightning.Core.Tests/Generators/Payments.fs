@@ -1,5 +1,6 @@
 module PaymentGenerators
 
+open DotNetLightning.Serialization
 open NBitcoin
 open NBitcoin
 open NBitcoin.Crypto
@@ -46,8 +47,12 @@ let routingInfoGen =
         return ExtraHop.TryCreate(nodeId, shortChannelId, feeBase, feeProportional, BlockHeightOffset16 expiryDelta)
     }
     let g = g |> Gen.filter(Result.isOk) |> Gen.map(Result.deref)
-    seq [ g |> Gen.listOfLength 1; g |> Gen.listOfLength 2; ]
-    |> Gen.oneof
+    seq [
+        (20, g |> Gen.listOfLength 1)
+        (20, g |> Gen.listOfLength 2)
+        (1, g |> Gen.listOfLength 3)
+    ]
+    |> Gen.frequency
     |> Gen.map(TaggedField.RoutingInfoTaggedField)
 
 let paymentRequestGen =
@@ -58,9 +63,10 @@ let paymentRequestGen =
             Arb.generate<DateTimeOffset>
                 |> Gen.filter(fun d -> d.IsValidUnixTime())
                 |> Gen.map(TaggedField.ExpiryTaggedField)
-            featuresGen |> Gen.map(FeaturesTaggedField)
+            completeFeaturesGen |> Gen.map(FeaturesTaggedField)
             fallbackAddrGen
             routingInfoGen
+            uint256Gen |> Gen.map PaymentSecretTaggedField
             Arb.generate<uint32> |> Gen.map(BlockHeightOffset32 >> MinFinalCltvExpiryTaggedField)
         ]
         |> Gen.sequence
@@ -85,8 +91,7 @@ let paymentRequestGen =
                 { tags with Fields = NodeIdTaggedField(nodeSecret.PubKey |> NodeId) :: tags.Fields }
             else
                 tags
-        let r = PaymentRequest.TryCreate(p, m, t, tags, nodeSecret)
-        return r
+        return PaymentRequest.TryCreate(p, m, t, tags, nodeSecret)
     }
     |> Gen.filter(Result.isOk)
     |> Gen.map(Result.deref)

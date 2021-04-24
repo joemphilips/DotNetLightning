@@ -10,10 +10,27 @@ open DotNetLightning.Utils
 
 let (<*>) = Gen.apply
 
-let featuresGen =
+
+let completeFeaturesGen =
+    let bitsGen =
+        seq {
+            for f in Feature.allFeatures do
+                Gen.oneof(seq [
+                    Gen.constant(1L <<< f.MandatoryBitPosition)
+                    Gen.constant(1L <<< f.OptionalBitPosition)
+                    Gen.constant(0L)
+                ])
+        }
+        |> Gen.sequence
+    bitsGen
+    |> Gen.map(Seq.reduce(|||))
+    |> Gen.map(FeatureBits.TryCreate)
+    |> Gen.filter(ResultUtils.Result.isOk)
+    |> Gen.map(ResultUtils.Result.deref)
+
+let private featuresGen =
     Gen.constant (1L <<< Feature.InitialRoutingSync.OptionalBitPosition)
     |> Gen.map FeatureBits.CreateUnsafe
-
 let private chainHashGen =
     Gen.oneof(seq {
         yield Gen.constant NBitcoin.Consensus.Main.HashGenesisBlock;
