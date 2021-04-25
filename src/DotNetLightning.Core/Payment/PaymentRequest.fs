@@ -20,9 +20,9 @@ open ResultUtils.Portability
 module private Helpers =
     let base58check = Base58CheckEncoder()
     let utf8 = UTF8Encoding(false)
-    
+
     let ascii = ASCIIEncoder()
-    
+
     let base58CheckDecode data =
         try
             base58check.DecodeData data |> Ok
@@ -35,15 +35,15 @@ module private Helpers =
         with
         | :? FormatException as fex ->
             fex.ToString() |> Error
-    
+
     let tryGetP2WPKHAddressEncoder (n: Network) =
         let maybeEncoder = n.GetBech32Encoder(Bech32Type.WITNESS_PUBKEY_ADDRESS, false)
         if isNull maybeEncoder then Error("Failed to get p2wpkh encoder") else Ok maybeEncoder
-        
+
     let tryGetP2WSHAddressEncoder (n: Network) =
         let maybeEncoder = n.GetBech32Encoder(Bech32Type.WITNESS_SCRIPT_ADDRESS, false)
         if isNull maybeEncoder then Error("Failed to get p2wsh encoder") else Ok maybeEncoder
-            
+
     let decodeBech32 s =
         try
             InternalBech32Encoder.Instance.DecodeData(s).ToTuple()
@@ -51,31 +51,31 @@ module private Helpers =
         with
         | :? FormatException as fex ->
             fex.ToString() |> Error
-            
+
     let encodeBech32 hrp s =
         InternalBech32Encoder.Instance.EncodeData(hrp, s, 0, s.Length)
-        
+
     // ----- base58check prefixes -----
-    // ref:https://en.bitcoin.it/wiki/List_of_address_prefixes 
+    // ref:https://en.bitcoin.it/wiki/List_of_address_prefixes
     // (TODO: We might be able to get rid of this by using NBitcoin correctly)
     [<Literal>]
     let PREFIX_ADDRESS_PUBKEYHASH = 0uy
-    
+
     [<Literal>]
     let PREFIX_ADDRESS_PUBKEYHASH_TESTNET = 111uy
-    
+
     [<Literal>]
     let PREFIX_ADDRESS_SCRIPTHASH = 5uy
-    
+
     [<Literal>]
     let PREFIX_ADDRESS_SCRIPTHASH_TESTNET = 196uy
-    
+
     let prefixes =
         Map.empty
         |> Map.add (Network.RegTest.GenesisHash) ("lnbcrt")
         |> Map.add (Network.TestNet.GenesisHash) ("lntb")
         |> Map.add (Network.Main.GenesisHash) ("lnbc")
-        
+
     /// The values for prefix are sorted by its length, in this way we assure that we try to match the longest
     /// value first, so that e.g. when we have "lnbcrt" it will not match "lnbc"
     let sortedPrefixValues = prefixes |> Map.toSeq |> Seq.map(fun (_, v) -> v) |> Seq.sortByDescending(fun x -> x.Length)
@@ -86,22 +86,22 @@ module private Helpers =
             Error(sprintf "Unknown prefix type %s! hrp must be either of %A" hrp sortedPrefixValues)
         | Some(prefix) ->
             Ok(prefix)
-        
+
     /// maxInvoiceLength is the maximum total length an invoice can have.
     /// This is chosen to be the maximum number of bytes that can fit into a
     /// single QR code: https://en.wikipedia.org/wiki/QR_code#Storage
     [<Literal>]
     let maxInvoiceLength = 7089
-    
+
     let checkMaxInvoiceLength (invoice: string) =
         if invoice.Length <= maxInvoiceLength then
             Ok()
         else
             Error(sprintf "Invoice length too large! max size is %d but it was %d" maxInvoiceLength invoice.Length)
-            
+
     let uint64ToBase32(num: uint64):byte[] =
         if num = 0UL then [||] else
-            
+
         let mutable numMutable = num
         // To fit an uint64, we need at most is ceil (64 / 5) = 13 groups.
         let arr = Array.zeroCreate 13
@@ -111,21 +111,21 @@ module private Helpers =
             arr.[i] <- byte(numMutable &&& 0b11111UL)
             numMutable <- numMutable >>> 5
         arr.[i..] // we only return non-zero leading groups
-        
+
     let convertBits(data, fromBits, toBits, pad: bool) =
         InternalBech32Encoder.Instance.ConvertBits(data, fromBits, toBits, pad)
-        
+
     let convert8BitsTo5 data =
         convertBits(data, 8, 5, true)
-        
+
     let convert5BitsTo8 data =
         convertBits(data, 5, 8, true)
-            
+
 type IMessageSigner =
     /// take serialized msg hash and returns 65 bytes signature for it.(1byte header + 32 bytes r + 32 bytes s)
     /// The header byte must be (recovery id + 27uy + 4uy).
     abstract member SignMessage: uint256 -> byte[]
-    
+
 /// To make it network-agnostic, it holds data directly in bytes rather than `NBitcoin.BitcoinAddress`
 type FallbackAddress = private {
     Version: uint8
@@ -144,7 +144,7 @@ type FallbackAddress = private {
             | x ->
                 return! Error(sprintf "Unknown address prefix %d" x)
         }
-        
+
     static member FromBech32Address(addrStr: string, n: Network) =
             match Helpers.tryGetP2WPKHAddressEncoder(n) with
             | Ok encoder ->
@@ -158,6 +158,15 @@ type FallbackAddress = private {
                     | decoded, witVersion -> { Version = witVersion; Data = decoded } |> Ok
                 | Error e2 ->
                     e + e2 |> Error
+
+    static member FromAddress(s: BitcoinAddress) =
+        match s with
+        | :? BitcoinWitScriptAddress as p2wsh -> FallbackAddress.FromBech32Address(p2wsh.ToString(), s.Network)
+        | :? BitcoinWitPubKeyAddress as p2wpkh -> FallbackAddress.FromBech32Address(p2wpkh.ToString(), s.Network)
+        | :? BitcoinPubKeyAddress as p2pkh -> FallbackAddress.FromBase58Address(p2pkh.ToString())
+        | :? BitcoinScriptAddress as p2pkh -> FallbackAddress.FromBase58Address(p2pkh.ToString())
+        | _ -> Error(sprintf "Unknown type of address: %s" (s.ToString()))
+
     static member TryCreate(version, data: byte[]) =
         match version with
         // p2pkh
@@ -172,7 +181,7 @@ type FallbackAddress = private {
         | v ->
             sprintf "Unknown combination of bitcoin address version and length! version %d. length: %d" v data.Length
             |> Error
-            
+
     member this.ToAddress(prefix: string) =
         match this.Version with
         | 17uy when prefix = "lnbc" ->
@@ -198,8 +207,8 @@ type FallbackAddress = private {
             encoder.Encode(v, this.Data)
         | v ->
             failwithf "Unreachable! Unexpected version %A" v
-            
-type ExtraHop = {
+
+type ExtraHop = internal {
     NodeId: NodeId
     ShortChannelId: ShortChannelId
     FeeBase: LNMoney
@@ -208,6 +217,21 @@ type ExtraHop = {
 }
     with
     static member Size = 264 + 64 + 32 + 32 + 16
+    static member TryCreate(nodeId, shortChannelId, feeBase, feeProportionalMillionths, cltvExpiryDelta: BlockHeightOffset16) =
+        if cltvExpiryDelta.Value = 0us then Error ("CLTVExpiryDelta in ExtraHop should not be 0") else
+        Ok {
+            NodeId = nodeId
+            ShortChannelId = shortChannelId
+            FeeBase = feeBase
+            FeeProportionalMillionths = feeProportionalMillionths
+            CLTVExpiryDelta = cltvExpiryDelta
+        }
+    member this.NodeIdValue = this.NodeId
+    member this.ShortChannelIdValue = this.ShortChannelId
+    member this.FeeBaseValue = this.FeeBase
+    member this.FeeProportionalMillionthsValue = this.FeeProportionalMillionths
+    member this.CLTVExpiryDeltaValue = this.CLTVExpiryDelta
+
 type TaggedField =
     | PaymentHashTaggedField of PaymentHash
     | PaymentSecretTaggedField of uint256
@@ -240,7 +264,9 @@ type TaggedField =
         // data length must be exactly 10 bits
         if (dataLengthInBase32.Length < 2) then
             dataLengthInBase32 <- Array.append ([|0uy|]) dataLengthInBase32
-        Debug.Assert(dataLengthInBase32.Length = 2)
+
+        if (dataLengthInBase32.Length <> 2) then
+            raise <| FormatException (sprintf "data length too-big to fit in 10 bits. It was %d" dataLengthInBase32.Length)
 
         writer.Write([|this.Type|])
         writer.Write(dataLengthInBase32)
@@ -291,7 +317,7 @@ type TaggedField =
                     byteArray <- Array.concat [ [| 0uy |]; byteArray ]
                 byteArray |> Helpers.convert8BitsTo5 |> Array.skipWhile((=)0uy)
             this.WriteField(writer, dBase32)
-            
+
 
 type TaggedFields = {
     Fields: TaggedField list
@@ -301,10 +327,10 @@ type TaggedFields = {
         { Fields = [] }
     member this.FallbackAddresses =
         this.Fields |> List.choose(function FallbackAddressTaggedField a -> Some(a) | _ -> None)
-        
+
     member this.ExplicitNodeId =
         this.Fields |> Seq.choose(function NodeIdTaggedField x -> Some x | _ -> None) |> Seq.tryExactlyOne
-        
+
     member this.FeatureBits =
         this.Fields |> Seq.choose(function FeaturesTaggedField fb -> Some fb | _ -> None) |> Seq.tryExactlyOne
 
@@ -330,7 +356,24 @@ type TaggedFields = {
         if (dHashes.Length > 1) then Error ("duplicate 'h' field") else
         if (descriptions.Length = 1 && dHashes.Length = 1) then Error("both 'h' and 'd' field exists") else
         if (descriptions.Length <> 1 && dHashes.Length <> 1) then Error("must have either description hash or description") else
-        () |> Ok
+        if (descriptions.Length = 1 && descriptions.[0] |> String.IsNullOrEmpty) then Error("Description should not be an empty string") else
+        if (this.Fields |> List.filter(function | TaggedField.RoutingInfoTaggedField _ -> true | _ -> false ) |> List.length > 2) then
+            Error("Extra Routing hint information can not be longer than 2.")
+        else
+        let features = this.Fields |> List.choose(function FeaturesTaggedField x -> Some x | _ -> None) |> Seq.tryExactlyOne
+        match features with
+        | Some x when x.BitArray.Length = 0 || x.ToByteArray() |> Seq.forall((=)0uy) ->
+            Error("Empty Features are not allowed for PaymentRequest")
+        | _ ->
+        let maybeMinFinalExp =
+            this.Fields
+            |> List.choose(function | MinFinalCltvExpiryTaggedField x-> Some x | _ -> None)
+            |> List.tryExactlyOne
+        match maybeMinFinalExp with
+        | Some(BlockHeightOffset32 v) when v = 0u ->
+            Error("MinFinalExpiry field should not be zero")
+        | _ ->
+            () |> Ok
         |> Result.mapError(fun s -> "Invalid BOLT11! " + s)
 
 type private Bolt11Data = {
@@ -353,7 +396,7 @@ type private Bolt11Data = {
                 let rs = reader.ReadBytes(65)
                 let signature = LNECDSASignature.FromBytesCompact(rs.[0..rs.Length - 2])
                 let recvId = rs.[rs.Length - 1]
-                
+
                 reader.Position <- 0
                 let timestamp = Utils.UnixTimeToDateTime(reader.ReadULongBE(35))
                 let checkSize (r: BitReader) c =
@@ -379,7 +422,7 @@ type private Bolt11Data = {
                                     return! loop r acc afterReadPosition // we must omit instead of returning an error (according to the BOLT11)
                                 else
                                     let ph = r.ReadBytes(32) |> fun x -> uint256(x, false) |> PaymentHash |> PaymentHashTaggedField
-                                    return! loop r ({ acc  with Fields = ph :: acc.Fields}) afterReadPosition 
+                                    return! loop r ({ acc  with Fields = ph :: acc.Fields}) afterReadPosition
                             | 16UL -> // payment secret
                                 if (size <> 52 * 5) then
                                     return! loop r acc afterReadPosition  // we must omit instead of returning an error (according to the BOLT11)
@@ -388,7 +431,7 @@ type private Bolt11Data = {
                                     return! loop r { acc with Fields = ps :: acc.Fields } afterReadPosition
                             | 6UL -> // expiry
                                 let expiryDate = timestamp + TimeSpan.FromSeconds(r.ReadULongBE(size) |> float) |> ExpiryTaggedField
-                                    
+
                                 return! loop r { acc with Fields = expiryDate :: acc.Fields } afterReadPosition
                             | 13UL -> // description
                                 let bytesCount = size / 8
@@ -446,20 +489,20 @@ type private Bolt11Data = {
                                 if (size < ExtraHop.Size) then
                                     return! sprintf "Unexpected length for routing info (%d)" size |> Error
                                 else
-                                    let hopInfos = ResizeArray()
+                                    let hopInfosR = ResizeArray<Result<_,_>>()
                                     while (size >= ExtraHop.Size) do
                                         let nodeId = r.ReadBytes(264 / 8) |> PubKey |> NodeId
                                         let schId = r.ReadULongBE(64) |> ShortChannelId.FromUInt64
                                         let feeBase = r.ReadULongBE(32) |> LNMoney.MilliSatoshis
                                         let feeProportional = r.ReadULongBE(32) |> uint32
                                         let cltvExpiryDelta =  r.ReadULongBE(16) |> uint16 |> BlockHeightOffset16
-                                        let hopInfo = { NodeId = nodeId
-                                                        ShortChannelId = schId
-                                                        FeeBase = feeBase
-                                                        CLTVExpiryDelta = cltvExpiryDelta
-                                                        FeeProportionalMillionths = feeProportional }
-                                        hopInfos.Add(hopInfo)
+                                        let hopInfo = ExtraHop.TryCreate(nodeId, schId, feeBase, feeProportional, cltvExpiryDelta)
+                                        hopInfosR.Add(hopInfo)
                                         size <- size - ExtraHop.Size
+                                    let! hopInfos=
+                                        hopInfosR
+                                        |> Seq.toList
+                                        |> List.traverseResultM(id)
                                     let hopInfoList = hopInfos |> Seq.toList |> RoutingInfoTaggedField
                                     return! loop r { acc with Fields = hopInfoList :: acc.Fields } afterReadPosition
                             | 5UL -> // feature bits
@@ -473,7 +516,7 @@ type private Bolt11Data = {
                                 return! loop r { acc with Fields = features :: acc.Fields } afterReadPosition
                             | _ -> // we must skip unknown field
                                 return! loop r acc afterReadPosition
-                                    
+
                     }
                 let! taggedField = loop reader (TaggedFields.Zero) reader.Position
                 do! taggedField.CheckSanity()
@@ -483,11 +526,11 @@ type private Bolt11Data = {
                     Signature = (signature, recvId) |> Some
                 }
             }
-    
+
     member this.ToBytesBase32() =
         use ms = new MemoryStream()
         use writer = new BinaryWriter(ms)
-        let timestamp = 
+        let timestamp =
             Utils.DateTimeToUnixTime(this.Timestamp)
             |> uint64
         let timestampBase32 =
@@ -497,26 +540,27 @@ type private Bolt11Data = {
         let padding: byte[] = Array.zeroCreate(7 - timestampBase32.Length)
         writer.Write(padding)
         writer.Write(timestampBase32)
-        
+
         this.TaggedFields.Fields
         |> List.rev
         |> List.iter(fun f ->
             f.WriteTo(writer, timestamp)
             )
-        
+
         this.Signature
         |> Option.iter(fun (s, recv) ->
             let sigBase32 = Array.concat [ s.ToBytesCompact(); [|recv|]] |> Helpers.convert8BitsTo5
             writer.Write(sigBase32)
             )
         ms.ToArray()
-        
+
     /// Returns binary representation for signing.
     member this.ToBytes() =
         this.ToBytesBase32()
         |> Helpers.convert5BitsTo8
-            
 
+
+[<CustomEquality;NoComparison>]
 /// a.k.a bolt11-invoice, lightning-invoice
 type PaymentRequest = private {
     Prefix: string
@@ -533,17 +577,17 @@ type PaymentRequest = private {
     member this.NodeIdValue = this.NodeId
     member this.SignatureValue = this.Signature
     member this.TagsValue = this.Tags
-    
+
     member this.PaymentHash =
         this.Tags.Fields
         |> Seq.choose(function TaggedField.PaymentHashTaggedField p -> Some p | _ -> None)
         |> Seq.exactlyOne // we assured in constructor that it has only one
-        
+
     member this.PaymentSecret =
         this.Tags.Fields
         |> Seq.choose(function TaggedField.PaymentSecretTaggedField ps -> Some ps | _ -> None)
         |> Seq.tryExactlyOne
-        
+
     member this.Description =
         this.Tags.Fields
             |> Seq.choose(function
@@ -556,18 +600,18 @@ type PaymentRequest = private {
         this.Tags.Fields
         |> List.choose(function FallbackAddressTaggedField f -> Some f | _ -> None)
         |> List.map(fun fallbackAddr -> fallbackAddr.ToAddress(this.Prefix))
-        
+
     member this.RoutingInfo =
         this.Tags.Fields
         |> List.choose(function RoutingInfoTaggedField r -> Some r | _ -> None)
-        
+
     /// absolute expiry date.
     member this.Expiry =
         this.Tags.Fields
         |> Seq.choose(function ExpiryTaggedField e -> Some (e) | _ -> None)
         |> Seq.tryExactlyOne
         |> Option.defaultValue (this.Timestamp + PaymentConstants.DEFAULT_EXPIRY_SECONDS)
-        
+
     member this.MinFinalCLTVExpiryDelta =
         this.Tags.Fields
         |> Seq.choose(function MinFinalCltvExpiryTaggedField cltvE -> Some (cltvE) | _ -> None)
@@ -578,30 +622,30 @@ type PaymentRequest = private {
         this.Tags.Fields
         |> Seq.choose(function FeaturesTaggedField f -> Some f | _ -> None)
         |> Seq.tryExactlyOne
-        
+
     member this.IsExpired =
         this.Expiry <= DateTimeOffset.UtcNow
-            
+
     member this.HumanReadablePart =
         (sprintf "%s%s" (this.Prefix) (Amount.encode(this.Amount)))
     member private this.Hash =
         let hrp =
              this.HumanReadablePart |> Helpers.utf8.GetBytes
-             
+
         let data = { Bolt11Data.Timestamp = this.Timestamp
                      TaggedFields = this.Tags
                      Signature = None }
         let bin = data.ToBytes()
         let msg = Array.concat(seq { yield hrp; yield bin })
         Hashes.SHA256(msg) |> uint256
-        
+
     member this.Sign(privKey: Key, ?forceLowR: bool) =
         let forceLowR = Option.defaultValue true forceLowR
         let ecdsaSig = privKey.SignCompact(this.Hash, forceLowR)
         let recvId = ecdsaSig.[0] - 27uy - 4uy
         let sig64 = ecdsaSig |> fun s -> LNECDSASignature.FromBytesCompact(s, true)
         { this with Signature = (sig64, recvId) |> Some }
-        
+
     override this.ToString() =
         let hrp = this.HumanReadablePart
         let data =
@@ -609,7 +653,7 @@ type PaymentRequest = private {
               Timestamp = this.TimestampValue
               Signature = this.Signature }
         data.ToBytesBase32() |> Helpers.encodeBech32 hrp
-        
+
     member private this.ToString(signature65bytes: byte[]) =
         let hrp = this.HumanReadablePart
         let data =
@@ -619,11 +663,11 @@ type PaymentRequest = private {
               Timestamp = this.Timestamp
               Signature = (signature, recvId) |> Some }
         data.ToBytesBase32() |> Helpers.encodeBech32 hrp
-        
+
     member this.ToString(signer: IMessageSigner) =
         let sign = signer.SignMessage(this.Hash)
         this.ToString(sign)
-        
+
     static member Parse(str: string): Result<PaymentRequest, string> =
         result {
             do! Helpers.checkMaxInvoiceLength (str) // for DoS protection
@@ -633,7 +677,7 @@ type PaymentRequest = private {
             let! (hrp, data) = Helpers.decodeBech32(s)
             let! prefix = Helpers.checkAndGetPrefixFromHrp hrp
             let maybeAmount = Amount.decode(hrp.Substring(prefix.Length)) |> function Ok s -> Some s | Error _ -> None
-            
+
             let! bolt11Data = Bolt11Data.FromBytes(data)
             let (sigCompact, recv) = bolt11Data.Signature.Value
             let nodeId =
@@ -647,7 +691,7 @@ type PaymentRequest = private {
                         let mutable byteCount = Math.DivRem(reader.Count, 8, remainder)
                         if (!remainder <> 0) then
                             byteCount <- byteCount + 1
-                    
+
                         seq { yield (hrp |> Helpers.utf8.GetBytes); yield (reader.ReadBytes(byteCount)) }
                         |> Array.concat
                     let signatureInNBitcoinFormat = Array.zeroCreate(65)
@@ -656,7 +700,7 @@ type PaymentRequest = private {
                     let r = Hashes.SHA256(msg) |> uint256
                     PubKey.RecoverCompact(r, signatureInNBitcoinFormat).Compress()
                     |> NodeId
-            
+
             return {
                 PaymentRequest.Amount = maybeAmount
                 Prefix = prefix
@@ -666,17 +710,35 @@ type PaymentRequest = private {
                 Signature = (sigCompact, recv) |> Some
             }
         }
-    static member TryCreate(prefix: string, amount: LNMoney option, timestamp, nodeId, tags: TaggedFields, nodeSecret: Key) =
+    static member TryCreate(network: Network, amount: LNMoney option, timestamp, tags: TaggedFields, nodeSecret: Key) =
+        let prefix = Helpers.prefixes.[network.GenesisHash]
+        PaymentRequest.TryCreate(prefix, amount, timestamp, tags, nodeSecret)
+
+    static member TryCreate(prefix: string, amount: LNMoney option, timestamp, tags: TaggedFields, nodeSecret: Key) =
+        let nodeId = nodeSecret.PubKey |> NodeId
+        PaymentRequest.TryCreate(prefix, amount, timestamp, nodeId, tags, nodeSecret)
+
+    static member TryCreate(prefix: string, amount: LNMoney option, timestamp, nodeId: NodeId, tags: TaggedFields, nodeSecret: Key) =
+        if (nodeId.Value <> nodeSecret.PubKey) then Error "Wrong Node secret" else
         let msgSigner  = { new IMessageSigner
                            with
                                member this.SignMessage(data) = nodeSecret.SignCompact(data, false) }
         PaymentRequest.TryCreate(prefix, amount, timestamp, nodeId, tags, msgSigner)
-        
+
     /// signer must sign by node_secret which corresponds to node_id
     static member TryCreate (prefix: string, amount: LNMoney option, timestamp, nodeId, tags: TaggedFields, signer: IMessageSigner) =
         result {
             do! amount |> function None -> Ok() | Some a -> Result.requireTrue "amount must be larger than 0" (a > LNMoney.Zero)
             do! tags.CheckSanity()
+            match tags.ExplicitNodeId with
+            | Some n when n <> nodeId ->
+                return! Error("NodeId mismatch!")
+            | _ ->
+            let maybeExpiryDate = tags.Fields |> List.choose(function | ExpiryTaggedField x -> Some x | _ -> None) |> List.tryExactlyOne
+            match maybeExpiryDate with
+            | Some e when e < timestamp ->
+                return! Error(sprintf "You can not newly create already expired invoice! timestamp: %A. expiryDate: %A" (timestamp) (e))
+            | _ ->
             let r = {
                 Prefix = prefix
                 Amount = amount
@@ -690,3 +752,17 @@ type PaymentRequest = private {
             let signature = signature65bytes |> fun s -> LNECDSASignature.FromBytesCompact(s, true)
             return { r with Signature = Some(signature, recvId) }
         }
+
+    override this.Equals(o) =
+        match o with
+        | :? PaymentRequest as other -> (this :> IEquatable<PaymentRequest>).Equals(other)
+        | :? String as other -> this.ToString().Equals(other)
+        | _ -> false
+
+    override this.GetHashCode() =
+        this.ToString()
+        |> hash
+
+    interface IEquatable<PaymentRequest> with
+        member this.Equals(other) =
+            this.ToString().Equals(other.ToString())

@@ -10,17 +10,34 @@ open DotNetLightning.Utils
 
 let (<*>) = Gen.apply
 
+
+let completeFeaturesGen =
+    let bitsGen =
+        seq {
+            for f in Feature.allFeatures do
+                Gen.oneof(seq [
+                    Gen.constant(1L <<< f.MandatoryBitPosition)
+                    Gen.constant(1L <<< f.OptionalBitPosition)
+                    Gen.constant(0L)
+                ])
+        }
+        |> Gen.sequence
+    bitsGen
+    |> Gen.map(Seq.reduce(|||))
+    |> Gen.map(FeatureBits.TryCreate)
+    |> Gen.filter(ResultUtils.Result.isOk)
+    |> Gen.map(ResultUtils.Result.deref)
+
 let private featuresGen =
     Gen.constant (1L <<< Feature.InitialRoutingSync.OptionalBitPosition)
     |> Gen.map FeatureBits.CreateUnsafe
-
 let private chainHashGen =
     Gen.oneof(seq {
         yield Gen.constant NBitcoin.Consensus.Main.HashGenesisBlock;
         yield Gen.constant NBitcoin.Consensus.TestNet.HashGenesisBlock;
         yield Gen.constant NBitcoin.Consensus.RegTest.HashGenesisBlock;
     })
-    
+
 let genericTLVGen (known: uint64 list) =
     gen {
         let! t =
@@ -34,7 +51,7 @@ let initTLVGen =
         (1, chainHashGen |> Gen.map(Array.singleton >> InitTLV.Networks))
         (1, genericTLVGen([1UL]) |> Gen.map(InitTLV.Unknown))
     |]
-    
+
 let initGen =
     Gen.map2 (fun f tlvS -> { Features = f; TLVStream = tlvS })
         featuresGen
@@ -169,7 +186,7 @@ let fundingLockedGen = gen {
 
 let shutdownGen = gen {
     let! c = ChannelId <!> uint256Gen
-    let! sc = pushScriptGen 
+    let! sc = pushScriptGen
     return { ChannelId = c; ScriptPubKey = sc }
 }
 
@@ -252,7 +269,7 @@ let commitmentSignedGen = gen {
 let revokeAndACKGen = gen {
     let! c = ChannelId <!> uint256Gen
     let! perCommitmentSecret = perCommitmentSecretGen
-    let! pk = perCommitmentPointGen 
+    let! pk = perCommitmentPointGen
     return {
         ChannelId = c
         PerCommitmentSecret = perCommitmentSecret
@@ -339,8 +356,8 @@ let private netAddressesGen = gen {
     let! ipv6 = Gen.optionOf(ipV6AddressGen)
     let! onionv2 = Gen.optionOf(onionV2AddressGen)
     let! onionv3 = Gen.optionOf(onionV3AddressGen)
-    return [|ipv4; ipv6; onionv2; onionv3|] 
-} 
+    return [|ipv4; ipv6; onionv2; onionv3|]
+}
 
 let unsignedNodeAnnouncementGen = gen {
     let! f = featuresGen
@@ -464,14 +481,14 @@ let private queryFlagGen: Gen<QueryFlags> =
     Arb.generate<uint8>
     |> Gen.filter(fun x -> 0xfduy > x) // query flags should be represented as 1 byte in VarInt encoding
     |> Gen.map QueryFlags.Create
-    
+
 let private queryFlagsGen (length: int): Gen<QueryShortChannelIdsTLV> =
     gen {
         let! ty = encodingTypeGen
         let! flags = Gen.arrayOfLength length queryFlagGen
         return QueryShortChannelIdsTLV.QueryFlags(ty, flags)
     }
-    
+
 let queryShortChannelIdsGen = gen {
     let! n = Arb.generate<PositiveInt>
     let! s = chainHashGen
@@ -522,7 +539,7 @@ let private timestampPairsGen (length: int): Gen<ReplyChannelRangeTLV> =
             |> Gen.arrayOfLength length
         return ReplyChannelRangeTLV.Timestamp(ty, timestampPairs)
     }
-    
+
 let private checksumPairsGen n = gen {
     let! pairs =
         (Arb.generate<uint32>, Arb.generate<uint32>)
@@ -530,7 +547,7 @@ let private checksumPairsGen n = gen {
         |> Gen.arrayOfLength n
     return ReplyChannelRangeTLV.Checksums(pairs)
 }
-    
+
 let private replyChannelRangeTLVGen n =
     Gen.frequency [
         (1, timestampPairsGen n)
