@@ -449,9 +449,9 @@ module ForceCloseFundsRecovery =
                     (lockTime.ToString())
                     (sequence.ToString())
 
-    let private tryGetObscuredCommitmentNumber (fundingOutPoint: OutPoint)
-                                               (transaction: Transaction)
-                                                   : Result<ObscuredCommitmentNumber, ValidateCommitmentTxError> = result {
+    let tryGetObscuredCommitmentNumber (fundingOutPoint: OutPoint)
+                                       (transaction: Transaction)
+                                           : Result<ObscuredCommitmentNumber, ValidateCommitmentTxError> = result {
         if transaction.Version <> TxVersionNumberOfCommitmentTxs then
             return! Error <| InvalidTxVersionForCommitmentTx transaction.Version
         if transaction.Inputs.Count = 0 then
