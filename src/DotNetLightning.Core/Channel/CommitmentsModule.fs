@@ -251,19 +251,22 @@ module internal Commitments =
         else
             result {
                 do! Helpers.checkUpdateFee (config) (msg) (localFeerate)
-                let c1 = cm.AddRemoteProposal(msg)
+                let nextCommitments = cm.AddRemoteProposal(msg)
                 let! reduced =
-                    c1.LocalCommit.Spec.Reduce(c1.LocalChanges.ACKed, c1.RemoteChanges.Proposed) |> expectTransactionError
+                    nextCommitments.LocalCommit.Spec.Reduce(
+                        nextCommitments.LocalChanges.ACKed,
+                        nextCommitments.RemoteChanges.Proposed
+                    ) |> expectTransactionError
                 
-                let fees = Transactions.commitTxFee(c1.RemoteParams.DustLimitSatoshis) reduced
-                let missing = reduced.ToRemote.ToMoney() - c1.RemoteParams.ChannelReserveSatoshis - fees
+                let fees = Transactions.commitTxFee(nextCommitments.RemoteParams.DustLimitSatoshis) reduced
+                let missing = reduced.ToRemote.ToMoney() - nextCommitments.RemoteParams.ChannelReserveSatoshis - fees
                 if (missing < Money.Zero) then
                     return!
-                        (c1.LocalParams.ChannelReserveSatoshis, fees,  (-1 * missing))
+                        (nextCommitments.LocalParams.ChannelReserveSatoshis, fees,  (-1 * missing))
                         |> cannotAffordFee
                 else
                     return
-                        [ WeAcceptedUpdateFee msg ]
+                        [ WeAcceptedUpdateFee(msg, nextCommitments) ]
             }
 
     let sendCommit (channelPrivKeys: ChannelPrivKeys) (n: Network) (cm: Commitments) =
