@@ -210,7 +210,10 @@ type internal BouncySecp256k1() =
         let tweaked = match op with
                       | Mul -> k.Multiply tweakInt
                       | Add -> k.Add tweakInt
-        tweaked.Mod(parameters.N).ToByteArrayUnsigned().AsSpan().CopyTo keyToMutate
+        let tweakedByteArray = tweaked.Mod(parameters.N).ToByteArrayUnsigned()
+        let offset = 32 - tweakedByteArray.Length
+        tweakedByteArray.AsSpan().CopyTo (keyToMutate.Slice offset)
+        keyToMutate.Slice(0, offset).Fill 0uy
         true
     interface IDisposable with
         member this.Dispose() = ()
