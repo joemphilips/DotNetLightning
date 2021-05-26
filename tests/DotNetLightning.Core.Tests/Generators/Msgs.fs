@@ -94,7 +94,7 @@ let openChannelGen =
             HTLCBasepoint = arg16
             FirstPerCommitmentPoint = arg17
             ChannelFlags = arg18
-            ShutdownScriptPubKey = arg19
+            TLVs = arg19
         }
     constructor
         <!> (uint256Gen)
@@ -115,7 +115,16 @@ let openChannelGen =
         <*> htlcBasepointGen
         <*> perCommitmentPointGen
         <*> Arb.generate<uint8>
-        <*> (Gen.optionOf pushScriptGen)
+        <*> Gen.oneof [
+            gen {
+                let! genericTLV = genericTLVGen [0UL]
+                return [| OpenChannelTLV.Unknown genericTLV |]
+            }
+            gen {
+                let! shutdownScript = (Gen.optionOf pushScriptGen)
+                return [| OpenChannelTLV.UpfrontShutdownScript shutdownScript |]
+            }
+        ]
 
 let acceptChannelGen =
     let constructor = fun a b c d e f g h i j k l m n o ->
@@ -134,7 +143,7 @@ let acceptChannelGen =
             DelayedPaymentBasepoint = l
             HTLCBasepoint = m
             FirstPerCommitmentPoint = n
-            ShutdownScriptPubKey = o
+            TLVs = o
         }
 
     constructor
@@ -152,7 +161,16 @@ let acceptChannelGen =
         <*> delayedPaymentBasepointGen
         <*> htlcBasepointGen
         <*> perCommitmentPointGen
-        <*> (Gen.optionOf pushScriptGen)
+        <*> Gen.oneof [
+            gen {
+                let! genericTLV = genericTLVGen [0UL]
+                return [| AcceptChannelTLV.Unknown genericTLV |]
+            };
+            gen {
+                let! shutdownScript = (Gen.optionOf pushScriptGen)
+                return [| AcceptChannelTLV.UpfrontShutdownScript shutdownScript |]
+            }
+        ]
 
 let fundingCreatedGen =
     let constructor = fun a b c d ->

@@ -28,6 +28,62 @@ type InitTLV =
             { GenericTLV.Type = 1UL; Value = v }
         | Unknown tlv -> tlv
 
+type OpenChannelTLV =
+    | UpfrontShutdownScript of Option<Script>
+    | Unknown of GenericTLV
+    with
+    static member FromGenericTLV(tlv: GenericTLV) =
+        match tlv.Type with
+        | 0UL ->
+            let script = Script tlv.Value
+            let script =
+                if script = Script.Empty then
+                    None
+                else
+                    Some script
+            UpfrontShutdownScript script
+        | _ -> Unknown tlv
+
+    member this.ToGenericTLV() =
+        match this with
+        | UpfrontShutdownScript script ->
+            {
+                Type = 0UL
+                Value =
+                    match script with
+                    | None -> Array.empty
+                    | Some script -> script.ToBytes()
+            }
+        | Unknown tlv -> tlv
+
+type AcceptChannelTLV =
+    | UpfrontShutdownScript of Option<Script>
+    | Unknown of GenericTLV
+    with
+    static member FromGenericTLV(tlv: GenericTLV) =
+        match tlv.Type with
+        | 0UL ->
+            let script = Script tlv.Value
+            let script =
+                if script = Script.Empty then
+                    None
+                else
+                    Some script
+            UpfrontShutdownScript script
+        | _ -> Unknown tlv
+
+    member this.ToGenericTLV() =
+        match this with
+        | UpfrontShutdownScript script ->
+            {
+                Type = 0UL
+                Value =
+                    match script with
+                    | None -> Array.empty
+                    | Some script -> script.ToBytes()
+            }
+        | Unknown tlv -> tlv
+
 type QueryShortChannelIdsTLV =
     | QueryFlags of encodingType: EncodingType * encodedQueryFlags: QueryFlags[]
     | Unknown of GenericTLV

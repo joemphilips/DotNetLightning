@@ -6,6 +6,7 @@ open DotNetLightning.Utils.Aether
 open DotNetLightning.Chain
 open DotNetLightning.Crypto
 open DotNetLightning.Transactions
+open DotNetLightning.Serialization
 open DotNetLightning.Serialization.Msgs
 open NBitcoin
 open System
@@ -309,7 +310,7 @@ and Channel = {
                 HTLCBasepoint = inputInitFunder.ChannelPrivKeys.HtlcBasepointSecret.HtlcBasepoint()
                 FirstPerCommitmentPoint = inputInitFunder.ChannelPrivKeys.CommitmentSeed.DerivePerCommitmentPoint CommitmentNumber.FirstCommitment
                 ChannelFlags = inputInitFunder.ChannelFlags
-                ShutdownScriptPubKey = channelOptions.ShutdownScriptPubKey
+                TLVs = [| OpenChannelTLV.UpfrontShutdownScript channelOptions.ShutdownScriptPubKey |]
             }
             result {
                 do! Validation.checkOurOpenChannelMsgAcceptable openChannelMsgToSend
@@ -363,7 +364,7 @@ and Channel = {
                     DelayedPaymentBasepoint = channelKeys.DelayedPaymentBasepointSecret.DelayedPaymentBasepoint()
                     HTLCBasepoint = channelKeys.HtlcBasepointSecret.HtlcBasepoint()
                     FirstPerCommitmentPoint = localCommitmentPubKey
-                    ShutdownScriptPubKey = channelOptions.ShutdownScriptPubKey
+                    TLVs = [| AcceptChannelTLV.UpfrontShutdownScript channelOptions.ShutdownScriptPubKey |]
                 }
                 let remoteParams = RemoteParams.FromOpenChannel remoteNodeId inputInitFundee.RemoteInit openChannelMsg
                 let waitForFundingCreatedData = Data.WaitForFundingCreatedData.Create localParams remoteParams openChannelMsg acceptChannelMsg
