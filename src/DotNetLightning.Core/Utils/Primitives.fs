@@ -338,12 +338,29 @@ module Primitives =
         member this.AsNBitcoinFeeRate() =
             this.Value |> uint64 |> (*)4UL |> Money.Satoshis |> FeeRate
 
+        /// <summary>
+        ///     Suppose remote = 3.0 and local = 1.0. This formula will calculate the mismatch "ratio" to be:
+        ///         abs (2.0 * (remote - local) / (remote + local)) == abs (2.0 * (3.0 - 1.0) / (3.0 + 1.0)) == abs (2.0 * 2.0 / 4.0) == 1.0
+        ///     If remote instead equals 0.33 we get the same mismatch ratio:
+        ///         abs (2.0 * (remote - local) / (remote + local)) == abs (2.0 * (0.33 - 1.0) / (0.33 + 1.0)) == abs (2.0 * 0.66 / 1.33) == 1.0
+        ///     This example demonstrates how the formula is both symmetrical and invariant in
+        ///     the scale of the parameters. ie. swapping remote and local, or scaling them
+        ///     both by a constant factor, will produce the same mismatch ratio.
+        ///     See this wikipedia entry for more info on ways of calculating relative differences:
+        ///         https://en.wikipedia.org/wiki/Relative_change_and_difference
+        /// </summary>
+        member this.MismatchRatio (other: FeeRatePerKw) =
+            let local = double this.Value
+            let remote = double other.Value
+            abs (2.0 * (remote - local) / (remote + local))
+
         static member Max(a: FeeRatePerKw, b: FeeRatePerKw) =
             if (a.Value >= b.Value) then a else b
         static member (+) (a: FeeRatePerKw, b: uint32) =
             (a.Value + b) |> FeeRatePerKw
         static member (*) (a: FeeRatePerKw, b: uint32) =
             (a.Value * b) |> FeeRatePerKw
+
     /// Block Hash
     type BlockId = | BlockId of uint256 with
         member x.Value = let (BlockId v) = x in v
