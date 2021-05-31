@@ -10,6 +10,7 @@ open DotNetLightning.Serialization.Msgs
 
 open ResultUtils
 open ResultUtils.Portability
+open DotNetLightning.Transactions
 
 type LocalChanges = {
     Proposed: IUpdateMsg list
@@ -115,6 +116,12 @@ type RemoteNextCommitInfo =
                 | Waiting _ -> remoteNextCommitInfo
                 | Revoked _ -> Revoked commitmentPubKey)
 
+type Amounts = 
+    {
+        ToLocal: Money
+        ToRemote: Money
+    }
+
 type Commitments = {
     LocalParams: LocalParams
     RemoteParams: RemoteParams
@@ -186,3 +193,46 @@ type Commitments = {
             match remoteSigned, localSigned with
             | Some _, Some htlcIn -> htlcIn.Add |> Some
             | _ -> None
+
+        static member RemoteCommitAmount (remoteParams: RemoteParams)
+                                         (localParams: LocalParams)
+                                         (remoteCommit: RemoteCommit)
+                                             : Amounts =
+            let commitFee = Transactions.commitTxFee
+                                remoteParams.DustLimitSatoshis
+                                remoteCommit.Spec
+            
+            let (toLocalAmount, toRemoteAmount) =
+                if (localParams.IsFunder) then
+                    (remoteCommit.Spec.ToLocal.Satoshi
+                     |> Money.Satoshis),
+                    (remoteCommit.Spec.ToRemote.Satoshi
+                     |> Money.Satoshis) - commitFee
+                else
+                    (remoteCommit.Spec.ToLocal.Satoshi
+                     |> Money.Satoshis) - commitFee,
+                    (remoteCommit.Spec.ToRemote.Satoshi
+                     |> Money.Satoshis)
+
+            {Amounts.ToLocal = toLocalAmount; ToRemote = toRemoteAmount}
+
+        static member LocalCommitAmount (localParams: LocalParams)
+                                        (localCommit: LocalCommit)
+                                            : Amounts =
+            let commitFee = Transactions.commitTxFee
+                                localParams.DustLimitSatoshis
+                                localCommit.Spec
+            
+            let (toLocalAmount, toRemoteAmount) =
+                if (localParams.IsFunder) then
+                    (localCommit.Spec.ToLocal.Satoshi
+                     |> Money.Satoshis) - commitFee,
+                    (localCommit.Spec.ToRemote.Satoshi
+                     |> Money.Satoshis)
+                else
+                    (localCommit.Spec.ToLocal.Satoshi
+                     |> Money.Satoshis),
+                    (localCommit.Spec.ToRemote.Satoshi
+                     |> Money.Satoshis) - commitFee
+
+            {Amounts.ToLocal = toLocalAmount; ToRemote = toRemoteAmount}
