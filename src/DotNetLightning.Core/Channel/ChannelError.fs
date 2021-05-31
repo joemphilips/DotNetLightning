@@ -241,11 +241,6 @@ module private ValidationHelper =
 /// Helpers to create channel error
 [<AutoOpen>]
 module internal ChannelError =
-    let feeRateMismatch (FeeRatePerKw remote, FeeRatePerKw local) =
-        let remote = float remote
-        let local = float local
-        abs (2.0 * (remote - local) / (remote + local))
-
     let inline feeDeltaTooHigh msg (actualDelta, maxAccepted) =
         InvalidUpdateFeeError.Create
             msg
@@ -352,7 +347,7 @@ module internal OpenChannelMsgValidation =
                        (maxFeeRateMismatchRatio: float) =
         let localFeeRatePerKw =
             feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background)
-        let diff = feeRateMismatch(remoteFeeRatePerKw, localFeeRatePerKw)
+        let diff = remoteFeeRatePerKw.MismatchRatio localFeeRatePerKw
         if (diff > maxFeeRateMismatchRatio) then
             sprintf
                 "Peer's feerate (%A) was unacceptably far from the estimated fee rate of %A"
@@ -556,7 +551,7 @@ module internal UpdateAddHTLCValidationWithContext =
 module internal UpdateFeeValidation =
     let checkFeeDiffTooHigh (msg: UpdateFeeMsg) (localFeeRatePerKw: FeeRatePerKw) (maxFeeRateMismatchRatio) =
         let remoteFeeRatePerKw = msg.FeeRatePerKw
-        let diff = feeRateMismatch(remoteFeeRatePerKw, localFeeRatePerKw)
+        let diff = remoteFeeRatePerKw.MismatchRatio localFeeRatePerKw
         if (diff > maxFeeRateMismatchRatio) then
             (diff, maxFeeRateMismatchRatio)
             |> feeDeltaTooHigh msg

@@ -106,7 +106,11 @@
     <PackageReference Include="System.Memory" Version="4.5.3" />
   </ItemGroup>
 
-  <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">
+  <!-- this is a workaround only needed for nuget push (so, not Mono, but just "dotnet nuget"), for more info see
+       https://github.com/joemphilips/DotNetLightning/issues/14 and https://github.com/joemphilips/DotNetLightning/commit/c98307465f647257df1438beadb4cabc7db757f2
+       and https://github.com/NuGet/Home/issues/3891 and https://github.com/NuGet/Home/issues/3891#issuecomment-377319939 -->
+  <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences"
+          Condition="'$(MSBuildRuntimeType)'!='Mono'">
     <ItemGroup>
       <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
     </ItemGroup>

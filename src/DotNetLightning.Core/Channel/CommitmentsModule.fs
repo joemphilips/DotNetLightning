@@ -457,9 +457,9 @@ module ForceCloseFundsRecovery =
                     (lockTime.ToString())
                     (sequence.ToString())
 
-    let private tryGetObscuredCommitmentNumber (fundingOutPoint: OutPoint)
-                                               (transaction: Transaction)
-                                                   : Result<ObscuredCommitmentNumber, ValidateCommitmentTxError> = result {
+    let tryGetObscuredCommitmentNumber (fundingOutPoint: OutPoint)
+                                       (transaction: Transaction)
+                                           : Result<ObscuredCommitmentNumber, ValidateCommitmentTxError> = result {
         if transaction.Version <> TxVersionNumberOfCommitmentTxs then
             return! Error <| InvalidTxVersionForCommitmentTx transaction.Version
         if transaction.Inputs.Count = 0 then
@@ -510,34 +510,19 @@ module ForceCloseFundsRecovery =
 
         let toLocalWitScriptPubKey = toLocalScriptPubKey.WitHash.ScriptPubKey
 
-        let commitFee =
-            commitTxFee 
-                remoteParams.DustLimitSatoshis 
-                remoteCommit.Spec
-
-        let (toLocalAmount, toRemoteAmount) =
-            if (localParams.IsFunder) then
-                (remoteCommit.Spec.ToLocal.Satoshi
-                 |> Money.Satoshis),
-                (remoteCommit.Spec.ToRemote.Satoshi
-                 |> Money.Satoshis) - commitFee
-            else
-                (remoteCommit.Spec.ToLocal.Satoshi
-                 |> Money.Satoshis) - commitFee,
-                (remoteCommit.Spec.ToRemote.Satoshi
-                 |> Money.Satoshis)
+        let amounts = Commitments.RemoteCommitAmount remoteParams localParams remoteCommit
 
         let toLocalTxOut = 
-            TxOut(toLocalAmount, toLocalWitScriptPubKey)
+            TxOut(amounts.ToLocal, toLocalWitScriptPubKey)
         let toRemoteTxOut = 
-            TxOut(toRemoteAmount, toRemoteScriptPubKey)
+            TxOut(amounts.ToRemote, toRemoteScriptPubKey)
 
         let outputs = 
             seq {
-                if toLocalAmount > remoteParams.DustLimitSatoshis then
+                if amounts.ToLocal > remoteParams.DustLimitSatoshis then
                     yield toLocalTxOut
 
-                if toRemoteAmount > remoteParams.DustLimitSatoshis then
+                if amounts.ToRemote > remoteParams.DustLimitSatoshis then
                     yield toRemoteTxOut
             }
             |> Seq.sortWith TxOut.LexicographicCompare
