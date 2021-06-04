@@ -72,7 +72,6 @@ module OperationClose =
         cmdClose.ScriptPubKey
 
 type LocalParams = {
-    NodeId: NodeId
     ChannelPubKeys: ChannelPubKeys
     DustLimitSatoshis: Money
     MaxHTLCValueInFlightMSat: LNMoney
@@ -95,7 +94,6 @@ type RemoteParams = {
     MaxAcceptedHTLCs: uint16
     ChannelPubKeys: ChannelPubKeys
     Features: FeatureBits
-    MinimumDepth: BlockHeightOffset32
 }
     with
         static member FromAcceptChannel nodeId (remoteInit: InitMsg) (msg: AcceptChannelMsg) =
@@ -116,10 +114,12 @@ type RemoteParams = {
                 MaxAcceptedHTLCs = msg.MaxAcceptedHTLCs
                 ChannelPubKeys = channelPubKeys
                 Features = remoteInit.Features
-                MinimumDepth = msg.MinimumDepth
             }
 
-        static member FromOpenChannel (nodeId) (remoteInit: InitMsg) (msg: OpenChannelMsg) (channelHandshakeConfig: ChannelHandshakeConfig) =
+        static member FromOpenChannel (nodeId: NodeId)
+                                      (remoteInit: InitMsg)
+                                      (msg: OpenChannelMsg)
+                                          : RemoteParams =
             let channelPubKeys = {
                 FundingPubKey = msg.FundingPubKey
                 RevocationBasepoint = msg.RevocationBasepoint
@@ -137,7 +137,6 @@ type RemoteParams = {
                 MaxAcceptedHTLCs = msg.MaxAcceptedHTLCs
                 ChannelPubKeys = channelPubKeys
                 Features = remoteInit.Features
-                MinimumDepth = channelHandshakeConfig.MinimumDepth
             }
 
 type InputInitFunder = {
@@ -188,7 +187,6 @@ and InputInitFundee = {
 /// It is just an input to the state.
 type ChannelCommand =
     // open: funder
-    | CreateOutbound of InputInitFunder
     | ApplyAcceptChannel of AcceptChannelMsg
     | CreateFundingTx of fundingTx: FinalizedTx * outIndex: TxOutIndex
     | ApplyFundingSigned of FundingSignedMsg
@@ -196,7 +194,6 @@ type ChannelCommand =
     | ApplyFundingConfirmedOnBC of height: BlockHeight * txIndex: TxIndexInBlock * depth: BlockHeightOffset32
 
     // open: fundee
-    | CreateInbound of InputInitFundee
     | ApplyOpenChannel of OpenChannelMsg
     | ApplyFundingCreated of FundingCreatedMsg
 

@@ -58,7 +58,6 @@ let testList = testList "transaction tests" [
         let remoteCommitmentPubKeys = perCommitmentPoint.DeriveCommitmentPubKeys remoteChannelPubKeys
 
         let localParams = {
-            NodeId = localNodeId
             ChannelPubKeys = localChannelPubKeys
             DustLimitSatoshis = 546L |> Money.Satoshis
             MaxHTLCValueInFlightMSat = 10_000_000L |> LNMoney
@@ -80,7 +79,6 @@ let testList = testList "transaction tests" [
             MaxAcceptedHTLCs = 1000us
             ChannelPubKeys = remoteChannelPubKeys
             Features = FeatureBits.Zero
-            MinimumDepth = 6u |> BlockHeightOffset32
         }
         let feeRate = FeeRatePerKw (rand.Next(0, 300) |> uint32)
         let localAmount = 2_000_000_000L |> LNMoney
@@ -169,7 +167,6 @@ let testList = testList "transaction tests" [
             RemotePerCommitmentPoint = perCommitmentPoint
         }
         let remoteLocalParams: LocalParams = {
-            NodeId = remoteParams.NodeId
             ChannelPubKeys = remoteParams.ChannelPubKeys
             DustLimitSatoshis = remoteParams.DustLimitSatoshis
             MaxHTLCValueInFlightMSat = remoteParams.MaxHTLCValueInFlightMSat
@@ -182,7 +179,7 @@ let testList = testList "transaction tests" [
             Features = remoteParams.Features
         }
         let remoteRemoteParams = {
-            NodeId = localParams.NodeId
+            NodeId = localNodeId
             DustLimitSatoshis = localParams.DustLimitSatoshis
             MaxHTLCValueInFlightMSat = localParams.MaxHTLCValueInFlightMSat
             ChannelReserveSatoshis = localParams.ChannelReserveSatoshis
@@ -191,7 +188,6 @@ let testList = testList "transaction tests" [
             MaxAcceptedHTLCs = localParams.MaxAcceptedHTLCs
             ChannelPubKeys = localParams.ChannelPubKeys
             Features = localParams.Features
-            MinimumDepth = 6u |> BlockHeightOffset32
         }
 
         let transactionBuilder =
