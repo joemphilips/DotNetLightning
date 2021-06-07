@@ -643,8 +643,7 @@ module ForceCloseFundsRecovery =
                 localChannelPrivKeys.PaymentBasepointSecret
 
         return
-            network
-                .CreateTransactionBuilder()
+            (createDeterministicTransactionBuilder network)
                 .SetVersion(TxVersionNumberOfCommitmentTxs)
                 .AddKeys(localPaymentPrivKey.RawKey())
                 .AddCoins(Coin(transaction, uint32 toRemoteIndex))
@@ -691,7 +690,7 @@ module ForceCloseFundsRecovery =
         let remoteCommitmentPubKeys =
             perCommitmentPoint.DeriveCommitmentPubKeys remoteChannelPubKeys
 
-        let transactionBuilder = network.CreateTransactionBuilder()
+        let transactionBuilder = createDeterministicTransactionBuilder network
 
         let toLocalScriptPubKey =
             Scripts.toLocalDelayed
