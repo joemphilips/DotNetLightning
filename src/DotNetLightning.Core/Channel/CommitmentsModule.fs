@@ -427,10 +427,6 @@ module internal Commitments =
             }
 
 module ForceCloseFundsRecovery =
-    // The lightning spec specifies that commitment txs use version 2 bitcoin transactions.
-    [<Literal>]
-    let TxVersionNumberOfCommitmentTxs = 2u
-
     type ValidateCommitmentTxError =
         | InvalidTxVersionForCommitmentTx of uint32
         | TxHasNoInputs

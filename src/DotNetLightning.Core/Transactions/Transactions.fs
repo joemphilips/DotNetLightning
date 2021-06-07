@@ -249,6 +249,10 @@ module Transactions =
 
     [<AutoOpen>]
     module Constants =
+        // The lightning spec specifies that commitment txs use version 2 bitcoin transactions.
+        [<Literal>]
+        let TxVersionNumberOfCommitmentTxs = 2u
+
         // ------- From eclair ---------
         [<Literal>]
         let COMMITMENT_TX_BASE_WEIGHT = 724UL
@@ -349,7 +353,7 @@ module Transactions =
                 remotePaymentBasepoint
 
     /// Sort by BOLT 3: Compliant way (i.e. BIP69 + CLTV order)
-    let sortTxOut (txOutsWithMeta: (TxOut * _) list) =
+    let sortTxOut (txOutsWithMeta: (TxOut * Option<UpdateAddHTLCMsg>) list) =
         txOutsWithMeta
         |> List.sortBy(fun txom -> { SortableTxOut.TxOut = (fst txom);UpdateAddHTLC = (snd txom) })
         |> List.map(fst)
@@ -404,18 +408,35 @@ module Transactions =
         let lockTime = obscuredCommitmentNumber.LockTime
 
         let tx =
-            let tx = network.CreateTransaction()
-            tx.Version <- 2u
-            let txin = TxIn(inputInfo.Outpoint)
-            txin.Sequence <- sequence
-            tx.Inputs.Add(txin) |> ignore
-            let txOuts =
-                ([toLocalDelayedOutput_opt; toRemoteOutput_opt;] |> List.choose id |> List.map(fun x -> x, None))
-                @ (htlcOfferedOutputsWithMetadata)
-                @ htlcReceivedOutputsWithMetadata
-            tx.Outputs.AddRange(txOuts |> sortTxOut)
-            tx.LockTime <- lockTime
-            tx
+
+            let txb, outAmount =
+                let txb =
+                    (createDeterministicTransactionBuilder network)
+                        .SetVersion(TxVersionNumberOfCommitmentTxs)
+                        .SetLockTime(lockTime)
+                        .AddCoin(
+                            inputInfo,
+                            CoinOptions (
+                                Sequence = Nullable sequence
+                            )
+                        )
+                let txOuts =
+                    ([toLocalDelayedOutput_opt; toRemoteOutput_opt] |> List.choose id |> List.map(fun x -> x, None))
+                    @ (htlcOfferedOutputsWithMetadata)
+                    @ htlcReceivedOutputsWithMetadata
+                List.fold
+                    (
+                        fun ((txb, outAmount): TransactionBuilder * Money) (txOut: TxOut) ->
+                            txb.Send(txOut.ScriptPubKey, txOut.Value) |> ignore
+                            (txb, outAmount + txOut.Value)
+                    )
+                    (txb, Money 0UL)
+                    (sortTxOut txOuts)
+
+            let actualFee = inputInfo.Amount - outAmount
+            txb.SendFees(actualFee)
+                .BuildTransaction true
+
         let psbt =
             let p = PSBT.FromTransaction(tx, network)
             p.AddCoins(inputInfo)
