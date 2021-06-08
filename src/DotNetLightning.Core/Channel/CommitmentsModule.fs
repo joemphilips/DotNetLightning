@@ -427,10 +427,6 @@ module internal Commitments =
             }
 
 module ForceCloseFundsRecovery =
-    // The lightning spec specifies that commitment txs use version 2 bitcoin transactions.
-    [<Literal>]
-    let TxVersionNumberOfCommitmentTxs = 2u
-
     type ValidateCommitmentTxError =
         | InvalidTxVersionForCommitmentTx of uint32
         | TxHasNoInputs
@@ -494,7 +490,7 @@ module ForceCloseFundsRecovery =
         let remoteCommitmentPubKeys =
             perCommitmentPoint.DeriveCommitmentPubKeys remoteChannelPubKeys
 
-        let transactionBuilder = createTransactionBuilder network
+        let transactionBuilder = createDeterministicTransactionBuilder network
 
         let toRemoteScriptPubKey =
             localCommitmentPubKeys
@@ -643,8 +639,7 @@ module ForceCloseFundsRecovery =
                 localChannelPrivKeys.PaymentBasepointSecret
 
         return
-            network
-                .CreateTransactionBuilder()
+            (createDeterministicTransactionBuilder network)
                 .SetVersion(TxVersionNumberOfCommitmentTxs)
                 .AddKeys(localPaymentPrivKey.RawKey())
                 .AddCoins(Coin(transaction, uint32 toRemoteIndex))
@@ -691,7 +686,7 @@ module ForceCloseFundsRecovery =
         let remoteCommitmentPubKeys =
             perCommitmentPoint.DeriveCommitmentPubKeys remoteChannelPubKeys
 
-        let transactionBuilder = network.CreateTransactionBuilder()
+        let transactionBuilder = createDeterministicTransactionBuilder network
 
         let toLocalScriptPubKey =
             Scripts.toLocalDelayed
