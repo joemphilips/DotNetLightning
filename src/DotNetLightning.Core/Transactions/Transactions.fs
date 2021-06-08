@@ -249,6 +249,10 @@ module Transactions =
 
     [<AutoOpen>]
     module Constants =
+        // The lightning spec specifies that commitment txs use version 2 bitcoin transactions.
+        [<Literal>]
+        let TxVersionNumberOfCommitmentTxs = 2u
+
         // ------- From eclair ---------
         [<Literal>]
         let COMMITMENT_TX_BASE_WEIGHT = 724UL
@@ -300,10 +304,11 @@ module Transactions =
         [<Literal>]
         let OFFERED_HTLC_SCRIPT_WEIGHT = 133uy
 
-    let internal createTransactionBuilder (network: Network) =
+    let internal createDeterministicTransactionBuilder (network: Network) =
         let txb = network.CreateTransactionBuilder()
         txb.ShuffleOutputs <- false
         txb.ShuffleInputs <- false
+        txb.CoinSelector <- DefaultCoinSelector 0
         txb
 
     let UINT32_MAX = 0xffffffffu
@@ -348,7 +353,7 @@ module Transactions =
                 remotePaymentBasepoint
 
     /// Sort by BOLT 3: Compliant way (i.e. BIP69 + CLTV order)
-    let sortTxOut (txOutsWithMeta: (TxOut * _) list) =
+    let sortTxOut (txOutsWithMeta: (TxOut * Option<UpdateAddHTLCMsg>) list) =
         txOutsWithMeta
         |> List.sortBy(fun txom -> { SortableTxOut.TxOut = (fst txom);UpdateAddHTLC = (snd txom) })
         |> List.map(fst)
@@ -403,18 +408,35 @@ module Transactions =
         let lockTime = obscuredCommitmentNumber.LockTime
 
         let tx =
-            let tx = network.CreateTransaction()
-            tx.Version <- 2u
-            let txin = TxIn(inputInfo.Outpoint)
-            txin.Sequence <- sequence
-            tx.Inputs.Add(txin) |> ignore
-            let txOuts =
-                ([toLocalDelayedOutput_opt; toRemoteOutput_opt;] |> List.choose id |> List.map(fun x -> x, None))
-                @ (htlcOfferedOutputsWithMetadata)
-                @ htlcReceivedOutputsWithMetadata
-            tx.Outputs.AddRange(txOuts |> sortTxOut)
-            tx.LockTime <- lockTime
-            tx
+
+            let txb, outAmount =
+                let txb =
+                    (createDeterministicTransactionBuilder network)
+                        .SetVersion(TxVersionNumberOfCommitmentTxs)
+                        .SetLockTime(lockTime)
+                        .AddCoin(
+                            inputInfo,
+                            CoinOptions (
+                                Sequence = Nullable sequence
+                            )
+                        )
+                let txOuts =
+                    ([toLocalDelayedOutput_opt; toRemoteOutput_opt] |> List.choose id |> List.map(fun x -> x, None))
+                    @ (htlcOfferedOutputsWithMetadata)
+                    @ htlcReceivedOutputsWithMetadata
+                List.fold
+                    (
+                        fun ((txb, outAmount): TransactionBuilder * Money) (txOut: TxOut) ->
+                            txb.Send(txOut.ScriptPubKey, txOut.Value) |> ignore
+                            (txb, outAmount + txOut.Value)
+                    )
+                    (txb, Money 0UL)
+                    (sortTxOut txOuts)
+
+            let actualFee = inputInfo.Amount - outAmount
+            txb.SendFees(actualFee)
+                .BuildTransaction true
+
         let psbt =
             let p = PSBT.FromTransaction(tx, network)
             p.AddCoins(inputInfo)
@@ -518,7 +540,7 @@ module Transactions =
             AmountBelowDustLimit amount |> Error
         else
             let psbt = 
-                let txb = createTransactionBuilder network
+                let txb = createDeterministicTransactionBuilder network
                 let indexedTxOut = commitTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex)
                 let scriptCoin = ScriptCoin(indexedTxOut, redeem)
                 let dest = Scripts.toLocalDelayed localRevocationPubKey toLocalDelay localDelayedPaymentPubKey
@@ -560,7 +582,7 @@ module Transactions =
             AmountBelowDustLimit amount |> Error
         else
             let psbt = 
-                let txb = createTransactionBuilder network
+                let txb = createDeterministicTransactionBuilder network
                 let scriptCoin =
                     let coin = commitTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex)
                     ScriptCoin(coin, redeem)
@@ -641,7 +663,7 @@ module Transactions =
             AmountBelowDustLimit amount |> Error
         else
             let psbt = 
-                let txb = createTransactionBuilder network
+                let txb = createDeterministicTransactionBuilder network
                 let coin = Coin(commitTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex))
                 let tx = txb.AddCoins(coin)
                             .Send(localFinalScriptPubKey, amount)
@@ -674,7 +696,7 @@ module Transactions =
         else
             let psbt = 
                 let coin = Coin(commitTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex))
-                let tx = (createTransactionBuilder network)
+                let tx = (createDeterministicTransactionBuilder network)
                           .AddCoins(coin)
                           .Send(localFinalScriptPubKey, amount)
                           .SendFees(fee)
@@ -703,7 +725,7 @@ module Transactions =
         else
             let psbt = 
                 let coin = Coin(outPut)
-                let txb = createTransactionBuilder network
+                let txb = createDeterministicTransactionBuilder network
                 // we have already done dust limit check above
                 txb.DustPrevention <- false
                 let tx = txb
@@ -738,7 +760,7 @@ module Transactions =
         else
             let psbt = 
                 let coin = Coin(outPut)
-                let txb = createTransactionBuilder network
+                let txb = createDeterministicTransactionBuilder network
                 // we have already done dust limit check above
                 txb.DustPrevention <- false
                 let tx = txb
@@ -783,7 +805,7 @@ module Transactions =
                 }
                 |> Seq.sortWith TxOut.LexicographicCompare
             let psbt = 
-                let txb = (createTransactionBuilder network)
+                let txb = (createDeterministicTransactionBuilder network)
                            .AddCoins(commitTxInput)
                            .SendFees(closingFee)
                            .SetLockTime(!> 0u)
