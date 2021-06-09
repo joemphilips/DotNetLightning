@@ -78,6 +78,10 @@ let pushOnlyOpcodeGen = bytesOfNGen(4) |> Gen.map(Op.GetPushOp)
 let pushOnlyOpcodesGen = Gen.listOf pushOnlyOpcodeGen
 
 let pushScriptGen = Gen.nonEmptyListOf pushOnlyOpcodeGen |> Gen.map(fun ops -> Script(ops))
+let shutdownScriptPubKeyGen = gen {
+    let! pubKey = pubKeyGen
+    return ShutdownScriptPubKey.FromPubKeyP2pkh pubKey
+}
 
 let cipherSeedGen = gen {
     let! v = Arb.generate<uint8>

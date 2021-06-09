@@ -118,15 +118,3 @@ module Scripts =
         opList.Add(!> OpcodeType.OP_ENDIF);
         Script(opList);
 
-    let isValidFinalScriptPubKey(spk: Script) =
-        (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(spk))
-        || (PayToScriptHashTemplate.Instance.CheckScriptPubKey(spk))
-        || (PayToWitPubKeyHashTemplate.Instance.CheckScriptPubKey(spk))
-        || (PayToWitScriptHashTemplate.Instance.CheckScriptPubKey(spk))
-        
-    let checkIsValidFinalScriptPubKey(spk: Script) =
-        if (isValidFinalScriptPubKey spk) then
-            Ok ()
-        else
-            sprintf "Invalid final script pubkey(%A). it must be one of p2pkh, p2sh, p2wpkh, p2wsh" spk
-            |> Error

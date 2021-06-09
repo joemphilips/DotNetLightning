@@ -121,7 +121,7 @@ let openChannelGen =
                 return [| OpenChannelTLV.Unknown genericTLV |]
             }
             gen {
-                let! shutdownScript = (Gen.optionOf pushScriptGen)
+                let! shutdownScript = (Gen.optionOf shutdownScriptPubKeyGen)
                 return [| OpenChannelTLV.UpfrontShutdownScript shutdownScript |]
             }
         ]
@@ -167,7 +167,7 @@ let acceptChannelGen =
                 return [| AcceptChannelTLV.Unknown genericTLV |]
             };
             gen {
-                let! shutdownScript = (Gen.optionOf pushScriptGen)
+                let! shutdownScript = (Gen.optionOf shutdownScriptPubKeyGen)
                 return [| AcceptChannelTLV.UpfrontShutdownScript shutdownScript |]
             }
         ]
@@ -204,7 +204,7 @@ let fundingLockedGen = gen {
 
 let shutdownGen = gen {
     let! c = ChannelId <!> uint256Gen
-    let! sc = pushScriptGen
+    let! sc = shutdownScriptPubKeyGen
     return { ChannelId = c; ScriptPubKey = sc }
 }
 
