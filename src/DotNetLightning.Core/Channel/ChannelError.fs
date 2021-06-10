@@ -543,7 +543,7 @@ module internal UpdateAddHTLCValidationWithContext =
         check acceptedHTLCs (>) (int limit) "We have much number of HTLCs (%A). Limit specified by remote is (%A). So not going to relay"
 
     let checkWeHaveSufficientFunds (state: Commitments) (currentSpec) =
-        let fees = if (state.LocalParams.IsFunder) then (Transactions.commitTxFee (state.RemoteParams.DustLimitSatoshis) currentSpec) else Money.Zero
+        let fees = if (state.IsFunder) then (Transactions.commitTxFee (state.RemoteParams.DustLimitSatoshis) currentSpec) else Money.Zero
         let missing = currentSpec.ToRemote.ToMoney() - state.RemoteParams.ChannelReserveSatoshis - fees
         if (missing < Money.Zero) then
             sprintf "We don't have sufficient funds to send HTLC. current to_remote amount is: %A. Remote Channel Reserve is: %A. and fee is %A"

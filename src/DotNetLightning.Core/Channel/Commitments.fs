@@ -123,6 +123,7 @@ type Commitments = {
     RemoteParams: RemoteParams
     ChannelFlags: uint8
     FundingScriptCoin: ScriptCoin
+    IsFunder: bool
     LocalCommit: LocalCommit
     RemoteCommit: RemoteCommit
     LocalChanges: LocalChanges
@@ -191,8 +192,8 @@ type Commitments = {
             | Some _, Some htlcIn -> htlcIn.Add |> Some
             | _ -> None
 
-        static member RemoteCommitAmount (remoteParams: RemoteParams)
-                                         (localParams: LocalParams)
+        static member RemoteCommitAmount (isLocalFunder: bool)
+                                         (remoteParams: RemoteParams)
                                          (remoteCommit: RemoteCommit)
                                              : Amounts =
             let commitFee = Transactions.commitTxFee
@@ -200,7 +201,7 @@ type Commitments = {
                                 remoteCommit.Spec
             
             let (toLocalAmount, toRemoteAmount) =
-                if (localParams.IsFunder) then
+                if isLocalFunder then
                     (remoteCommit.Spec.ToLocal.Satoshi
                      |> Money.Satoshis),
                     (remoteCommit.Spec.ToRemote.Satoshi
@@ -213,7 +214,8 @@ type Commitments = {
 
             {Amounts.ToLocal = toLocalAmount; ToRemote = toRemoteAmount}
 
-        static member LocalCommitAmount (localParams: LocalParams)
+        static member LocalCommitAmount (isLocalFunder: bool)
+                                        (localParams: LocalParams)
                                         (localCommit: LocalCommit)
                                             : Amounts =
             let commitFee = Transactions.commitTxFee
@@ -221,7 +223,7 @@ type Commitments = {
                                 localCommit.Spec
             
             let (toLocalAmount, toRemoteAmount) =
-                if (localParams.IsFunder) then
+                if isLocalFunder then
                     (localCommit.Spec.ToLocal.Satoshi
                      |> Money.Satoshis) - commitFee,
                     (localCommit.Spec.ToRemote.Satoshi

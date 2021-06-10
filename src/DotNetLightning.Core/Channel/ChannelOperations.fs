@@ -66,7 +66,6 @@ type LocalParams = {
     HTLCMinimumMSat: LNMoney
     ToSelfDelay: BlockHeightOffset16
     MaxAcceptedHTLCs: uint16
-    IsFunder: bool
     Features: FeatureBits
 }
 

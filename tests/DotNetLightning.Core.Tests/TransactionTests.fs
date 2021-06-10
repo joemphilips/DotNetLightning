@@ -53,7 +53,7 @@ let testList = testList "transaction tests" [
         let localCommitmentPubKeys = perCommitmentPoint.DeriveCommitmentPubKeys localChannelPubKeys
         let remoteCommitmentPubKeys = perCommitmentPoint.DeriveCommitmentPubKeys remoteChannelPubKeys
 
-        let localParams = {
+        let localParams : LocalParams = {
             ChannelPubKeys = localChannelPubKeys
             DustLimitSatoshis = 546L |> Money.Satoshis
             MaxHTLCValueInFlightMSat = 10_000_000L |> LNMoney
@@ -61,7 +61,6 @@ let testList = testList "transaction tests" [
             HTLCMinimumMSat = 1000L |> LNMoney
             ToSelfDelay = 144us |> BlockHeightOffset16
             MaxAcceptedHTLCs = 1000us
-            IsFunder = true
             Features = FeatureBits.Zero
         }
         let remoteParams = {
@@ -108,6 +107,7 @@ let testList = testList "transaction tests" [
 
         let transactionBuilder =
             ForceCloseFundsRecovery.tryGetFundsFromLocalCommitmentTx
+                true
                 localParams
                 remoteParams
                 fundingScriptCoin
@@ -168,7 +168,6 @@ let testList = testList "transaction tests" [
             HTLCMinimumMSat = remoteParams.HTLCMinimumMSat
             ToSelfDelay = remoteParams.ToSelfDelay
             MaxAcceptedHTLCs = remoteParams.MaxAcceptedHTLCs
-            IsFunder = false
             Features = remoteParams.Features
         }
         let remoteRemoteParams = {
@@ -184,6 +183,7 @@ let testList = testList "transaction tests" [
 
         let transactionBuilder =
             ForceCloseFundsRecovery.tryGetFundsFromRemoteCommitmentTx
+                false
                 remoteLocalParams
                 remoteRemoteParams
                 fundingScriptCoin
@@ -209,6 +209,7 @@ let testList = testList "transaction tests" [
 
         let transactionBuilder =
             ForceCloseFundsRecovery.createPenaltyTx
+                false
                 remoteLocalParams
                 remoteRemoteParams
                 perCommitmentSecret

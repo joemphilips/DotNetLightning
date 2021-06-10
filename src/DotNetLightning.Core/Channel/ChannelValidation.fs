@@ -79,18 +79,20 @@ module internal ChannelHelpers =
             res + (uint64 (feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Normal).Value) * SPENDING_INPUT_FOR_A_OUTPUT_WEIGHT) / 1000UL
         res |> LNMoney.Satoshis
 
-    let makeFirstCommitTxs (localParams: LocalParams)
-                          (remoteParams: RemoteParams)
-                          (fundingSatoshis: Money)
-                          (pushMSat: LNMoney)
-                          (initialFeeRatePerKw: FeeRatePerKw)
-                          (fundingOutputIndex: TxOutIndex)
-                          (fundingTxId: TxId)
-                          (localPerCommitmentPoint: PerCommitmentPoint)
-                          (remotePerCommitmentPoint: PerCommitmentPoint)
-                          (n: Network): Result<CommitmentSpec * CommitTx * CommitmentSpec * CommitTx, ChannelError> =
-        let toLocal = if (localParams.IsFunder) then fundingSatoshis.ToLNMoney() - pushMSat else pushMSat
-        let toRemote = if (localParams.IsFunder) then pushMSat else fundingSatoshis.ToLNMoney() - pushMSat
+    let makeFirstCommitTxs (localIsFunder: bool)
+                           (localParams: LocalParams)
+                           (remoteParams: RemoteParams)
+                           (fundingSatoshis: Money)
+                           (pushMSat: LNMoney)
+                           (initialFeeRatePerKw: FeeRatePerKw)
+                           (fundingOutputIndex: TxOutIndex)
+                           (fundingTxId: TxId)
+                           (localPerCommitmentPoint: PerCommitmentPoint)
+                           (remotePerCommitmentPoint: PerCommitmentPoint)
+                           (n: Network)
+                               : Result<CommitmentSpec * CommitTx * CommitmentSpec * CommitTx, ChannelError> =
+        let toLocal = if localIsFunder then fundingSatoshis.ToLNMoney() - pushMSat else pushMSat
+        let toRemote = if localIsFunder then pushMSat else fundingSatoshis.ToLNMoney() - pushMSat
         let localChannelKeys = localParams.ChannelPubKeys
         let remoteChannelKeys = remoteParams.ChannelPubKeys
         let localSpec = CommitmentSpec.Create toLocal toRemote initialFeeRatePerKw
@@ -117,7 +119,7 @@ module internal ChannelHelpers =
                                           CommitmentNumber.FirstCommitment
                                           localChannelKeys.PaymentBasepoint
                                           remoteChannelKeys.PaymentBasepoint
-                                          localParams.IsFunder
+                                          localIsFunder
                                           localParams.DustLimitSatoshis
                                           remotePubKeysForLocalCommitment.RevocationPubKey
                                           remoteParams.ToSelfDelay
@@ -136,7 +138,7 @@ module internal ChannelHelpers =
                                           CommitmentNumber.FirstCommitment
                                           remoteChannelKeys.PaymentBasepoint
                                           localChannelKeys.PaymentBasepoint
-                                          (not localParams.IsFunder)
+                                          (not localIsFunder)
                                           (remoteParams.DustLimitSatoshis)
                                           localPubKeysForRemoteCommitment.RevocationPubKey
                                           localParams.ToSelfDelay
@@ -149,7 +151,7 @@ module internal ChannelHelpers =
 
             (localSpec, localCommitTx, remoteSpec, remoteCommitTx) |> Ok
 
-        if (not localParams.IsFunder) then
+        if (not localIsFunder) then
             result {
                 do! checkTheyCanAffordFee()
                 return! (makeFirstCommitTxCore())
