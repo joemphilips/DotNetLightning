@@ -54,10 +54,6 @@ type RemoteChanges = {
             (fun v lc -> { lc with ACKed = v })
 
 
-type Changes =
-    | Local of LocalChanges
-    | Remote of RemoteChanges
-
 type PublishableTxs = {
     CommitTx: FinalizedTx
     HTLCTxs: FinalizedTx list
@@ -136,7 +132,6 @@ type Commitments = {
     OriginChannels: Map<HTLCId, HTLCSource>
     RemoteNextCommitInfo: RemoteNextCommitInfo
     RemotePerCommitmentSecrets: PerCommitmentSecretStore
-    ChannelId: ChannelId
 }
     with
         static member LocalChanges_: Lens<_, _> =
@@ -149,6 +144,8 @@ type Commitments = {
             (fun c -> c.RemoteNextCommitInfo),
             (fun v c -> { c with RemoteNextCommitInfo = v })
 
+        member this.ChannelId(): ChannelId =
+            this.FundingScriptCoin.Outpoint.ToChannelId()
 
         member this.AddLocalProposal(proposal: IUpdateMsg) =
             let lens = Commitments.LocalChanges_ >-> LocalChanges.Proposed_

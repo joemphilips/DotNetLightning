@@ -203,10 +203,10 @@ module internal Validation =
         |> Result.mapError(InvalidAcceptChannelError.Create msg >> InvalidAcceptChannel)
 
 
-    let checkOperationAddHTLC (state: NormalData) (op: OperationAddHTLC) =
+    let checkOperationAddHTLC (commitments: Commitments) (op: OperationAddHTLC) =
         Validation.ofResult(UpdateAddHTLCValidation.checkExpiryIsNotPast op.CurrentHeight op.Expiry)
         *> UpdateAddHTLCValidation.checkExpiryIsInAcceptableRange op.CurrentHeight op.Expiry
-        *^> UpdateAddHTLCValidation.checkAmountIsLargerThanMinimum state.Commitments.RemoteParams.HTLCMinimumMSat op.Amount
+        *^> UpdateAddHTLCValidation.checkAmountIsLargerThanMinimum commitments.RemoteParams.HTLCMinimumMSat op.Amount
         |> Result.mapError(InvalidOperationAddHTLCError.Create op >> InvalidOperationAddHTLC)
 
     let checkOurUpdateAddHTLCIsAcceptableWithCurrentSpec (currentSpec) (state: Commitments) (add: UpdateAddHTLCMsg) =
