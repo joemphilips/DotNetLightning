@@ -71,7 +71,6 @@ type LocalParams = {
 }
 
 type RemoteParams = {
-    NodeId: NodeId
     DustLimitSatoshis: Money
     MaxHTLCValueInFlightMSat: LNMoney
     ChannelReserveSatoshis: Money
@@ -82,7 +81,7 @@ type RemoteParams = {
     Features: FeatureBits
 }
     with
-        static member FromAcceptChannel nodeId (remoteInit: InitMsg) (msg: AcceptChannelMsg) =
+        static member FromAcceptChannel (remoteInit: InitMsg) (msg: AcceptChannelMsg) =
             let channelPubKeys = {
                 FundingPubKey = msg.FundingPubKey
                 RevocationBasepoint = msg.RevocationBasepoint
@@ -91,7 +90,6 @@ type RemoteParams = {
                 HtlcBasepoint = msg.HTLCBasepoint
             }
             {
-                NodeId = nodeId
                 DustLimitSatoshis = msg.DustLimitSatoshis
                 MaxHTLCValueInFlightMSat = msg.MaxHTLCValueInFlightMsat
                 ChannelReserveSatoshis = msg.ChannelReserveSatoshis
@@ -102,8 +100,7 @@ type RemoteParams = {
                 Features = remoteInit.Features
             }
 
-        static member FromOpenChannel (nodeId: NodeId)
-                                      (remoteInit: InitMsg)
+        static member FromOpenChannel (remoteInit: InitMsg)
                                       (msg: OpenChannelMsg)
                                           : RemoteParams =
             let channelPubKeys = {
@@ -114,7 +111,6 @@ type RemoteParams = {
                 HtlcBasepoint = msg.HTLCBasepoint
             }
             {
-                NodeId = nodeId
                 DustLimitSatoshis = msg.DustLimitSatoshis
                 MaxHTLCValueInFlightMSat = msg.MaxHTLCValueInFlightMsat
                 ChannelReserveSatoshis = msg.ChannelReserveSatoshis

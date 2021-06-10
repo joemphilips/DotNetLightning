@@ -23,8 +23,6 @@ let testList = testList "transaction tests" [
         let localNodeMasterPrivKey =
             let extKey = ExtKey()
             NodeMasterPrivKey extKey
-        let localNodeSecret = localNodeMasterPrivKey.NodeSecret()
-        let localNodeId = localNodeSecret.NodeId()
         let localChannelPrivKeys = localNodeMasterPrivKey.ChannelPrivKeys (rand.Next(1, 100))
         let localChannelPubKeys = localChannelPrivKeys.ToChannelPubKeys()
         let localDestPrivKey = new Key()
@@ -33,8 +31,6 @@ let testList = testList "transaction tests" [
         let remoteNodeMasterPrivKey =
             let extKey = ExtKey()
             NodeMasterPrivKey extKey
-        let remoteNodeSecret = remoteNodeMasterPrivKey.NodeSecret()
-        let remoteNodeId = remoteNodeSecret.NodeId()
         let remoteChannelPrivKeys = remoteNodeMasterPrivKey.ChannelPrivKeys (rand.Next(1, 100))
         let remoteChannelPubKeys = remoteChannelPrivKeys.ToChannelPubKeys()
 
@@ -69,7 +65,6 @@ let testList = testList "transaction tests" [
             Features = FeatureBits.Zero
         }
         let remoteParams = {
-            NodeId = remoteNodeId
             DustLimitSatoshis = 546L |> Money.Satoshis
             MaxHTLCValueInFlightMSat = 10_000_000L |> LNMoney
             ChannelReserveSatoshis = 1000L |> Money.Satoshis
@@ -177,7 +172,6 @@ let testList = testList "transaction tests" [
             Features = remoteParams.Features
         }
         let remoteRemoteParams = {
-            NodeId = localNodeId
             DustLimitSatoshis = localParams.DustLimitSatoshis
             MaxHTLCValueInFlightMSat = localParams.MaxHTLCValueInFlightMSat
             ChannelReserveSatoshis = localParams.ChannelReserveSatoshis

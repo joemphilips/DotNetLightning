@@ -234,7 +234,7 @@ and ChannelWaitingForFundingTx = {
     member self.CreateFundingTx (fundingTx: FinalizedTx)
                                 (outIndex: TxOutIndex)
                                     : Result<FundingCreatedMsg * ChannelWaitingForFundingSigned, ChannelError> = result {
-        let remoteParams = RemoteParams.FromAcceptChannel self.RemoteNodeId (self.RemoteInit) self.LastReceived
+        let remoteParams = RemoteParams.FromAcceptChannel self.RemoteInit self.LastReceived
         let localParams = self.LocalParams
         let commitmentSpec = CommitmentSpec.Create (self.FundingSatoshis.ToLNMoney() - self.PushMSat) self.PushMSat self.FundingTxFeeRatePerKw
         let commitmentSeed = self.ChannelPrivKeys.CommitmentSeed
@@ -447,7 +447,7 @@ and Channel = {
                     FirstPerCommitmentPoint = firstPerCommitmentPoint
                     TLVs = [| AcceptChannelTLV.UpfrontShutdownScript shutdownScriptPubKey |]
                 }
-                let remoteParams = RemoteParams.FromOpenChannel remoteNodeId remoteInit openChannelMsg
+                let remoteParams = RemoteParams.FromOpenChannel remoteInit openChannelMsg
                 let channelPrivKeys = nodeMasterPrivKey.ChannelPrivKeys channelIndex
                 let nodeSecret = nodeMasterPrivKey.NodeSecret()
                 let channelWaitingForFundingCreated = {
