@@ -463,27 +463,32 @@ module internal AcceptChannelMsgValidation =
         else
             Ok()
 
-    let checkChannelReserveSatoshis (state: Data.WaitForAcceptChannelData) msg =
-        if msg.ChannelReserveSatoshis > state.LastSent.FundingSatoshis then
-            sprintf "bogus channel_reserve_satoshis %A . Must be larger than funding_satoshis %A" (msg.ChannelReserveSatoshis) (state.InputInitFunder.FundingSatoshis)
+    let checkChannelReserveSatoshis (fundingSatoshis: Money)
+                                    (channelReserveSatoshis: Money)
+                                    (dustLimitSatoshis: Money)
+                                    (acceptChannelMsg: AcceptChannelMsg) =
+        if acceptChannelMsg.ChannelReserveSatoshis > fundingSatoshis then
+            sprintf "bogus channel_reserve_satoshis %A . Must be larger than funding_satoshis %A" (acceptChannelMsg.ChannelReserveSatoshis) fundingSatoshis
             |> Error
-        else if msg.DustLimitSatoshis > state.LastSent.ChannelReserveSatoshis then
-            sprintf "Bogus channel_reserve and dust_limit. dust_limit: %A; channel_reserve %A" msg.DustLimitSatoshis (state.LastSent.ChannelReserveSatoshis)
+        else if acceptChannelMsg.DustLimitSatoshis > channelReserveSatoshis then
+            sprintf "Bogus channel_reserve and dust_limit. dust_limit: %A; channel_reserve %A" acceptChannelMsg.DustLimitSatoshis channelReserveSatoshis
             |> Error
-        else if msg.ChannelReserveSatoshis < state.LastSent.DustLimitSatoshis then
-            sprintf "Peer never wants payout outputs? channel_reserve_satoshis are %A; dust_limit_satoshis in our last sent msg is %A" msg.ChannelReserveSatoshis (state.LastSent.DustLimitSatoshis)
+        else if acceptChannelMsg.ChannelReserveSatoshis < dustLimitSatoshis then
+            sprintf "Peer never wants payout outputs? channel_reserve_satoshis are %A; dust_limit_satoshis in our last sent msg is %A" acceptChannelMsg.ChannelReserveSatoshis dustLimitSatoshis
             |> Error
         else
             Ok()
 
-    let checkDustLimitIsLargerThanOurChannelReserve (state: Data.WaitForAcceptChannelData) msg =
+    let checkDustLimitIsLargerThanOurChannelReserve (channelReserveSatoshis: Money)
+                                                    (acceptChannelMsg: AcceptChannelMsg) =
         check
-            msg.DustLimitSatoshis (>) state.LastSent.ChannelReserveSatoshis
+            acceptChannelMsg.DustLimitSatoshis (>) channelReserveSatoshis
             "dust limit (%A) is bigger than our channel reserve (%A)" 
 
-    let checkMinimumHTLCValueIsAcceptable (state: Data.WaitForAcceptChannelData) (msg: AcceptChannelMsg) =
-        if (msg.HTLCMinimumMSat.ToMoney() >= (state.LastSent.FundingSatoshis - msg.ChannelReserveSatoshis)) then
-            sprintf "Minimum HTLC value is greater than full channel value HTLCMinimum %A satoshi; funding_satoshis %A; channel_reserve: %A" (msg.HTLCMinimumMSat.ToMoney()) (state.LastSent.FundingSatoshis) (msg.ChannelReserveSatoshis)
+    let checkMinimumHTLCValueIsAcceptable (fundingSatoshis: Money)
+                                          (acceptChannelMsg: AcceptChannelMsg) =
+        if (acceptChannelMsg.HTLCMinimumMSat.ToMoney() >= (fundingSatoshis - acceptChannelMsg.ChannelReserveSatoshis)) then
+            sprintf "Minimum HTLC value is greater than full channel value HTLCMinimum %A satoshi; funding_satoshis %A; channel_reserve: %A" (acceptChannelMsg.HTLCMinimumMSat.ToMoney()) (fundingSatoshis) (acceptChannelMsg.ChannelReserveSatoshis)
             |> Error
         else
             Ok()
@@ -538,7 +543,7 @@ module internal UpdateAddHTLCValidationWithContext =
         check acceptedHTLCs (>) (int limit) "We have much number of HTLCs (%A). Limit specified by remote is (%A). So not going to relay"
 
     let checkWeHaveSufficientFunds (state: Commitments) (currentSpec) =
-        let fees = if (state.LocalParams.IsFunder) then (Transactions.commitTxFee (state.RemoteParams.DustLimitSatoshis) currentSpec) else Money.Zero
+        let fees = if (state.IsFunder) then (Transactions.commitTxFee (state.RemoteParams.DustLimitSatoshis) currentSpec) else Money.Zero
         let missing = currentSpec.ToRemote.ToMoney() - state.RemoteParams.ChannelReserveSatoshis - fees
         if (missing < Money.Zero) then
             sprintf "We don't have sufficient funds to send HTLC. current to_remote amount is: %A. Remote Channel Reserve is: %A. and fee is %A"

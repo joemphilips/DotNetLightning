@@ -79,20 +79,23 @@ module internal ChannelHelpers =
             res + (uint64 (feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Normal).Value) * SPENDING_INPUT_FOR_A_OUTPUT_WEIGHT) / 1000UL
         res |> LNMoney.Satoshis
 
-    let makeFirstCommitTxs (localParams: LocalParams)
-                          (remoteParams: RemoteParams)
-                          (fundingSatoshis: Money)
-                          (pushMSat: LNMoney)
-                          (initialFeeRatePerKw: FeeRatePerKw)
-                          (fundingOutputIndex: TxOutIndex)
-                          (fundingTxId: TxId)
-                          (localPerCommitmentPoint: PerCommitmentPoint)
-                          (remotePerCommitmentPoint: PerCommitmentPoint)
-                          (n: Network): Result<CommitmentSpec * CommitTx * CommitmentSpec * CommitTx, ChannelError> =
-        let toLocal = if (localParams.IsFunder) then fundingSatoshis.ToLNMoney() - pushMSat else pushMSat
-        let toRemote = if (localParams.IsFunder) then pushMSat else fundingSatoshis.ToLNMoney() - pushMSat
-        let localChannelKeys = localParams.ChannelPubKeys
-        let remoteChannelKeys = remoteParams.ChannelPubKeys
+    let makeFirstCommitTxs (localIsFunder: bool)
+                           (localChannelPubKeys: ChannelPubKeys)
+                           (remoteChannelPubKeys: ChannelPubKeys)
+                           (localParams: LocalParams)
+                           (remoteParams: RemoteParams)
+                           (fundingSatoshis: Money)
+                           (pushMSat: LNMoney)
+                           (initialFeeRatePerKw: FeeRatePerKw)
+                           (fundingOutputIndex: TxOutIndex)
+                           (fundingTxId: TxId)
+                           (localPerCommitmentPoint: PerCommitmentPoint)
+                           (remotePerCommitmentPoint: PerCommitmentPoint)
+                           (n: Network)
+                               : Result<CommitmentSpec * CommitTx * CommitmentSpec * CommitTx, ChannelError> =
+        let toLocal = if localIsFunder then fundingSatoshis.ToLNMoney() - pushMSat else pushMSat
+        let toRemote = if localIsFunder then pushMSat else fundingSatoshis.ToLNMoney() - pushMSat
+        let localChannelKeys = localChannelPubKeys
         let localSpec = CommitmentSpec.Create toLocal toRemote initialFeeRatePerKw
         let remoteSpec = CommitmentSpec.Create toRemote toLocal initialFeeRatePerKw
         let checkTheyCanAffordFee() =
@@ -105,19 +108,19 @@ module internal ChannelHelpers =
                 Ok()
         let makeFirstCommitTxCore() =
             let scriptCoin = getFundingScriptCoin localChannelKeys.FundingPubKey
-                                                  remoteChannelKeys.FundingPubKey
+                                                  remoteChannelPubKeys.FundingPubKey
                                                   fundingTxId
                                                   fundingOutputIndex
                                                   fundingSatoshis
             let localPubKeysForLocalCommitment = localPerCommitmentPoint.DeriveCommitmentPubKeys localChannelKeys
-            let remotePubKeysForLocalCommitment = localPerCommitmentPoint.DeriveCommitmentPubKeys remoteChannelKeys
+            let remotePubKeysForLocalCommitment = localPerCommitmentPoint.DeriveCommitmentPubKeys remoteChannelPubKeys
 
             let localCommitTx =
                 Transactions.makeCommitTx scriptCoin
                                           CommitmentNumber.FirstCommitment
                                           localChannelKeys.PaymentBasepoint
-                                          remoteChannelKeys.PaymentBasepoint
-                                          localParams.IsFunder
+                                          remoteChannelPubKeys.PaymentBasepoint
+                                          localIsFunder
                                           localParams.DustLimitSatoshis
                                           remotePubKeysForLocalCommitment.RevocationPubKey
                                           remoteParams.ToSelfDelay
@@ -129,14 +132,14 @@ module internal ChannelHelpers =
                                           n
 
             let localPubKeysForRemoteCommitment = remotePerCommitmentPoint.DeriveCommitmentPubKeys localChannelKeys
-            let remotePubKeysForRemoteCommitment = remotePerCommitmentPoint.DeriveCommitmentPubKeys remoteChannelKeys
+            let remotePubKeysForRemoteCommitment = remotePerCommitmentPoint.DeriveCommitmentPubKeys remoteChannelPubKeys
 
             let remoteCommitTx =
                 Transactions.makeCommitTx scriptCoin
                                           CommitmentNumber.FirstCommitment
-                                          remoteChannelKeys.PaymentBasepoint
+                                          remoteChannelPubKeys.PaymentBasepoint
                                           localChannelKeys.PaymentBasepoint
-                                          (not localParams.IsFunder)
+                                          (not localIsFunder)
                                           (remoteParams.DustLimitSatoshis)
                                           localPubKeysForRemoteCommitment.RevocationPubKey
                                           localParams.ToSelfDelay
@@ -149,7 +152,7 @@ module internal ChannelHelpers =
 
             (localSpec, localCommitTx, remoteSpec, remoteCommitTx) |> Ok
 
-        if (not localParams.IsFunder) then
+        if (not localIsFunder) then
             result {
                 do! checkTheyCanAffordFee()
                 return! (makeFirstCommitTxCore())
@@ -190,17 +193,18 @@ module internal Validation =
 
 
     let internal checkAcceptChannelMsgAcceptable (channelHandshakeLimits: ChannelHandshakeLimits)
-                                                 (state: WaitForAcceptChannelData)
-                                                 (msg: AcceptChannelMsg) =
-        Validation.ofResult(AcceptChannelMsgValidation.checkMaxAcceptedHTLCs msg)
-        *^> AcceptChannelMsgValidation.checkDustLimit msg
-        *^> (AcceptChannelMsgValidation.checkChannelReserveSatoshis state msg)
-        *^> AcceptChannelMsgValidation.checkChannelReserveSatoshis state msg
-        *^> AcceptChannelMsgValidation.checkDustLimitIsLargerThanOurChannelReserve state msg
-        *^> AcceptChannelMsgValidation.checkMinimumHTLCValueIsAcceptable state msg
-        *^> AcceptChannelMsgValidation.checkToSelfDelayIsAcceptable msg
-        *> AcceptChannelMsgValidation.checkConfigPermits channelHandshakeLimits msg
-        |> Result.mapError(InvalidAcceptChannelError.Create msg >> InvalidAcceptChannel)
+                                                 (fundingSatoshis: Money)
+                                                 (channelReserveSatoshis: Money)
+                                                 (dustLimitSatoshis: Money)
+                                                 (acceptChannelMsg: AcceptChannelMsg) =
+        Validation.ofResult(AcceptChannelMsgValidation.checkMaxAcceptedHTLCs acceptChannelMsg)
+        *^> AcceptChannelMsgValidation.checkDustLimit acceptChannelMsg
+        *^> AcceptChannelMsgValidation.checkChannelReserveSatoshis fundingSatoshis channelReserveSatoshis dustLimitSatoshis acceptChannelMsg
+        *^> AcceptChannelMsgValidation.checkDustLimitIsLargerThanOurChannelReserve channelReserveSatoshis acceptChannelMsg
+        *^> AcceptChannelMsgValidation.checkMinimumHTLCValueIsAcceptable fundingSatoshis acceptChannelMsg
+        *^> AcceptChannelMsgValidation.checkToSelfDelayIsAcceptable acceptChannelMsg
+        *> AcceptChannelMsgValidation.checkConfigPermits channelHandshakeLimits acceptChannelMsg
+        |> Result.mapError(InvalidAcceptChannelError.Create acceptChannelMsg >> InvalidAcceptChannel)
 
 
     let checkOperationAddHTLC (commitments: Commitments) (op: OperationAddHTLC) =

@@ -59,78 +59,16 @@ module Data =
 
     type IChannelStateData = interface inherit IStateData end
 
-    type WaitForAcceptChannelData = {
-            InputInitFunder: InputInitFunder
-            LastSent: OpenChannelMsg
-    } with
-        interface IChannelStateData
-
-    type WaitForFundingTxData = {
-        InputInitFunder: InputInitFunder
-        LastSent: OpenChannelMsg
-        LastReceived: AcceptChannelMsg
-    }
-
-    type WaitForFundingCreatedData = {
-        TemporaryFailure: ChannelId
-        LocalParams: LocalParams
-        RemoteParams: RemoteParams
-        FundingSatoshis: Money
-        PushMSat: LNMoney
-        InitialFeeRatePerKw: FeeRatePerKw
-        RemoteFirstPerCommitmentPoint: PerCommitmentPoint
-        ChannelFlags: uint8
-        LastSent: AcceptChannelMsg
-    } with
-        interface IChannelStateData
-
-        static member Create (localParams: LocalParams)
-                             (remoteParams: RemoteParams)
-                             (msg: OpenChannelMsg)
-                             (acceptChannelMsg: AcceptChannelMsg)
-                                 : WaitForFundingCreatedData = {
-            ChannelFlags = msg.ChannelFlags
-            TemporaryFailure = msg.TemporaryChannelId
-            LocalParams = localParams
-            RemoteParams = remoteParams
-            FundingSatoshis = msg.FundingSatoshis
-            PushMSat = msg.PushMSat
-            InitialFeeRatePerKw = msg.FeeRatePerKw
-            RemoteFirstPerCommitmentPoint = msg.FirstPerCommitmentPoint
-            LastSent = acceptChannelMsg
-        }
-
-    type WaitForFundingSignedData = {
-        ChannelId: ChannelId
-        LocalParams: LocalParams
-        RemoteParams: RemoteParams
-        FundingTx: FinalizedTx
-        LocalSpec: CommitmentSpec
-        LocalCommitTx: CommitTx
-        RemoteCommit: RemoteCommit
-        ChannelFlags: uint8
-        LastSent: FundingCreatedMsg
-        InitialFeeRatePerKw: FeeRatePerKw
-    } with
-        interface IChannelStateData
-
     type WaitForFundingConfirmedData = {
         Deferred: Option<FundingLockedMsg>
-        LastSent: Choice<FundingCreatedMsg, FundingSignedMsg>
-        InitialFeeRatePerKw: FeeRatePerKw
     }
 
     type WaitForFundingLockedData = {
         ShortChannelId: ShortChannelId
-        OurMessage: FundingLockedMsg
-        TheirMessage: Option<FundingLockedMsg>
-        InitialFeeRatePerKw: FeeRatePerKw
-        HaveWeSentFundingLocked: bool
     }
 
     type NormalData = {
         ShortChannelId: ShortChannelId
-        Buried: bool
         ChannelAnnouncement: Option<ChannelAnnouncementMsg>
         ChannelUpdate: ChannelUpdateMsg
         LocalShutdown: Option<ShutdownMsg>
@@ -193,9 +131,8 @@ module Data =
 type ChannelEvent =
     // --- ln events ---
     /// -------- init both -----
-    | FundingConfirmed of nextState: Data.WaitForFundingLockedData
+    | FundingConfirmed of FundingLockedMsg * nextState: Data.WaitForFundingLockedData
     | TheySentFundingLocked of msg: FundingLockedMsg
-    | WeSentFundingLocked of msg: FundingLockedMsg
     | WeResumedDelayedFundingLocked of msg: FundingLockedMsg
     | BothFundingLocked of nextState: Data.NormalData * nextCommitments: Commitments
 

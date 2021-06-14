@@ -59,111 +59,48 @@ type OperationUpdateFee = {
 }
 
 type LocalParams = {
-    ChannelPubKeys: ChannelPubKeys
     DustLimitSatoshis: Money
     MaxHTLCValueInFlightMSat: LNMoney
     ChannelReserveSatoshis: Money
     HTLCMinimumMSat: LNMoney
     ToSelfDelay: BlockHeightOffset16
     MaxAcceptedHTLCs: uint16
-    IsFunder: bool
     Features: FeatureBits
 }
 
 type RemoteParams = {
-    NodeId: NodeId
     DustLimitSatoshis: Money
     MaxHTLCValueInFlightMSat: LNMoney
     ChannelReserveSatoshis: Money
     HTLCMinimumMSat: LNMoney
     ToSelfDelay: BlockHeightOffset16
     MaxAcceptedHTLCs: uint16
-    ChannelPubKeys: ChannelPubKeys
     Features: FeatureBits
 }
     with
-        static member FromAcceptChannel nodeId (remoteInit: InitMsg) (msg: AcceptChannelMsg) =
-            let channelPubKeys = {
-                FundingPubKey = msg.FundingPubKey
-                RevocationBasepoint = msg.RevocationBasepoint
-                PaymentBasepoint = msg.PaymentBasepoint
-                DelayedPaymentBasepoint = msg.DelayedPaymentBasepoint
-                HtlcBasepoint = msg.HTLCBasepoint
-            }
+        static member FromAcceptChannel (remoteInit: InitMsg) (msg: AcceptChannelMsg) =
             {
-                NodeId = nodeId
                 DustLimitSatoshis = msg.DustLimitSatoshis
                 MaxHTLCValueInFlightMSat = msg.MaxHTLCValueInFlightMsat
                 ChannelReserveSatoshis = msg.ChannelReserveSatoshis
                 HTLCMinimumMSat = msg.HTLCMinimumMSat
                 ToSelfDelay = msg.ToSelfDelay
                 MaxAcceptedHTLCs = msg.MaxAcceptedHTLCs
-                ChannelPubKeys = channelPubKeys
                 Features = remoteInit.Features
             }
 
-        static member FromOpenChannel (nodeId: NodeId)
-                                      (remoteInit: InitMsg)
+        static member FromOpenChannel (remoteInit: InitMsg)
                                       (msg: OpenChannelMsg)
                                           : RemoteParams =
-            let channelPubKeys = {
-                FundingPubKey = msg.FundingPubKey
-                RevocationBasepoint = msg.RevocationBasepoint
-                PaymentBasepoint = msg.PaymentBasepoint
-                DelayedPaymentBasepoint = msg.DelayedPaymentBasepoint
-                HtlcBasepoint = msg.HTLCBasepoint
-            }
             {
-                NodeId = nodeId
                 DustLimitSatoshis = msg.DustLimitSatoshis
                 MaxHTLCValueInFlightMSat = msg.MaxHTLCValueInFlightMsat
                 ChannelReserveSatoshis = msg.ChannelReserveSatoshis
                 HTLCMinimumMSat = msg.HTLCMinimumMsat
                 ToSelfDelay = msg.ToSelfDelay
                 MaxAcceptedHTLCs = msg.MaxAcceptedHTLCs
-                ChannelPubKeys = channelPubKeys
                 Features = remoteInit.Features
             }
-
-type InputInitFunder = {
-    TemporaryChannelId: ChannelId
-    FundingSatoshis: Money
-    PushMSat: LNMoney
-    InitFeeRatePerKw: FeeRatePerKw
-    FundingTxFeeRatePerKw: FeeRatePerKw
-    LocalParams: LocalParams
-    RemoteInit: InitMsg
-    ChannelFlags: uint8
-    ChannelPrivKeys: ChannelPrivKeys
-}
-    with
-        static member FromOpenChannel (localParams) (remoteInit) (channelPrivKeys) (o: OpenChannelMsg) =
-            {
-                InputInitFunder.TemporaryChannelId = o.TemporaryChannelId
-                FundingSatoshis = o.FundingSatoshis
-                PushMSat = o.PushMSat
-                InitFeeRatePerKw = o.FeeRatePerKw
-                FundingTxFeeRatePerKw = o.FeeRatePerKw
-                LocalParams = localParams
-                RemoteInit = remoteInit
-                ChannelFlags = o.ChannelFlags
-                ChannelPrivKeys = channelPrivKeys
-            }
-
-        member this.DeriveCommitmentSpec() =
-            CommitmentSpec.Create this.ToLocal this.PushMSat this.FundingTxFeeRatePerKw
-
-        member this.ToLocal =
-            this.FundingSatoshis.ToLNMoney() - this.PushMSat
-
-and InputInitFundee = {
-    TemporaryChannelId: ChannelId
-    LocalParams: LocalParams
-    RemoteInit: InitMsg
-    ToLocal: LNMoney
-    ChannelPrivKeys: ChannelPrivKeys
-}
-
 
 /// possible input to the channel. Command prefixed from `Apply` is passive. i.e.
 /// it has caused by the outside world and not by the user. Mostly this is a message sent
