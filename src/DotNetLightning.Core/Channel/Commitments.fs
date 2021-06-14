@@ -73,22 +73,14 @@ type RemoteCommit = {
     RemotePerCommitmentPoint: PerCommitmentPoint
 }
 
-type WaitingForRevocation = {
-    NextRemoteCommit: RemoteCommit
-}
-    with
-        static member NextRemoteCommit_: Lens<_,_> =
-            (fun w -> w.NextRemoteCommit),
-            (fun v w -> { w with NextRemoteCommit = v})
-
 type RemoteNextCommitInfo =
-    | Waiting of WaitingForRevocation
+    | Waiting of RemoteCommit
     | Revoked of PerCommitmentPoint
     with
-        static member Waiting_: Prism<RemoteNextCommitInfo, WaitingForRevocation> =
+        static member Waiting_: Prism<RemoteNextCommitInfo, RemoteCommit> =
             (fun remoteNextCommitInfo ->
                 match remoteNextCommitInfo with
-                | Waiting waitingForRevocation -> Some waitingForRevocation
+                | Waiting remoteCommit -> Some remoteCommit
                 | Revoked _ -> None),
             (fun waitingForRevocation remoteNextCommitInfo ->
                 match remoteNextCommitInfo with
@@ -125,7 +117,6 @@ type Commitments = {
     RemoteNextHTLCId: HTLCId
     OriginChannels: Map<HTLCId, HTLCSource>
     RemoteChannelPubKeys: ChannelPubKeys
-    RemoteNextCommitInfo: RemoteNextCommitInfo
     RemotePerCommitmentSecrets: PerCommitmentSecretStore
 }
     with
@@ -135,9 +126,6 @@ type Commitments = {
         static member RemoteChanges_: Lens<_, _> =
             (fun c -> c.RemoteChanges),
             (fun v c -> { c with RemoteChanges = v })
-        static member RemoteNextCommitInfo_: Lens<_, _> =
-            (fun c -> c.RemoteNextCommitInfo),
-            (fun v c -> { c with RemoteNextCommitInfo = v })
 
         member this.ChannelId(): ChannelId =
             this.FundingScriptCoin.Outpoint.ToChannelId()
@@ -165,23 +153,36 @@ type Commitments = {
         member internal this.RemoteHasUnsignedOutgoingHTLCs() =
             this.RemoteChanges.Proposed |> List.exists(fun p -> match p with | :? UpdateAddHTLCMsg -> true | _ -> false)
 
-        member internal this.HasNoPendingHTLCs() =
-            this.LocalCommit.Spec.HTLCs.IsEmpty && this.RemoteCommit.Spec.HTLCs.IsEmpty && (this.RemoteNextCommitInfo |> function Waiting _ -> false | Revoked _ -> true)
+        member internal this.HasNoPendingHTLCs (remoteNextCommitInfo: RemoteNextCommitInfo) =
+            this.LocalCommit.Spec.HTLCs.IsEmpty
+            && this.RemoteCommit.Spec.HTLCs.IsEmpty
+            && (remoteNextCommitInfo |> function Waiting _ -> false | Revoked _ -> true)
 
-        member internal this.GetHTLCCrossSigned(directionRelativeToLocal: Direction, htlcId: HTLCId): UpdateAddHTLCMsg option =
+        member internal this.GetHTLCCrossSigned (remoteNextCommitInfo: RemoteNextCommitInfo)
+                                                (directionRelativeToLocal: Direction)
+                                                (htlcId: HTLCId)
+                                                    : Option<UpdateAddHTLCMsg> =
             let remoteSigned =
                 this.LocalCommit.Spec.HTLCs
-                |> Map.tryPick (fun _k v -> if v.Direction = directionRelativeToLocal && v.Add.HTLCId = htlcId then Some v else None)
+                |> Map.tryPick (fun _k v ->
+                    if v.Direction = directionRelativeToLocal && v.Add.HTLCId = htlcId then
+                        Some v
+                    else None
+                )
 
             let localSigned =
-                let lens =
-                    Commitments.RemoteNextCommitInfo_
-                    >-> RemoteNextCommitInfo.Waiting_
-                    >?> WaitingForRevocation.NextRemoteCommit_
-                match Optic.get lens this with
-                | Some v -> v
-                | None -> this.RemoteCommit
-                |> fun v -> v.Spec.HTLCs |> Map.tryPick(fun _k v -> if v.Direction = directionRelativeToLocal.Opposite && v.Add.HTLCId = htlcId then Some v else None)
+                let remoteCommit =
+                    match remoteNextCommitInfo with
+                    | Revoked _ -> this.RemoteCommit
+                    | Waiting nextRemoteCommit -> nextRemoteCommit
+                remoteCommit.Spec.HTLCs
+                |> Map.tryPick(fun _k v ->
+                    if v.Direction = directionRelativeToLocal.Opposite && v.Add.HTLCId = htlcId then
+                        Some v
+                    else
+                        None
+                )
+
             match remoteSigned, localSigned with
             | Some _, Some htlcIn -> htlcIn.Add |> Some
             | _ -> None
