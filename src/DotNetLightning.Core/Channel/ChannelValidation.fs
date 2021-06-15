@@ -19,10 +19,10 @@ module internal ChannelHelpers =
                              (theirFundingPubKey: FundingPubKey)
                              (TxId fundingTxId)
                              (TxOutIndex fundingOutputIndex)
-                             (fundingSatoshis)
+                             (fundingAmount: Money)
                                  : ScriptCoin =
         let redeem = Scripts.funding ourFundingPubKey theirFundingPubKey
-        Coin(fundingTxId, uint32 fundingOutputIndex, fundingSatoshis, redeem.WitHash.ScriptPubKey)
+        Coin(fundingTxId, uint32 fundingOutputIndex, fundingAmount, redeem.WitHash.ScriptPubKey)
         |> fun c -> ScriptCoin(c, redeem)
 
     let private makeFlags (isNode1: bool, enable: bool) =
@@ -65,7 +65,7 @@ module internal ChannelHelpers =
         }
 
     /// gets the fee we'd want to charge for adding an HTLC output to this channel
-    let internal getOurFeeBaseMSat (feeEstimator: IFeeEstimator) (FeeRatePerKw feeRatePerKw) (isFunder: bool) =
+    let internal getOurFeeBase (feeEstimator: IFeeEstimator) (FeeRatePerKw feeRatePerKw) (isFunder: bool): LNMoney =
         // for lack of a better metric, we calculate waht it would cost to consolidate the new HTLC
         // output value back into a transaction with the regular channel output:
 
@@ -84,8 +84,8 @@ module internal ChannelHelpers =
                            (remoteChannelPubKeys: ChannelPubKeys)
                            (localParams: LocalParams)
                            (remoteParams: RemoteParams)
-                           (fundingSatoshis: Money)
-                           (pushMSat: LNMoney)
+                           (fundingAmount: Money)
+                           (pushAmount: LNMoney)
                            (initialFeeRatePerKw: FeeRatePerKw)
                            (fundingOutputIndex: TxOutIndex)
                            (fundingTxId: TxId)
@@ -93,8 +93,16 @@ module internal ChannelHelpers =
                            (remotePerCommitmentPoint: PerCommitmentPoint)
                            (n: Network)
                                : Result<CommitmentSpec * CommitTx * CommitmentSpec * CommitTx, ChannelError> =
-        let toLocal = if localIsFunder then fundingSatoshis.ToLNMoney() - pushMSat else pushMSat
-        let toRemote = if localIsFunder then pushMSat else fundingSatoshis.ToLNMoney() - pushMSat
+        let toLocal =
+            if localIsFunder then
+                fundingAmount.ToLNMoney() - pushAmount
+            else
+                pushAmount
+        let toRemote =
+            if localIsFunder then
+                pushAmount
+            else
+                fundingAmount.ToLNMoney() - pushAmount
         let localChannelKeys = localChannelPubKeys
         let localSpec = CommitmentSpec.Create toLocal toRemote initialFeeRatePerKw
         let remoteSpec = CommitmentSpec.Create toRemote toLocal initialFeeRatePerKw
@@ -111,7 +119,7 @@ module internal ChannelHelpers =
                                                   remoteChannelPubKeys.FundingPubKey
                                                   fundingTxId
                                                   fundingOutputIndex
-                                                  fundingSatoshis
+                                                  fundingAmount
             let localPubKeysForLocalCommitment = localPerCommitmentPoint.DeriveCommitmentPubKeys localChannelKeys
             let remotePubKeysForLocalCommitment = localPerCommitmentPoint.DeriveCommitmentPubKeys remoteChannelPubKeys
 
@@ -193,15 +201,15 @@ module internal Validation =
 
 
     let internal checkAcceptChannelMsgAcceptable (channelHandshakeLimits: ChannelHandshakeLimits)
-                                                 (fundingSatoshis: Money)
-                                                 (channelReserveSatoshis: Money)
-                                                 (dustLimitSatoshis: Money)
+                                                 (fundingAmount: Money)
+                                                 (channelReserveAmount: Money)
+                                                 (dustLimit: Money)
                                                  (acceptChannelMsg: AcceptChannelMsg) =
         Validation.ofResult(AcceptChannelMsgValidation.checkMaxAcceptedHTLCs acceptChannelMsg)
         *^> AcceptChannelMsgValidation.checkDustLimit acceptChannelMsg
-        *^> AcceptChannelMsgValidation.checkChannelReserveSatoshis fundingSatoshis channelReserveSatoshis dustLimitSatoshis acceptChannelMsg
-        *^> AcceptChannelMsgValidation.checkDustLimitIsLargerThanOurChannelReserve channelReserveSatoshis acceptChannelMsg
-        *^> AcceptChannelMsgValidation.checkMinimumHTLCValueIsAcceptable fundingSatoshis acceptChannelMsg
+        *^> AcceptChannelMsgValidation.checkChannelReserveSatoshis fundingAmount channelReserveAmount dustLimit acceptChannelMsg
+        *^> AcceptChannelMsgValidation.checkDustLimitIsLargerThanOurChannelReserve channelReserveAmount acceptChannelMsg
+        *^> AcceptChannelMsgValidation.checkMinimumHTLCValueIsAcceptable fundingAmount acceptChannelMsg
         *^> AcceptChannelMsgValidation.checkToSelfDelayIsAcceptable acceptChannelMsg
         *> AcceptChannelMsgValidation.checkConfigPermits channelHandshakeLimits acceptChannelMsg
         |> Result.mapError(InvalidAcceptChannelError.Create acceptChannelMsg >> InvalidAcceptChannel)
