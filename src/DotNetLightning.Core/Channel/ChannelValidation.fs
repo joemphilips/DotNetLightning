@@ -91,7 +91,7 @@ module internal ChannelHelpers =
                            (fundingTxId: TxId)
                            (localPerCommitmentPoint: PerCommitmentPoint)
                            (remotePerCommitmentPoint: PerCommitmentPoint)
-                           (n: Network)
+                           (network: Network)
                                : Result<CommitmentSpec * CommitTx * CommitmentSpec * CommitTx, ChannelError> =
         let toLocal =
             if localIsFunder then
@@ -137,7 +137,7 @@ module internal ChannelHelpers =
                                           localPubKeysForLocalCommitment.HtlcPubKey
                                           remotePubKeysForLocalCommitment.HtlcPubKey
                                           localSpec
-                                          n
+                                          network
 
             let localPubKeysForRemoteCommitment = remotePerCommitmentPoint.DeriveCommitmentPubKeys localChannelKeys
             let remotePubKeysForRemoteCommitment = remotePerCommitmentPoint.DeriveCommitmentPubKeys remoteChannelPubKeys
@@ -156,7 +156,7 @@ module internal ChannelHelpers =
                                           remotePubKeysForRemoteCommitment.HtlcPubKey
                                           localPubKeysForRemoteCommitment.HtlcPubKey
                                           remoteSpec
-                                          n
+                                          network
 
             (localSpec, localCommitTx, remoteSpec, remoteCommitTx) |> Ok
 

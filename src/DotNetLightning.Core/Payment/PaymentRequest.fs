@@ -36,12 +36,12 @@ module private Helpers =
         | :? FormatException as fex ->
             fex.ToString() |> Error
 
-    let tryGetP2WPKHAddressEncoder (n: Network) =
-        let maybeEncoder = n.GetBech32Encoder(Bech32Type.WITNESS_PUBKEY_ADDRESS, false)
+    let tryGetP2WPKHAddressEncoder (network: Network) =
+        let maybeEncoder = network.GetBech32Encoder(Bech32Type.WITNESS_PUBKEY_ADDRESS, false)
         if isNull maybeEncoder then Error("Failed to get p2wpkh encoder") else Ok maybeEncoder
 
-    let tryGetP2WSHAddressEncoder (n: Network) =
-        let maybeEncoder = n.GetBech32Encoder(Bech32Type.WITNESS_SCRIPT_ADDRESS, false)
+    let tryGetP2WSHAddressEncoder (network: Network) =
+        let maybeEncoder = network.GetBech32Encoder(Bech32Type.WITNESS_SCRIPT_ADDRESS, false)
         if isNull maybeEncoder then Error("Failed to get p2wsh encoder") else Ok maybeEncoder
 
     let decodeBech32 s =
@@ -145,14 +145,14 @@ type FallbackAddress = private {
                 return! Error(sprintf "Unknown address prefix %d" x)
         }
 
-    static member FromBech32Address(addrStr: string, n: Network) =
-            match Helpers.tryGetP2WPKHAddressEncoder(n) with
+    static member FromBech32Address(addrStr: string, network: Network) =
+            match Helpers.tryGetP2WPKHAddressEncoder network with
             | Ok encoder ->
                 match encoder.Decode(addrStr) with
                 | decoded, witVersion ->
                     { Version = witVersion; Data = decoded } |> Ok
             | Error e ->
-                match Helpers.tryGetP2WSHAddressEncoder(n) with
+                match Helpers.tryGetP2WSHAddressEncoder network with
                 | Ok encoder ->
                     match encoder.Decode(addrStr) with
                     | decoded, witVersion -> { Version = witVersion; Data = decoded } |> Ok
