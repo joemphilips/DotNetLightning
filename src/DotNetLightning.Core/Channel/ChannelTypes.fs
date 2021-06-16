@@ -3,7 +3,6 @@ namespace DotNetLightning.Channel
 open DotNetLightning.Chain
 open DotNetLightning.Utils
 open DotNetLightning.Utils.Aether
-open DotNetLightning.DomainUtils.Types
 open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Transactions
 open DotNetLightning.Crypto
@@ -25,8 +24,6 @@ open NBitcoin
 
 [<AutoOpen>]
 module Data =
-    type IChannelStateData = interface inherit IStateData end
-
     type NegotiatingState = {
         LocalRequestedShutdown: Option<ShutdownScriptPubKey>
         RemoteRequestedShutdown: Option<ShutdownScriptPubKey>

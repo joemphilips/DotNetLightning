@@ -64,7 +64,6 @@
     <Compile Include="Crypto/ShaChain.fs" />
     <Compile Include="Crypto\Aezeed.fs" />
     <Compile Include="Crypto/Sphinx.fs" />
-    <Compile Include="DomainUtils/Types.fs" />
     <Compile Include="Transactions\TransactionError.fs" />
     <Compile Include="Transactions/CommitmentSpec.fs" />
     <Compile Include="Transactions/Scripts.fs" />

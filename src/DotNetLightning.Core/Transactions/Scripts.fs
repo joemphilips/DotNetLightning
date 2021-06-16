@@ -1,6 +1,5 @@
 namespace DotNetLightning.Transactions
 
-open DotNetLightning.DomainUtils.Types
 open NBitcoin
 open NBitcoin.Crypto
 open DotNetLightning.Utils
