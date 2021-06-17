@@ -522,16 +522,12 @@ and Channel = {
                     Error <| InvalidFundingLocked { NetworkMsg = fundingLockedMsg }
                 else
                     Ok ()
-        match self.SavedChannelState.ShortChannelId with
-        | None ->
-            return {
-                self with
-                    RemoteNextCommitInfo =
-                        RemoteNextCommitInfo.Revoked fundingLockedMsg.NextPerCommitmentPoint
-                        |> Some
-            }
-        | Some _shortChannelId ->
-            return self
+        return {
+            self with
+                RemoteNextCommitInfo =
+                    RemoteNextCommitInfo.Revoked fundingLockedMsg.NextPerCommitmentPoint
+                    |> Some
+        }
     }
 
     member self.ApplyFundingConfirmedOnBC (height: BlockHeight)
