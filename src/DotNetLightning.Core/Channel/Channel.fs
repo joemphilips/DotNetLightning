@@ -533,49 +533,42 @@ and Channel = {
     member self.ApplyFundingConfirmedOnBC (height: BlockHeight)
                                           (txindex: TxIndexInBlock)
                                           (depth: BlockHeightOffset32)
-                                              : Result<Channel * Option<FundingLockedMsg>, ChannelError> = result {
+                                              : Result<Channel * FundingLockedMsg, ChannelError> = result {
         let requiredDepth = self.SavedChannelState.StaticChannelConfig.FundingTxMinimumDepth
-        match self.SavedChannelState.ShortChannelId with
-        | None ->
-            if depth < requiredDepth then
-                return! Error <| InsufficientConfirmations (requiredDepth, depth)
-            else
-                let nextPerCommitmentPoint =
-                    self.ChannelPrivKeys.CommitmentSeed.DerivePerCommitmentPoint
-                        (CommitmentNumber.FirstCommitment.NextCommitment())
-                let msgToSend: FundingLockedMsg = {
-                    ChannelId = self.SavedChannelState.StaticChannelConfig.ChannelId()
-                    NextPerCommitmentPoint = nextPerCommitmentPoint
-                }
+        if depth < requiredDepth then
+            return! Error <| InsufficientConfirmations (requiredDepth, depth)
+        else
+            let nextPerCommitmentPoint =
+                self.ChannelPrivKeys.CommitmentSeed.DerivePerCommitmentPoint
+                    (CommitmentNumber.FirstCommitment.NextCommitment())
+            let msgToSend: FundingLockedMsg = {
+                ChannelId = self.SavedChannelState.StaticChannelConfig.ChannelId()
+                NextPerCommitmentPoint = nextPerCommitmentPoint
+            }
 
-                // This is temporary channel id that we will use in our
-                // channel_update message, the goal is to be able to use our
-                // channel as soon as it reaches NORMAL state, and before it is
-                // announced on the network (this id might be updated when the
-                // funding tx gets deeply buried, if there was a reorg in the
-                // meantime) this is not specified in BOLT.
-                let shortChannelId = {
-                    ShortChannelId.BlockHeight = height;
-                    BlockIndex = txindex
-                    TxOutIndex =
-                        self.SavedChannelState.StaticChannelConfig.FundingScriptCoin.Outpoint.N
-                        |> uint16
-                        |> TxOutIndex
-                }
-                let savedChannelState = {
-                    self.SavedChannelState with
-                        ShortChannelId = Some shortChannelId
-                }
-                let channel = {
-                    self with
-                        SavedChannelState = savedChannelState
-                }
-                return channel, Some msgToSend
-        | Some _shortChannelId ->
-            if (self.SavedChannelState.StaticChannelConfig.FundingTxMinimumDepth <= depth) then
-                return self, None
-            else
-                return! Error <| OnceConfirmedFundingTxHasBecomeUnconfirmed(height, depth)
+            // This is temporary channel id that we will use in our
+            // channel_update message, the goal is to be able to use our
+            // channel as soon as it reaches NORMAL state, and before it is
+            // announced on the network (this id might be updated when the
+            // funding tx gets deeply buried, if there was a reorg in the
+            // meantime) this is not specified in BOLT.
+            let shortChannelId = {
+                ShortChannelId.BlockHeight = height;
+                BlockIndex = txindex
+                TxOutIndex =
+                    self.SavedChannelState.StaticChannelConfig.FundingScriptCoin.Outpoint.N
+                    |> uint16
+                    |> TxOutIndex
+            }
+            let savedChannelState = {
+                self.SavedChannelState with
+                    ShortChannelId = Some shortChannelId
+            }
+            let channel = {
+                self with
+                    SavedChannelState = savedChannelState
+            }
+            return channel, msgToSend
     }
 
     member self.AddHTLC (op: OperationAddHTLC)
