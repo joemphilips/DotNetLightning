@@ -953,6 +953,14 @@ and Channel = {
             }
             return channel, None, None
         else
+            let localShutdownMsgOpt: Option<ShutdownMsg> =
+                match self.NegotiatingState.LocalRequestedShutdown with
+                | None ->
+                    Some {
+                        ChannelId = self.SavedChannelState.StaticChannelConfig.ChannelId()
+                        ScriptPubKey = localShutdownScriptPubKey
+                    }
+                | Some _ -> None
             let hasNoPendingHTLCs =
                 match self.RemoteNextCommitInfo with
                 | None -> true
@@ -982,7 +990,7 @@ and Channel = {
                         self with
                             NegotiatingState = nextState
                     }
-                    return channel, None, Some closingSignedMsg
+                    return channel, localShutdownMsgOpt, Some closingSignedMsg
                 else
                     let nextState = {
                         LocalRequestedShutdown = Some localShutdownScriptPubKey
@@ -994,12 +1002,8 @@ and Channel = {
                         self with
                             NegotiatingState = nextState
                     }
-                    return channel, None, None
+                    return channel, localShutdownMsgOpt, None
             else
-                let localShutdownMsg: ShutdownMsg = {
-                    ChannelId = self.SavedChannelState.StaticChannelConfig.ChannelId()
-                    ScriptPubKey = localShutdownScriptPubKey
-                }
                 let channel = {
                     self with
                         NegotiatingState = {
@@ -1008,7 +1012,7 @@ and Channel = {
                                 RemoteRequestedShutdown = Some remoteShutdownScriptPubKey
                         }
                 }
-                return channel, Some localShutdownMsg, None
+                return channel, localShutdownMsgOpt, None
     }
 
     member self.ApplyClosingSigned (msg: ClosingSignedMsg)
