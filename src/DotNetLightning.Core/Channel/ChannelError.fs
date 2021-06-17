@@ -55,6 +55,7 @@ type ChannelError =
     | RemoteProposedFeeOutOfNegotiatedRange of ourPreviousFee: Money * theirPreviousFee: Money * theirNextFee: Money
     | NoUpdatesToSign
     | CannotSignCommitmentBeforeRevocation
+    | InsufficientConfirmations of requiredDepth: BlockHeightOffset32 * currentDepth: BlockHeightOffset32
     // ---- invalid command ----
     | InvalidOperationAddHTLC of InvalidOperationAddHTLCError
     // -------------------------
@@ -89,6 +90,7 @@ type ChannelError =
         | CannotCloseChannel _ -> Ignore
         | NoUpdatesToSign -> Ignore
         | CannotSignCommitmentBeforeRevocation -> Ignore
+        | InsufficientConfirmations(_, _) -> Ignore
         | InvalidOperationAddHTLC _ -> Ignore
         | RemoteProposedHigherFeeThanBaseFee(_, _) -> Close
         | RemoteProposedFeeOutOfNegotiatedRange(_, _, _) -> Close
@@ -167,6 +169,11 @@ type ChannelError =
             "No updates to sign"
         | CannotSignCommitmentBeforeRevocation ->
             "Cannot sign commitment before previous commitment is revoked"
+        | InsufficientConfirmations (requiredConfirmations, currentConfirmations) ->
+            sprintf
+                "Insufficient confirmations. %i required, only have %i"
+                requiredConfirmations.Value
+                currentConfirmations.Value
         | InvalidOperationAddHTLC invalidOperationAddHTLCError ->
             sprintf "Invalid operation (add htlc): %s" invalidOperationAddHTLCError.Message
 

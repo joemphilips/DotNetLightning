@@ -538,11 +538,11 @@ and Channel = {
                                           (txindex: TxIndexInBlock)
                                           (depth: BlockHeightOffset32)
                                               : Result<Channel * Option<FundingLockedMsg>, ChannelError> = result {
+        let requiredDepth = self.SavedChannelState.StaticChannelConfig.FundingTxMinimumDepth
         match self.SavedChannelState.ShortChannelId with
         | None ->
-            if self.SavedChannelState.StaticChannelConfig.FundingTxMinimumDepth > depth then
-                // TODO: this should probably be an error (?)
-                return self, None
+            if depth < requiredDepth then
+                return! Error <| InsufficientConfirmations (requiredDepth, depth)
             else
                 let nextPerCommitmentPoint =
                     self.ChannelPrivKeys.CommitmentSeed.DerivePerCommitmentPoint
