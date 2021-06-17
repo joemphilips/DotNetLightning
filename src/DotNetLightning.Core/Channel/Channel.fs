@@ -793,20 +793,18 @@ and Channel = {
         }
     }
 
-    member self.SignCommitment(): Result<Channel * Option<CommitmentSignedMsg>, ChannelError> = result {
+    member self.SignCommitment(): Result<Channel * CommitmentSignedMsg, ChannelError> = result {
         let! remoteNextCommitInfo =
             self.RemoteNextCommitInfoIfFundingLockedNormal "SignCommit"
         match remoteNextCommitInfo with
         | _ when (self.LocalHasChanges() |> not) ->
-            // Ignore SignCommitment Command (nothing to sign)
-            return self, None
+            return! Error NoUpdatesToSign
         | RemoteNextCommitInfo.Revoked _ ->
             let! commitmentSignedMsg, channel =
                 self.sendCommit remoteNextCommitInfo
-            return channel, Some commitmentSignedMsg
+            return channel, commitmentSignedMsg
         | RemoteNextCommitInfo.Waiting _ ->
-            // Already in the process of signing
-            return self, None
+            return! Error CannotSignCommitmentBeforeRevocation
     }
 
     member self.ApplyCommitmentSigned (msg: CommitmentSignedMsg)
