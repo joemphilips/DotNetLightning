@@ -348,8 +348,8 @@ module internal ChannelError =
         match (ourPreviousFeeOpt, theirPreviousFeeOpt) with
         | (Some ourPreviousFee, Some theirPreviousFee) ->
             let feeWithinRange =
-                ((theirNextFee < theirPreviousFee) && (theirNextFee > ourPreviousFee)) ||
-                ((theirNextFee < ourPreviousFee) && (theirNextFee > theirPreviousFee))
+                ((theirNextFee < theirPreviousFee) && (theirNextFee >= ourPreviousFee)) ||
+                ((theirNextFee <= ourPreviousFee) && (theirNextFee > theirPreviousFee))
             if feeWithinRange then
                 Ok ()
             else
