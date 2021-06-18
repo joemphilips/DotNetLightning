@@ -109,10 +109,10 @@ module Async =
 
     /// extend default async builder to enable awaiting task without Async.AwaitTask
     type AsyncBuilder with
-        member x.Bind(t: Task<'T>, f: 'T -> Async<'R>): Async<'R> =
+        member __.Bind(t: Task<'T>, f: 'T -> Async<'R>): Async<'R> =
             async.Bind(Async.AwaitTask t, f)
 
-        member x.Bind(t: Task, f: unit -> Async<'R>): Async<'R> =
+        member __.Bind(t: Task, f: unit -> Async<'R>): Async<'R> =
             async.Bind(Async.AwaitTask t, f)
 module Set =
     let first (predicate: 'a -> bool) (items: Set<'a>) =

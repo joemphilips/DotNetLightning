@@ -77,10 +77,10 @@ module Graph =
             num
         interface IEquatable<WeightedNode> with
             member this.Equals o = this.Equals o
-        member x.CompareTo(y: WeightedNode) =
-            let weightCmp = x.Weight.CompareTo(y.Weight)
+        member this.CompareTo(other: WeightedNode) =
+            let weightCmp = this.Weight.CompareTo other.Weight
             if (weightCmp <> 0) then weightCmp else
-            x.Id.Value.ToHex().CompareTo(y.Id.Value.ToHex())
+            this.Id.Value.ToHex().CompareTo(other.Id.Value.ToHex())
         interface IComparable with
             member this.CompareTo(o: obj) =
                 match o with
@@ -140,8 +140,8 @@ module Graph =
             
         interface IEquatable<WeightedPath> with
             member this.Equals o = this.Equals o
-        member x.CompareTo(y: WeightedPath)=
-            x.Weight.CompareTo(y.Weight)
+        member this.CompareTo(other: WeightedPath)=
+            this.Weight.CompareTo other.Weight
             
         interface IComparable with
             member this.CompareTo o =

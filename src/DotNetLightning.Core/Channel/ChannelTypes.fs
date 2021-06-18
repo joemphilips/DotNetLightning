@@ -36,8 +36,8 @@ module Data =
             LocalClosingFeesProposed = List.empty
             RemoteClosingFeeProposed = None
         }
-        member self.HasEnteredShutdown(): bool =
-            self.LocalRequestedShutdown.IsSome && self.RemoteRequestedShutdown.IsSome
+        member this.HasEnteredShutdown(): bool =
+            this.LocalRequestedShutdown.IsSome && this.RemoteRequestedShutdown.IsSome
 
 type ClosingSignedResponse =
     | NewClosingSigned of ClosingSignedMsg
