@@ -41,17 +41,17 @@ type CommitmentSpec = {
             { this with ToRemote = this.ToRemote - update.Amount; IncomingHTLCs = this.IncomingHTLCs.Add(update.HTLCId, update)}
 
         member internal this.FulfillOutgoingHTLC(htlcId: HTLCId) =
-            match this.OutgoingHTLCs |> Map.tryFind htlcId with
+            match this.IncomingHTLCs |> Map.tryFind htlcId with
             | Some htlc ->
-                { this with ToLocal = this.ToLocal + htlc.Amount; OutgoingHTLCs = this.OutgoingHTLCs.Remove htlcId }
+                { this with ToLocal = this.ToLocal + htlc.Amount; IncomingHTLCs = this.IncomingHTLCs.Remove htlcId }
                 |> Ok
             | None ->
                 UnknownHTLC htlcId |> Error
 
         member internal this.FulfillIncomingHTLC(htlcId: HTLCId) =
-            match this.IncomingHTLCs |> Map.tryFind htlcId with
+            match this.OutgoingHTLCs |> Map.tryFind htlcId with
             | Some htlc ->
-                { this with ToRemote = this.ToRemote + htlc.Amount; IncomingHTLCs = this.IncomingHTLCs.Remove htlcId }
+                { this with ToRemote = this.ToRemote + htlc.Amount; OutgoingHTLCs = this.OutgoingHTLCs.Remove htlcId }
                 |> Ok
             | None ->
                 UnknownHTLC htlcId |> Error
