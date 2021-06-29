@@ -5,6 +5,7 @@ open NBitcoinExtensions
 open DotNetLightning.Utils.OnionError
 open DotNetLightning.Chain
 open DotNetLightning.Crypto
+open DotNetLightning.Serialization
 open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Transactions
 
@@ -368,9 +369,21 @@ module internal OpenChannelMsgValidation =
         else
             Ok()
 
-    let checkFundingSatoshisLessThanMax (msg: OpenChannelMsg) =
-        if (msg.FundingSatoshis >= ChannelConstants.MAX_FUNDING_SATOSHIS) then
-            sprintf "funding_satoshis must be less than %A. It was %A" ChannelConstants.MAX_FUNDING_SATOSHIS msg.FundingSatoshis
+    let checkFundingSatoshisLessThanMax (msg: OpenChannelMsg) (localParams: LocalParams) (isOurOpenChannelMsg: bool) =
+        // If we are validating our own open message we make sure we are forcing support for option_support_large_channel on the other peer
+        let featureType =
+            match isOurOpenChannelMsg with
+            | true ->
+                Some FeaturesSupport.Mandatory
+            | false ->
+                None
+
+        if msg.FundingSatoshis >= ChannelConstants.MAX_FUNDING_SATOSHIS && 
+                not (localParams.Features.HasFeature (Feature.OptionSupportLargeChannel, ?featureType = featureType)) then
+            sprintf 
+                "funding_satoshis must be less than %A. It was %A, consider activating option_support_large_channel feature." 
+                ChannelConstants.MAX_FUNDING_SATOSHIS 
+                msg.FundingSatoshis
             |> Error
         else
             Ok()
