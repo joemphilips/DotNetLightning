@@ -13,17 +13,13 @@ open ResultUtils.Portability
 open DotNetLightning.Transactions
 
 type LocalChanges = {
-    Proposed: IUpdateMsg list
     Signed: IUpdateMsg list
     ACKed: IUpdateMsg list
 }
     with
-        static member Zero = { Proposed = []; Signed = []; ACKed = [] }
+        static member Zero = { Signed = []; ACKed = [] }
 
         // -- lenses
-        static member Proposed_: Lens<_, _> =
-            (fun lc -> lc.Proposed),
-            (fun ps lc -> { lc with Proposed = ps })
         static member Signed_: Lens<_, _> =
             (fun lc -> lc.Signed),
             (fun v lc -> { lc with Signed = v })
@@ -32,19 +28,13 @@ type LocalChanges = {
             (fun lc -> lc.ACKed),
             (fun v lc -> { lc with ACKed = v })
 
-        member this.All() =
-            this.Proposed @ this.Signed @ this.ACKed
-
 type RemoteChanges = { 
-    Proposed: IUpdateMsg list
     Signed: IUpdateMsg list
     ACKed: IUpdateMsg list
 }
     with
-        static member Zero = { Proposed = []; Signed = []; ACKed = [] }
-        static member Proposed_: Lens<_, _> =
-            (fun lc -> lc.Proposed),
-            (fun ps lc -> { lc with Proposed = ps })
+        static member Zero = { Signed = []; ACKed = [] }
+
         static member Signed_: Lens<_, _> =
             (fun lc -> lc.Signed),
             (fun v lc -> { lc with Signed = v })
@@ -97,6 +87,11 @@ type RemoteNextCommitInfo =
                 | Waiting _ -> remoteNextCommitInfo
                 | Revoked _ -> Revoked commitmentPubKey)
 
+        member this.PerCommitmentPoint(): PerCommitmentPoint =
+            match this with
+            | Waiting remoteCommit -> remoteCommit.RemotePerCommitmentPoint
+            | Revoked perCommitmentPoint -> perCommitmentPoint
+
 type Amounts = 
     {
         ToLocal: Money
@@ -104,88 +99,34 @@ type Amounts =
     }
 
 type Commitments = {
-    LocalParams: LocalParams
-    RemoteParams: RemoteParams
-    ChannelFlags: uint8
-    FundingScriptCoin: ScriptCoin
-    IsFunder: bool
-    LocalCommit: LocalCommit
-    RemoteCommit: RemoteCommit
-    LocalChanges: LocalChanges
-    RemoteChanges: RemoteChanges
+    ProposedLocalChanges: list<IUpdateMsg>
+    ProposedRemoteChanges: list<IUpdateMsg>
     LocalNextHTLCId: HTLCId
     RemoteNextHTLCId: HTLCId
     OriginChannels: Map<HTLCId, HTLCSource>
-    RemoteChannelPubKeys: ChannelPubKeys
-    RemotePerCommitmentSecrets: PerCommitmentSecretStore
 }
     with
-        static member LocalChanges_: Lens<_, _> =
-            (fun c -> c.LocalChanges),
-            (fun v c -> { c with LocalChanges = v })
-        static member RemoteChanges_: Lens<_, _> =
-            (fun c -> c.RemoteChanges),
-            (fun v c -> { c with RemoteChanges = v })
-
-        member this.ChannelId(): ChannelId =
-            this.FundingScriptCoin.Outpoint.ToChannelId()
-
         member this.AddLocalProposal(proposal: IUpdateMsg) =
-            let lens = Commitments.LocalChanges_ >-> LocalChanges.Proposed_
-            Optic.map lens (fun proposalList -> proposal :: proposalList) this
+            {
+                this with
+                    ProposedLocalChanges = proposal :: this.ProposedLocalChanges
+            }
 
         member this.AddRemoteProposal(proposal: IUpdateMsg) =
-            let lens = Commitments.RemoteChanges_ >-> RemoteChanges.Proposed_
-            Optic.map lens (fun proposalList -> proposal :: proposalList) this
+            {
+                this with
+                    ProposedRemoteChanges = proposal :: this.ProposedRemoteChanges
+            }
 
         member this.IncrLocalHTLCId() = { this with LocalNextHTLCId = this.LocalNextHTLCId + 1UL }
         member this.IncrRemoteHTLCId() = { this with RemoteNextHTLCId = this.RemoteNextHTLCId + 1UL }
 
-        member this.LocalHasChanges() =
-            (not this.RemoteChanges.ACKed.IsEmpty) || (not this.LocalChanges.Proposed.IsEmpty)
-
-        member this.RemoteHasChanges() =
-            (not this.LocalChanges.ACKed.IsEmpty) || (not this.RemoteChanges.Proposed.IsEmpty)
-
         member internal this.LocalHasUnsignedOutgoingHTLCs() =
-            this.LocalChanges.Proposed |> List.exists(fun p -> match p with | :? UpdateAddHTLCMsg -> true | _ -> false)
+            this.ProposedLocalChanges |> List.exists(fun p -> match p with | :? UpdateAddHTLCMsg -> true | _ -> false)
 
         member internal this.RemoteHasUnsignedOutgoingHTLCs() =
-            this.RemoteChanges.Proposed |> List.exists(fun p -> match p with | :? UpdateAddHTLCMsg -> true | _ -> false)
+            this.ProposedRemoteChanges |> List.exists(fun p -> match p with | :? UpdateAddHTLCMsg -> true | _ -> false)
 
-        member internal this.HasNoPendingHTLCs (remoteNextCommitInfo: RemoteNextCommitInfo) =
-            this.LocalCommit.Spec.HTLCs.IsEmpty
-            && this.RemoteCommit.Spec.HTLCs.IsEmpty
-            && (remoteNextCommitInfo |> function Waiting _ -> false | Revoked _ -> true)
-
-        member internal this.GetHTLCCrossSigned (remoteNextCommitInfo: RemoteNextCommitInfo)
-                                                (directionRelativeToLocal: Direction)
-                                                (htlcId: HTLCId)
-                                                    : Option<UpdateAddHTLCMsg> =
-            let remoteSigned =
-                this.LocalCommit.Spec.HTLCs
-                |> Map.tryPick (fun _k v ->
-                    if v.Direction = directionRelativeToLocal && v.Add.HTLCId = htlcId then
-                        Some v
-                    else None
-                )
-
-            let localSigned =
-                let remoteCommit =
-                    match remoteNextCommitInfo with
-                    | Revoked _ -> this.RemoteCommit
-                    | Waiting nextRemoteCommit -> nextRemoteCommit
-                remoteCommit.Spec.HTLCs
-                |> Map.tryPick(fun _k v ->
-                    if v.Direction = directionRelativeToLocal.Opposite && v.Add.HTLCId = htlcId then
-                        Some v
-                    else
-                        None
-                )
-
-            match remoteSigned, localSigned with
-            | Some _, Some htlcIn -> htlcIn.Add |> Some
-            | _ -> None
 
         static member RemoteCommitAmount (isLocalFunder: bool)
                                          (remoteParams: RemoteParams)

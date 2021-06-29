@@ -29,34 +29,34 @@ type System.UInt64 with
                 bytes8
         BitConverter.ToUInt64(bytes, 0)
 
-    member x.ToVarInt() =
-        if x < 0xfdUL then
-            [|uint8 x|]
-        else if x < 0x10000UL then
+    member this.ToVarInt() =
+        if this < 0xfdUL then
+            [|uint8 this|]
+        elif this < 0x10000UL then
             let buf = Array.zeroCreate(3)
             buf.[0] <- (0xfduy)
-            buf.[1] <- (byte (x >>> 8))
-            buf.[2] <- byte x
+            buf.[1] <- (byte (this >>> 8))
+            buf.[2] <- byte this
             buf
-        else if x < 0x100000000UL then
+        elif this < 0x100000000UL then
             let buf = Array.zeroCreate(5)
             buf.[0] <- (0xfeuy)
-            buf.[1] <- (byte (x >>> 24))
-            buf.[2] <- (byte (x >>> 16))
-            buf.[3] <- (byte (x >>> 8))
-            buf.[4] <- (byte x)
+            buf.[1] <- (byte (this >>> 24))
+            buf.[2] <- (byte (this >>> 16))
+            buf.[3] <- (byte (this >>> 8))
+            buf.[4] <- (byte this)
             buf
         else
             let buf = Array.zeroCreate(9)
             buf.[0] <- (0xffuy)
-            buf.[1] <- (byte (x >>> 56))
-            buf.[2] <- (byte (x >>> 48))
-            buf.[3] <- (byte (x >>> 40))
-            buf.[4] <- (byte (x >>> 32))
-            buf.[5] <- (byte (x >>> 24))
-            buf.[6] <- (byte (x >>> 16))
-            buf.[7] <- (byte (x >>> 8))
-            buf.[8] <- (byte x)
+            buf.[1] <- (byte (this >>> 56))
+            buf.[2] <- (byte (this >>> 48))
+            buf.[3] <- (byte (this >>> 40))
+            buf.[4] <- (byte (this >>> 32))
+            buf.[5] <- (byte (this >>> 24))
+            buf.[6] <- (byte (this >>> 16))
+            buf.[7] <- (byte (this >>> 8))
+            buf.[8] <- (byte this)
             buf
         
 type System.UInt32 with

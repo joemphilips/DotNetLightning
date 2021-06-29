@@ -3,7 +3,6 @@ namespace DotNetLightning.Channel
 open DotNetLightning.Chain
 open DotNetLightning.Utils
 open DotNetLightning.Utils.Aether
-open DotNetLightning.DomainUtils.Types
 open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Transactions
 open DotNetLightning.Crypto
@@ -25,202 +24,68 @@ open NBitcoin
 
 [<AutoOpen>]
 module Data =
-    type ClosingTxProposed = {
-        UnsignedTx: ClosingTx
-        LocalClosingSigned: ClosingSignedMsg
-    }
-    with
-        static member LocalClosingSigned_: Lens<_ ,_> =
-            (fun p -> p.LocalClosingSigned),
-            (fun v p -> { p with LocalClosingSigned = v })
-
-    type LocalCommitPublished = {
-        CommitTx: CommitTx
-        ClaimMainDelayedOutputTx: ClaimDelayedOutputTx option
-        HTLCSuccessTxs: HTLCSuccessTx list
-        HTLCTimeoutTxs: HTLCTimeoutTx list
-    }
-
-    type RemoteCommitPublished = {
-        CommitTx: CommitTx
-        ClaimMainOutputTx: ClaimP2WPKHOutputTx
-        ClaimHTLCSuccessTxs: ClaimHTLCSuccessTx list
-        ClaimHTLCTimeoutTxs: ClaimHTLCTimeoutTx list
-    }
-
-    type RevokedCommitPublished = {
-        CommitTx: CommitTx
-        ClaimMainOutputTx: ClaimP2WPKHOutputTx option
-        MainPenaltyTx: MainPenaltyTx option
-        ClaimHTLCTimeoutTxs: ClaimHTLCTimeoutTx list
-        HTLCTimeoutTxs: HTLCTimeoutTx list
-        HTLCPenaltyTxs: HTLCPenaltyTx list
-    }
-
-    type IChannelStateData = interface inherit IStateData end
-
-    type WaitForFundingConfirmedData = {
-        RemoteNextPerCommitmentPointOpt: Option<PerCommitmentPoint>
-    }
-
-    type WaitForFundingLockedData = {
-        ShortChannelId: ShortChannelId
-    }
-
-    type NormalData = {
-        ShortChannelId: ShortChannelId
-        ChannelAnnouncement: Option<ChannelAnnouncementMsg>
-        ChannelUpdate: ChannelUpdateMsg
-        LocalShutdown: Option<ShutdownMsg>
-        RemoteShutdown: Option<ShutdownMsg>
-        RemoteNextCommitInfo: RemoteNextCommitInfo
-    }
-
-    type ShutdownData = {
-        RemoteNextCommitInfo: RemoteNextCommitInfo
-        LocalShutdown: ShutdownMsg
-        RemoteShutdown: ShutdownMsg
-    }
-
-    type NegotiatingData = {
-        RemoteNextCommitInfo: RemoteNextCommitInfo
-        LocalShutdown: ShutdownMsg
-        RemoteShutdown: ShutdownMsg
-        ClosingTxProposed: List<List<ClosingTxProposed>>
-        MaybeBestUnpublishedTx: Option<FinalizedTx>
-    }
-
-    type ClosingData = {
-        RemoteNextCommitInfo: RemoteNextCommitInfo
-        MaybeFundingTx: Option<Transaction>
-        WaitingSince: System.DateTime
-        MutualCloseProposed: List<ClosingTx>
-        MutualClosePublished: FinalizedTx
-        LocalCommitPublished: Option<LocalCommitPublished>
-        RemoteCommitPublished: Option<RemoteCommitPublished>
-        NextRemoteCommitPublished: Option<RemoteCommitPublished>
-        FutureRemoteCommitPublished: Option<RemoteCommitPublished>
-        RevokedCommitPublished: List<RevokedCommitPublished>
+    type NegotiatingState = {
+        LocalRequestedShutdown: Option<ShutdownScriptPubKey>
+        RemoteRequestedShutdown: Option<ShutdownScriptPubKey>
+        LocalClosingFeesProposed: List<Money>
+        RemoteClosingFeeProposed: Option<Money * LNECDSASignature>
     } with
-        member this.FinalizedTx =
-            this.MutualClosePublished
-        
-        static member Create (maybeFundingTx: Option<Transaction>)
-                             (waitingSince: System.DateTime)
-                             (mutualCloseProposed: List<ClosingTx>)
-                             (mutualClosePublished: FinalizedTx)
-                             (remoteNextCommitInfo: RemoteNextCommitInfo)
-                                 : ClosingData = {
-            RemoteNextCommitInfo = remoteNextCommitInfo
-            MaybeFundingTx = maybeFundingTx
-            WaitingSince = waitingSince
-            MutualCloseProposed = mutualCloseProposed
-            MutualClosePublished = mutualClosePublished
-            LocalCommitPublished = None
-            RemoteCommitPublished = None
-            NextRemoteCommitPublished = None
-            FutureRemoteCommitPublished = None
-            RevokedCommitPublished = []
+        static member New(): NegotiatingState = {
+            LocalRequestedShutdown = None
+            RemoteRequestedShutdown = None
+            LocalClosingFeesProposed = List.empty
+            RemoteClosingFeeProposed = None
         }
+        member this.HasEnteredShutdown(): bool =
+            this.LocalRequestedShutdown.IsSome && this.RemoteRequestedShutdown.IsSome
 
-//     8888888888 888     888 8888888888 888b    888 88888888888 .d8888b.
-//     888        888     888 888        8888b   888     888    d88P  Y88b
-//     888        888     888 888        88888b  888     888    Y88b.
-//     8888888    Y88b   d88P 8888888    888Y88b 888     888     "Y888b.
-//     888         Y88b d88P  888        888 Y88b888     888        "Y88b.
-//     888          Y88o88P   888        888  Y88888     888          "888
-//     888           Y888P    888        888   Y8888     888    Y88b  d88P
-//     8888888888     Y8P     8888888888 888    Y888     888     "Y8888P"
+type ClosingSignedResponse =
+    | NewClosingSigned of ClosingSignedMsg
+    | MutualClose of FinalizedTx * Option<ClosingSignedMsg>
 
+type SavedChannelState = {
+    StaticChannelConfig: StaticChannelConfig
+    RemotePerCommitmentSecrets: PerCommitmentSecretStore
+    ShortChannelId: Option<ShortChannelId>
+    LocalCommit: LocalCommit
+    RemoteCommit: RemoteCommit
+    LocalChanges: LocalChanges
+    RemoteChanges: RemoteChanges
+} with
+    member internal this.HasNoPendingHTLCs (remoteNextCommitInfo: RemoteNextCommitInfo) =
+        this.LocalCommit.Spec.OutgoingHTLCs.IsEmpty
+        && this.LocalCommit.Spec.IncomingHTLCs.IsEmpty
+        && this.RemoteCommit.Spec.OutgoingHTLCs.IsEmpty
+        && this.RemoteCommit.Spec.IncomingHTLCs.IsEmpty
+        && (remoteNextCommitInfo |> function Waiting _ -> false | Revoked _ -> true)
 
-/// The one that includes `Operation` in its name is the event which we are the initiator
-type ChannelEvent =
-    // --- ln events ---
-    /// -------- init both -----
-    | FundingConfirmed of FundingLockedMsg * nextState: Data.WaitForFundingLockedData
-    | TheySentFundingLocked of msg: FundingLockedMsg
-    | WeResumedDelayedFundingLocked of remoteNextPerCommitmentPoint: PerCommitmentPoint
-    | BothFundingLocked of nextState: Data.NormalData
+    member internal this.GetOutgoingHTLCCrossSigned (remoteNextCommitInfo: RemoteNextCommitInfo)
+                                                    (htlcId: HTLCId)
+                                                        : Option<UpdateAddHTLCMsg> =
+        let remoteSigned =
+            Map.tryFind htlcId this.LocalCommit.Spec.OutgoingHTLCs
+        let localSigned =
+            let remoteCommit =
+                match remoteNextCommitInfo with
+                | Revoked _ -> this.RemoteCommit
+                | Waiting nextRemoteCommit -> nextRemoteCommit
+            Map.tryFind htlcId remoteCommit.Spec.IncomingHTLCs
+        match remoteSigned, localSigned with
+        | Some _, Some htlcIn -> htlcIn |> Some
+        | _ -> None
 
-    // -------- normal operation ------
-    | WeAcceptedOperationAddHTLC of msg: UpdateAddHTLCMsg * newCommitments: Commitments
-    | WeAcceptedUpdateAddHTLC of newCommitments: Commitments
+    member internal this.GetIncomingHTLCCrossSigned (remoteNextCommitInfo: RemoteNextCommitInfo)
+                                                    (htlcId: HTLCId)
+                                                        : Option<UpdateAddHTLCMsg> =
+        let remoteSigned =
+            Map.tryFind htlcId this.LocalCommit.Spec.IncomingHTLCs
+        let localSigned =
+            let remoteCommit =
+                match remoteNextCommitInfo with
+                | Revoked _ -> this.RemoteCommit
+                | Waiting nextRemoteCommit -> nextRemoteCommit
+            Map.tryFind htlcId remoteCommit.Spec.OutgoingHTLCs
+        match remoteSigned, localSigned with
+        | Some _, Some htlcIn -> htlcIn |> Some
+        | _ -> None
 
-    | WeAcceptedOperationFulfillHTLC of msg: UpdateFulfillHTLCMsg * newCommitments: Commitments
-    | WeAcceptedFulfillHTLC of msg: UpdateFulfillHTLCMsg * origin: HTLCSource * htlc: UpdateAddHTLCMsg * newCommitments: Commitments
-
-    | WeAcceptedOperationFailHTLC of msg: UpdateFailHTLCMsg * newCommitments: Commitments
-    | WeAcceptedFailHTLC of origin: HTLCSource * msg: UpdateAddHTLCMsg * nextCommitments: Commitments
-
-    | WeAcceptedOperationFailMalformedHTLC of msg: UpdateFailMalformedHTLCMsg * newCommitments: Commitments
-    | WeAcceptedFailMalformedHTLC of origin: HTLCSource * msg: UpdateAddHTLCMsg * newCommitments: Commitments
-
-    | WeAcceptedOperationUpdateFee of msg: UpdateFeeMsg  * nextCommitments: Commitments
-    | WeAcceptedUpdateFee of msg: UpdateFeeMsg * newCommitments: Commitments
-
-    | WeAcceptedOperationSign of msg: CommitmentSignedMsg * nextCommitments: Commitments * nextRemoteCommit: RemoteCommit
-    | WeAcceptedCommitmentSigned of msg: RevokeAndACKMsg * nextCommitments: Commitments
-
-    | WeAcceptedRevokeAndACK of nextCommitments: Commitments * remoteNextPerCommitmentPoint: PerCommitmentPoint
-
-    | AcceptedOperationShutdown of msg: ShutdownMsg
-    | AcceptedShutdownWhileWeHaveUnsignedOutgoingHTLCs of remoteShutdown: ShutdownMsg * nextCommitments: Commitments
-    /// We have to send closing_signed to initiate the negotiation only when if we are the funder
-    | AcceptedShutdownWhenNoPendingHTLCs of msgToSend: ClosingSignedMsg option * nextState: NegotiatingData
-    | AcceptedShutdownWhenWeHavePendingHTLCs of nextState: ShutdownData
-
-    // ------ closing ------
-    | MutualClosePerformed of txToPublish: FinalizedTx * nextState : ClosingData * nextMsgToSend: Option<ClosingSignedMsg>
-    | WeProposedNewClosingSigned of msgToSend: ClosingSignedMsg * nextState: NegotiatingData
-    // -------- else ---------
-    | Closed
-    | Disconnected
-    | ChannelStateRequestedSignCommitment
-    | WeSentChannelReestablish of msg: ChannelReestablishMsg
-
-
-//      .d8888b. 88888888888     d8888 88888888888 8888888888 .d8888b.
-//     d88P  Y88b    888        d88888     888     888       d88P  Y88b
-//     Y88b.         888       d88P888     888     888       Y88b.
-//      "Y888b.      888      d88P 888     888     8888888    "Y888b.
-//         "Y88b.    888     d88P  888     888     888           "Y88b.
-//           "888    888    d88P   888     888     888             "888
-//     Y88b  d88P    888   d8888888888     888     888       Y88b  d88P
-//      "Y8888P"     888  d88P     888     888     8888888888 "Y8888P"
-    // --- setup ---
-
-open Data
-type ChannelStatePhase =
-    | Opening
-    | Normal
-    | Closing
-type ChannelState =
-    /// Establishing
-    | WaitForFundingConfirmed of WaitForFundingConfirmedData
-    | WaitForFundingLocked of WaitForFundingLockedData
-
-    /// normal
-    | Normal of NormalData
-
-    /// Closing
-    | Shutdown of ShutdownData
-    | Negotiating of NegotiatingData
-    | Closing of ClosingData
-    with
-        interface IState 
-
-        static member Normal_: Prism<_, _> =
-            (fun cc -> match cc with
-                       | Normal s -> Some s
-                       | _ -> None ),
-            (fun v cc -> match cc with
-                         | Normal _ -> Normal v
-                         | _ -> cc )
-        member this.Phase =
-            match this with
-            | WaitForFundingConfirmed _
-            | WaitForFundingLocked _ -> Opening
-            | Normal _ -> ChannelStatePhase.Normal
-            | Shutdown _
-            | Negotiating _
-            | Closing _ -> ChannelStatePhase.Closing

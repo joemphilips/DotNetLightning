@@ -31,15 +31,14 @@ type IHTLCTx =
 
 type CommitTx = {
     Value: PSBT
-    WhichInput: int
 }
     with    
         interface ILightningTx with
             member this.Value: PSBT = 
                 this.Value
-            member this.WhichInput: int = 
-                this.WhichInput
+            member this.WhichInput: int = 0
 
+        static member WhichInput: int = 0
         member this.GetTxId() =
             this.Value.GetGlobalTransaction().GetTxId()
 
@@ -84,16 +83,17 @@ module private HTLCHelper =
         
 type HTLCSuccessTx = {
     Value: PSBT
-    WhichInput: int
     PaymentHash: PaymentHash
 }
     with
+        static member WhichInput: int = 0
+
         member this.GetRedeem() =
-            this.Value.Inputs.[this.WhichInput].WitnessScript
+            this.Value.Inputs.[HTLCSuccessTx.WhichInput].WitnessScript
             
         member this.Finalize(localPubkey, remotePubKey, paymentPreimage) =
-            let localSig = this.Value.Inputs.[this.WhichInput].PartialSigs.[localPubkey]
-            let remoteSig = this.Value.Inputs.[this.WhichInput].PartialSigs.[remotePubKey]
+            let localSig = this.Value.Inputs.[HTLCSuccessTx.WhichInput].PartialSigs.[localPubkey]
+            let remoteSig = this.Value.Inputs.[HTLCSuccessTx.WhichInput].PartialSigs.[remotePubKey]
             this.Finalize(localSig, remoteSig, paymentPreimage)
             
         member this.Finalize(localSig, remoteSig, paymentPreimage: PaymentPreimage) =
@@ -102,20 +102,21 @@ type HTLCSuccessTx = {
         interface IHTLCTx
             with
                 member this.Value = this.Value
-                member this.WhichInput = this.WhichInput
+                member this.WhichInput = HTLCSuccessTx.WhichInput
 
 type HTLCTimeoutTx = {
     Value: PSBT
-    WhichInput: int
 }
     with
+        static member WhichInput: int = 0
+
         member this.Finalize(localSig: TransactionSignature, remoteSig: TransactionSignature) =
             HTLCHelper.finalize(this, localSig, remoteSig, None)
             
         interface IHTLCTx
             with
                 member this.Value = this.Value
-                member this.WhichInput = this.WhichInput
+                member this.WhichInput = HTLCTimeoutTx.WhichInput
 
 
 type ClaimHTLCSuccessTx = ClaimHTLCSuccessTx of PSBT
@@ -313,21 +314,19 @@ module Transactions =
 
     let UINT32_MAX = 0xffffffffu
 
-    let private trimOfferedHTLCs (dustLimit: Money) (spec: CommitmentSpec): DirectedHTLC list =
+    let private trimOfferedHTLCs (dustLimit: Money) (spec: CommitmentSpec): list<UpdateAddHTLCMsg> =
         let htlcTimeoutFee = spec.FeeRatePerKw.CalculateFeeFromWeight(HTLC_TIMEOUT_WEIGHT)
-        spec.HTLCs
+        spec.OutgoingHTLCs
             |> Map.toList
             |> List.map snd
-            |> List.filter(fun v -> v.Direction = Out)
-            |> List.filter(fun v -> (v.Add.Amount.ToMoney()) >= (dustLimit + htlcTimeoutFee))
+            |> List.filter(fun v -> (v.Amount.ToMoney()) >= (dustLimit + htlcTimeoutFee))
 
-    let private trimReceivedHTLCs (dustLimit: Money) (spec: CommitmentSpec) : DirectedHTLC list =
+    let private trimReceivedHTLCs (dustLimit: Money) (spec: CommitmentSpec) : list<UpdateAddHTLCMsg> =
         let htlcSuccessFee = spec.FeeRatePerKw.CalculateFeeFromWeight(HTLC_SUCCESS_WEIGHT)
-        spec.HTLCs
+        spec.IncomingHTLCs
             |> Map.toList
             |> List.map snd
-            |> List.filter(fun v -> v.Direction = In)
-            |> List.filter(fun v -> (v.Add.Amount.ToMoney()) >= (dustLimit + htlcSuccessFee))
+            |> List.filter(fun v -> (v.Amount.ToMoney()) >= (dustLimit + htlcSuccessFee))
 
     let internal commitTxFee (dustLimit: Money) (spec: CommitmentSpec): Money =
         let trimmedOfferedHTLCs = trimOfferedHTLCs (dustLimit) (spec)
@@ -394,13 +393,13 @@ module Transactions =
         let htlcOfferedOutputsWithMetadata =
             trimOfferedHTLCs (localDustLimit) (spec)
             |> List.map(fun htlc ->
-                let redeem = Scripts.htlcOffered (localHTLCPubKey) (remoteHTLCPubkey) localRevocationPubKey (htlc.Add.PaymentHash)
-                (TxOut(htlc.Add.Amount.ToMoney(), redeem.WitHash.ScriptPubKey)), Some htlc.Add)
+                let redeem = Scripts.htlcOffered (localHTLCPubKey) (remoteHTLCPubkey) localRevocationPubKey (htlc.PaymentHash)
+                (TxOut(htlc.Amount.ToMoney(), redeem.WitHash.ScriptPubKey)), Some htlc)
         let htlcReceivedOutputsWithMetadata =
             trimReceivedHTLCs(localDustLimit) (spec)
             |> List.map(fun htlc ->
-                    let redeem = Scripts.htlcReceived (localHTLCPubKey) (remoteHTLCPubkey) (localRevocationPubKey) (htlc.Add.PaymentHash) (htlc.Add.CLTVExpiry.Value)
-                    TxOut(htlc.Add.Amount.ToMoney(), redeem.WitHash.ScriptPubKey), Some htlc.Add)
+                    let redeem = Scripts.htlcReceived (localHTLCPubKey) (remoteHTLCPubkey) (localRevocationPubKey) (htlc.PaymentHash) (htlc.CLTVExpiry.Value)
+                    TxOut(htlc.Amount.ToMoney(), redeem.WitHash.ScriptPubKey), Some htlc)
         
         let obscuredCommitmentNumber =
             commitmentNumber.Obscure localIsFunder localPaymentBasepoint remotePaymentBasepoint
@@ -440,7 +439,7 @@ module Transactions =
         let psbt =
             let p = PSBT.FromTransaction(tx, network)
             p.AddCoins(inputInfo)
-        { CommitTx.Value = psbt; WhichInput = 0 }
+        { CommitTx.Value = psbt }
 
 
     let private findScriptPubKeyIndex(tx: Transaction) (spk: Script) =
@@ -559,8 +558,7 @@ module Transactions =
 
                 PSBT.FromTransaction(tx, network)
                     .AddCoins scriptCoin
-            let whichInput = psbt.Inputs |> Seq.findIndex(fun i -> not (isNull i.WitnessScript))
-            { HTLCTimeoutTx.Value = psbt; WhichInput = whichInput } |> Ok
+            { HTLCTimeoutTx.Value = psbt } |> Ok
 
     let makeHTLCSuccessTx (commitTx: Transaction)
                           (localDustLimit: Money)
@@ -602,8 +600,7 @@ module Transactions =
 
                 PSBT.FromTransaction(tx, network)
                     .AddCoins scriptCoin
-            let whichInput = psbt.Inputs |> Seq.findIndex(fun i -> not (isNull i.WitnessScript))
-            { HTLCSuccessTx.Value = psbt; WhichInput = whichInput; PaymentHash = htlc.PaymentHash } |> Ok
+            { HTLCSuccessTx.Value = psbt; PaymentHash = htlc.PaymentHash } |> Ok
 
     let makeHTLCTxs (commitTx: Transaction)
                     (localDustLimit: Money)
@@ -624,7 +621,7 @@ module Transactions =
                                                                        localHTLCPubKey
                                                                        remoteHTLCPubKey
                                                                        spec.FeeRatePerKw
-                                                                       htlc.Add
+                                                                       htlc
                                                                        network
                                         )
                              |> List.sequenceResultA
@@ -638,7 +635,7 @@ module Transactions =
                                                                        localHTLCPubKey
                                                                        remoteHTLCPubKey
                                                                        spec.FeeRatePerKw
-                                                                       htlc.Add
+                                                                       htlc
                                                                        network
                                         )
                              |> List.sequenceResultA
@@ -787,8 +784,10 @@ module Transactions =
                       (spec: CommitmentSpec)
                       (network: Network)
                           : Result<ClosingTx, _> =
-        if (not spec.HTLCs.IsEmpty) then
-            HTLCNotClean (spec.HTLCs |> Map.toList |> List.map(fst)) |> Error
+        if (not spec.OutgoingHTLCs.IsEmpty) || (not spec.IncomingHTLCs.IsEmpty) then
+            HTLCNotClean
+                ((spec.OutgoingHTLCs |> Map.toList |> List.map(fst)) @ (spec.IncomingHTLCs |> Map.toList |> List.map(fst)))
+            |> Error
         else
             let toLocalAmount, toRemoteAmount =
                 if (localIsFunder) then

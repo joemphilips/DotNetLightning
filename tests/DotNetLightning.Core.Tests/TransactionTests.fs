@@ -62,15 +62,52 @@ let testList = testList "transaction tests" [
             MaxAcceptedHTLCs = 1000us
             Features = FeatureBits.Zero
         }
+        
+        let remoteLocalParam : LocalParams = {
+            DustLimitSatoshis = 546L |> Money.Satoshis
+            MaxHTLCValueInFlightMSat = 10_000_000L |> LNMoney
+            ChannelReserveSatoshis = 1000L |> Money.Satoshis
+            HTLCMinimumMSat = 1000L |> LNMoney
+            ToSelfDelay = 144us |> BlockHeightOffset16
+            MaxAcceptedHTLCs = 1000us
+            Features = FeatureBits.Zero
+        }
+
+        let remoteParam : RemoteParams = {
+            DustLimitSatoshis = 546L |> Money.Satoshis
+            MaxHTLCValueInFlightMSat = 10_000_000L |> LNMoney
+            ChannelReserveSatoshis = 1000L |> Money.Satoshis
+            HTLCMinimumMSat = 1000L |> LNMoney
+            ToSelfDelay = 144us |> BlockHeightOffset16
+            MaxAcceptedHTLCs = 1000us
+            Features = FeatureBits.Zero
+        }
+
         let feeRate = FeeRatePerKw (rand.Next(0, 300) |> uint32)
         let localAmount = 2_000_000_000L |> LNMoney
         let remoteAmount = LNMoney.Satoshis(fundingAmount.Satoshi) - localAmount
         let commitmentSpec = {
-            HTLCs = Map.empty
+            IncomingHTLCs = Map.empty
+            OutgoingHTLCs = Map.empty
             FeeRatePerKw = feeRate
             ToLocal = localAmount
             ToRemote = remoteAmount
         }
+
+        let staticLocalChannelConfig : StaticChannelConfig = 
+            {
+                FundingScriptCoin = fundingScriptCoin
+                AnnounceChannel = false
+                RemoteNodeId = remoteNodeMasterPrivKey.NodeId()
+                Network = Network.RegTest
+                IsFunder = true
+                FundingTxMinimumDepth = BlockHeightOffset32 6u
+                LocalStaticShutdownScriptPubKey = None
+                RemoteStaticShutdownScriptPubKey = None
+                LocalParams = localParams
+                RemoteParams = remoteParam
+                RemoteChannelPubKeys = remoteChannelPubKeys
+            }
 
         let unsignedCommitmentTx =
             makeCommitTx
@@ -96,12 +133,8 @@ let testList = testList "transaction tests" [
 
         let transactionBuilder =
             ForceCloseFundsRecovery.tryGetFundsFromLocalCommitmentTx
-                true
-                localParams
-                fundingScriptCoin
                 localChannelPrivKeys
-                remoteChannelPubKeys
-                Network.RegTest
+                staticLocalChannelConfig
                 commitmentTx
             |> Result.deref
 
@@ -159,15 +192,53 @@ let testList = testList "transaction tests" [
             Features = localParams.Features
         }
 
+        let staticRemoteChannelConfig : StaticChannelConfig = 
+            {
+                FundingScriptCoin = fundingScriptCoin
+                AnnounceChannel = false
+                RemoteNodeId = localNodeMasterPrivKey.NodeId()
+                Network = Network.RegTest
+                IsFunder = false
+                FundingTxMinimumDepth = BlockHeightOffset32 6u
+                LocalStaticShutdownScriptPubKey = None
+                RemoteStaticShutdownScriptPubKey = None
+                LocalParams = remoteLocalParam
+                RemoteParams = remoteRemoteParams
+                RemoteChannelPubKeys = localChannelPubKeys
+            }
+
+        let remoteCommitmentSpec = {
+            IncomingHTLCs = Map.empty
+            OutgoingHTLCs = Map.empty
+            FeeRatePerKw = feeRate
+            ToLocal = remoteAmount
+            ToRemote = localAmount
+        }
+        let remoteLocalCommit : LocalCommit =
+            {
+                Index = commitmentNumber
+                Spec = remoteCommitmentSpec
+                PublishableTxs = {
+                    CommitTx = FinalizedTx commitmentTx
+                    HTLCTxs = List.Empty
+                }
+                PendingHTLCSuccessTxs = List.Empty
+            }
+
+        let remoteSavedChannelState : SavedChannelState = {
+            StaticChannelConfig = staticRemoteChannelConfig
+            RemotePerCommitmentSecrets = remoteRemotePerCommitmentSecrets
+            ShortChannelId = None
+            LocalCommit = remoteLocalCommit
+            RemoteCommit = remoteRemoteCommit 
+            LocalChanges = LocalChanges.Zero
+            RemoteChanges = RemoteChanges.Zero
+        }
+
         let transactionBuilder =
             ForceCloseFundsRecovery.tryGetFundsFromRemoteCommitmentTx
-                false
-                fundingScriptCoin
-                remoteRemotePerCommitmentSecrets
-                remoteRemoteCommit
                 remoteChannelPrivKeys
-                localChannelPubKeys
-                Network.RegTest
+                remoteSavedChannelState
                 commitmentTx
             |> Result.deref
 
@@ -186,13 +257,9 @@ let testList = testList "transaction tests" [
 
         let transactionBuilder =
             ForceCloseFundsRecovery.createPenaltyTx
-                false
-                remoteRemoteParams
                 perCommitmentSecret
-                remoteRemoteCommit
+                remoteSavedChannelState
                 remoteChannelPrivKeys
-                localChannelPubKeys
-                Network.RegTest
         let penaltyTransaction =
             transactionBuilder
                 .SendAll(remoteDestPubKey)

@@ -7,6 +7,7 @@ open DotNetLightning.Crypto
 open System
 open DotNetLightning.Crypto
 
+let boolGen = Gen.oneof [ gen { return true }; gen { return false } ]
 let byteGen = byte <!> Gen.choose(0, 127)
 let bytesGen = Gen.listOf(byteGen) |> Gen.map(List.toArray)
 let bytesOfNGen(n) = Gen.listOfLength n byteGen |> Gen.map(List.toArray)
@@ -70,6 +71,13 @@ let signatureGen: Gen<LNECDSASignature> = gen {
     let! h = uint256Gen
     let! k = keyGen
     return k.Sign(h, false) |> LNECDSASignature
+}
+
+let channelFlagsGen = gen {
+    let! announceChannel = boolGen
+    return {
+        AnnounceChannel = announceChannel
+    }
 }
 
 // scripts

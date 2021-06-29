@@ -81,10 +81,10 @@ type CommitmentToLocalParameters = {
 
 type internal CommitmentToLocalExtension() =
     inherit BuilderExtension()
-        override self.CanGenerateScriptSig (scriptPubKey: Script): bool =
+        override __.CanGenerateScriptSig (scriptPubKey: Script): bool =
             (CommitmentToLocalParameters.TryExtractParameters scriptPubKey).IsSome
 
-        override self.GenerateScriptSig(scriptPubKey: Script, keyRepo: IKeyRepository, signer: ISigner): Script =
+        override __.GenerateScriptSig(scriptPubKey: Script, keyRepo: IKeyRepository, signer: ISigner): Script =
             let parameters =
                 match (CommitmentToLocalParameters.TryExtractParameters scriptPubKey) with
                 | Some parameters -> parameters
@@ -112,25 +112,25 @@ type internal CommitmentToLocalExtension() =
                 ]
             | _ -> null
 
-        override self.CanDeduceScriptPubKey(_scriptSig: Script): bool =
+        override __.CanDeduceScriptPubKey(_scriptSig: Script): bool =
             false
 
-        override self.DeduceScriptPubKey(_scriptSig: Script): Script =
+        override __.DeduceScriptPubKey(_scriptSig: Script): Script =
             raise <| NotSupportedException()
 
-        override self.CanEstimateScriptSigSize(_scriptPubKey: Script): bool =
+        override __.CanEstimateScriptSigSize(_scriptPubKey: Script): bool =
             false
 
-        override self.EstimateScriptSigSize(_scriptPubKey: Script): int =
+        override __.EstimateScriptSigSize(_scriptPubKey: Script): int =
             raise <| NotSupportedException()
 
-        override self.CanCombineScriptSig(_scriptPubKey: Script, _a: Script, _b: Script): bool = 
+        override __.CanCombineScriptSig(_scriptPubKey: Script, _a: Script, _b: Script): bool = 
             false
 
-        override self.CombineScriptSig(_scriptPubKey: Script, _a: Script, _b: Script): Script =
+        override __.CombineScriptSig(_scriptPubKey: Script, _a: Script, _b: Script): Script =
             raise <| NotSupportedException()
 
-        override self.IsCompatibleKey(pubKey: PubKey, scriptPubKey: Script): bool =
+        override __.IsCompatibleKey(pubKey: PubKey, scriptPubKey: Script): bool =
             match CommitmentToLocalParameters.TryExtractParameters scriptPubKey with
             | None -> false
             | Some parameters ->

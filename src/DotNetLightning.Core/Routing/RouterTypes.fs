@@ -34,7 +34,6 @@ type RouterError =
 module internal RouterError =
     let routeFindingError msg = RouteFindingError msg |> Error
 type RouterCommand =
-    | ChannelEvent of ChannelEvent
     | NetworkEvent of NetworkEvent
     | NetworkCommand of NetworkCommand
     

@@ -19,10 +19,10 @@ module internal ChannelHelpers =
                              (theirFundingPubKey: FundingPubKey)
                              (TxId fundingTxId)
                              (TxOutIndex fundingOutputIndex)
-                             (fundingSatoshis)
+                             (fundingAmount: Money)
                                  : ScriptCoin =
         let redeem = Scripts.funding ourFundingPubKey theirFundingPubKey
-        Coin(fundingTxId, uint32 fundingOutputIndex, fundingSatoshis, redeem.WitHash.ScriptPubKey)
+        Coin(fundingTxId, uint32 fundingOutputIndex, fundingAmount, redeem.WitHash.ScriptPubKey)
         |> fun c -> ScriptCoin(c, redeem)
 
     let private makeFlags (isNode1: bool, enable: bool) =
@@ -65,7 +65,7 @@ module internal ChannelHelpers =
         }
 
     /// gets the fee we'd want to charge for adding an HTLC output to this channel
-    let internal getOurFeeBaseMSat (feeEstimator: IFeeEstimator) (FeeRatePerKw feeRatePerKw) (isFunder: bool) =
+    let internal getOurFeeBase (feeEstimator: IFeeEstimator) (FeeRatePerKw feeRatePerKw) (isFunder: bool): LNMoney =
         // for lack of a better metric, we calculate waht it would cost to consolidate the new HTLC
         // output value back into a transaction with the regular channel output:
 
@@ -84,17 +84,25 @@ module internal ChannelHelpers =
                            (remoteChannelPubKeys: ChannelPubKeys)
                            (localParams: LocalParams)
                            (remoteParams: RemoteParams)
-                           (fundingSatoshis: Money)
-                           (pushMSat: LNMoney)
+                           (fundingAmount: Money)
+                           (pushAmount: LNMoney)
                            (initialFeeRatePerKw: FeeRatePerKw)
                            (fundingOutputIndex: TxOutIndex)
                            (fundingTxId: TxId)
                            (localPerCommitmentPoint: PerCommitmentPoint)
                            (remotePerCommitmentPoint: PerCommitmentPoint)
-                           (n: Network)
+                           (network: Network)
                                : Result<CommitmentSpec * CommitTx * CommitmentSpec * CommitTx, ChannelError> =
-        let toLocal = if localIsFunder then fundingSatoshis.ToLNMoney() - pushMSat else pushMSat
-        let toRemote = if localIsFunder then pushMSat else fundingSatoshis.ToLNMoney() - pushMSat
+        let toLocal =
+            if localIsFunder then
+                fundingAmount.ToLNMoney() - pushAmount
+            else
+                pushAmount
+        let toRemote =
+            if localIsFunder then
+                pushAmount
+            else
+                fundingAmount.ToLNMoney() - pushAmount
         let localChannelKeys = localChannelPubKeys
         let localSpec = CommitmentSpec.Create toLocal toRemote initialFeeRatePerKw
         let remoteSpec = CommitmentSpec.Create toRemote toLocal initialFeeRatePerKw
@@ -111,7 +119,7 @@ module internal ChannelHelpers =
                                                   remoteChannelPubKeys.FundingPubKey
                                                   fundingTxId
                                                   fundingOutputIndex
-                                                  fundingSatoshis
+                                                  fundingAmount
             let localPubKeysForLocalCommitment = localPerCommitmentPoint.DeriveCommitmentPubKeys localChannelKeys
             let remotePubKeysForLocalCommitment = localPerCommitmentPoint.DeriveCommitmentPubKeys remoteChannelPubKeys
 
@@ -129,7 +137,7 @@ module internal ChannelHelpers =
                                           localPubKeysForLocalCommitment.HtlcPubKey
                                           remotePubKeysForLocalCommitment.HtlcPubKey
                                           localSpec
-                                          n
+                                          network
 
             let localPubKeysForRemoteCommitment = remotePerCommitmentPoint.DeriveCommitmentPubKeys localChannelKeys
             let remotePubKeysForRemoteCommitment = remotePerCommitmentPoint.DeriveCommitmentPubKeys remoteChannelPubKeys
@@ -148,7 +156,7 @@ module internal ChannelHelpers =
                                           remotePubKeysForRemoteCommitment.HtlcPubKey
                                           localPubKeysForRemoteCommitment.HtlcPubKey
                                           remoteSpec
-                                          n
+                                          network
 
             (localSpec, localCommitTx, remoteSpec, remoteCommitTx) |> Ok
 
@@ -173,61 +181,84 @@ module internal Validation =
         *^> OpenChannelMsgValidation.checkFunderCanAffordFee (msg.FeeRatePerKw) msg
         |> Result.mapError((@)["open_channel msg is invalid"] >> InvalidOpenChannelError.Create msg >> InvalidOpenChannel)
 
-    let internal checkOpenChannelMsgAcceptable (feeEstimator: IFeeEstimator)
-                                               (channelHandshakeLimits: ChannelHandshakeLimits)
+    let internal checkOpenChannelMsgAcceptable (channelHandshakeLimits: ChannelHandshakeLimits)
                                                (channelOptions: ChannelOptions)
+                                               (announceChannel: bool)
                                                (msg: OpenChannelMsg) =
-        let feeRate = feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background)
+        let feeRate = channelOptions.FeeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background)
         Validation.ofResult(OpenChannelMsgValidation.checkFundingSatoshisLessThanMax msg)
         *^> OpenChannelMsgValidation.checkChannelReserveSatohisLessThanFundingSatoshis msg
         *^> OpenChannelMsgValidation.checkPushMSatLesserThanFundingValue msg
         *^> OpenChannelMsgValidation.checkFundingSatoshisLessThanDustLimitSatoshis msg
-        *^> OpenChannelMsgValidation.checkRemoteFee feeEstimator msg.FeeRatePerKw channelOptions.MaxFeeRateMismatchRatio
+        *^> OpenChannelMsgValidation.checkRemoteFee channelOptions.FeeEstimator msg.FeeRatePerKw channelOptions.MaxFeeRateMismatchRatio
         *^> OpenChannelMsgValidation.checkToSelfDelayIsInAcceptableRange msg
         *^> OpenChannelMsgValidation.checkMaxAcceptedHTLCs msg
         *> OpenChannelMsgValidation.checkConfigPermits channelHandshakeLimits msg
-        *^> OpenChannelMsgValidation.checkChannelAnnouncementPreferenceAcceptable channelHandshakeLimits channelOptions msg
-        *> OpenChannelMsgValidation.checkIsAcceptableByCurrentFeeRate feeEstimator msg
+        *^> OpenChannelMsgValidation.checkChannelAnnouncementPreferenceAcceptable channelHandshakeLimits announceChannel msg
+        *> OpenChannelMsgValidation.checkIsAcceptableByCurrentFeeRate channelOptions.FeeEstimator msg
         *^> OpenChannelMsgValidation.checkFunderCanAffordFee feeRate msg
         |> Result.mapError((@)["rejected received open_channel msg"] >> InvalidOpenChannelError.Create msg >> InvalidOpenChannel)
 
 
     let internal checkAcceptChannelMsgAcceptable (channelHandshakeLimits: ChannelHandshakeLimits)
-                                                 (fundingSatoshis: Money)
-                                                 (channelReserveSatoshis: Money)
-                                                 (dustLimitSatoshis: Money)
+                                                 (fundingAmount: Money)
+                                                 (channelReserveAmount: Money)
+                                                 (dustLimit: Money)
                                                  (acceptChannelMsg: AcceptChannelMsg) =
         Validation.ofResult(AcceptChannelMsgValidation.checkMaxAcceptedHTLCs acceptChannelMsg)
         *^> AcceptChannelMsgValidation.checkDustLimit acceptChannelMsg
-        *^> AcceptChannelMsgValidation.checkChannelReserveSatoshis fundingSatoshis channelReserveSatoshis dustLimitSatoshis acceptChannelMsg
-        *^> AcceptChannelMsgValidation.checkDustLimitIsLargerThanOurChannelReserve channelReserveSatoshis acceptChannelMsg
-        *^> AcceptChannelMsgValidation.checkMinimumHTLCValueIsAcceptable fundingSatoshis acceptChannelMsg
+        *^> AcceptChannelMsgValidation.checkChannelReserveSatoshis fundingAmount channelReserveAmount dustLimit acceptChannelMsg
+        *^> AcceptChannelMsgValidation.checkDustLimitIsLargerThanOurChannelReserve channelReserveAmount acceptChannelMsg
+        *^> AcceptChannelMsgValidation.checkMinimumHTLCValueIsAcceptable fundingAmount acceptChannelMsg
         *^> AcceptChannelMsgValidation.checkToSelfDelayIsAcceptable acceptChannelMsg
         *> AcceptChannelMsgValidation.checkConfigPermits channelHandshakeLimits acceptChannelMsg
         |> Result.mapError(InvalidAcceptChannelError.Create acceptChannelMsg >> InvalidAcceptChannel)
 
 
-    let checkOperationAddHTLC (commitments: Commitments) (op: OperationAddHTLC) =
+    let checkOperationAddHTLC (remoteParams: RemoteParams) (op: OperationAddHTLC) =
         Validation.ofResult(UpdateAddHTLCValidation.checkExpiryIsNotPast op.CurrentHeight op.Expiry)
         *> UpdateAddHTLCValidation.checkExpiryIsInAcceptableRange op.CurrentHeight op.Expiry
-        *^> UpdateAddHTLCValidation.checkAmountIsLargerThanMinimum commitments.RemoteParams.HTLCMinimumMSat op.Amount
+        *^> UpdateAddHTLCValidation.checkAmountIsLargerThanMinimum remoteParams.HTLCMinimumMSat op.Amount
         |> Result.mapError(InvalidOperationAddHTLCError.Create op >> InvalidOperationAddHTLC)
 
-    let checkOurUpdateAddHTLCIsAcceptableWithCurrentSpec (currentSpec) (state: Commitments) (add: UpdateAddHTLCMsg) =
-        Validation.ofResult(UpdateAddHTLCValidationWithContext.checkLessThanHTLCValueInFlightLimit currentSpec state.RemoteParams.MaxHTLCValueInFlightMSat add)
-        *^> UpdateAddHTLCValidationWithContext.checkLessThanMaxAcceptedHTLC currentSpec state.RemoteParams.MaxAcceptedHTLCs
-        *^> UpdateAddHTLCValidationWithContext.checkWeHaveSufficientFunds state currentSpec
+    let checkOurUpdateAddHTLCIsAcceptableWithCurrentSpec (currentSpec)
+                                                         (staticChannelConfig: StaticChannelConfig)
+                                                         (add: UpdateAddHTLCMsg) =
+        Validation.ofResult(
+            UpdateAddHTLCValidationWithContext.checkLessThanHTLCValueInFlightLimit
+                currentSpec
+                staticChannelConfig.RemoteParams.MaxHTLCValueInFlightMSat
+                add
+        )
+        *^> UpdateAddHTLCValidationWithContext.checkLessThanMaxAcceptedHTLC currentSpec staticChannelConfig.RemoteParams.MaxAcceptedHTLCs
+        *^> UpdateAddHTLCValidationWithContext.checkWeHaveSufficientFunds staticChannelConfig currentSpec
         |> Result.mapError(InvalidUpdateAddHTLCError.Create add >> InvalidUpdateAddHTLC)
 
-    let checkTheirUpdateAddHTLCIsAcceptable (state: Commitments) (add: UpdateAddHTLCMsg) (currentHeight: BlockHeight) =
+    let checkTheirUpdateAddHTLCIsAcceptable (state: Commitments)
+                                            (localParams: LocalParams)
+                                            (add: UpdateAddHTLCMsg)
+                                            (currentHeight: BlockHeight) =
         Validation.ofResult(ValidationHelper.check add.HTLCId (<>) state.RemoteNextHTLCId "Received Unexpected HTLCId (%A). Must be (%A)")
             *^> UpdateAddHTLCValidation.checkExpiryIsNotPast currentHeight add.CLTVExpiry
             *> UpdateAddHTLCValidation.checkExpiryIsInAcceptableRange currentHeight add.CLTVExpiry
-            *^> UpdateAddHTLCValidation.checkAmountIsLargerThanMinimum state.LocalParams.HTLCMinimumMSat add.Amount
+            *^> UpdateAddHTLCValidation.checkAmountIsLargerThanMinimum localParams.HTLCMinimumMSat add.Amount
             |> Result.mapError(InvalidUpdateAddHTLCError.Create add >> InvalidUpdateAddHTLC)
 
-    let checkTheirUpdateAddHTLCIsAcceptableWithCurrentSpec (currentSpec) (state: Commitments) (add: UpdateAddHTLCMsg) =
-        Validation.ofResult(UpdateAddHTLCValidationWithContext.checkLessThanHTLCValueInFlightLimit currentSpec state.LocalParams.MaxHTLCValueInFlightMSat add)
-        *^> UpdateAddHTLCValidationWithContext.checkLessThanMaxAcceptedHTLC currentSpec state.LocalParams.MaxAcceptedHTLCs
-        *^> UpdateAddHTLCValidationWithContext.checkWeHaveSufficientFunds state currentSpec
+    let checkTheirUpdateAddHTLCIsAcceptableWithCurrentSpec (currentSpec)
+                                                           (staticChannelConfig: StaticChannelConfig)
+                                                           (add: UpdateAddHTLCMsg) =
+        Validation.ofResult(UpdateAddHTLCValidationWithContext.checkLessThanHTLCValueInFlightLimit currentSpec staticChannelConfig.LocalParams.MaxHTLCValueInFlightMSat add)
+        *^> UpdateAddHTLCValidationWithContext.checkLessThanMaxAcceptedHTLC currentSpec staticChannelConfig.LocalParams.MaxAcceptedHTLCs
+        *^> UpdateAddHTLCValidationWithContext.checkWeHaveSufficientFunds staticChannelConfig currentSpec
         |> Result.mapError(InvalidUpdateAddHTLCError.Create add >> InvalidUpdateAddHTLC)
+
+    let checkShutdownScriptPubKeyAcceptable (staticShutdownScriptPubKey: Option<ShutdownScriptPubKey>)
+                                            (requestedShutdownScriptPubKey: ShutdownScriptPubKey)
+                                                : Result<unit, ChannelError> =
+        match staticShutdownScriptPubKey with
+        | Some scriptPubKey when scriptPubKey <> requestedShutdownScriptPubKey ->
+            Error <|
+                cannotCloseChannel
+                    "requested shutdown script does not match shutdown \
+                    script in open/accept channel"
+        | _ -> Ok ()

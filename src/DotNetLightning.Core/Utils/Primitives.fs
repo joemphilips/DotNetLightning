@@ -40,9 +40,9 @@ module Primitives =
     type BlockHeight = | BlockHeight of uint32 with
         static member Zero = 0u |> BlockHeight
         static member One = 1u |> BlockHeight
-        member x.Value = let (BlockHeight v) = x in v
-        member x.AsOffset() =
-            x.Value |> Checked.uint16 |> BlockHeightOffset16
+        member this.Value = let (BlockHeight v) = this in v
+        member this.AsOffset() =
+            this.Value |> Checked.uint16 |> BlockHeightOffset16
 
         static member (+) (a: BlockHeight, b: BlockHeightOffset16) =
                 a.Value + (uint32 b.Value ) |> BlockHeight
@@ -67,7 +67,7 @@ module Primitives =
         [<Struct>]
 #endif
         BlockHeightOffset16 = | BlockHeightOffset16 of uint16 with
-        member x.Value = let (BlockHeightOffset16 v) = x in v
+        member this.Value = let (BlockHeightOffset16 v) = this in v
 
         static member ofBlockHeightOffset32(bho32: BlockHeightOffset32) =
             BlockHeightOffset16 (uint16 bho32.Value)
@@ -90,7 +90,7 @@ module Primitives =
         [<Struct>]
 #endif
         BlockHeightOffset32 = | BlockHeightOffset32 of uint32 with
-        member x.Value = let (BlockHeightOffset32 v) = x in v
+        member this.Value = let (BlockHeightOffset32 v) = this in v
 
         static member ofBlockHeightOffset16(bho16: BlockHeightOffset16) =
             BlockHeightOffset32 (uint32 bho16.Value)
@@ -110,7 +110,7 @@ module Primitives =
     /// 3. Custom `ToString`
     [<CustomEquality;CustomComparison;StructuredFormatDisplay("{AsString}")>]
     type LNECDSASignature = LNECDSASignature of ECDSASignature | Empty with
-        member x.Value = match x with LNECDSASignature s -> s | Empty -> failwith "Unreachable!"
+        member this.Value = match this with LNECDSASignature s -> s | Empty -> failwith "Unreachable!"
         override this.GetHashCode() = hash this.Value
         override this.Equals(obj: obj) =
             match obj with
@@ -172,10 +172,10 @@ module Primitives =
             ec |> LNECDSASignature
 
     type PaymentHash = | PaymentHash of uint256 with
-        member x.Value = let (PaymentHash v) = x in v
-        member x.ToBytes(?lEndian) =
+        member this.Value = let (PaymentHash v) = this in v
+        member this.ToBytes(?lEndian) =
             let e = defaultArg lEndian false
-            x.Value.ToBytes(e)
+            this.Value.ToBytes e
 
         member x.GetRIPEMD160() =
             let b = x.Value.ToBytes() |> Array.rev
@@ -245,7 +245,7 @@ module Primitives =
 
     [<CustomEquality;CustomComparison>]
     type ComparablePubKey = ComparablePubKey of PubKey with
-        member x.Value = let (ComparablePubKey v) = x in v
+        member this.Value = let (ComparablePubKey v) = this in v
         interface IComparable with
             override this.CompareTo(other) =
                 match other with
@@ -261,7 +261,7 @@ module Primitives =
             
     [<CustomEquality;CustomComparison>]
     type NodeId = | NodeId of PubKey with
-        member x.Value = let (NodeId v) = x in v
+        member this.Value = let (NodeId v) = this in v
         interface IComparable with
             override this.CompareTo(other) =
                 match other with
@@ -278,7 +278,7 @@ module Primitives =
     /// So that it supports comparison and equality constraints
     [<CustomComparison;CustomEquality>]
     type LNOutPoint = LNOutPoint of OutPoint with
-        member x.Value = let (LNOutPoint v) = x in v
+        member this.Value = let (LNOutPoint v) = this in v
         
         member this.CompareTo(other: LNOutPoint) =
             if this.Value.Hash > other.Value.Hash then
@@ -315,7 +315,7 @@ module Primitives =
 
     /// feerate per kilo weight
     type FeeRatePerKw = | FeeRatePerKw of uint32 with
-        member x.Value = let (FeeRatePerKw v) = x in v
+        member this.Value = let (FeeRatePerKw v) = this in v
         static member FromFee(fee: Money, weight: uint64) =
             (((uint64 fee.Satoshi) * 1000UL) / weight)
             |> uint32
@@ -363,14 +363,14 @@ module Primitives =
 
     /// Block Hash
     type BlockId = | BlockId of uint256 with
-        member x.Value = let (BlockId v) = x in v
+        member this.Value = let (BlockId v) = this in v
 
 #if !NoDUsAsStructs
     [<Struct>]
 #endif
     type HTLCId = | HTLCId of uint64 with
         static member Zero = HTLCId(0UL)
-        member x.Value = let (HTLCId v) = x in v
+        member this.Value = let (HTLCId v) = this in v
 
         static member (+) (a: HTLCId, b: uint64) = (a.Value + b) |> HTLCId
 
@@ -378,13 +378,13 @@ module Primitives =
     [<Struct>]
 #endif
     type TxOutIndex = | TxOutIndex of uint16 with
-        member x.Value = let (TxOutIndex v) = x in v
+        member this.Value = let (TxOutIndex v) = this in v
 
 #if !NoDUsAsStructs
     [<Struct>]
 #endif
     type TxIndexInBlock = | TxIndexInBlock of uint32 with
-        member x.Value = let (TxIndexInBlock v) = x in v
+        member this.Value = let (TxIndexInBlock v) = this in v
 
 #if !NoDUsAsStructs
     [<Struct;StructuredFormatDisplay("{AsString}")>]
@@ -484,9 +484,30 @@ module Primitives =
                 sprintf "Invalid final script pubkey(%A). it must be one of p2pkh, p2sh, p2wpkh, p2wsh" scriptPubKey
                 |> Error 
 
-        member self.ScriptPubKey(): Script =
-            self.ShutdownScript
+        member this.ScriptPubKey(): Script =
+            this.ShutdownScript
 
-        member self.ToBytes(): array<byte> =
-            self.ShutdownScript.ToBytes()
+        member this.ToBytes(): array<byte> =
+            this.ShutdownScript.ToBytes()
+
+    type ChannelFlags = {
+        // Set to announce the channel publicly and notify all nodes that they
+        // can route via this channel. This should only be set to true for
+        // nodes which expect to be online reliably. As the node which funds a
+        // channel picks this value this will only apply for new outbound
+        // channels unless
+        // `ChannelHandshakeLimits.ForceAnnouncedChannelPreferences` is set.
+        AnnounceChannel: bool
+    } with
+        static member private AnnounceChannelMask: uint8 = 1uy
+
+        static member FromUInt8(flags: uint8): ChannelFlags = {
+            AnnounceChannel = (flags &&& ChannelFlags.AnnounceChannelMask) = ChannelFlags.AnnounceChannelMask
+        }
+
+        member this.IntoUInt8(): uint8 =
+            if this.AnnounceChannel then
+                ChannelFlags.AnnounceChannelMask
+            else
+                0uy
 

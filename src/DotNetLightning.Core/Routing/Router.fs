@@ -136,8 +136,6 @@ module Routing =
     // ----- ------
     let executeCommand (state: RouterState) (cmd: RouterCommand) =
         match state, cmd with
-        | RouterState.Normal _d, (ChannelEvent(_)) ->
-            failwith "Not implemented: Routing::executeCommand when state,cmd = Normal,ChannelEvent"
         | RouterState.Normal _d, (NetworkEvent (ChannelUpdateReceived (_update))) ->
             failwith "Not implemented: Routing::executeCommand when state,cmd = Normal,NetworkEvent ChannelUpdateRecv"
         | RouterState.Normal d, (NetworkCommand (CalculateRoute (routeRequest))) ->

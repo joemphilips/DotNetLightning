@@ -512,7 +512,7 @@ type OpenChannelMsg = {
     mutable DelayedPaymentBasepoint: DelayedPaymentBasepoint
     mutable HTLCBasepoint: HtlcBasepoint
     mutable FirstPerCommitmentPoint: PerCommitmentPoint
-    mutable ChannelFlags: uint8
+    mutable ChannelFlags: ChannelFlags
     mutable TLVs: array<OpenChannelTLV>
 }
 with
@@ -536,7 +536,7 @@ with
             this.DelayedPaymentBasepoint <- ls.ReadDelayedPaymentBasepoint()
             this.HTLCBasepoint <- ls.ReadHtlcBasepoint()
             this.FirstPerCommitmentPoint <- ls.ReadPerCommitmentPoint()
-            this.ChannelFlags <- ls.ReadUInt8()
+            this.ChannelFlags <- ls.ReadChannelFlags()
             this.TLVs <-
                 ls.ReadTLVStream()
                 |> Array.map OpenChannelTLV.FromGenericTLV
@@ -559,7 +559,7 @@ with
             ls.Write(this.DelayedPaymentBasepoint.ToBytes())
             ls.Write(this.HTLCBasepoint.ToBytes())
             ls.Write(this.FirstPerCommitmentPoint.ToBytes())
-            ls.Write(this.ChannelFlags)
+            ls.Write(this.ChannelFlags.IntoUInt8())
             this.TLVs |> Array.map(fun tlv -> tlv.ToGenericTLV()) |> ls.WriteTLVStream
 
     member this.ShutdownScriptPubKey() : Option<ShutdownScriptPubKey> =

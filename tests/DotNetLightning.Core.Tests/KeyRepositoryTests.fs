@@ -25,44 +25,55 @@ let paymentPreImages =
     _s |> List.map(hex.DecodeData) |> List.map(PaymentPreimage.Create)
     
 /// same with bolt 3
-let htlcs = [
-    { DirectedHTLC.Direction = In;
-      Add = { UpdateAddHTLCMsg.ChannelId = ChannelId.Zero;
-              HTLCId = HTLCId.Zero;
-              Amount = LNMoney.MilliSatoshis 1000000L
-              PaymentHash = paymentPreImages.[0].Hash
-              CLTVExpiry = 500u |> BlockHeight;
-              OnionRoutingPacket = OnionPacket.LastPacket } }
-    { DirectedHTLC.Direction = In;
-      Add = { UpdateAddHTLCMsg.ChannelId = ChannelId.Zero;
-              HTLCId = HTLCId(1UL);
-              Amount = LNMoney.MilliSatoshis 2000000L
-              PaymentHash = paymentPreImages.[1].Hash
-              CLTVExpiry = 501u |> BlockHeight;
-              OnionRoutingPacket = OnionPacket.LastPacket } }
-    { DirectedHTLC.Direction = Out;
-      Add = { UpdateAddHTLCMsg.ChannelId = ChannelId.Zero;
-              HTLCId = HTLCId(2UL);
-              Amount = LNMoney.MilliSatoshis 2000000L
-              PaymentHash = paymentPreImages.[2].Hash
-              CLTVExpiry = 502u |> BlockHeight;
-              OnionRoutingPacket = OnionPacket.LastPacket } }
-    { DirectedHTLC.Direction = Out;
-      Add = { UpdateAddHTLCMsg.ChannelId = ChannelId.Zero;
-              HTLCId = HTLCId(3UL);
-              Amount = LNMoney.MilliSatoshis 3000000L
-              PaymentHash = paymentPreImages.[3].Hash
-              CLTVExpiry = 503u |> BlockHeight;
-              OnionRoutingPacket = OnionPacket.LastPacket } }
-    { DirectedHTLC.Direction = In;
-      Add = { UpdateAddHTLCMsg.ChannelId = ChannelId.Zero;
-              HTLCId = HTLCId(4UL);
-              Amount = LNMoney.MilliSatoshis 4000000L
-              PaymentHash = paymentPreImages.[4].Hash
-              CLTVExpiry = 504u |> BlockHeight;
-              OnionRoutingPacket = OnionPacket.LastPacket } }
+let incomingHtlcs = [
+    {
+        UpdateAddHTLCMsg.ChannelId = ChannelId.Zero;
+        HTLCId = HTLCId.Zero;
+        Amount = LNMoney.MilliSatoshis 1000000L
+        PaymentHash = paymentPreImages.[0].Hash
+        CLTVExpiry = 500u |> BlockHeight;
+        OnionRoutingPacket = OnionPacket.LastPacket
+    }
+    {
+        UpdateAddHTLCMsg.ChannelId = ChannelId.Zero;
+        HTLCId = HTLCId(1UL);
+        Amount = LNMoney.MilliSatoshis 2000000L
+        PaymentHash = paymentPreImages.[1].Hash
+        CLTVExpiry = 501u |> BlockHeight;
+        OnionRoutingPacket = OnionPacket.LastPacket
+    }
+    {
+        UpdateAddHTLCMsg.ChannelId = ChannelId.Zero;
+        HTLCId = HTLCId(4UL);
+        Amount = LNMoney.MilliSatoshis 4000000L
+        PaymentHash = paymentPreImages.[4].Hash
+        CLTVExpiry = 504u |> BlockHeight;
+        OnionRoutingPacket = OnionPacket.LastPacket
+    }
 ]
-let htlcMap = htlcs |> List.map(fun htlc ->  htlc.Add.HTLCId, htlc) |> Map.ofList
+let outgoingHtlcs = [
+    {
+        UpdateAddHTLCMsg.ChannelId = ChannelId.Zero;
+        HTLCId = HTLCId(2UL);
+        Amount = LNMoney.MilliSatoshis 2000000L
+        PaymentHash = paymentPreImages.[2].Hash
+        CLTVExpiry = 502u |> BlockHeight;
+        OnionRoutingPacket = OnionPacket.LastPacket
+    }
+    {
+        UpdateAddHTLCMsg.ChannelId = ChannelId.Zero;
+        HTLCId = HTLCId(3UL);
+        Amount = LNMoney.MilliSatoshis 3000000L
+        PaymentHash = paymentPreImages.[3].Hash
+        CLTVExpiry = 503u |> BlockHeight;
+        OnionRoutingPacket = OnionPacket.LastPacket
+    }
+]
+
+let incomingHtlcMap =
+    incomingHtlcs |> List.map(fun htlc -> htlc.HTLCId, htlc) |> Map.ofList
+let outgoingHtlcMap =
+    outgoingHtlcs |> List.map(fun htlc -> htlc.HTLCId, htlc) |> Map.ofList
 
 [<Tests>]
 let tests =
@@ -91,8 +102,13 @@ let tests =
             
             let localDustLimit = Money.Satoshis(546L)
             let toLocalDelay = 200us |> BlockHeightOffset16
-            let specBase = { CommitmentSpec.HTLCs = htlcMap; FeeRatePerKw = 15000u |> FeeRatePerKw;
-                             ToLocal = LNMoney.MilliSatoshis(6988000000L); ToRemote =  3000000000L |> LNMoney.MilliSatoshis}
+            let specBase = {
+                CommitmentSpec.IncomingHTLCs = incomingHtlcMap
+                CommitmentSpec.OutgoingHTLCs = outgoingHtlcMap
+                FeeRatePerKw = 15000u |> FeeRatePerKw
+                ToLocal = LNMoney.MilliSatoshis(6988000000L)
+                ToRemote = 3000000000L |> LNMoney.MilliSatoshis
+            }
             let commitTx =
                 Transactions.makeCommitTx fundingScriptCoin
                                           CommitmentNumber.FirstCommitment

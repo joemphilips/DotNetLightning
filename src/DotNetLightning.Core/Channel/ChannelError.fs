@@ -36,6 +36,7 @@ type ChannelError =
     | TheyCannotAffordFee of toRemote: LNMoney * fee: Money * channelReserve: Money
     
     // --- case they sent unacceptable msg ---
+    | InvalidFundingLocked of InvalidFundingLockedError
     | InvalidOpenChannel of InvalidOpenChannelError
     | InvalidAcceptChannel of InvalidAcceptChannelError
     | InvalidUpdateAddHTLC of InvalidUpdateAddHTLCError
@@ -44,11 +45,17 @@ type ChannelError =
     // ------------------
     
     /// Consumer of the api (usually, that is wallet) failed to give an funding tx
+    | ReceivedClosingSignedBeforeReceivingShutdown
+    | ReceivedClosingSignedBeforeSendingShutdown
+    | ReceivedClosingSignedBeforeSendingOrReceivingShutdown
     | FundingTxNotGiven of msg: string
     | OnceConfirmedFundingTxHasBecomeUnconfirmed of height: BlockHeight * depth: BlockHeightOffset32
     | CannotCloseChannel of msg: string
-    | UndefinedStateAndCmdPair of state: ChannelState * cmd: ChannelCommand
-    | RemoteProposedHigherFeeThanBefore of previous: Money * current: Money
+    | RemoteProposedHigherFeeThanBaseFee of baseFee: Money * proposedFee: Money
+    | RemoteProposedFeeOutOfNegotiatedRange of ourPreviousFee: Money * theirPreviousFee: Money * theirNextFee: Money
+    | NoUpdatesToSign
+    | CannotSignCommitmentBeforeRevocation
+    | InsufficientConfirmations of requiredDepth: BlockHeightOffset32 * currentDepth: BlockHeightOffset32
     // ---- invalid command ----
     | InvalidOperationAddHTLC of InvalidOperationAddHTLCError
     // -------------------------
@@ -69,17 +76,24 @@ type ChannelError =
         | ReceivedShutdownWhenRemoteHasUnsignedOutgoingHTLCs _ -> Close
         | SignatureCountMismatch (_, _) -> Close
         | TheyCannotAffordFee (_, _, _) -> Close
+        | InvalidFundingLocked _ -> DistrustPeer
         | InvalidOpenChannel _ -> DistrustPeer
         | InvalidAcceptChannel _ -> DistrustPeer
         | InvalidUpdateAddHTLC _ -> Close
         | InvalidRevokeAndACK _ -> Close
         | InvalidUpdateFee _ -> Close
+        | ReceivedClosingSignedBeforeReceivingShutdown -> Close
+        | ReceivedClosingSignedBeforeSendingShutdown -> Close
+        | ReceivedClosingSignedBeforeSendingOrReceivingShutdown -> Close
         | FundingTxNotGiven _ -> Ignore
         | OnceConfirmedFundingTxHasBecomeUnconfirmed _ -> Close
         | CannotCloseChannel _ -> Ignore
-        | UndefinedStateAndCmdPair _ -> Ignore
+        | NoUpdatesToSign -> Ignore
+        | CannotSignCommitmentBeforeRevocation -> Ignore
+        | InsufficientConfirmations(_, _) -> Ignore
         | InvalidOperationAddHTLC _ -> Ignore
-        | RemoteProposedHigherFeeThanBefore(_, _) -> Close
+        | RemoteProposedHigherFeeThanBaseFee(_, _) -> Close
+        | RemoteProposedFeeOutOfNegotiatedRange(_, _, _) -> Close
     
     member this.Message =
         match this with
@@ -100,17 +114,23 @@ type ChannelError =
             sprintf "Number of signatures went from the remote (%A) does not match the number expected (%A)" actual expected
         | TheyCannotAffordFee (toRemote, fee, channelReserve) ->
             sprintf "they are funder but cannot afford their fee. to_remote output is: %A; actual fee is %A; channel_reserve_satoshis is: %A" toRemote fee channelReserve
+        | InvalidFundingLocked invalidFundingLockedError ->
+            sprintf "Invalid funding_locked from the peer: %s" invalidFundingLockedError.Message
         | InvalidOpenChannel invalidOpenChannelError ->
             sprintf "Invalid open_channel from the peer.: %s" invalidOpenChannelError.Message
         | OnceConfirmedFundingTxHasBecomeUnconfirmed (height, depth) ->
             sprintf "once confirmed funding tx has become less confirmed than threshold %A! This is probably caused by reorg. current depth is: %A " height depth
         | ReceivedShutdownWhenRemoteHasUnsignedOutgoingHTLCs msg ->
             sprintf "They sent shutdown msg (%A) while they have pending unsigned HTLCs, this is protocol violation" msg
-        | UndefinedStateAndCmdPair (state, cmd) ->
-            sprintf "DotNetLightning does not know how to handle command (%A) while in state (%A)" cmd state
-        | RemoteProposedHigherFeeThanBefore(prev, current) ->
-            "remote proposed a commitment fee higher than the last commitment fee in the course of fee negotiation"
-            + sprintf "previous fee=%A; fee remote proposed=%A;" prev current
+        | RemoteProposedHigherFeeThanBaseFee(baseFee, proposedFee) ->
+            "remote proposed a closing fee higher than commitment fee of the final commitment transaction. "
+            + sprintf "commitment fee=%A; fee remote proposed=%A;" baseFee proposedFee
+        | RemoteProposedFeeOutOfNegotiatedRange(ourPreviousFee, theirPreviousFee, theirNextFee) ->
+            "remote proposed a closing fee which was not strictly between the previous fee that \
+            we proposed and the previous fee that they proposed. "
+            + sprintf
+                "our previous fee = %A; their previous fee = %A; their next fee = %A"
+                ourPreviousFee theirPreviousFee theirNextFee
         | CryptoError cryptoError ->
             sprintf "Crypto error: %s" cryptoError.Message
         | TransactionRelatedErrors transactionErrors ->
@@ -135,10 +155,25 @@ type ChannelError =
             sprintf "Invalid revoke_and_ack msg: %s" invalidRevokeAndACKError.Message
         | InvalidUpdateFee invalidUpdateFeeError ->
             sprintf "Invalid update_fee msg: %s" invalidUpdateFeeError.Message
+        | ReceivedClosingSignedBeforeReceivingShutdown ->
+            sprintf "received closing_signed before receiving shutdown"
+        | ReceivedClosingSignedBeforeSendingShutdown ->
+            sprintf "received closing_signed before sending shutdown"
+        | ReceivedClosingSignedBeforeSendingOrReceivingShutdown ->
+            sprintf "received closing_signed before sending or receiving shutdown"
         | FundingTxNotGiven msg ->
             sprintf "Funding tx not given: %s" msg
         | CannotCloseChannel msg ->
             sprintf "Cannot close channel: %s" msg
+        | NoUpdatesToSign ->
+            "No updates to sign"
+        | CannotSignCommitmentBeforeRevocation ->
+            "Cannot sign commitment before previous commitment is revoked"
+        | InsufficientConfirmations (requiredConfirmations, currentConfirmations) ->
+            sprintf
+                "Insufficient confirmations. %i required, only have %i"
+                requiredConfirmations.Value
+                currentConfirmations.Value
         | InvalidOperationAddHTLC invalidOperationAddHTLCError ->
             sprintf "Invalid operation (add htlc): %s" invalidOperationAddHTLCError.Message
 
@@ -157,6 +192,13 @@ and ChannelConsumerAction =
     /// The error is not critical to the channel operation.
     /// But it maybe good to report the log message, or maybe lower the peer score.
     | Ignore
+and InvalidFundingLockedError ={
+    NetworkMsg: FundingLockedMsg
+}
+    with
+    member this.Message =
+        "remote peer sent a second funding_locked message which does not match their first"
+
 and InvalidOpenChannelError = {
     NetworkMsg: OpenChannelMsg
     Errors: string list
@@ -256,7 +298,7 @@ module internal ChannelError =
     let inline unknownHTLCId x =
         x |> UnknownHTLCId |> Error
         
-    let inline htlcOriginNowKnown x =
+    let inline htlcOriginNotKnown x =
         x |> HTLCOriginNotKnown |> Error
     let inline invalidFailureCode x =
         x |> InvalidFailureCode |> Error
@@ -286,21 +328,38 @@ module internal ChannelError =
         Result.mapError(FundingTxNotGiven) msg
         
     let invalidRevokeAndACK msg e =
-        InvalidRevokeAndACKError.Create msg ([e]) |> InvalidRevokeAndACK |> Error
+        InvalidRevokeAndACKError.Create msg ([e]) |> InvalidRevokeAndACK
         
     let cannotCloseChannel msg =
-        msg |> CannotCloseChannel|> Error
+        msg |> CannotCloseChannel
 
     let receivedShutdownWhenRemoteHasUnsignedOutgoingHTLCs msg =
         msg |> ReceivedShutdownWhenRemoteHasUnsignedOutgoingHTLCs |> Error
-    let undefinedStateAndCmdPair state cmd =
-        UndefinedStateAndCmdPair (state, cmd) |> Error
         
-    let checkRemoteProposedHigherFeeThanBefore prev curr =
-        if (prev < curr) then
-            RemoteProposedHigherFeeThanBefore(prev, curr) |> Error
+    let checkRemoteProposedHigherFeeThanBaseFee baseFee proposedFee =
+        if (baseFee < proposedFee) then
+            RemoteProposedHigherFeeThanBaseFee(baseFee, proposedFee) |> Error
         else
             Ok()
+
+    let checkRemoteProposedFeeWithinNegotiatedRange (ourPreviousFeeOpt: Option<Money>)
+                                                    (theirPreviousFeeOpt: Option<Money>)
+                                                    (theirNextFee: Money) =
+        match (ourPreviousFeeOpt, theirPreviousFeeOpt) with
+        | (Some ourPreviousFee, Some theirPreviousFee) ->
+            let feeWithinRange =
+                ((theirNextFee < theirPreviousFee) && (theirNextFee >= ourPreviousFee)) ||
+                ((theirNextFee <= ourPreviousFee) && (theirNextFee > theirPreviousFee))
+            if feeWithinRange then
+                Ok ()
+            else
+                RemoteProposedFeeOutOfNegotiatedRange(
+                    ourPreviousFee,
+                    theirPreviousFee,
+                    theirNextFee
+                ) |> Error
+        | _ -> Ok ()
+
 module internal OpenChannelMsgValidation =
     let checkMaxAcceptedHTLCs (msg: OpenChannelMsg) =
         if (msg.MaxAcceptedHTLCs < 1us) || (msg.MaxAcceptedHTLCs > 483us) then
@@ -395,10 +454,10 @@ module internal OpenChannelMsgValidation =
                 "dust_limit_satoshis is greater than the user specified limit. received: %A; limit: %A"
         Validation.ofResult(check1) *^> check2 *^> check3 *^> check4 *^> check5 *^> check6 *^> check7
     let checkChannelAnnouncementPreferenceAcceptable (channelHandshakeLimits: ChannelHandshakeLimits)
-                                                     (channelOptions: ChannelOptions)
+                                                     (announceChannel: bool)
                                                      (msg: OpenChannelMsg) =
-        let theirAnnounce = (msg.ChannelFlags &&& 1uy) = 1uy
-        if (channelHandshakeLimits.ForceChannelAnnouncementPreference) && channelOptions.AnnounceChannel <> theirAnnounce then
+        let theirAnnounce = msg.ChannelFlags.AnnounceChannel
+        if (channelHandshakeLimits.ForceChannelAnnouncementPreference) && announceChannel <> theirAnnounce then
             "Peer tried to open channel but their announcement preference is different from ours"
             |> Error
         else
@@ -463,32 +522,32 @@ module internal AcceptChannelMsgValidation =
         else
             Ok()
 
-    let checkChannelReserveSatoshis (fundingSatoshis: Money)
-                                    (channelReserveSatoshis: Money)
-                                    (dustLimitSatoshis: Money)
+    let checkChannelReserveSatoshis (fundingAmount: Money)
+                                    (channelReserveAmount: Money)
+                                    (dustLimit: Money)
                                     (acceptChannelMsg: AcceptChannelMsg) =
-        if acceptChannelMsg.ChannelReserveSatoshis > fundingSatoshis then
-            sprintf "bogus channel_reserve_satoshis %A . Must be larger than funding_satoshis %A" (acceptChannelMsg.ChannelReserveSatoshis) fundingSatoshis
+        if acceptChannelMsg.ChannelReserveSatoshis > fundingAmount then
+            sprintf "bogus channel_reserve_satoshis %A . Must be larger than funding_satoshis %A" (acceptChannelMsg.ChannelReserveSatoshis) fundingAmount
             |> Error
-        else if acceptChannelMsg.DustLimitSatoshis > channelReserveSatoshis then
-            sprintf "Bogus channel_reserve and dust_limit. dust_limit: %A; channel_reserve %A" acceptChannelMsg.DustLimitSatoshis channelReserveSatoshis
+        else if acceptChannelMsg.DustLimitSatoshis > channelReserveAmount then
+            sprintf "Bogus channel_reserve and dust_limit. dust_limit: %A; channel_reserve %A" acceptChannelMsg.DustLimitSatoshis channelReserveAmount
             |> Error
-        else if acceptChannelMsg.ChannelReserveSatoshis < dustLimitSatoshis then
-            sprintf "Peer never wants payout outputs? channel_reserve_satoshis are %A; dust_limit_satoshis in our last sent msg is %A" acceptChannelMsg.ChannelReserveSatoshis dustLimitSatoshis
+        else if acceptChannelMsg.ChannelReserveSatoshis < dustLimit then
+            sprintf "Peer never wants payout outputs? channel_reserve_satoshis are %A; dust_limit_satoshis in our last sent msg is %A" acceptChannelMsg.ChannelReserveSatoshis dustLimit
             |> Error
         else
             Ok()
 
-    let checkDustLimitIsLargerThanOurChannelReserve (channelReserveSatoshis: Money)
+    let checkDustLimitIsLargerThanOurChannelReserve (channelReserveAmount: Money)
                                                     (acceptChannelMsg: AcceptChannelMsg) =
         check
-            acceptChannelMsg.DustLimitSatoshis (>) channelReserveSatoshis
+            acceptChannelMsg.DustLimitSatoshis (>) channelReserveAmount
             "dust limit (%A) is bigger than our channel reserve (%A)" 
 
-    let checkMinimumHTLCValueIsAcceptable (fundingSatoshis: Money)
+    let checkMinimumHTLCValueIsAcceptable (fundingAmount: Money)
                                           (acceptChannelMsg: AcceptChannelMsg) =
-        if (acceptChannelMsg.HTLCMinimumMSat.ToMoney() >= (fundingSatoshis - acceptChannelMsg.ChannelReserveSatoshis)) then
-            sprintf "Minimum HTLC value is greater than full channel value HTLCMinimum %A satoshi; funding_satoshis %A; channel_reserve: %A" (acceptChannelMsg.HTLCMinimumMSat.ToMoney()) (fundingSatoshis) (acceptChannelMsg.ChannelReserveSatoshis)
+        if acceptChannelMsg.HTLCMinimumMSat.ToMoney() >= (fundingAmount - acceptChannelMsg.ChannelReserveSatoshis) then
+            sprintf "Minimum HTLC value is greater than full channel value HTLCMinimum %A satoshi; funding_satoshis %A; channel_reserve: %A" (acceptChannelMsg.HTLCMinimumMSat.ToMoney()) (fundingAmount) (acceptChannelMsg.ChannelReserveSatoshis)
             |> Error
         else
             Ok()
@@ -528,7 +587,15 @@ module UpdateAddHTLCValidation =
     
 module internal UpdateAddHTLCValidationWithContext =
     let checkLessThanHTLCValueInFlightLimit (currentSpec: CommitmentSpec) (limit) (add: UpdateAddHTLCMsg) =
-        let htlcValueInFlight = currentSpec.HTLCs |> Map.toSeq |> Seq.sumBy (fun (_, v) -> v.Add.Amount)
+        let outgoingValue =
+            currentSpec.OutgoingHTLCs
+            |> Map.toSeq
+            |> Seq.sumBy (fun (_, v) -> v.Amount)
+        let incomingValue =
+            currentSpec.IncomingHTLCs
+            |> Map.toSeq
+            |> Seq.sumBy (fun (_, v) -> v.Amount)
+        let htlcValueInFlight = outgoingValue + incomingValue
         if (htlcValueInFlight > limit) then
             sprintf "Too much HTLC value is in flight. Current: %A. Limit: %A \n Could not add new one with value: %A"
                     htlcValueInFlight
@@ -539,16 +606,22 @@ module internal UpdateAddHTLCValidationWithContext =
             Ok()
 
     let checkLessThanMaxAcceptedHTLC (currentSpec: CommitmentSpec) (limit: uint16) =
-        let acceptedHTLCs = currentSpec.HTLCs |> Map.toSeq |> Seq.filter (fun kv -> (snd kv).Direction = In) |> Seq.length
+        let acceptedHTLCs = currentSpec.IncomingHTLCs |> Map.count
         check acceptedHTLCs (>) (int limit) "We have much number of HTLCs (%A). Limit specified by remote is (%A). So not going to relay"
 
-    let checkWeHaveSufficientFunds (state: Commitments) (currentSpec) =
-        let fees = if (state.IsFunder) then (Transactions.commitTxFee (state.RemoteParams.DustLimitSatoshis) currentSpec) else Money.Zero
-        let missing = currentSpec.ToRemote.ToMoney() - state.RemoteParams.ChannelReserveSatoshis - fees
+    let checkWeHaveSufficientFunds (staticChannelConfig: StaticChannelConfig) (currentSpec) =
+        let fees =
+            if staticChannelConfig.IsFunder then
+                Transactions.commitTxFee
+                    staticChannelConfig.RemoteParams.DustLimitSatoshis
+                    currentSpec
+            else
+                Money.Zero
+        let missing = currentSpec.ToRemote.ToMoney() - staticChannelConfig.RemoteParams.ChannelReserveSatoshis - fees
         if (missing < Money.Zero) then
             sprintf "We don't have sufficient funds to send HTLC. current to_remote amount is: %A. Remote Channel Reserve is: %A. and fee is %A"
                     (currentSpec.ToRemote.ToMoney())
-                    (state.RemoteParams.ChannelReserveSatoshis)
+                    (staticChannelConfig.RemoteParams.ChannelReserveSatoshis)
                     (fees)
             |> Error
         else

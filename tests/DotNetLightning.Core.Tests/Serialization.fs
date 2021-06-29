@@ -489,7 +489,9 @@ module SerializationTest =
                         DelayedPaymentBasepoint = DelayedPaymentBasepoint pubkey4
                         HTLCBasepoint = HtlcBasepoint pubkey5
                         FirstPerCommitmentPoint = PerCommitmentPoint pubkey6
-                        ChannelFlags = if randomBit then 1uy <<< 5 else 0uy
+                        ChannelFlags = {
+                            AnnounceChannel = randomBit
+                        }
                         TLVs = [|
                             OpenChannelTLV.UpfrontShutdownScript (
                                 if shutdown then
@@ -507,7 +509,7 @@ module SerializationTest =
                         expected <- Array.append expected (hex.DecodeData("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"))
                     expected <- Array.append expected (hex.DecodeData("02020202020202020202020202020202020202020202020202020202020202021234567890123456233403289122369832144668701144767633030896203198784335490624111800083a840000034d000c89d4c0bcc0bc031b84c5567b126440995d3ed5aaba0565d71e1834604819ff9c17f5e9d5dd078f024d4b6cd1361032ca9bd2aeb9d900aa4d45d9ead80ac9423374c451a7254d076602531fe6068134503d2723133227c867ac8fa6c83c537e9a44c3c5bdbdcb1fe33703462779ad4aad39514614751a71085f2f10e1c7a593e4e030efb5b8721ce55b0b0362c0a046dacce86ddd0343c6d3c7c79c2208ba0d9c9cf24a6d046d21d21f90f703f006a18d5653c4edf5391ff23a61f03ff83d237e880ee61187fa9f379a028e0a"))
                     if randomBit then
-                        expected <- Array.append expected (hex.DecodeData("20"))
+                        expected <- Array.append expected (hex.DecodeData("01"))
                     else
                         expected <- Array.append expected (hex.DecodeData("00"))
                     if shutdown then
