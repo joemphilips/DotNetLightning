@@ -418,6 +418,11 @@ module Primitives =
                         NBitcoin.Utils.ToBytes(this.BlockIndex.Value, false).[1..3]
                         NBitcoin.Utils.ToBytes(this.TxOutIndex.Value, false)
                     |]
+
+        member this.ToUInt64() =
+            this.ToBytes()
+            |> fun b -> NBitcoin.Utils.ToUInt64(b, false)
+
         override this.ToString() =
             sprintf "%dx%dx%d" this.BlockHeight.Value this.BlockIndex.Value this.TxOutIndex.Value
             

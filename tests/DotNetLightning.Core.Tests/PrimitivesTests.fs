@@ -18,3 +18,12 @@ let tests =
             feeRateFromFeeTest (Money(10.0m, MoneyUnit.Satoshi)) 10000UL (FeeRatePerKw 1u)
     ]
 
+[<Tests>]
+let primitiveTests =
+    testList "primitives" [
+        testProperty "ShortChannelId serialization" <| fun (cId: ShortChannelId) ->
+            Expect.equal
+                (cId.ToUInt64() |> ShortChannelId.FromUInt64)
+                cId
+                "Short Channel Id must be same after (de)/serialization"
+    ]
