@@ -12,6 +12,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-20.04, macos-latest, windows-latest]
+        dotnet: ['5.0.x']
         include:
           - os: ubuntu-20.04
             RID: linux
@@ -27,7 +28,7 @@ jobs:
     - name: Setup ${{ matrix.dotnet }} .NET Core
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '3.1.200'
+        dotnet-version: ${{ matrix.dotnet }}
 
     - name: Upload nuget packages (Portability)
       if: startsWith(matrix.os, 'ubuntu')

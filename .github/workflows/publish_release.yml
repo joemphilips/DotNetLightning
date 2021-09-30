@@ -43,6 +43,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-20.04, macos-latest, windows-latest]
+        dotnet: ['5.0.x']
         include:
           - os: ubuntu-20.04
             RID: linux
@@ -50,10 +51,10 @@ jobs:
             RID: osx
     steps:
       - uses: actions/checkout@v2
-      - name: Setup 3.1.200 .NET Core
+      - name: Setup ${{ matrix.dotnet }} .NET Core
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: 3.1.200
+          dotnet-version: ${{ matrix.dotnet }}
           
       # get and set release url and version
       - uses: actions/download-artifact@v1
