@@ -118,11 +118,18 @@ type internal CommitmentToLocalExtension() =
         override __.DeduceScriptPubKey(_scriptSig: Script): Script =
             raise <| NotSupportedException()
 
-        override __.CanEstimateScriptSigSize(_scriptPubKey: Script): bool =
-            false
+        override __.CanEstimateScriptSigSize(scriptPubKey: Script): bool =
+            (CommitmentToLocalParameters.TryExtractParameters scriptPubKey).IsSome
 
         override __.EstimateScriptSigSize(_scriptPubKey: Script): int =
-            raise <| NotSupportedException()
+            (*
+               Max script signature size = max signature size + op_true/op_false (1 byte)
+               According to BIP 137: "Signatures are either 73, 72, or 71 bytes long,
+               with probabilities approximately 25%, 50% and 25% respectively, although
+               sizes even smaller than that are possible with exponentially decreasing probability"
+               Reference: https://github.com/bitcoin/bips/blob/master/bip-0137.mediawiki#background-on-ecdsa-signatures
+            *)
+            73 + 1
 
         override __.CanCombineScriptSig(_scriptPubKey: Script, _a: Script, _b: Script): bool = 
             false
