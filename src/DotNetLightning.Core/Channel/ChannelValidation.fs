@@ -192,7 +192,6 @@ module internal Validation =
         *^> OpenChannelMsgValidation.checkPushMSatLesserThanFundingValue msg
         *^> OpenChannelMsgValidation.checkFundingSatoshisLessThanDustLimitSatoshis msg
         *^> OpenChannelMsgValidation.checkRemoteFee channelOptions.FeeEstimator msg.FeeRatePerKw channelOptions.MaxFeeRateMismatchRatio
-        *^> OpenChannelMsgValidation.checkToSelfDelayIsInAcceptableRange msg
         *^> OpenChannelMsgValidation.checkMaxAcceptedHTLCs msg
         *> OpenChannelMsgValidation.checkConfigPermits channelHandshakeLimits msg
         *^> OpenChannelMsgValidation.checkChannelAnnouncementPreferenceAcceptable channelHandshakeLimits announceChannel msg
@@ -211,7 +210,6 @@ module internal Validation =
         *^> AcceptChannelMsgValidation.checkChannelReserveSatoshis fundingAmount channelReserveAmount dustLimit acceptChannelMsg
         *^> AcceptChannelMsgValidation.checkDustLimitIsLargerThanOurChannelReserve channelReserveAmount acceptChannelMsg
         *^> AcceptChannelMsgValidation.checkMinimumHTLCValueIsAcceptable fundingAmount acceptChannelMsg
-        *^> AcceptChannelMsgValidation.checkToSelfDelayIsAcceptable acceptChannelMsg
         *> AcceptChannelMsgValidation.checkConfigPermits channelHandshakeLimits acceptChannelMsg
         |> Result.mapError(InvalidAcceptChannelError.Create acceptChannelMsg >> InvalidAcceptChannel)
 

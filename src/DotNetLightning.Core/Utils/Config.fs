@@ -37,6 +37,7 @@ type ChannelHandshakeLimits = {
     /// Defaults to true to make the default that no announced channels are possible (which is
     /// appropriate for any nodes which are not online very reliably)
     ForceChannelAnnouncementPreference: bool
+    MaxToSelfDelay: BlockHeightOffset16
  }
 
     with
@@ -51,6 +52,7 @@ type ChannelHandshakeLimits = {
             MaxDustLimitSatoshis = Money.Coins(21_000_000m)
             MaxMinimumDepth = 144u |> BlockHeightOffset32
             ForceChannelAnnouncementPreference = true
+            MaxToSelfDelay = BlockHeightOffset16(6us * 24us * 14us) // two weeks
         }
 
 

@@ -428,14 +428,6 @@ module internal OpenChannelMsgValidation =
         else
             Ok()
 
-    let checkToSelfDelayIsInAcceptableRange (msg: OpenChannelMsg) =
-        if msg.ToSelfDelay > (MAX_LOCAL_BREAKDOWN_TIMEOUT) then
-            sprintf "They wanted our payments to be delayed by a needlessly long period (%A) ." msg.ToSelfDelay
-            |> Error
-        else
-            Ok()
-
-
     let checkConfigPermits (config: ChannelHandshakeLimits) (msg: OpenChannelMsg) =
         let check1 =
             check
@@ -465,7 +457,12 @@ module internal OpenChannelMsgValidation =
             check
                 msg.DustLimitSatoshis (>) config.MaxDustLimitSatoshis
                 "dust_limit_satoshis is greater than the user specified limit. received: %A; limit: %A"
-        Validation.ofResult(check1) *^> check2 *^> check3 *^> check4 *^> check5 *^> check6 *^> check7
+        let check8 =
+            check
+                msg.ToSelfDelay (>) (config.MaxToSelfDelay)
+                "They wanted our payments to be delayed by a needlessly long period (%A), configured maximum was (%A)"
+
+        Validation.ofResult(check1) *^> check2 *^> check3 *^> check4 *^> check5 *^> check6 *^> check7 *^> check8
     let checkChannelAnnouncementPreferenceAcceptable (channelHandshakeLimits: ChannelHandshakeLimits)
                                                      (announceChannel: bool)
                                                      (msg: OpenChannelMsg) =
@@ -565,12 +562,6 @@ module internal AcceptChannelMsgValidation =
         else
             Ok()
 
-    let checkToSelfDelayIsAcceptable (msg) =
-        if (msg.ToSelfDelay > MAX_LOCAL_BREAKDOWN_TIMEOUT) then
-            sprintf "They wanted our payments to be delayed by a needlessly long period (%A)" msg.ToSelfDelay
-            |> Error
-        else
-            Ok()
 
     let checkConfigPermits (config: ChannelHandshakeLimits) (msg: AcceptChannelMsg) =
         let check1 = check msg.HTLCMinimumMSat (>) config.MaxHTLCMinimumMSat "HTLC Minimum msat in accept_channel (%A) is higher than the user specified limit (%A)"
@@ -580,8 +571,9 @@ module internal AcceptChannelMsgValidation =
         let check5 = check msg.DustLimitSatoshis (<) config.MinDustLimitSatoshis "dust limit satoshis (%A) is less then the user specified limit (%A)"
         let check6 = check msg.DustLimitSatoshis (>) config.MaxDustLimitSatoshis "dust limit satoshis (%A) is greater then the user specified limit (%A)"
         let check7 = check (msg.MinimumDepth.Value) (>) (config.MaxMinimumDepth.Value |> uint32) "We consider the minimum depth (%A) to be unreasonably large. Our max minimum depth is (%A)"
+        let check8 = check msg.ToSelfDelay (>) (config.MaxToSelfDelay) "They wanted our payments to be delayed by a needlessly long period (%A), configured maximum was (%A)"
 
-        (check1 |> Validation.ofResult) *^> check2 *^> check3 *^> check4 *^> check5 *^> check6 *^> check7
+        (check1 |> Validation.ofResult) *^> check2 *^> check3 *^> check4 *^> check5 *^> check6 *^> check7 *^> check8
         
 
 module UpdateAddHTLCValidation =
