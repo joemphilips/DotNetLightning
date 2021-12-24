@@ -408,7 +408,7 @@ and Channel = {
             TLVs = [| OpenChannelTLV.UpfrontShutdownScript shutdownScriptPubKey |]
         }
         result {
-            do! Validation.checkOurOpenChannelMsgAcceptable openChannelMsgToSend
+            do! Validation.checkOurOpenChannelMsgAcceptable localParams openChannelMsgToSend
             let channelPrivKeys = nodeMasterPrivKey.ChannelPrivKeys channelIndex
             let nodeSecret = nodeMasterPrivKey.NodeSecret()
             let channelWaitingForAcceptChannel = {
@@ -449,6 +449,7 @@ and Channel = {
                     channelHandshakeLimits
                     channelOptions
                     announceChannel
+                    localParams
                     openChannelMsg
             let firstPerCommitmentPoint = channelPrivKeys.CommitmentSeed.DerivePerCommitmentPoint CommitmentNumber.FirstCommitment
             let acceptChannelMsg: AcceptChannelMsg = {

@@ -854,7 +854,7 @@ module SerializationTest =
                         1L <<< Feature.BasicMultiPartPayment.MandatoryBitPosition, false
                         1L <<< Feature.BasicMultiPartPayment.OptionalBitPosition, true
                         
-                        1L <<< Feature.OptionSupportLargeChannel.MandatoryBitPosition, false
+                        1L <<< Feature.OptionSupportLargeChannel.MandatoryBitPosition, true
                         1L <<< Feature.OptionSupportLargeChannel.OptionalBitPosition, true
                     ]
                 for (s, expected) in testCases do
@@ -880,8 +880,9 @@ module SerializationTest =
                     // unknown optional feature bits
                     |> Map.add "            10000000000000000000" true
                     |> Map.add "        001000000000000000000000" true
+                    // support_large_channel_option(mandatory)
+                    |> Map.add "        000001000000000000000000" true
                     // those are useful for nonreg testing of the areSupported method (which needs to be updated with every new supported mandatory bit)
-                    |> Map.add "        000001000000000000000000" false
                     |> Map.add "        000100000000000000000000" false
                     |> Map.add "        010000000000000000000000" false
                     |> Map.add "    0001000000000000000000000000" false

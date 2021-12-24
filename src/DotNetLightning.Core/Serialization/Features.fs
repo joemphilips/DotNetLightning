@@ -142,6 +142,7 @@ module internal Feature =
               yield Feature.PaymentSecret
               // TODO: support this feature
               // Feature.BasicMultiPartPayment
+              yield Feature.OptionSupportLargeChannel
           }
         |> Seq.map(fun f -> f.Mandatory)
         |> Set
