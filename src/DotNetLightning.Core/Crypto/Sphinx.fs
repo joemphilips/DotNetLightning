@@ -112,11 +112,11 @@ module Sphinx =
             |> Error
         else
             let packet = ILightningSerializable.fromBytes<OnionPacket>(rawPacket)
-            if not (PubKey.Check(packet.PublicKey, true)) then
+            match PubKey.TryCreatePubKey packet.PublicKey with
+            | false, _ ->
                 InvalidPublicKey(packet.PublicKey) |> Error
-            else
-                let pk = packet.PublicKey |> PubKey
-                let ss = computeSharedSecret(pk, nodePrivateKey)
+            | true, publicKey ->
+                let ss = computeSharedSecret(publicKey, nodePrivateKey)
                 let mu = generateKey("mu", ss)
                 let check =
                     let msg = Array.concat (seq [ packet.HopData; ad ])
@@ -133,7 +133,7 @@ module Sphinx =
                     let payload = bin.[0..PayloadLength - 1]
                     let hmac = bin.[PayloadLength .. PayloadLength + MacLength - 1] |> uint256
                     let nextRouteInfo = bin.[PayloadLength + MacLength..]
-                    let nextPubKey = blind(pk) (computeBlindingFactor(pk) (new Key(ss)))
+                    let nextPubKey = blind(publicKey) (computeBlindingFactor(publicKey) (new Key(ss)))
                     { ParsedPacket.Payload = payload
                       NextPacket = { Version = VERSION; PublicKey = nextPubKey.ToBytes(); HMAC= hmac; HopData = nextRouteInfo }
                       SharedSecret = ss } |> Ok
