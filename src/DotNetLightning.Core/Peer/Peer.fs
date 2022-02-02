@@ -29,7 +29,6 @@ module private PeerConstants =
     let INITIAL_SYNCS_TO_SEND = 5u
 
 type Peer = {
-    PeerId: PeerId
     ChannelEncryptor: PeerChannelEncryptor
     IsOutBound : bool
     TheirNodeId: NodeId option
@@ -37,8 +36,7 @@ type Peer = {
     SyncStatus: InitSyncTracker
 }
     with
-        static member CreateInbound(peerId, ourNodeSecret) = {
-            PeerId = peerId
+        static member CreateInbound(ourNodeSecret) = {
             ChannelEncryptor = PeerChannelEncryptor.newInBound(ourNodeSecret)
             IsOutBound = false
             TheirNodeId = None
@@ -46,8 +44,7 @@ type Peer = {
             SyncStatus = NoSyncRequested
         }
         
-        static member CreateOutbound(peerId, theirNodeId, ourNodeSecret: Key) = {
-            PeerId = peerId
+        static member CreateOutbound(theirNodeId, ourNodeSecret: Key) = {
             ChannelEncryptor = PeerChannelEncryptor.newOutBound(theirNodeId, ourNodeSecret)
             IsOutBound = true
             TheirNodeId = Some theirNodeId
