@@ -133,7 +133,9 @@ module Sphinx =
                     let payload = bin.[0..PayloadLength - 1]
                     let hmac = bin.[PayloadLength .. PayloadLength + MacLength - 1] |> uint256
                     let nextRouteInfo = bin.[PayloadLength + MacLength..]
-                    let nextPubKey = blind(publicKey) (computeBlindingFactor(publicKey) (new Key(ss)))
+                    let nextPubKey =
+                        use sharedSecret = new Key(ss)
+                        blind publicKey (computeBlindingFactor publicKey sharedSecret)
                     { ParsedPacket.Payload = payload
                       NextPacket = { Version = VERSION; PublicKey = nextPubKey.ToBytes(); HMAC= hmac; HopData = nextRouteInfo }
                       SharedSecret = ss } |> Ok
