@@ -471,11 +471,10 @@ module Transactions =
             let spentOutput = psbt.Inputs.[tx.WhichInput].GetTxOut()
             let scriptCode = psbt.Inputs.[tx.WhichInput].WitnessScript
             let globalTx = psbt.GetGlobalTransaction()
+            let checker = TransactionChecker(globalTx, tx.WhichInput, spentOutput)
+            let sigHash = checker.Transaction.GetSignatureHash(scriptCode, checker.Index, signature.SigHash, checker.SpentOutput, HashVersion.WitnessV0, checker.PrecomputedTransactionData);
 
-            let ctx = ScriptEvaluationContext()
-            ctx.SigHash <- signature.SigHash
-            ctx.ScriptVerify <- ScriptVerify.Standard
-            if ctx.CheckSig(signature.ToBytes(), pk.ToBytes(), scriptCode, globalTx, tx.WhichInput, 1, spentOutput) then
+            if pk.Verify (sigHash, signature.Signature) then
                 tx.Value.Inputs.[tx.WhichInput].PartialSigs.AddOrReplace(pk, signature)
                 tx |> Ok
             else
@@ -487,36 +486,22 @@ module Transactions =
     /// Technically speaking, we could just return one of them.
     /// Returning both is just for ergonomic reason. (pretending to be referential transparent)
     let signCore(tx: ILightningTx, key: Key, enforceLowR) =
-        let signingOptions = SigningOptions()
-        signingOptions.EnforceLowR <- enforceLowR
-        try
-            tx.Value.SignWithKeys(signingOptions, key) |> ignore
-            match tx.Value.GetMatchingSig(key.PubKey) with
-            | Some signature -> (signature, tx)
-            | None -> failwith "unreachable"
-        with
-        /// Sadly, psbt does not support signing for script other than predefined template.
-        /// So we must fallback to more low level way.
-        /// This should be removed when NBitcoin supports finalization for Miniscript.
-        | :? NotSupportedException ->
-            let psbt = tx.Value
-            let psbtIn = psbt.Inputs.[tx.WhichInput]
-            let coin =
-                let c = psbtIn.GetCoin()
-                ScriptCoin(c, psbtIn.WitnessScript)
-            let txIn =
-                let globalTx = psbt.GetGlobalTransaction()
-                globalTx.Inputs.AsIndexedInputs()
-                |> Seq.indexed
-                |> Seq.find(fun (i, _txIn) -> i = tx.WhichInput)
-                |> snd
-            let txSig = txIn.Sign(key, coin, SigHash.All, enforceLowR)
-            match checkSigAndAdd tx txSig key.PubKey with
-            | Ok txWithSig ->
-                (txSig, txWithSig)
-            | Error(InvalidSignature signature) ->
-                failwithf "Failed to check signature. (%A) This should never happen." signature
-            | Error e -> failwithf "%A" e
+        let psbt = tx.Value
+        let psbtIn = psbt.Inputs.[tx.WhichInput]
+        let coin = ScriptCoin(psbtIn.GetCoin(), psbtIn.WitnessScript)
+        let txIn =
+            let globalTx = psbt.GetGlobalTransaction()
+            globalTx.Inputs.AsIndexedInputs()
+            |> Seq.indexed
+            |> Seq.find(fun (i, _txIn) -> i = tx.WhichInput)
+            |> snd
+        let txSig = txIn.Sign(key, coin, SigningOptions (EnforceLowR = enforceLowR, SigHash = SigHash.All))
+        match checkSigAndAdd tx txSig key.PubKey with
+        | Ok txWithSig ->
+            (txSig, txWithSig)
+        | Error(InvalidSignature signature) ->
+            failwithf "Failed to check signature. (%A) This should never happen." signature
+        | Error err -> failwithf "%A" err
 
     let sign(tx, key) = signCore(tx, key, true)
     let makeHTLCTimeoutTx (commitTx: Transaction)

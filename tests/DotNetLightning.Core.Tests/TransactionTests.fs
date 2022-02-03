@@ -149,7 +149,7 @@ let testList = testList "transaction tests" [
         Expect.equal input.PrevOut.Hash (commitmentTx.GetHash()) "wrong prevout hash"
         let expectedAmount =
             let fullAmount = commitmentSpec.ToLocal.ToMoney()
-            let fee = commitmentTx.GetFee [| fundingScriptCoin |]
+            let fee = commitmentTx.GetFee [| fundingScriptCoin :> ICoin |]
             fullAmount - fee
         let actualAmount =
             commitmentTx.Outputs.[input.PrevOut.N].Value
@@ -271,7 +271,7 @@ let testList = testList "transaction tests" [
 
         let expectedAmountFromToLocal =
             let localAmount = commitmentSpec.ToLocal.ToMoney()
-            let fee = commitmentTx.GetFee [| fundingScriptCoin |]
+            let fee = commitmentTx.GetFee [| fundingScriptCoin :> ICoin |]
             localAmount - fee
         let expectedAmountFromToRemote =
             commitmentSpec.ToRemote.ToMoney()

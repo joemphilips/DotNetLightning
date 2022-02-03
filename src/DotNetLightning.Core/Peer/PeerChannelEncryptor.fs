@@ -340,20 +340,22 @@ module PeerChannelEncryptor =
             if (act.Length <> 50) then raise <| ArgumentException(sprintf "Invalid act length: %d" (act.Length))
             if (act.[0] <> 0uy) then
                 Error(UnknownHandshakeVersionNumber (act.[0]))
-            else if not (PubKey.Check(act.[1..33], true)) then
-                Error(PeerError.CryptoError(InvalidPublicKey(act.[1..33])))
             else
-                let theirPub = PubKey(act.[1..33])
-                let tempK, s3 =
-                    let ss = Secret.FromKeyPair(theirPub, ourKey)
-                    let s2 = updateHWith state (theirPub.ToBytes())
-                    hkdf ss s2
-                let currentH = Optic.get (PeerChannelEncryptor.H_) s3
-                result {
-                    let! _ = decryptWithAD (0UL, tempK, currentH.Value.ToBytes(), ReadOnlySpan(act.[34..]))
-                    let s4 =  updateHWith s3 act.[34..]
-                    return ((theirPub, tempK), s4)
-                }
+                let publicKeyBytes = act.[1..33]
+                match PubKey.TryCreatePubKey publicKeyBytes with
+                | false, _ ->
+                    Error(PeerError.CryptoError(InvalidPublicKey(publicKeyBytes)))
+                | true, theirPub ->
+                    let tempK, s3 =
+                        let ss = Secret.FromKeyPair(theirPub, ourKey)
+                        let s2 = updateHWith state (theirPub.ToBytes())
+                        hkdf ss s2
+                    let currentH = Optic.get (PeerChannelEncryptor.H_) s3
+                    result {
+                        let! _ = decryptWithAD (0UL, tempK, currentH.Value.ToBytes(), ReadOnlySpan(act.[34..]))
+                        let s4 =  updateHWith s3 act.[34..]
+                        return ((theirPub, tempK), s4)
+                    }
 
         let getActOne (pce: PeerChannelEncryptor) : byte[] * PeerChannelEncryptor =
             match pce.NoiseState with
@@ -458,14 +460,15 @@ module PeerChannelEncryptor =
                         let h = Optic.get (PeerChannelEncryptor.H_) pce
                         decryptWithAD (1UL, tempk2.Value, h.Value.ToBytes(), ReadOnlySpan(actThree.[1..49]))
                         >>= fun theirNodeId ->
-                            if not (PubKey.Check (theirNodeId, true)) then
+                            match PubKey.TryCreatePubKey theirNodeId with
+                            | false, _ ->
                                 Error(PeerError.CryptoError(CryptoError.InvalidPublicKey(theirNodeId)))
-                            else
+                            | true, theirNodeIdPubKey ->
                                 let tempK, pce3 =
                                     let pce2 =
                                         pce
                                         |> fun p -> updateHWith p (actThree.[1..49])
-                                        |> Optic.set (PeerChannelEncryptor.TheirNodeId_) (PubKey(theirNodeId) |> NodeId)
+                                        |> Optic.set (PeerChannelEncryptor.TheirNodeId_) (theirNodeIdPubKey |> NodeId)
                                     let ss = Secret.FromKeyPair(pce2.TheirNodeId.Value.Value, re.Value)
                                     hkdf ss pce2
 

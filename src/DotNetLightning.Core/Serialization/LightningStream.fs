@@ -333,9 +333,10 @@ type LightningReaderStream(inner: Stream) =
 
     member this.ReadPubKey(): PubKey =
         let bytes = this.ReadBytes PubKey.BytesLength
-        if PubKey.Check(bytes, true) then
-            PubKey(bytes, true)
-        else
+        match PubKey.TryCreatePubKey bytes with
+        | true, pubKey ->
+            pubKey
+        | false, _ ->
             raise (FormatException("Invalid Pubkey encoding"))
 
     member this.ReadPerCommitmentSecret(): PerCommitmentSecret =
