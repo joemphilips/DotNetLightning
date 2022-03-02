@@ -690,38 +690,6 @@ module Transactions =
                     .AddCoins(coin)
             psbt |> ClaimHTLCTimeoutTx |> Ok
 
-    let makeClaimP2WPKHOutputTx (delayedOutputTx: Transaction)
-                                (localDustLimit: Money)
-                                (localPaymentPubKey: PaymentPubKey)
-                                (localFinalDestination: IDestination)
-                                (feeRatePerKw: FeeRatePerKw)
-                                (network: Network)
-                                    : Result<ClaimP2WPKHOutputTx, _> =
-        let fee = feeRatePerKw.CalculateFeeFromWeight(CLAIM_P2WPKH_OUTPUT_WEIGHT)
-        let spk = localPaymentPubKey.RawPubKey().WitHash.ScriptPubKey
-        let spkIndex = findScriptPubKeyIndex delayedOutputTx spk
-        let outPut = delayedOutputTx.Outputs.AsIndexedOutputs().ElementAt(spkIndex)
-        let amount = (outPut).TxOut.Value - fee
-        if (amount < localDustLimit) then
-            AmountBelowDustLimit amount |> Error
-        else
-            let psbt = 
-                let coin = Coin(outPut)
-                let txb = createDeterministicTransactionBuilder network
-                // we have already done dust limit check above
-                txb.DustPrevention <- false
-                let tx = txb
-                          .AddCoins(coin)
-                          .Send(localFinalDestination, amount)
-                          .SendFees(fee)
-                          .SetLockTime(!> 0u)
-                          .BuildTransaction(false)
-                tx.Version <- 2u
-                tx.Inputs.[0].Sequence <- !> UINT32_MAX
-                PSBT.FromTransaction(tx, network)
-                    .AddCoins(coin)
-            psbt |> ClaimP2WPKHOutputTx|> Ok
-
     let makeMainPenaltyTx (commitTx: Transaction)
                           (localDustLimit: Money)
                           (remoteRevocationKey: RevocationPubKey)
