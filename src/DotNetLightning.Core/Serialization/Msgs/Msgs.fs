@@ -419,22 +419,12 @@ type InitMsg =
                 // distinction between global and local features, of which
                 // VariableLengthOnion was the only global feature. Although
                 // this distinction has since been removed, older clients still
-                // expect VariableLengthOnion to appear only in the
-                // global_features field of an init message and other features
-                // to appear only in the local_features field. This is still
-                // compatible with newer clients since those clients simply OR
-                // the two feature fields.
+                // expect VariableLengthOnion to appear in the global_features
+                // field of an init message and other features to appear only
+                // in the local_features field. This is still compatible with
+                // newer clients since those clients simply OR the two feature fields.
                 let localFeatures =
-                    let localFeatures = this.Features
-                    localFeatures.SetFeature
-                        Feature.VariableLengthOnion
-                        FeaturesSupport.Mandatory
-                        false
-                    localFeatures.SetFeature
-                        Feature.VariableLengthOnion
-                        FeaturesSupport.Optional
-                        false
-                    localFeatures.ToByteArray()
+                    this.Features.ToByteArray()
                 let globalFeatures =
                     let globalFeatures = FeatureBits.Zero
                     let mandatory =
