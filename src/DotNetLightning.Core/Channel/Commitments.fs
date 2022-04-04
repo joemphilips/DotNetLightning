@@ -2,8 +2,6 @@ namespace DotNetLightning.Channel
 
 open NBitcoin
 open DotNetLightning.Utils
-open DotNetLightning.Utils.Aether
-open DotNetLightning.Utils.Aether.Operators
 open DotNetLightning.Crypto
 open DotNetLightning.Transactions
 open DotNetLightning.Serialization.Msgs
@@ -19,30 +17,12 @@ type LocalChanges = {
     with
         static member Zero = { Signed = []; ACKed = [] }
 
-        // -- lenses
-        static member Signed_: Lens<_, _> =
-            (fun lc -> lc.Signed),
-            (fun v lc -> { lc with Signed = v })
-
-        static member ACKed_: Lens<_, _> =
-            (fun lc -> lc.ACKed),
-            (fun v lc -> { lc with ACKed = v })
-
 type RemoteChanges = { 
     Signed: IUpdateMsg list
     ACKed: IUpdateMsg list
 }
     with
         static member Zero = { Signed = []; ACKed = [] }
-
-        static member Signed_: Lens<_, _> =
-            (fun lc -> lc.Signed),
-            (fun v lc -> { lc with Signed = v })
-
-        static member ACKed_: Lens<_, _> =
-            (fun lc -> lc.ACKed),
-            (fun v lc -> { lc with ACKed = v })
-
 
 type PublishableTxs = {
     CommitTx: FinalizedTx
@@ -67,26 +47,6 @@ type RemoteNextCommitInfo =
     | Waiting of RemoteCommit
     | Revoked of PerCommitmentPoint
     with
-        static member Waiting_: Prism<RemoteNextCommitInfo, RemoteCommit> =
-            (fun remoteNextCommitInfo ->
-                match remoteNextCommitInfo with
-                | Waiting remoteCommit -> Some remoteCommit
-                | Revoked _ -> None),
-            (fun waitingForRevocation remoteNextCommitInfo ->
-                match remoteNextCommitInfo with
-                | Waiting _ -> Waiting waitingForRevocation
-                | Revoked _ -> remoteNextCommitInfo)
-
-        static member Revoked_: Prism<RemoteNextCommitInfo, PerCommitmentPoint> =
-            (fun remoteNextCommitInfo ->
-                match remoteNextCommitInfo with
-                | Waiting _ -> None
-                | Revoked commitmentPubKey -> Some commitmentPubKey),
-            (fun commitmentPubKey remoteNextCommitInfo ->
-                match remoteNextCommitInfo with
-                | Waiting _ -> remoteNextCommitInfo
-                | Revoked _ -> Revoked commitmentPubKey)
-
         member this.PerCommitmentPoint(): PerCommitmentPoint =
             match this with
             | Waiting remoteCommit -> remoteCommit.RemotePerCommitmentPoint

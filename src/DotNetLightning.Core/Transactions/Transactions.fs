@@ -9,7 +9,6 @@ open NBitcoin
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils
 open DotNetLightning.Core.Utils.Extensions
-open DotNetLightning.Utils.Aether
 open DotNetLightning.Crypto
 open DotNetLightning.Serialization.Msgs
 

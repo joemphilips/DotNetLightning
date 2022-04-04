@@ -6,8 +6,6 @@ open NBitcoin
 open NBitcoin.Crypto
 
 open DotNetLightning.Utils
-open DotNetLightning.Utils.Aether
-open DotNetLightning.Utils.Aether.Operators
 open DotNetLightning.Crypto
 
 open ResultUtils
@@ -51,117 +49,28 @@ module PeerChannelEncryptor =
         /// At the end of the handshake, it is used for deriving the encryption keys for Lightning Messages.
         CK: uint256
     }
-        with
-            static member H_: Lens<_, _> =
-                (fun state -> state.H),
-                (fun h state -> { state with BidirectionalNoiseState.H = h })
-            static member CK_: Lens<_ ,_> =
-                (fun state -> state.CK),
-                (fun ck state -> { state with BidirectionalNoiseState.CK = ck })
 
     type DirectionalNoisestate =
         | OutBound of OutBound
         | InBound of InBound
-        with
-            static member OutBound_: Prism<DirectionalNoisestate, _> =
-                (fun state ->
-                    match state with
-                    | OutBound o -> Some o
-                    | InBound _i -> None),
-                (fun o state ->
-                    match state with
-                    | OutBound _ -> OutBound o
-                    | _ -> state)
-
-            static member InBound_: Prism<DirectionalNoisestate, _> =
-                (fun state ->
-                    match state with
-                    | OutBound _ -> None
-                    | InBound i -> Some i),
-                (fun i state ->
-                    match state with
-                    | InBound _ -> InBound i
-                    | _ -> state)
 
     and OutBound = { IE: Key }
-        with
-            static member IE_: Lens<_, _> =
-                (fun ob -> ob.IE),
-                (fun ie ob -> { ob with OutBound.IE = ie})
+
     and InBound = {
         IE: PubKey option // Some if state >= PostActOne
         RE: Key option // Some if state >= PostActTwo
         TempK2: uint256 option // Some if state >= PostActTwo
     }
-        with
-            static member IE_: Prism<InBound, _> =
-                (fun ib -> ib.IE),
-                (fun ie ib -> { ib with InBound.IE = Some ie})
-
-            static member RE_: Prism<_, _>  =
-                (fun ib -> ib.RE),
-                (fun re ib -> { ib with InBound.RE = Some re })
-
-            static member TempK2_: Prism<_, _> =
-                (fun ib -> ib.TempK2),
-                (fun tempk2 ib -> {ib with InBound.TempK2 = Some tempk2})
 
     type NoiseState =
         | InProgress of InProgressNoiseState
         | Finished of FinishedNoiseState
-        with
-            static member InProgress_: Prism<_, _> =
-                (fun ns ->
-                    match ns with
-                    | InProgress i -> Some i
-                    | _ -> None),
-                (fun ipns ns ->
-                    match ns with
-                    | InProgress _ -> InProgress ipns
-                    | _ -> ns)
-            static member Finished_: Prism<_, _> =
-                (fun ns ->
-                    match ns with
-                    | Finished state -> Some state
-                    | _ -> None),
-                (fun finishedNS ns ->
-                    match ns with
-                    | Finished _ -> Finished finishedNS
-                    | _ -> ns)
-
-            static member internal SK_: Prism<_, _> =
-                NoiseState.Finished_ >?> FinishedNoiseState.SK_
-
-            static member internal SN_: Prism<_, _> =
-                NoiseState.Finished_ >?> FinishedNoiseState.SN_
-
-            static member internal SCK_: Prism<_, _> =
-                NoiseState.Finished_ >?> FinishedNoiseState.SCK_
-
-            static member internal RK_: Prism<_, _> =
-                NoiseState.Finished_ >?> FinishedNoiseState.RK_
-
-            static member internal RN_: Prism<_, _> =
-                NoiseState.Finished_ >?> FinishedNoiseState.RN_
-
-            static member internal RCK_: Prism<_, _> =
-                NoiseState.Finished_ >?> FinishedNoiseState.RCK_
 
     and InProgressNoiseState = {
         State: NoiseStep
         DirectionalState: DirectionalNoisestate
         BidirectionalState: BidirectionalNoiseState
     }
-        with
-            static member State_: Lens<_, _>  =
-                (fun ipns -> ipns.State),
-                (fun noiseStep ipns -> { ipns with InProgressNoiseState.State = noiseStep })
-            static member DirectionalState_: Lens<_, _>  =
-                (fun ipns -> ipns.DirectionalState),
-                (fun ds ipns -> { ipns with InProgressNoiseState.DirectionalState = ds })
-            static member BiDirectionalState_: Lens<_, _>  =
-                (fun ipns -> ipns.BidirectionalState),
-                (fun bidirectionalState ipns -> { ipns with InProgressNoiseState.BidirectionalState = bidirectionalState })
 
     and FinishedNoiseState = {
         /// Sending key
@@ -176,93 +85,11 @@ module PeerChannelEncryptor =
         RCK: uint256
     }
 
-        with
-            static member SK_: Lens<_, _> =
-                (fun fns -> fns.SK),
-                (fun sk fns -> { fns with FinishedNoiseState.SK = sk })
-            static member SN_: Lens<_, _>  =
-                (fun fns -> fns.SN),
-                (fun sn fns -> { fns with FinishedNoiseState.SN = sn })
-            static member SCK_: Lens<_, _>  =
-                (fun fns -> fns.SCK),
-                (fun sck fns -> { fns with FinishedNoiseState.SCK = sck })
-            static member RK_: Lens<_, _>  =
-                (fun fns -> fns.RK),
-                (fun rk fns -> { fns with FinishedNoiseState.RK = rk })
-            static member RN_: Lens<_, _>  =
-                (fun fns -> fns.RN),
-                (fun rn fns -> { fns with FinishedNoiseState.RN = rn })
-            static member RCK_: Lens<_, _>  =
-                (fun fns -> fns.RCK),
-                (fun rck fns -> { fns with FinishedNoiseState.RCK = rck })
-
     type PeerChannelEncryptor = internal {
         TheirNodeId: NodeId option
         NoiseState: NoiseState
     }
         with
-            static member internal TheirNodeId_: Prism<_, _> =
-                (fun pce -> pce.TheirNodeId),
-                (fun nodeid pce -> { pce with TheirNodeId = Some nodeid })
-            static member internal NoiseState_: Lens<_, _> =
-                (fun pce -> pce.NoiseState),
-                (fun ns pce -> { pce with NoiseState = ns })
-
-            static member internal Finished_: Prism<_, _> =
-                PeerChannelEncryptor.NoiseState_ >-> NoiseState.Finished_
-
-            // finished noise state lenses
-            static member SK_: Prism<_, _> =
-                PeerChannelEncryptor.Finished_  >?> FinishedNoiseState.SK_
-            static member SN_: Prism<_, _> =
-                PeerChannelEncryptor.Finished_  >?> FinishedNoiseState.SN_
-            static member SCK_: Prism<_, _> =
-                PeerChannelEncryptor.Finished_  >?> FinishedNoiseState.SCK_
-            static member RK_: Prism<_, _> =
-                PeerChannelEncryptor.Finished_  >?> FinishedNoiseState.RK_
-            static member RN_: Prism<_, _> =
-                PeerChannelEncryptor.Finished_  >?> FinishedNoiseState.RN_
-            static member RCK_: Prism<_, _> =
-                PeerChannelEncryptor.Finished_  >?> FinishedNoiseState.RCK_
-
-
-            // inprogress noise state lenses
-            static member internal InProgress_: Prism<_,_> =
-                PeerChannelEncryptor.NoiseState_ >-> NoiseState.InProgress_
-
-            static member internal State_ :Prism<_, _> =
-                PeerChannelEncryptor.NoiseState_ >-> NoiseState.InProgress_ >?> InProgressNoiseState.State_
-
-            static member internal BState_ :Prism<_, _> =
-                PeerChannelEncryptor.NoiseState_ >-> NoiseState.InProgress_ >?> InProgressNoiseState.BiDirectionalState_
-
-            static member internal H_ :Prism<_, _> =
-                PeerChannelEncryptor.BState_ >?> BidirectionalNoiseState.H_
-
-            static member internal CK_ :Prism<_, _> =
-                PeerChannelEncryptor.BState_ >?> BidirectionalNoiseState.CK_
-
-            static member internal DState_ :Prism<_, _> =
-                PeerChannelEncryptor.NoiseState_ >-> NoiseState.InProgress_ >?> InProgressNoiseState.DirectionalState_
-
-            static member internal OutBound_: Prism<_,_> =
-                PeerChannelEncryptor.DState_ >?> DirectionalNoisestate.OutBound_
-
-            static member OutBoundIE_: Prism<_,_> =
-                PeerChannelEncryptor.OutBound_ >?> OutBound.IE_
-
-            static member internal InBound_: Prism<_,_> =
-                PeerChannelEncryptor.DState_ >?> DirectionalNoisestate.InBound_
-
-            static member internal InBoundIE_: Prism<_,_> =
-                PeerChannelEncryptor.InBound_ >?> InBound.IE_
-
-            static member internal RE_: Prism<_,_> =
-                PeerChannelEncryptor.InBound_ >?> InBound.RE_
-
-            static member internal TempK2_: Prism<_,_> =
-                PeerChannelEncryptor.InBound_ >?> InBound.TempK2_
-
             member this.IsReadyForEncryption() =
                 match this.NoiseState with
                 | Finished _ -> true
@@ -314,13 +141,56 @@ module PeerChannelEncryptor =
             (t1, t2)
 
         let private hkdf (sharedSecret: byte[]) (state: PeerChannelEncryptor) =
-            let (t1, t2) =
-                let ck = Optic.get (PeerChannelEncryptor.CK_) state
-                hkdfExtractExpand(ck.Value.ToBytes(), sharedSecret)
-            uint256(t2), (state |> Optic.set (PeerChannelEncryptor.CK_) (t1 |> uint256 ))
+            match state.NoiseState with
+            | InProgress inProgressState ->
+                let (t1, t2) =
+                    let ck = inProgressState.BidirectionalState.CK
+                    hkdfExtractExpand(ck.ToBytes(), sharedSecret)
+                uint256 t2,
+                {
+                    state
+                        with
+                            NoiseState = 
+                                    InProgress {
+                                        inProgressState
+                                            with
+                                                BidirectionalState = 
+                                                    {
+                                                        inProgressState.BidirectionalState
+                                                            with
+                                                                CK = uint256 t1
+                                                    }
+                                    }
+                    }
+            | _ ->
+                failwith "Invalid state when calculating hdkf"
 
         let private updateHWith (state: PeerChannelEncryptor) (item: byte[]) =
-             Optic.map (PeerChannelEncryptor.H_) (fun h -> Array.concat[| h.ToBytes(); item |] |> Hashes.SHA256 |> uint256) state
+             match state.NoiseState with
+             | InProgress inProgressNoiseState ->
+                 {
+                     state 
+                         with
+                             NoiseState = 
+                             InProgress {
+                                 inProgressNoiseState
+                                     with
+                                         BidirectionalState =
+                                            {
+                                                inProgressNoiseState.BidirectionalState
+                                                    with
+                                                        H = 
+                                                            [|
+                                                                inProgressNoiseState.BidirectionalState.H.ToBytes()
+                                                                item
+                                                            |]
+                                                            |> Array.concat
+                                                            |> Hashes.SHA256
+                                                            |> uint256
+                                            }
+                                 } 
+                 }
+             | _ -> failwith "Invalid state when updating H"
 
         let private outBoundNoiseAct (state: PeerChannelEncryptor, ourKey: Key, theirKey: PubKey) =
             let ourPub = ourKey.PubKey
@@ -330,7 +200,12 @@ module PeerChannelEncryptor =
                 hkdf ss s2
 
             let c =
-                let h = Optic.get (PeerChannelEncryptor.H_) s3
+                let h =
+                    match s3.NoiseState with
+                    | InProgress { BidirectionalState = bState } ->
+                        Some bState.H
+                    | _ ->
+                        None
                 crypto.encryptWithAD (0UL, tempK, ReadOnlySpan(h.Value.ToBytes()), ReadOnlySpan([||]))
             let resultToSend = Array.concat (seq [ [|0uy|]; ourPub.ToBytes(); c ])
             let newState = updateHWith s3 c
@@ -350,7 +225,12 @@ module PeerChannelEncryptor =
                         let ss = Secret.FromKeyPair(theirPub, ourKey)
                         let s2 = updateHWith state (theirPub.ToBytes())
                         hkdf ss s2
-                    let currentH = Optic.get (PeerChannelEncryptor.H_) s3
+                    let currentH =
+                        match s3.NoiseState with
+                        | InProgress { BidirectionalState = bState } ->
+                            Some bState.H
+                        | _ ->
+                            None
                     result {
                         let! _ = decryptWithAD (0UL, tempK, currentH.Value.ToBytes(), ReadOnlySpan(act.[34..]))
                         let s4 =  updateHWith s3 act.[34..]
@@ -367,7 +247,21 @@ module PeerChannelEncryptor =
                     else
                         outBoundNoiseAct (pce, ie, pce.TheirNodeId.Value.Value)
                         |> fun ((res, _), pce2) ->
-                            res, (pce2 |> Optic.set (PeerChannelEncryptor.State_) NoiseStep.PostActOne)
+                            match pce2.NoiseState with
+                            | InProgress inProgressNoiseState ->
+                                res,
+                                {
+                                    pce2
+                                        with
+                                            NoiseState =
+                                                InProgress {
+                                                    inProgressNoiseState with
+                                                        State = 
+                                                            NoiseStep.PostActOne
+                                                }
+
+                                }
+                            | _ -> failwith "Invalid state for updating state"
                 | _ -> failwith "Wrong Direction for Act"
             | _ -> failwith "Cannot get act one after noise  handshake completes"
 
@@ -383,14 +277,52 @@ module PeerChannelEncryptor =
                     >>= fun res ->
                         let (theirPub, _), pce2 = res
                         let pce3 =
-                            pce2
-                            |> Optic.set (PeerChannelEncryptor.InBoundIE_) theirPub
-                            |> Optic.set (PeerChannelEncryptor.RE_) ourEphemeral
+                            match pce2.NoiseState with
+                            | InProgress inProgressState ->
+                                match inProgressState.DirectionalState with
+                                | InBound inBoundState ->
+                                    {
+                                        pce2
+                                            with
+                                                NoiseState =
+                                                    InProgress {
+                                                        inProgressState
+                                                            with
+                                                                DirectionalState =
+                                                                    InBound {
+                                                                        inBoundState
+                                                                            with
+                                                                                IE = Some theirPub
+                                                                                RE = Some ourEphemeral
+                                                                    }
+                                                    }
+                                    }
+                                | _ -> failwith "Invalid directional state"
+                            | _ -> failwith "Invalid noise state"
                         let (res, tempK), pce4 = outBoundNoiseAct (pce3, ourEphemeral, theirPub)
                         let pce5 =
-                            pce4
-                            |> Optic.set PeerChannelEncryptor.State_ NoiseStep.PostActTwo
-                            |> Optic.set PeerChannelEncryptor.TempK2_ tempK
+                            match pce4.NoiseState with
+                            | InProgress inProgressState ->
+                                match inProgressState.DirectionalState with
+                                | InBound inBoundState ->
+                                    {
+                                        pce4
+                                            with
+                                                NoiseState =
+                                                    InProgress {
+                                                        inProgressState
+                                                            with
+                                                                DirectionalState =
+                                                                    InBound {
+                                                                        inBoundState
+                                                                            with
+                                                                                TempK2 = Some tempK
+                                                                    }
+                                                                State = NoiseStep.PostActTwo
+                                                    }
+                                    }
+                                | _ -> failwith "Invalid directional state"
+                            | _ -> failwith "Invalid noise state"
 
                         Ok (res, pce5)
                 | _ -> failwith "Requested act at wrong step"
@@ -414,7 +346,12 @@ module PeerChannelEncryptor =
                     >>= fun ((re, tempK2), pce2) ->
                         let ourNodeId = ourNodeSecret.PubKey
                         let encryptedRes1 =
-                            let currentH = Optic.get (PeerChannelEncryptor.H_) pce2
+                            let currentH =
+                                match pce2.NoiseState with
+                                | InProgress { BidirectionalState = bState } ->
+                                    Some bState.H
+                                | _ ->
+                                    None
                             crypto.encryptWithAD (1UL, tempK2, ReadOnlySpan(currentH.Value.ToBytes()), ReadOnlySpan(ourNodeId.ToBytes()))
                         let pce3 = updateHWith pce2 encryptedRes1 
                         let (tempK, pce4) =
@@ -422,25 +359,43 @@ module PeerChannelEncryptor =
                             hkdf ss pce3
 
                         let encryptedRes2 =
-                            let currentH = Optic.get (PeerChannelEncryptor.H_) pce4
+                            let currentH =
+                                match pce4.NoiseState with
+                                | InProgress { BidirectionalState = bState } ->
+                                    Some bState.H
+                                | _ ->
+                                    None
                             crypto.encryptWithAD (0UL, tempK, ReadOnlySpan(currentH.Value.ToBytes()), ReadOnlySpan([||]))
 
                         let (sk, rk) =
-                            let currentCK = Optic.get (PeerChannelEncryptor.CK_) pce4
+                            let currentCK = 
+                                match pce4.NoiseState with
+                                | InProgress { BidirectionalState = bState } ->
+                                    Some bState.CK
+                                | _ ->
+                                    None
                             hkdfExtractExpand(currentCK.Value.ToBytes(), [||])
 
                         let newPce =
-                            let ck = Optic.get (PeerChannelEncryptor.CK_) (pce4)
-                            pce4
-                            |> Optic.set (PeerChannelEncryptor.NoiseState_)
-                                         (Finished {
-                                             FinishedNoiseState.SK = sk |> uint256
-                                             SN = 0UL
-                                             SCK = ck.Value
-                                             RK = rk |> uint256
-                                             RN = 0UL
-                                             RCK = ck.Value
-                                         })
+                            let ck =
+                                match pce4.NoiseState with
+                                | InProgress { BidirectionalState = bState } ->
+                                    Some bState.CK
+                                | _ ->
+                                    None
+                            {
+                                pce4
+                                    with
+                                        NoiseState =
+                                            Finished {
+                                                FinishedNoiseState.SK = uint256 sk
+                                                SN = 0UL
+                                                SCK = ck.Value
+                                                RK = uint256 rk
+                                                RN = 0UL
+                                                RCK = ck.Value
+                                            }
+                            }
                         let resultToSend = Array.concat (seq [ [|0uy|]; encryptedRes1; encryptedRes2 ])
                         Ok ((resultToSend, newPce.TheirNodeId.Value), newPce)
                 | _ -> failwith "Wrong direction with act"
@@ -457,7 +412,12 @@ module PeerChannelEncryptor =
                     else if (actThree.[0] <> 0uy) then
                         Error(UnknownHandshakeVersionNumber(actThree.[0]))
                     else
-                        let h = Optic.get (PeerChannelEncryptor.H_) pce
+                        let h =
+                            match pce.NoiseState with
+                            | InProgress { BidirectionalState = bState } ->
+                                Some bState.H
+                            | _ ->
+                                None
                         decryptWithAD (1UL, tempk2.Value, h.Value.ToBytes(), ReadOnlySpan(actThree.[1..49]))
                         >>= fun theirNodeId ->
                             match PubKey.TryCreatePubKey theirNodeId with
@@ -466,56 +426,112 @@ module PeerChannelEncryptor =
                             | true, theirNodeIdPubKey ->
                                 let tempK, pce3 =
                                     let pce2 =
-                                        pce
-                                        |> fun p -> updateHWith p (actThree.[1..49])
-                                        |> Optic.set (PeerChannelEncryptor.TheirNodeId_) (theirNodeIdPubKey |> NodeId)
+                                        let pceWithUpdatedH =
+                                            pce
+                                            |> fun p -> updateHWith p (actThree.[1..49])
+                                        {
+                                            pceWithUpdatedH
+                                            with
+                                                TheirNodeId =
+                                                    theirNodeIdPubKey |> NodeId |> Some
+                                        }
+                                        
                                     let ss = Secret.FromKeyPair(pce2.TheirNodeId.Value.Value, re.Value)
                                     hkdf ss pce2
 
-                                let h = Optic.get (PeerChannelEncryptor.H_) pce3
+                                let h =
+                                    match pce3.NoiseState with
+                                    | InProgress { BidirectionalState = bState } ->
+                                        Some bState.H
+                                    | _ ->
+                                        None
                                 decryptWithAD(0UL, tempK, h.Value.ToBytes(), ReadOnlySpan(actThree.[50..]))
                                 >>= fun _ ->
-                                    let ck = (Optic.get (PeerChannelEncryptor.CK_) pce3).Value
+                                    let ck =
+                                        match pce3.NoiseState with
+                                        | InProgress { BidirectionalState = bState } ->
+                                            bState.CK
+                                        | _ ->
+                                            failwith "Invalid state when reading CK"
                                     let (rk, sk) = hkdfExtractExpand(ck.ToBytes(), [||])
-                                    let newPce = Optic.set (PeerChannelEncryptor.NoiseState_)
-                                                         (Finished({
+                                    let newPce =
+                                        {
+                                            pce3
+                                                with
+                                                    NoiseState =
+                                                        Finished {
                                                             FinishedNoiseState.SK = sk |> uint256
                                                             SN = 0UL
                                                             SCK = ck
                                                             RK = rk |> uint256
                                                             RN= 0UL
                                                             RCK = ck
-                                                         }))
-                                                         pce3
+                                                         }
+                                        }
                                     Ok(newPce.TheirNodeId.Value, newPce)
                 | _ -> failwith "wrong direction for act"
             | _ -> failwith "Cannot get act one after noise handshake completes"
 
         let private encryptCore (msg: byte[]) (pceLocal) =
-            let sn = (Optic.get (PeerChannelEncryptor.SN_) pceLocal).Value
-            let sk = (Optic.get (PeerChannelEncryptor.SK_) pceLocal).Value
+            let sn, sk =
+                match pceLocal.NoiseState with
+                | Finished { SN = sn; SK = sk} ->
+                    sn, sk
+                | _ ->
+                    failwith "Invalid state when reading SK"
             let lengthBytes = BitConverter.GetBytesBE(uint16 msg.Length)
             // 2 byte length + 16 bytes MAC
             let cipherLength = crypto.encryptWithAD (sn, sk, ReadOnlySpan([||]) , ReadOnlySpan(lengthBytes))
             let newSN = (sn + 1UL)
-            let pce3 = pceLocal |> Optic.set (PeerChannelEncryptor.SN_) (newSN)
+            let pce3 =
+                match pceLocal.NoiseState with
+                | Finished finishedNoiseState ->
+                    {
+                        pceLocal with
+                            NoiseState =
+                                Finished {
+                                    finishedNoiseState
+                                        with
+                                            SN = newSN
+                                }
+                    }
+                | _ -> failwith "Invalid state when incrementing SN"
             let cipherText = crypto.encryptWithAD (newSN, sk, ReadOnlySpan[||], ReadOnlySpan(msg))
-            let pce4 = pce3 |> Optic.set (PeerChannelEncryptor.SN_) (newSN + 1UL)
+            let pce4 =
+                match pce3.NoiseState with
+                | Finished finishedNoiseState ->
+                    {
+                        pce3 with
+                            NoiseState =
+                                Finished {
+                                    finishedNoiseState
+                                        with
+                                            SN = newSN + 1UL
+                                }
+                    }
+                | _ -> failwith "Invalid state when incrementing SN"
             Array.concat (seq [ cipherLength; cipherText ]), pce4
 
         let encryptMessage (msg: byte[]) (pce: PeerChannelEncryptor): byte[] * PeerChannelEncryptor =
             if msg.Length > 65535 then failwith "Attempted encrypt message longer thaan 65535 bytes"
             match pce.NoiseState with
             | Finished { SK = sk; SN = sn; SCK = sck } ->
-                let refreshState(pceLocal) = 
+                let refreshState(pceLocal: PeerChannelEncryptor) = 
                     let (newSCK, newSK) = hkdfExtractExpand(sck.ToBytes(), sk.ToBytes())
-                    pceLocal
-                    |> Optic.set (PeerChannelEncryptor.SCK_)
-                                 (uint256 newSCK)
-                    |> Optic.set (PeerChannelEncryptor.SK_)
-                                 (uint256 newSK)
-                    |> Optic.set (PeerChannelEncryptor.SN_)
-                                 (0UL)
+                    match pceLocal.NoiseState with
+                    | Finished finishedNoiseState ->
+                        {
+                            pceLocal with
+                                NoiseState =
+                                    Finished {
+                                        finishedNoiseState
+                                            with
+                                                SCK = uint256 newSCK
+                                                SK = uint256 newSK
+                                                SN = 0UL
+                                    }
+                        }
+                    | _ -> failwith "Invalid state when encrypting"
 
                 if sn >= 1000UL then
                     let newState = refreshState(pce)
@@ -525,13 +541,33 @@ module PeerChannelEncryptor =
             | _ -> failwith "Tried to encrypt a message prior to noise handshake completion"
 
         let private decryptCore (msg) (localPce) =
-            let newRK = (Optic.get (PeerChannelEncryptor.RK_) localPce).Value
-            let newRN = (Optic.get (PeerChannelEncryptor.RN_) localPce).Value
+            let newRK =
+                match localPce.NoiseState with
+                | Finished { RK = rk } ->
+                    rk
+                | _ ->
+                    failwith "Invalid state when reading RK"
+            let newRN =
+                match localPce.NoiseState with
+                | Finished { RN = rn } ->
+                    rn
+                | _ ->
+                    failwith "Invalid state when reading RN"
             decryptWithAD(newRN, newRK, [||], ReadOnlySpan(msg))
             >>= fun plainText ->
                 let newPCE =
-                    localPce
-                    |> Optic.set (PeerChannelEncryptor.RN_) (newRN + 1UL)
+                    match localPce.NoiseState with
+                    | Finished finishedNoiseState ->
+                        {
+                            localPce with
+                                NoiseState =
+                                    Finished {
+                                        finishedNoiseState
+                                            with
+                                                RN = finishedNoiseState.RN + 1UL
+                                    }
+                        }
+                    | _ -> failwith "Invalid state when incrementing RN"
                 (BitConverter.ToUint16BE(plainText), newPCE) |> Ok
         let decryptLengthHeader (msg: byte[]) (pce): Result<uint16 * PeerChannelEncryptor, PeerError> =
             if (msg.Length <> 16 + 2) then raise <| ArgumentException(sprintf "Invalid length of message %d" msg.Length)
@@ -539,13 +575,20 @@ module PeerChannelEncryptor =
             | Finished { RK = rk; RN = rn; RCK = rck } ->
                 let refreshState (localPce) =
                     let (newRCK, newRK) = hkdfExtractExpand(rck.ToBytes(), rk.ToBytes())
-                    localPce
-                    |> Optic.set (PeerChannelEncryptor.RCK_)
-                                 (uint256 newRCK)
-                    |> Optic.set (PeerChannelEncryptor.RK_)
-                                 (uint256 newRK)
-                    |> Optic.set (PeerChannelEncryptor.RN_)
-                                 (0UL)
+                    match localPce.NoiseState with
+                    | Finished finishedNoiseState ->
+                        {
+                            localPce with
+                                NoiseState =
+                                    Finished {
+                                        finishedNoiseState
+                                            with
+                                                RCK = uint256 newRCK
+                                                RK = uint256 newRK
+                                                RN = 0UL
+                                    }
+                        }
+                    | _ -> failwith "Invalid state when decrypting"
 
                 if (rn >= 1000UL) then
                     let newState = refreshState pce
@@ -561,9 +604,20 @@ module PeerChannelEncryptor =
             | Finished { RK = rk; RN  = rn;} ->
                 decryptWithAD(rn, rk, [||], ReadOnlySpan(msg))
                 >>= fun plainText ->
-                    let newState =
-                        pce |> Optic.set (PeerChannelEncryptor.RN_) (rn + 1UL)
-                    Ok(plainText, newState)
+                    let newPCE =
+                        match pce.NoiseState with
+                        | Finished finishedNoiseState ->
+                            {
+                                pce with
+                                    NoiseState =
+                                        Finished {
+                                            finishedNoiseState
+                                                with
+                                                    RN = finishedNoiseState.RN + 1UL
+                                        }
+                            }
+                        | _ -> failwith "Invalid state when incrementing RN"
+                    Ok(plainText, newPCE)
             | _ -> failwith "Tried to encyrpt a message prior to noise handshake completion"
 
 
