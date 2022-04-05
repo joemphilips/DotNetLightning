@@ -178,13 +178,13 @@ module internal Feature =
         
         
 [<StructuredFormatDisplay("{PrettyPrint}")>]
-type FeatureBits private (bitArray) =
-    member val BitArray: BitArray = bitArray with get, set
-    member this.ByteArray
+type FeatureBits private (bitArray: BitArray) =
+    member internal __.BitArray
+        with get() =
+            bitArray
+    member internal this.ByteArray
         with get() =
             this.BitArray.ToByteArray()
-        and set(bytes: byte[]) =
-            this.BitArray <- BitArray.FromBytes(bytes)
     static member TryCreate(ba: BitArray) =
         result {
             do! Feature.validateFeatureGraph(ba)
@@ -230,11 +230,15 @@ type FeatureBits private (bitArray) =
     override this.ToString() =
         this.BitArray.PrintBits()
         
-    member this.SetFeature(feature: Feature) (support: FeaturesSupport) (on: bool): unit =
+    member this.SetFeature(feature: Feature) (support: FeaturesSupport) (on: bool): FeatureBits =
         let index = feature.BitPosition support
-        let length = this.BitArray.Length
+        let length = bitArray.Length
+        let bits = Array.zeroCreate<byte> length
+        //FIXME: will clone() work here?
+        this.BitArray.CopyTo(bits, 0)
+        let newBitArray = BitArray bits
         if length <= index then
-            this.BitArray.Length <- index + 1
+            newBitArray.Length <- index + 1
 
             //this.BitArray.RightShift(index - length + 1)
 
@@ -242,14 +246,15 @@ type FeatureBits private (bitArray) =
             // "The field, constructor or member 'RightShift' is not defined."
             // So I just re-implement it here
             for i in (length - 1) .. -1 .. 0 do
-                this.BitArray.[i + index - length + 1] <- this.BitArray.[i]
+                newBitArray.[i + index - length + 1] <- this.BitArray.[i]
 
             // NOTE: this probably wouldn't be necessary if we were using
             // RightShift, but the dotnet docs don't actualy specify that
             // RightShift sets the leading bits to zero.
             for i in 0 .. (index - length) do
-                this.BitArray.[i] <- false
-        this.BitArray.[this.BitArray.Length - index - 1] <- on
+                newBitArray.[i] <- false
+        newBitArray.[newBitArray.Length - index - 1] <- on
+        FeatureBits newBitArray
 
     member this.HasFeature(f, ?featureType) =
         Feature.hasFeature this.BitArray (f) (featureType)

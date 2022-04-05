@@ -426,7 +426,6 @@ type InitMsg =
                 let localFeatures =
                     this.Features.ToByteArray()
                 let globalFeatures =
-                    let globalFeatures = FeatureBits.Zero
                     let mandatory =
                         this.Features.HasFeature(
                             Feature.VariableLengthOnion,
@@ -437,16 +436,21 @@ type InitMsg =
                             Feature.VariableLengthOnion,
                             FeaturesSupport.Optional
                         )
-                    if mandatory then
-                        globalFeatures.SetFeature
-                            Feature.VariableLengthOnion
-                            FeaturesSupport.Mandatory
-                            true
-                    if optional then
-                        globalFeatures.SetFeature
-                            Feature.VariableLengthOnion
-                            FeaturesSupport.Optional
-                            true
+
+                    let globalFeatures =
+                        let zero = FeatureBits.Zero
+                        if mandatory then
+                            zero.SetFeature
+                                Feature.VariableLengthOnion
+                                FeaturesSupport.Mandatory
+                                true
+                        elif optional then
+                            zero.SetFeature
+                                Feature.VariableLengthOnion
+                                FeaturesSupport.Optional
+                                true
+                        else
+                            zero
                     globalFeatures.ToByteArray()
                 ls.WriteWithLen(globalFeatures)
                 ls.WriteWithLen(localFeatures)
