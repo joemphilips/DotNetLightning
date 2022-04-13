@@ -132,10 +132,10 @@ let testList = testList "transaction tests" [
                 .ExtractTransaction()
 
         let transactionBuilder =
-            ForceCloseFundsRecovery.tryGetFundsFromLocalCommitmentTx
-                localChannelPrivKeys
-                staticLocalChannelConfig
+            (ClosingHelpers.LocalClose.ClaimCommitTxOutputs
                 commitmentTx
+                staticLocalChannelConfig
+                localChannelPrivKeys).MainOutput
             |> Result.deref
 
         let recoveryTransaction =
@@ -236,10 +236,11 @@ let testList = testList "transaction tests" [
         }
 
         let transactionBuilder =
-            ForceCloseFundsRecovery.tryGetFundsFromRemoteCommitmentTx
-                remoteChannelPrivKeys
-                remoteSavedChannelState
+            (ClosingHelpers.RemoteClose.ClaimCommitTxOutputs
                 commitmentTx
+                remoteSavedChannelState.StaticChannelConfig
+                remoteChannelPrivKeys
+                remoteRemoteCommit).MainOutput
             |> Result.deref
 
         let recoveryTransaction =
@@ -256,10 +257,12 @@ let testList = testList "transaction tests" [
         Expect.equal actualAmount expectedAmount "wrong prevout amount"
 
         let transactionBuilder =
-            ForceCloseFundsRecovery.createPenaltyTx
-                perCommitmentSecret
-                remoteSavedChannelState
+            ClosingHelpers.RevokedClose.createPenaltyTx
                 remoteChannelPrivKeys
+                remoteSavedChannelState.StaticChannelConfig
+                remoteRemoteCommit
+                perCommitmentSecret
+            |> Result.deref
         let penaltyTransaction =
             transactionBuilder
                 .SendAll(remoteDestPubKey)
