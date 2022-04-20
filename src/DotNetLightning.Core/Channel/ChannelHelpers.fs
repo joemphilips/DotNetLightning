@@ -325,7 +325,15 @@ module ClosingHelpers =
                             .AddCoin(ScriptCoin(closingTx, toLocalIndex |> uint32, toLocalScriptPubKey))
                         |> ignore)
 
-                // FIXME: what if all the money is in htlcs?
+                // We should've retuned BalanceBelowDustLimit here
+                // but because it's possible for old local commitment TXs to
+                // get used with HandleFundingTxSpent (which calls
+                // RevokedClose.ClaimMainOutput for all non-last
+                // commitment txs) we can't return BalanceBelowDustLimit error
+                // and we instead use UnknownClosingTx error.
+                // There's a small edge case: all the commitment tx money
+                // to be in HTLCs (which we should return BalanceBelowDustLimit
+                // for) but we return an invalid error msg.
                 if toLocalIndexOpt.IsNone && toRemoteIndexOpt.IsNone then
                     return! Error UnknownClosingTx
                 else
