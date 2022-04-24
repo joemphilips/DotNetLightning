@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Requests.fs" />
+    <Compile Include="Client.fs" />
+    <Compile Include="Client.Methods.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DotNetLightning.Core\DotNetLightning.Core.fsproj" />
+    <ProjectReference Include="..\ResultUtils\ResultUtils.fsproj" />
+  </ItemGroup>
+
+</Project>
