@@ -2,10 +2,10 @@ namespace ResultUtils
 
 [<RequireQualifiedAccess>]
 module Option =
-  let traverseResult f opt =
-    match opt with
-    | None -> Ok None
-    | Some v -> f v |> Result.map Some
+    let traverseResult f opt =
+        match opt with
+        | None -> Ok None
+        | Some v -> f v |> Result.map Some
 
-  let sequenceResult opt =
-    traverseResult id opt
+    let sequenceResult opt =
+        traverseResult id opt

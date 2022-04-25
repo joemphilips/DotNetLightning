@@ -1,14 +1,18 @@
 namespace DotNetLightning.Channel
+
 open DotNetLightning.Utils
 open NBitcoin
-type ChannelValueStat = internal {
-    ValueToSelf: LNMoney;
-    ChannelValue: LNMoney;
-    ChannelReserve: LNMoney;
-    PendingOutboundHTLCsAmount: LNMoney;
-    PendingInBoundHTLCsAmount: LNMoney;
-    HoldingCellOutBoundAmount: LNMoney;
-}
+
+type ChannelValueStat =
+    internal
+        {
+            ValueToSelf: LNMoney
+            ChannelValue: LNMoney
+            ChannelReserve: LNMoney
+            PendingOutboundHTLCsAmount: LNMoney
+            PendingInBoundHTLCsAmount: LNMoney
+            HoldingCellOutBoundAmount: LNMoney
+        }
 
 [<AutoOpen>]
 module ChannelConstants =
@@ -22,7 +26,6 @@ module ChannelConstants =
     let MAX_FUNDING_SATOSHIS = Money.Satoshis(16777216m) // (1 << 24)
 
     [<Literal>]
-    /// see refs: https://github.com/lightningnetwork/lightning-rfc/blob/master/07-routing-gossip.md#requirements
     let UNCONF_THRESHOLD = 6u
 
     /// The amount of time we require our counterparty wait to claim their money (i.e. time between when
@@ -39,13 +42,14 @@ module ChannelConstants =
 
     [<Literal>]
     let COMMITMENT_TX_BASE_WEIGHT = 724UL
+
     [<Literal>]
     let COMMITMENT_TX_WEIGHT_PER_HTLC = 172UL
 
 
     // prevout: 36, nSequence: 4, script len: 1, witness lengths: (3+1)/4, sig: 73/4, if-selector: 1, redeemScript: (6 ops + 2*33 pubkeys + 1*2 delay)/4
     [<Literal>]
-    let SPENDING_INPUT_FOR_A_OUTPUT_WEIGHT = 79UL 
+    let SPENDING_INPUT_FOR_A_OUTPUT_WEIGHT = 79UL
     // prevout: 40, nSequence: 4, script len: 1, witness lengths: 3/4, sig: 73/4, pubkey: 33/4, output: 31
     [<Literal>]
     let B_OUTPUT_PLUS_SPENDING_INPUT_WEIGHT = 104UL
@@ -53,6 +57,7 @@ module ChannelConstants =
 
     [<Literal>]
     let ACCEPTED_HTLC_SCRIPT_WEIGHT = 139uy
+
     [<Literal>]
     let OFFERED_HTLC_SCRIPT_WEIGHT = 133uy
 

@@ -15,15 +15,21 @@ open NBitcoin
 
 /// cousin of `ChannelHelpers` module which only includes very primitive function.
 module internal ChannelConstantHelpers =
-    let deriveOurDustLimitSatoshis (feeEstimator: IFeeEstimator): Money =
-        let (FeeRatePerKw atOpenBackGroundFee) = feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background)
-        (Money.Satoshis((uint64 atOpenBackGroundFee) * B_OUTPUT_PLUS_SPENDING_INPUT_WEIGHT / 1000UL), Money.Satoshis(546UL))
+    let deriveOurDustLimitSatoshis(feeEstimator: IFeeEstimator) : Money =
+        let (FeeRatePerKw atOpenBackGroundFee) =
+            feeEstimator.GetEstSatPer1000Weight(ConfirmationTarget.Background)
+
+        (Money.Satoshis(
+            (uint64 atOpenBackGroundFee) * B_OUTPUT_PLUS_SPENDING_INPUT_WEIGHT
+            / 1000UL
+         ),
+         Money.Satoshis(546UL))
         |> Money.Max
-        
-    let getOurChannelReserve (channelValue: Money) =
+
+    let getOurChannelReserve(channelValue: Money) =
         let q = channelValue / 100L
         Money.Min(channelValue, Money.Max(q, Money.Satoshis(1L)))
-        
+
 module ClosingHelpers =
     let TxVersionNumberOfCommitmentTxs = 2u
 
@@ -33,9 +39,11 @@ module ClosingHelpers =
         | TxHasMultipleInputs of int
         | DoesNotSpendChannelFunds of OutPoint
         | InvalidLockTimeAndSequenceForCommitmentTx of LockTime * Sequence
+
         member this.Message: string =
             match this with
-            | InvalidTxVersionForCommitmentTx version -> sprintf "invalid tx version for commitment tx (%i)" version
+            | InvalidTxVersionForCommitmentTx version ->
+                sprintf "invalid tx version for commitment tx (%i)" version
             | TxHasNoInputs -> "tx has no inputs"
             | TxHasMultipleInputs n -> sprintf "tx has multiple inputs (%i)" n
             | DoesNotSpendChannelFunds outPoint ->
@@ -43,7 +51,7 @@ module ClosingHelpers =
                     "tx does not spend from the channel funds but spends from a different \
                     outpoint (%s)"
                     (outPoint.ToString())
-            | InvalidLockTimeAndSequenceForCommitmentTx (lockTime, sequence) ->
+            | InvalidLockTimeAndSequenceForCommitmentTx(lockTime, sequence) ->
                 sprintf
                     "invalid lock time and sequence for commitment tx \
                     (locktime = %s, sequence = %s)"
@@ -64,30 +72,33 @@ module ClosingHelpers =
         (transaction: Transaction)
         : Result<ObscuredCommitmentNumber, ValidateCommitmentTxError> =
         result {
-            if transaction.Version
-               <> TxVersionNumberOfCommitmentTxs then
+            if transaction.Version <> TxVersionNumberOfCommitmentTxs then
                 return!
-                    Error
-                    <| InvalidTxVersionForCommitmentTx transaction.Version
+                    Error <| InvalidTxVersionForCommitmentTx transaction.Version
 
             if transaction.Inputs.Count = 0 then
                 return! Error <| TxHasNoInputs
 
             if transaction.Inputs.Count > 1 then
-                return!
-                    Error
-                    <| TxHasMultipleInputs transaction.Inputs.Count
+                return! Error <| TxHasMultipleInputs transaction.Inputs.Count
 
             let txIn = Seq.exactlyOne transaction.Inputs
 
             if fundingOutPoint <> txIn.PrevOut then
                 return! Error <| DoesNotSpendChannelFunds txIn.PrevOut
 
-            match ObscuredCommitmentNumber.TryFromLockTimeAndSequence transaction.LockTime txIn.Sequence with
+            match
+                ObscuredCommitmentNumber.TryFromLockTimeAndSequence
+                    transaction.LockTime
+                    txIn.Sequence
+                with
             | None ->
                 return!
                     Error
-                    <| InvalidLockTimeAndSequenceForCommitmentTx(transaction.LockTime, txIn.Sequence)
+                    <| InvalidLockTimeAndSequenceForCommitmentTx(
+                        transaction.LockTime,
+                        txIn.Sequence
+                    )
             | Some obscuredCommitmentNumber -> return obscuredCommitmentNumber
         }
 
@@ -99,14 +110,16 @@ module ClosingHelpers =
             (remotePerCommitmentPoint: PerCommitmentPoint)
             =
             result {
-                let localChannelPubKeys = localChannelPrivKeys.ToChannelPubKeys()
+                let localChannelPubKeys =
+                    localChannelPrivKeys.ToChannelPubKeys()
 
                 let localPaymentPrivKey =
                     remotePerCommitmentPoint.DerivePaymentPrivKey
                         localChannelPrivKeys.PaymentBasepointSecret
 
                 let localCommitmentPubKeys =
-                    remotePerCommitmentPoint.DeriveCommitmentPubKeys localChannelPubKeys
+                    remotePerCommitmentPoint.DeriveCommitmentPubKeys
+                        localChannelPubKeys
 
                 let toRemoteScriptPubKey =
                     localCommitmentPubKeys
@@ -116,7 +129,11 @@ module ClosingHelpers =
                         .ScriptPubKey
 
                 let toRemoteIndexOpt =
-                    Seq.tryFindIndex (fun (txOut: TxOut) -> txOut.ScriptPubKey = toRemoteScriptPubKey) commitTx.Outputs
+                    Seq.tryFindIndex
+                        (fun (txOut: TxOut) ->
+                            txOut.ScriptPubKey = toRemoteScriptPubKey
+                        )
+                        commitTx.Outputs
 
                 let! toRemoteIndex =
                     match toRemoteIndexOpt with
@@ -131,7 +148,9 @@ module ClosingHelpers =
                         .AddKeys(localPaymentPrivKey.RawKey())
 
                 return
-                    transactionBuilder.AddCoin(Coin(commitTx, uint32 toRemoteIndex))
+                    transactionBuilder.AddCoin(
+                        Coin(commitTx, uint32 toRemoteIndex)
+                    )
             }
 
         let ClaimCommitTxOutputs
@@ -143,7 +162,12 @@ module ClosingHelpers =
             assert (remoteCommit.TxId = closingTx.GetTxId())
 
             {
-                MainOutput = ClaimMainOutput closingTx staticChannelConfig channelPrivKeys remoteCommit.RemotePerCommitmentPoint
+                MainOutput =
+                    ClaimMainOutput
+                        closingTx
+                        staticChannelConfig
+                        channelPrivKeys
+                        remoteCommit.RemotePerCommitmentPoint
             }
 
     module LocalClose =
@@ -154,17 +178,23 @@ module ClosingHelpers =
             (localChannelPrivKeys: ChannelPrivKeys)
             =
             result {
-                let localChannelPubKeys = localChannelPrivKeys.ToChannelPubKeys()
-                let remoteChannelPubKeys = staticChannelConfig.RemoteChannelPubKeys
+                let localChannelPubKeys =
+                    localChannelPrivKeys.ToChannelPubKeys()
+
+                let remoteChannelPubKeys =
+                    staticChannelConfig.RemoteChannelPubKeys
 
                 let perCommitmentPoint =
-                    localChannelPrivKeys.CommitmentSeed.DerivePerCommitmentPoint commitmentNumber
+                    localChannelPrivKeys.CommitmentSeed.DerivePerCommitmentPoint
+                        commitmentNumber
 
                 let localCommitmentPubKeys =
-                    perCommitmentPoint.DeriveCommitmentPubKeys localChannelPubKeys
+                    perCommitmentPoint.DeriveCommitmentPubKeys
+                        localChannelPubKeys
 
                 let remoteCommitmentPubKeys =
-                    perCommitmentPoint.DeriveCommitmentPubKeys remoteChannelPubKeys
+                    perCommitmentPoint.DeriveCommitmentPubKeys
+                        remoteChannelPubKeys
 
                 let transactionBuilder =
                     staticChannelConfig.Network.CreateTransactionBuilder()
@@ -176,10 +206,13 @@ module ClosingHelpers =
                         localCommitmentPubKeys.DelayedPaymentPubKey
 
                 let toLocalIndexOpt =
-                    let toLocalWitScriptPubKey = toLocalScriptPubKey.WitHash.ScriptPubKey
+                    let toLocalWitScriptPubKey =
+                        toLocalScriptPubKey.WitHash.ScriptPubKey
 
                     Seq.tryFindIndex
-                        (fun (txOut: TxOut) -> txOut.ScriptPubKey = toLocalWitScriptPubKey)
+                        (fun (txOut: TxOut) ->
+                            txOut.ScriptPubKey = toLocalWitScriptPubKey
+                        )
                         commitTx.Outputs
 
                 let! toLocalIndex =
@@ -188,7 +221,8 @@ module ClosingHelpers =
                     | None -> Error BalanceBelowDustLimit
 
                 let delayedPaymentPrivKey =
-                    perCommitmentPoint.DeriveDelayedPaymentPrivKey localChannelPrivKeys.DelayedPaymentBasepointSecret
+                    perCommitmentPoint.DeriveDelayedPaymentPrivKey
+                        localChannelPrivKeys.DelayedPaymentBasepointSecret
 
                 transactionBuilder
                     .SetVersion(TxVersionNumberOfCommitmentTxs)
@@ -198,11 +232,18 @@ module ClosingHelpers =
                     transactionBuilder
                         .AddKeys(delayedPaymentPrivKey.RawKey())
                         .AddCoin(
-                            ScriptCoin(commitTx, uint32 toLocalIndex, toLocalScriptPubKey),
+                            ScriptCoin(
+                                commitTx,
+                                uint32 toLocalIndex,
+                                toLocalScriptPubKey
+                            ),
                             CoinOptions(
                                 Sequence =
                                     (Nullable
-                                     <| Sequence(uint32 staticChannelConfig.LocalParams.ToSelfDelay.Value))
+                                     <| Sequence(
+                                         uint32
+                                             staticChannelConfig.LocalParams.ToSelfDelay.Value
+                                     ))
                             )
                         )
             }
@@ -231,7 +272,12 @@ module ClosingHelpers =
                         remoteChannelPubKeys.PaymentBasepoint
 
                 {
-                    MainOutput = ClaimMainOutput closingTx commitmentNumber staticChannelConfig channelPrivKeys
+                    MainOutput =
+                        ClaimMainOutput
+                            closingTx
+                            commitmentNumber
+                            staticChannelConfig
+                            channelPrivKeys
                 }
             | _ ->
                 {
@@ -244,30 +290,38 @@ module ClosingHelpers =
             (commitmentNumber: CommitmentNumber)
             (staticChannelConfig: StaticChannelConfig)
             (remotePerCommitmentSecret: Choice<PerCommitmentSecret, PerCommitmentSecretStore>)
-            (localChannelPrivKeys: ChannelPrivKeys): Result<TransactionBuilder, OutputClaimError>
-            =
+            (localChannelPrivKeys: ChannelPrivKeys)
+            : Result<TransactionBuilder, OutputClaimError> =
             result {
-                let localChannelPubKeys = localChannelPrivKeys.ToChannelPubKeys()
-                let remoteChannelPubKeys = staticChannelConfig.RemoteChannelPubKeys
+                let localChannelPubKeys =
+                    localChannelPrivKeys.ToChannelPubKeys()
+
+                let remoteChannelPubKeys =
+                    staticChannelConfig.RemoteChannelPubKeys
 
                 let! perCommitmentSecret =
                     match remotePerCommitmentSecret with
-                    | Choice1Of2 remotePerCommitmentSecret -> Ok remotePerCommitmentSecret
+                    | Choice1Of2 remotePerCommitmentSecret ->
+                        Ok remotePerCommitmentSecret
                     | Choice2Of2 remotePerCommitmentSecretStore ->
                         let commitmentSecretOpt =
-                            remotePerCommitmentSecretStore.GetPerCommitmentSecret commitmentNumber
+                            remotePerCommitmentSecretStore.GetPerCommitmentSecret
+                                commitmentNumber
 
                         match commitmentSecretOpt with
                         | Some commitmentSecret -> Ok commitmentSecret
                         | None -> Error OutputClaimError.UnknownClosingTx
 
-                let perCommitmentPoint = perCommitmentSecret.PerCommitmentPoint()
+                let perCommitmentPoint =
+                    perCommitmentSecret.PerCommitmentPoint()
 
                 let localCommitmentPubKeys =
-                    perCommitmentPoint.DeriveCommitmentPubKeys localChannelPubKeys
+                    perCommitmentPoint.DeriveCommitmentPubKeys
+                        localChannelPubKeys
 
                 let remoteCommitmentPubKeys =
-                    perCommitmentPoint.DeriveCommitmentPubKeys remoteChannelPubKeys
+                    perCommitmentPoint.DeriveCommitmentPubKeys
+                        remoteChannelPubKeys
 
                 let transactionBuilder =
                     staticChannelConfig.Network.CreateTransactionBuilder()
@@ -285,45 +339,60 @@ module ClosingHelpers =
                         staticChannelConfig.LocalParams.ToSelfDelay
                         remoteCommitmentPubKeys.DelayedPaymentPubKey
 
-                let toLocalWitScriptPubKey = toLocalScriptPubKey.WitHash.ScriptPubKey
+                let toLocalWitScriptPubKey =
+                    toLocalScriptPubKey.WitHash.ScriptPubKey
 
                 let toRemoteIndexOpt =
                     closingTx.Outputs
-                    |> Seq.tryFindIndex (fun out -> out.ScriptPubKey = toRemoteScriptPubKey)
+                    |> Seq.tryFindIndex(fun out ->
+                        out.ScriptPubKey = toRemoteScriptPubKey
+                    )
 
                 toRemoteIndexOpt
-                |> Option.iter
-                    (
-                        fun toRemoteIndex ->
-                            let localPaymentPrivKey =
-                                perCommitmentPoint.DerivePaymentPrivKey
-                                    localChannelPrivKeys.PaymentBasepointSecret
+                |> Option.iter(fun toRemoteIndex ->
+                    let localPaymentPrivKey =
+                        perCommitmentPoint.DerivePaymentPrivKey
+                            localChannelPrivKeys.PaymentBasepointSecret
 
-                            transactionBuilder.SetVersion TxVersionNumberOfCommitmentTxs
-                            |> ignore<TransactionBuilder>
+                    transactionBuilder.SetVersion TxVersionNumberOfCommitmentTxs
+                    |> ignore<TransactionBuilder>
 
-                            transactionBuilder.AddKeys(localPaymentPrivKey.RawKey())
-                            |> ignore<TransactionBuilder>
+                    transactionBuilder.AddKeys(localPaymentPrivKey.RawKey())
+                    |> ignore<TransactionBuilder>
 
-                            transactionBuilder.AddCoin(Coin(closingTx, toRemoteIndex |> uint32)) |> ignore
+                    transactionBuilder.AddCoin(
+                        Coin(closingTx, toRemoteIndex |> uint32)
                     )
+                    |> ignore
+                )
 
                 let toLocalIndexOpt =
                     closingTx.Outputs
-                    |> Seq.tryFindIndex (fun out -> out.ScriptPubKey = toLocalWitScriptPubKey)
+                    |> Seq.tryFindIndex(fun out ->
+                        out.ScriptPubKey = toLocalWitScriptPubKey
+                    )
 
                 toLocalIndexOpt
-                |> Option.iter
-                    (fun toLocalIndex ->
-                        let revocationPrivKey =
-                            perCommitmentSecret.DeriveRevocationPrivKey localChannelPrivKeys.RevocationBasepointSecret
+                |> Option.iter(fun toLocalIndex ->
+                    let revocationPrivKey =
+                        perCommitmentSecret.DeriveRevocationPrivKey
+                            localChannelPrivKeys.RevocationBasepointSecret
 
-                        transactionBuilder.Extensions.Add(CommitmentToLocalExtension())
+                    transactionBuilder.Extensions.Add(
+                        CommitmentToLocalExtension()
+                    )
 
-                        transactionBuilder
-                            .AddKeys(revocationPrivKey.RawKey())
-                            .AddCoin(ScriptCoin(closingTx, toLocalIndex |> uint32, toLocalScriptPubKey))
-                        |> ignore)
+                    transactionBuilder
+                        .AddKeys(revocationPrivKey.RawKey())
+                        .AddCoin(
+                            ScriptCoin(
+                                closingTx,
+                                toLocalIndex |> uint32,
+                                toLocalScriptPubKey
+                            )
+                        )
+                    |> ignore
+                )
 
                 // We should've retuned BalanceBelowDustLimit here
                 // but because it's possible for old local commitment TXs to
@@ -352,7 +421,8 @@ module ClosingHelpers =
                 remotePerCommitmentSecret.PerCommitmentPoint()
 
             let localCommitmentPubKeys =
-                remotePerCommitmentPoint.DeriveCommitmentPubKeys localChannelPubKeys
+                remotePerCommitmentPoint.DeriveCommitmentPubKeys
+                    localChannelPubKeys
 
             let remoteCommitmentPubKeys =
                 remotePerCommitmentPoint.DeriveCommitmentPubKeys
@@ -433,9 +503,12 @@ module ClosingHelpers =
         (savedChannelState: SavedChannelState)
         (remoteNextCommitInfoOpt: Option<RemoteNextCommitInfo>)
         (channelPrivKeys: ChannelPrivKeys)
-        (closingTx: Transaction) : ClosingResult =
+        (closingTx: Transaction)
+        : ClosingResult =
         let closingTxId = closingTx.GetTxId()
-        if closingTxId = savedChannelState.LocalCommit.PublishableTxs.CommitTx.Value.GetTxId() then
+
+        if closingTxId = savedChannelState.LocalCommit.PublishableTxs.CommitTx.Value.GetTxId
+                             () then
             LocalClose.ClaimCommitTxOutputs
                 closingTx
                 savedChannelState.StaticChannelConfig
@@ -448,7 +521,9 @@ module ClosingHelpers =
                 savedChannelState.RemoteCommit
         else
             match remoteNextCommitInfoOpt with
-            | Some (Waiting remoteNextCommit) when closingTxId = remoteNextCommit.TxId ->
+            | Some(Waiting remoteNextCommit) when
+                closingTxId = remoteNextCommit.TxId
+                ->
                 RemoteClose.ClaimCommitTxOutputs
                     closingTx
                     savedChannelState.StaticChannelConfig
