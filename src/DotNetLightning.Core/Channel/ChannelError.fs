@@ -167,9 +167,10 @@ type ChannelError =
                 "commitment fee=%A; fee remote proposed=%A;"
                 baseFee
                 proposedFee
-        | RemoteProposedFeeOutOfNegotiatedRange(ourPreviousFee,
-                                                theirPreviousFee,
-                                                theirNextFee) ->
+        | RemoteProposedFeeOutOfNegotiatedRange
+            (
+                ourPreviousFee, theirPreviousFee, theirNextFee
+            ) ->
             "remote proposed a closing fee which was not strictly between the previous fee that \
             we proposed and the previous fee that they proposed. "
             + sprintf

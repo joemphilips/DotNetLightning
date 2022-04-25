@@ -163,7 +163,8 @@ type internal CommitmentToLocalExtension() =
         let scriptPubKey = inputSigningContext.Coin.GetScriptCode()
 
         let parameters =
-            match (CommitmentToLocalParameters.TryExtractParameters scriptPubKey)
+            match
+                (CommitmentToLocalParameters.TryExtractParameters scriptPubKey)
                 with
             | Some parameters -> parameters
             | None ->

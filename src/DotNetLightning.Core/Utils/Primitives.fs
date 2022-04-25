@@ -547,9 +547,10 @@ module Primitives =
             if (items.Length <> 3) then
                 err
             else
-                match (items.[0] |> UInt32.TryParse),
-                      (items.[1] |> UInt32.TryParse),
-                      (items.[2] |> UInt16.TryParse)
+                match
+                    (items.[0] |> UInt32.TryParse),
+                    (items.[1] |> UInt32.TryParse),
+                    (items.[2] |> UInt16.TryParse)
                     with
                 | (true, h), (true, blockI), (true, outputI) ->
                     {

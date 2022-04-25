@@ -179,8 +179,9 @@ module Sodium =
                 let pk1 = this.NormalizePubKey(Span<byte>.op_Implicit (pk1))
                 let pk2 = this.NormalizePubKey(Span<byte>.op_Implicit (pk2))
 
-                match ECPubKey.TryCreateRawFormat(pk1, context),
-                      ECPubKey.TryCreateRawFormat(pk2, context)
+                match
+                    ECPubKey.TryCreateRawFormat(pk1, context),
+                    ECPubKey.TryCreateRawFormat(pk2, context)
                     with
                 | (true, pk1), (true, pk2) ->
                     match

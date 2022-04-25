@@ -1450,11 +1450,15 @@ and Channel =
         : Result<Channel * ClosingSignedResponse, ChannelError> =
         result {
             let! localShutdownScriptPubKey, remoteShutdownScriptPubKey =
-                match (this.NegotiatingState.LocalRequestedShutdown,
-                       this.NegotiatingState.RemoteRequestedShutdown)
+                match
+                    (this.NegotiatingState.LocalRequestedShutdown,
+                     this.NegotiatingState.RemoteRequestedShutdown)
                     with
-                | (Some localShutdownScriptPubKey,
-                   Some remoteShutdownScriptPubKey) ->
+                |
+                    (
+                        Some localShutdownScriptPubKey,
+                        Some remoteShutdownScriptPubKey
+                    ) ->
                     Ok(localShutdownScriptPubKey, remoteShutdownScriptPubKey)
                 // FIXME: these should be new channel errors
                 | (Some _, None) ->
