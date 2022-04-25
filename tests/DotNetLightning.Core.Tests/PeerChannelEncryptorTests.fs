@@ -1,9 +1,10 @@
 module PeerChannelEncryptorTests
 
+open System
+
 open Expecto
 open Expecto.Logging
 open NBitcoin
-open DotNetLightning.Utils.Aether
 open DotNetLightning.Utils
 open DotNetLightning.Peer
 
@@ -20,8 +21,16 @@ let getOutBoundPeerForInitiatorTestVectors () =
         let ie = (new Key(hex.DecodeData("1212121212121212121212121212121212121212121212121212121212121212")))
         PeerChannelEncryptor.newOutBound(NodeId theirNodeId, ie)
         |> fun c ->
-                Expect.equal (Optic.get (PeerChannelEncryptor.OutBoundIE_) c) (Some(ie)) ""
-                c
+            let expectedIE =
+                match c.NoiseState with
+                | InProgress inProgressNoiseState ->
+                    match inProgressNoiseState.DirectionalState with
+                    | OutBound outbound ->
+                        Some outbound.IE
+                    | _ -> None
+                | _ -> None
+            Expect.equal expectedIE (Some ie) String.Empty
+            c
 
     let actual, result = outboundPeer |> PeerChannelEncryptor.getActOne
     let expected = hex.DecodeData("00036360e856310ce5d294e8be33fc807077dc56ac80d95d9cd4ddbd21325eff73f70df6086551151f58b8afe6c195782c6a")

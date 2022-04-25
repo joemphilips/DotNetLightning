@@ -41,7 +41,6 @@
     <Compile Include="Utils/Primitives.fs" />
     <Compile Include="Utils/Keys.fs" />
     <Compile Include="Utils/Utils.fs" />
-    <Compile Include="Utils/Aether.fs" />
     <Compile Include="Utils/Config.fs" />
     <Compile Include="Utils/Errors.fs" />
     <Compile Include="Utils/RouteType.fs" />

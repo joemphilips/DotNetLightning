@@ -3,7 +3,6 @@ namespace DotNetLightning.Transactions
 open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils
-open DotNetLightning.Utils.Aether
 
 open ResultUtils
 open ResultUtils.Portability
@@ -24,15 +23,6 @@ type CommitmentSpec = {
                 ToLocal = toLocal
                 ToRemote = toRemote
             }
-        static member internal  FeeRatePerKW_: Lens<_, _> =
-            (fun cs -> cs.FeeRatePerKw),
-            (fun v cs -> { cs with FeeRatePerKw = v })
-        static member internal ToLocal_ : Lens<_,_> =
-            (fun cs -> cs.ToLocal),
-            (fun v cs -> { cs with ToLocal = v })
-        static member internal ToRemote_: Lens<_, _> =
-            (fun cs -> cs.ToRemote),
-            (fun v cs -> { cs with ToRemote = v })
 
         member internal this.AddOutgoingHTLC(update: UpdateAddHTLCMsg) =
             { this with ToLocal = (this.ToLocal - update.Amount); OutgoingHTLCs = this.OutgoingHTLCs.Add(update.HTLCId, update)}

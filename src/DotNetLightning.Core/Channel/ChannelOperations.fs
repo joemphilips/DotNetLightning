@@ -11,7 +11,6 @@ open DotNetLightning.Transactions
 open DotNetLightning.Serialization
 
 open NBitcoin
-open Aether
 
 open ResultUtils
 open ResultUtils.Portability
@@ -133,9 +132,3 @@ type ChannelOptions = {
     MaxClosingNegotiationIterations: int32
     FeeEstimator: IFeeEstimator
  }
-    with
-
-    static member FeeProportionalMillionths_: Lens<_, _> =
-        (fun cc -> cc.FeeProportionalMillionths),
-        (fun v cc -> { cc with FeeProportionalMillionths = v })
-        

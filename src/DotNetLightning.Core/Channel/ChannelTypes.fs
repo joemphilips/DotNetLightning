@@ -2,7 +2,6 @@ namespace DotNetLightning.Channel
 
 open DotNetLightning.Chain
 open DotNetLightning.Utils
-open DotNetLightning.Utils.Aether
 open DotNetLightning.Serialization.Msgs
 open DotNetLightning.Transactions
 open DotNetLightning.Crypto

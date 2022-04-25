@@ -6,7 +6,6 @@ open DotNetLightning.Serialization
 open System.Collections
 open DotNetLightning.Utils
 open DotNetLightning.Serialization.Msgs
-open DotNetLightning.Utils.Aether
 
 open ResultUtils
 open ResultUtils.Portability
@@ -61,10 +60,6 @@ type Peer = {
             | NoSyncRequested -> true
             | ChannelsSyncing i -> i < channelId
             | NodeSyncing _ -> true
-            
-        static member ChannelEncryptor_: Lens<_,_> =
-            (fun p -> p.ChannelEncryptor),
-            (fun pce p -> { p with ChannelEncryptor = pce })
             
 module Peer =
     let executeCommand (state: Peer) (cmd: PeerCommand) =

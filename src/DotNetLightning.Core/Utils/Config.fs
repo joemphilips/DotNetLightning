@@ -1,7 +1,6 @@
 namespace DotNetLightning.Utils
 open System
 open NBitcoin
-open Aether
 
 /// Optional Channel limits which are applied during channel creation.
 /// These limits are only applied to our counterparty's limits, not our own
