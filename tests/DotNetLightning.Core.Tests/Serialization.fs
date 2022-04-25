@@ -781,12 +781,16 @@ module SerializationTest =
                 Expect.equal ba.Get finalArray "BitArray.ToByteArray does not invert and trim BitArray.FromBytes"
 
             testCase "FeatureBits to/from byte array preserves byte order, bit order and trims zero bytes" <| fun _ ->
-                let features = FeatureBits.Zero
-                features.ByteArray <- [| 0b00000000uy; 0b00100000uy; 0b10000010uy |]
-                Expect.equal
-                    features.ByteArray
-                    [| 0b00100000uy; 0b10000010uy |]
-                    "unexpected ByteArray value"
+                let featuresOpt =
+                    FeatureBits.TryCreate [| 0b00000000uy; 0b00100000uy; 0b10000010uy |]
+
+                match featuresOpt with
+                | Error _err -> failwith "Should have been able to create features"
+                | Ok features ->
+                    Expect.equal
+                        features.ByteArray
+                        [| 0b00100000uy; 0b10000010uy |]
+                        "unexpected ByteArray value"
 
             testCase "features dependencies" <| fun _ ->
                 let testCases =

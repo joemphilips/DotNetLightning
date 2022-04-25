@@ -419,24 +419,13 @@ type InitMsg =
                 // distinction between global and local features, of which
                 // VariableLengthOnion was the only global feature. Although
                 // this distinction has since been removed, older clients still
-                // expect VariableLengthOnion to appear only in the
-                // global_features field of an init message and other features
-                // to appear only in the local_features field. This is still
-                // compatible with newer clients since those clients simply OR
-                // the two feature fields.
+                // expect VariableLengthOnion to appear in the global_features
+                // field of an init message and other features to appear only
+                // in the local_features field. This is still compatible with
+                // newer clients since those clients simply OR the two feature fields.
                 let localFeatures =
-                    let localFeatures = this.Features
-                    localFeatures.SetFeature
-                        Feature.VariableLengthOnion
-                        FeaturesSupport.Mandatory
-                        false
-                    localFeatures.SetFeature
-                        Feature.VariableLengthOnion
-                        FeaturesSupport.Optional
-                        false
-                    localFeatures.ToByteArray()
+                    this.Features.ToByteArray()
                 let globalFeatures =
-                    let globalFeatures = FeatureBits.Zero
                     let mandatory =
                         this.Features.HasFeature(
                             Feature.VariableLengthOnion,
@@ -447,16 +436,21 @@ type InitMsg =
                             Feature.VariableLengthOnion,
                             FeaturesSupport.Optional
                         )
-                    if mandatory then
-                        globalFeatures.SetFeature
-                            Feature.VariableLengthOnion
-                            FeaturesSupport.Mandatory
-                            true
-                    if optional then
-                        globalFeatures.SetFeature
-                            Feature.VariableLengthOnion
-                            FeaturesSupport.Optional
-                            true
+
+                    let globalFeatures =
+                        let zero = FeatureBits.Zero
+                        if mandatory then
+                            zero.SetFeature
+                                Feature.VariableLengthOnion
+                                FeaturesSupport.Mandatory
+                                true
+                        elif optional then
+                            zero.SetFeature
+                                Feature.VariableLengthOnion
+                                FeaturesSupport.Optional
+                                true
+                        else
+                            zero
                     globalFeatures.ToByteArray()
                 ls.WriteWithLen(globalFeatures)
                 ls.WriteWithLen(localFeatures)
