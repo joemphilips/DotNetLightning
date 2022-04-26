@@ -49,7 +49,6 @@ jobs:
         msbuild src/DotNetLightning.Core/DotNetLightning.Core.fsproj -p:Portability=True -p:TargetFramework=netstandard2.0
 
   style:
-    needs: build_and_test
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
