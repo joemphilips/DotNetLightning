@@ -27,6 +27,10 @@ jobs:
         dotnet build tests/DotNetLightning.Core.Tests -p:Portability=True --framework=${{ matrix.framework }}
         dotnet run --no-build --project tests/DotNetLightning.Core.Tests --framework=${{ matrix.framework }}
 
+    - name: Build/pack in release mode
+      run: |
+        dotnet pack -p:Configuration=Release src/DotNetLightning.Core -p:Portability=True
+
     - name: Clean to prepare for NSec build
       run: |
         dotnet clean
