@@ -619,18 +619,13 @@ module Primitives =
             (scriptPubKey: Script)
             : Result<ShutdownScriptPubKey, string> =
             let isValidFinalScriptPubKey =
-                (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(
-                    scriptPubKey
-                ))
-                || (PayToScriptHashTemplate.Instance.CheckScriptPubKey(
-                    scriptPubKey
-                ))
-                || (PayToWitPubKeyHashTemplate.Instance.CheckScriptPubKey(
-                    scriptPubKey
-                ))
-                || (PayToWitScriptHashTemplate.Instance.CheckScriptPubKey(
-                    scriptPubKey
-                ))
+                (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey scriptPubKey)
+                || (PayToScriptHashTemplate.Instance.CheckScriptPubKey
+                        scriptPubKey)
+                || (PayToWitPubKeyHashTemplate.Instance.CheckScriptPubKey
+                        scriptPubKey)
+                || (PayToWitScriptHashTemplate.Instance.CheckScriptPubKey
+                        scriptPubKey)
 
             if isValidFinalScriptPubKey then
                 Ok
