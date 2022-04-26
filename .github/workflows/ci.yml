@@ -24,8 +24,8 @@ jobs:
       # we want to run only once.
       if: startsWith(matrix.os, 'ubuntu-20')
       run: |
-        dotnet build tests/DotNetLightning.Core.Tests -p:Portability=True --framework=${{ matrix.framework }}
-        dotnet run --no-build --project tests/DotNetLightning.Core.Tests --framework=${{ matrix.framework }}
+        dotnet build -c Release tests/DotNetLightning.Core.Tests -p:Portability=True --framework=${{ matrix.framework }}
+        dotnet run -c Release --no-build --project tests/DotNetLightning.Core.Tests --framework=${{ matrix.framework }}
 
     - name: Clean to prepare for NSec build
       run: |
@@ -35,7 +35,7 @@ jobs:
         dotnet run --project tests/DotNetLightning.Core.Tests --framework=${{ matrix.framework }}
     - name: Run other tests
       run: |
-        dotnet test --filter "FullyQualifiedName!~Macaroon" --framework=${{ matrix.framework }} # see https://github.com/joemphilips/DotNetLightning/issues/153
+        dotnet test -c Release --filter "FullyQualifiedName!~Macaroon" --framework=${{ matrix.framework }} # see https://github.com/joemphilips/DotNetLightning/issues/153
 
   build_with_fsharp_from_mono:
     runs-on: ubuntu-20.04
