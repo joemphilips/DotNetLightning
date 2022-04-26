@@ -60,23 +60,30 @@ type LNMoney =
             LNMoneyUnit.MilliSatoshi
         )
 
+    static member MilliSatoshis(sats: int64) =
+        LNMoney sats
+
+    static member MilliSatoshis(sats: uint64) =
+        LNMoney(Checked.int64 sats)
+
+    static member MilliSatoshis(sats: int) =
+        LNMoney(Checked.int64 sats)
+
+    static member MilliSatoshis(sats: uint32) =
+        LNMoney(Checked.int64 sats)
+
     static member Satoshis(sats: int64) =
         LNMoney.MilliSatoshis(Checked.op_Multiply 1000L sats)
-
-    static member inline Satoshis sats =
-        LNMoney.Satoshis(int64 sats)
 
     static member Satoshis(sats: uint64) =
         LNMoney.MilliSatoshis(Checked.op_Multiply 1000UL sats)
 
-    static member MilliSatoshis(sats: int64) =
-        LNMoney(sats)
+    static member Satoshis(sats: int) =
+        LNMoney.Satoshis(Checked.int64 sats)
 
-    static member inline MilliSatoshis sats =
-        LNMoney(int64 sats)
+    static member Satoshis(sats: uint32) =
+        LNMoney.Satoshis(Checked.int64 sats)
 
-    static member MilliSatoshis(sats: uint64) =
-        LNMoney(Checked.int64 sats)
 
     static member Zero = LNMoney(0L)
     static member One = LNMoney(1L)
