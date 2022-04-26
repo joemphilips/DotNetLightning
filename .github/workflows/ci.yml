@@ -48,3 +48,20 @@ jobs:
         dotnet restore -p:Portability=True DotNetLightning.sln
         msbuild src/DotNetLightning.Core/DotNetLightning.Core.fsproj -p:Portability=True -p:TargetFramework=netstandard2.0
 
+  style:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Setup .NET Core SDK 5.0.x
+        uses: actions/setup-dotnet@v1.7.2
+        with:
+          dotnet-version: '5.0.x'
+      - name: fantomless
+        run: |
+          dotnet tool update --global fantomless-tool --version 4.7.997
+          # path taken from https://stackoverflow.com/a/65367006/544947
+          $HOME/.dotnet/tools/fantomless . --recurse
+          git diff --exit-code
+

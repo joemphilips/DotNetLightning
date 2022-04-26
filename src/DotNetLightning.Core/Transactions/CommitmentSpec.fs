@@ -7,115 +7,145 @@ open DotNetLightning.Utils
 open ResultUtils
 open ResultUtils.Portability
 
-type CommitmentSpec = {
-    OutgoingHTLCs: Map<HTLCId, UpdateAddHTLCMsg>
-    IncomingHTLCs: Map<HTLCId, UpdateAddHTLCMsg>
-    FeeRatePerKw: FeeRatePerKw
-    ToLocal: LNMoney
-    ToRemote: LNMoney
-}
-    with
-        static member Create (toLocal) (toRemote) (feeRate) =
-            {
-                OutgoingHTLCs = Map.empty
-                IncomingHTLCs = Map.empty
-                FeeRatePerKw = feeRate
-                ToLocal = toLocal
-                ToRemote = toRemote
+type CommitmentSpec =
+    {
+        OutgoingHTLCs: Map<HTLCId, UpdateAddHTLCMsg>
+        IncomingHTLCs: Map<HTLCId, UpdateAddHTLCMsg>
+        FeeRatePerKw: FeeRatePerKw
+        ToLocal: LNMoney
+        ToRemote: LNMoney
+    }
+
+    static member Create toLocal toRemote feeRate =
+        {
+            OutgoingHTLCs = Map.empty
+            IncomingHTLCs = Map.empty
+            FeeRatePerKw = feeRate
+            ToLocal = toLocal
+            ToRemote = toRemote
+        }
+
+    member internal this.AddOutgoingHTLC(update: UpdateAddHTLCMsg) =
+        { this with
+            ToLocal = (this.ToLocal - update.Amount)
+            OutgoingHTLCs = this.OutgoingHTLCs.Add(update.HTLCId, update)
+        }
+
+    member internal this.AddIncomingHTLC(update: UpdateAddHTLCMsg) =
+        { this with
+            ToRemote = this.ToRemote - update.Amount
+            IncomingHTLCs = this.IncomingHTLCs.Add(update.HTLCId, update)
+        }
+
+    member internal this.FulfillOutgoingHTLC(htlcId: HTLCId) =
+        match this.IncomingHTLCs |> Map.tryFind htlcId with
+        | Some htlc ->
+            { this with
+                ToLocal = this.ToLocal + htlc.Amount
+                IncomingHTLCs = this.IncomingHTLCs.Remove htlcId
             }
+            |> Ok
+        | None -> UnknownHTLC htlcId |> Error
 
-        member internal this.AddOutgoingHTLC(update: UpdateAddHTLCMsg) =
-            { this with ToLocal = (this.ToLocal - update.Amount); OutgoingHTLCs = this.OutgoingHTLCs.Add(update.HTLCId, update)}
+    member internal this.FulfillIncomingHTLC(htlcId: HTLCId) =
+        match this.OutgoingHTLCs |> Map.tryFind htlcId with
+        | Some htlc ->
+            { this with
+                ToRemote = this.ToRemote + htlc.Amount
+                OutgoingHTLCs = this.OutgoingHTLCs.Remove htlcId
+            }
+            |> Ok
+        | None -> UnknownHTLC htlcId |> Error
 
-        member internal this.AddIncomingHTLC(update: UpdateAddHTLCMsg) =
-            { this with ToRemote = this.ToRemote - update.Amount; IncomingHTLCs = this.IncomingHTLCs.Add(update.HTLCId, update)}
+    member internal this.FailOutgoingHTLC(htlcId: HTLCId) =
+        match this.OutgoingHTLCs |> Map.tryFind htlcId with
+        | Some htlc ->
+            { this with
+                ToRemote = this.ToRemote + htlc.Amount
+                OutgoingHTLCs = this.OutgoingHTLCs.Remove htlcId
+            }
+            |> Ok
+        | None -> UnknownHTLC htlcId |> Error
 
-        member internal this.FulfillOutgoingHTLC(htlcId: HTLCId) =
-            match this.IncomingHTLCs |> Map.tryFind htlcId with
-            | Some htlc ->
-                { this with ToLocal = this.ToLocal + htlc.Amount; IncomingHTLCs = this.IncomingHTLCs.Remove htlcId }
-                |> Ok
-            | None ->
-                UnknownHTLC htlcId |> Error
+    member internal this.FailIncomingHTLC(htlcId: HTLCId) =
+        match this.IncomingHTLCs |> Map.tryFind htlcId with
+        | Some htlc ->
+            { this with
+                ToLocal = this.ToLocal + htlc.Amount
+                IncomingHTLCs = this.IncomingHTLCs.Remove htlcId
+            }
+            |> Ok
+        | None -> UnknownHTLC htlcId |> Error
 
-        member internal this.FulfillIncomingHTLC(htlcId: HTLCId) =
-            match this.OutgoingHTLCs |> Map.tryFind htlcId with
-            | Some htlc ->
-                { this with ToRemote = this.ToRemote + htlc.Amount; OutgoingHTLCs = this.OutgoingHTLCs.Remove htlcId }
-                |> Ok
-            | None ->
-                UnknownHTLC htlcId |> Error
+    member internal this.Reduce
+        (
+            localChanges: list<#IUpdateMsg>,
+            remoteChanges: list<#IUpdateMsg>
+        ) =
+        let spec1 =
+            localChanges
+            |> List.fold
+                (fun (acc: CommitmentSpec) updateMsg ->
+                    match box updateMsg with
+                    | :? UpdateAddHTLCMsg as u -> acc.AddOutgoingHTLC u
+                    | _ -> acc
+                )
+                this
 
-        member internal this.FailOutgoingHTLC(htlcId: HTLCId) =
-            match this.OutgoingHTLCs |> Map.tryFind htlcId with
-            | Some htlc ->
-                { this with ToRemote = this.ToRemote + htlc.Amount; OutgoingHTLCs = this.OutgoingHTLCs.Remove htlcId }
-                |> Ok
-            | None ->
-                UnknownHTLC htlcId |> Error
+        let spec2 =
+            remoteChanges
+            |> List.fold
+                (fun (acc: CommitmentSpec) updateMsg ->
+                    match box updateMsg with
+                    | :? UpdateAddHTLCMsg as u -> acc.AddIncomingHTLC u
+                    | _ -> acc
+                )
+                spec1
 
-        member internal this.FailIncomingHTLC(htlcId: HTLCId) =
-            match this.IncomingHTLCs |> Map.tryFind htlcId with
-            | Some htlc ->
-                { this with ToLocal = this.ToLocal + htlc.Amount; IncomingHTLCs = this.IncomingHTLCs.Remove htlcId }
-                |> Ok
-            | None ->
-                UnknownHTLC htlcId |> Error
+        let spec3RR =
+            localChanges
+            |> List.fold
+                (fun (acc: Result<CommitmentSpec, TransactionError>) updateMsg ->
+                    match box updateMsg with
+                    | :? UpdateFulfillHTLCMsg as u ->
+                        acc >>= fun a -> a.FulfillOutgoingHTLC u.HTLCId
+                    | :? UpdateFailHTLCMsg as u ->
+                        acc >>= fun a -> a.FailOutgoingHTLC u.HTLCId
+                    | :? UpdateFailMalformedHTLCMsg as u ->
+                        acc >>= fun a -> a.FailOutgoingHTLC u.HTLCId
+                    | _ -> acc
+                )
+                (Ok spec2)
 
-        member internal this.Reduce(localChanges: #IUpdateMsg list, remoteChanges: #IUpdateMsg list) =
-            let spec1 =
-                localChanges
-                |> List.fold(fun (acc: CommitmentSpec) updateMsg ->
-                        match box updateMsg with
-                        | :? UpdateAddHTLCMsg as u -> acc.AddOutgoingHTLC u
-                        | _ -> acc
-                    )
-                    this
+        let spec4RR =
+            remoteChanges
+            |> List.fold
+                (fun (acc: Result<CommitmentSpec, TransactionError>) updateMsg ->
+                    match box updateMsg with
+                    | :? UpdateFulfillHTLCMsg as u ->
+                        acc >>= fun a -> a.FulfillIncomingHTLC u.HTLCId
+                    | :? UpdateFailHTLCMsg as u ->
+                        acc >>= fun a -> a.FailIncomingHTLC u.HTLCId
+                    | :? UpdateFailMalformedHTLCMsg as u ->
+                        acc >>= fun a -> a.FailIncomingHTLC u.HTLCId
+                    | _ -> acc
+                )
+                spec3RR
 
-            let spec2 =
-                remoteChanges
-                |> List.fold(fun (acc: CommitmentSpec) updateMsg ->
-                        match box updateMsg with
-                        | :? UpdateAddHTLCMsg as u -> acc.AddIncomingHTLC u
-                        | _ -> acc
-                    )
-                    spec1
-
-            let spec3RR =
-                localChanges
-                |> List.fold(fun (acc: Result<CommitmentSpec, TransactionError>) updateMsg ->
-                            match box updateMsg with
-                            | :? UpdateFulfillHTLCMsg as u ->
-                                acc >>= fun a -> a.FulfillOutgoingHTLC u.HTLCId
-                            | :? UpdateFailHTLCMsg as u ->
-                                acc >>= fun a -> a.FailOutgoingHTLC u.HTLCId
-                            | :? UpdateFailMalformedHTLCMsg as u ->
-                                acc >>= fun a -> a.FailOutgoingHTLC u.HTLCId
-                            | _ -> acc
+        let spec5 =
+            (localChanges @ remoteChanges)
+            |> List.fold
+                (fun acc updateMsg ->
+                    match box updateMsg with
+                    | :? UpdateFeeMsg as u ->
+                        (fun a ->
+                            { a with
+                                CommitmentSpec.FeeRatePerKw = u.FeeRatePerKw
+                            }
                         )
-                    (Ok spec2)
+                        <!> acc
+                    | _ -> acc
+                )
+                spec4RR
 
-            let spec4RR =
-                remoteChanges
-                |> List.fold(fun (acc: Result<CommitmentSpec, TransactionError>) updateMsg ->
-                            match box updateMsg with
-                            | :? UpdateFulfillHTLCMsg as u ->
-                                acc >>= fun a -> a.FulfillIncomingHTLC u.HTLCId
-                            | :? UpdateFailHTLCMsg as u ->
-                                acc >>= fun a -> a.FailIncomingHTLC u.HTLCId
-                            | :? UpdateFailMalformedHTLCMsg as u ->
-                                acc >>= fun a -> a.FailIncomingHTLC u.HTLCId
-                            | _ -> acc
-                    )
-                    spec3RR
-
-            let spec5 = 
-                (localChanges @ remoteChanges)
-                |> List.fold(fun (acc) updateMsg ->
-                        match box updateMsg with
-                        | :? UpdateFeeMsg as u ->
-                            (fun a -> { a with CommitmentSpec.FeeRatePerKw = u.FeeRatePerKw }) <!> acc
-                        | _ -> acc
-                    )
-                    spec4RR
-            spec5
+        spec5

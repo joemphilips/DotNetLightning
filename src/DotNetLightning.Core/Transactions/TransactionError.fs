@@ -10,17 +10,17 @@ type TransactionError =
     | AmountBelowDustLimit of amount: Money
     /// We tried to close the channel, but there are remaining HTLC we must do something
     /// before closing it
-    | HTLCNotClean of remainingHTLCs: HTLCId list
-    
+    | HTLCNotClean of remainingHTLCs: list<HTLCId>
+
     member this.Message =
         match this with
-        | UnknownHTLC htlcId ->
-            sprintf "Unknown htlc id (%i)" htlcId.Value
+        | UnknownHTLC htlcId -> sprintf "Unknown htlc id (%i)" htlcId.Value
         | FailedToFinalizeScript errorMsg ->
             sprintf "Failed to finalize script: %s" errorMsg
-        | InvalidSignature _ ->
-            "Invalid signature"
+        | InvalidSignature _ -> "Invalid signature"
         | AmountBelowDustLimit amount ->
             sprintf "Amount (%s) is below dust limit" (amount.ToString())
         | HTLCNotClean remainingHTLCs ->
-            sprintf "Attempted to close channel with %i remaining htlcs" remainingHTLCs.Length
+            sprintf
+                "Attempted to close channel with %i remaining htlcs"
+                remainingHTLCs.Length

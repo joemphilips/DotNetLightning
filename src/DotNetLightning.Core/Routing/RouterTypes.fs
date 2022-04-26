@@ -16,7 +16,7 @@ type NetworkEvent =
     | NodeDiscovered of msg: NodeAnnouncementMsg
     | NodeUpdated of msg: NodeAnnouncementMsg
     | NodeLost of nodeId: NodeId
-    | ChannelDiscovered of msg: ChannelAnnouncementMsg * capacity : Money
+    | ChannelDiscovered of msg: ChannelAnnouncementMsg * capacity: Money
     | ChannelUpdateReceived of msg: ChannelUpdateMsg
     // when funding tx on the blockchain has been spent, we must consider that the channel is closed in a graph view
     | FundingTxSpent of ShortChannelId
@@ -27,13 +27,14 @@ type NetworkCommand =
     /// channel to recover (note that exclusions are directed)
     | ExcludeChannel of desc: ChannelDesc
     | CalculateRoute of RouteRequest
-    
-type RouterError =
-    | RouteFindingError of string
+
+type RouterError = RouteFindingError of string
+
 [<AutoOpen>]
 module internal RouterError =
-    let routeFindingError msg = RouteFindingError msg |> Error
+    let routeFindingError msg =
+        RouteFindingError msg |> Error
+
 type RouterCommand =
     | NetworkEvent of NetworkEvent
     | NetworkCommand of NetworkCommand
-    

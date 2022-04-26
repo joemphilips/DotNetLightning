@@ -3,6 +3,4 @@ module FunctionalTests
 open Expecto
 
 [<Tests>]
-let tests =
-    testList "test from rust-lightning" [
-    ]
+let tests = testList "test from rust-lightning" []

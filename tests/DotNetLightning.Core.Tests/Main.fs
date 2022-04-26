@@ -1,4 +1,5 @@
 ﻿module ExpectoTemplate
+
 open Expecto
 
 [<EntryPoint>]

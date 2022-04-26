@@ -9,9 +9,9 @@ open DotNetLightning.Serialization.Msgs
 /// TODO: fix
 type PeerError =
     | CryptoError of CryptoError
-    
+
     | P2PMessageDecodeError of P2PDecodeError
-    
+
     // ---- handshake logic errors ----
     | UnknownHandshakeVersionNumber of uint8
 
@@ -22,5 +22,6 @@ type PeerError =
         | P2PMessageDecodeError p2pDecodeError ->
             sprintf "deserialization error: %s" p2pDecodeError.Message
         | UnknownHandshakeVersionNumber version ->
-            sprintf "unknown handshake version number. expected 0, got %i." version
-
+            sprintf
+                "unknown handshake version number. expected 0, got %i."
+                version

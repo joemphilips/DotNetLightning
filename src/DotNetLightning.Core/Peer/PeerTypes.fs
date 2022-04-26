@@ -6,10 +6,10 @@ open NBitcoin
 
 type PeerEvent =
     // --- initialization ---
-    | ActOneProcessed of actTwo: byte[] * newPCE: PeerChannelEncryptor
-    | ActTwoProcessed of (byte[] * NodeId) * newPCE: PeerChannelEncryptor
+    | ActOneProcessed of actTwo: array<byte> * newPCE: PeerChannelEncryptor
+    | ActTwoProcessed of (array<byte> * NodeId) * newPCE: PeerChannelEncryptor
     | ActThreeProcessed of theirNodeId: NodeId * newPCE: PeerChannelEncryptor
-    
+
     // --- else ---
     // --- receiving ---
     | ReceivedError of error: ErrorMsg * newPCE: PeerChannelEncryptor
@@ -18,14 +18,16 @@ type PeerEvent =
     | ReceivedInit of initMsg: InitMsg * newPCE: PeerChannelEncryptor
     | ReceivedRoutingMsg of msg: IRoutingMsg * newPCE: PeerChannelEncryptor
     | ReceivedChannelMsg of msg: IChannelMsg * newPCE: PeerChannelEncryptor
-    
+
     // --- sending ---
-    | MsgEncoded of msg: byte[] * newPCE: PeerChannelEncryptor
+    | MsgEncoded of msg: array<byte> * newPCE: PeerChannelEncryptor
     | FailedToBroadcastTransaction of tx: Transaction
 
 type PeerCommand =
-    | ProcessActOne of actOne: byte[] * ourNodeSecret: Key
-    | ProcessActTwo of actTwo: byte[] * ourNodeSecret: Key
-    | ProcessActThree of actThree: byte[]
-    | DecodeCipherPacket of lengthHeader: byte[] * reader: (int -> byte[])
+    | ProcessActOne of actOne: array<byte> * ourNodeSecret: Key
+    | ProcessActTwo of actTwo: array<byte> * ourNodeSecret: Key
+    | ProcessActThree of actThree: array<byte>
+    | DecodeCipherPacket of
+        lengthHeader: array<byte> *
+        reader: (int -> array<byte>)
     | EncodeMsg of msg: ILightningMsg

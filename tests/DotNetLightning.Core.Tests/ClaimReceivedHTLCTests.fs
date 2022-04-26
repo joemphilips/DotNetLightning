@@ -14,24 +14,32 @@ let base58 = Encoders.Base58
 let n = Network.TestNet
 
 let alice =
-    let commitKey = "cVuzKWCszfvjkoJyUasvsrRdECriz8hSd1BDinRNzytwnXmX7m1g"  |> fun d ->  Key.Parse(d, n)
-    let finalKey = "cRUfvpbRtMSqCFD1ADdvgPn5HfRLYuHCFYAr2noWnaRDNger2AoA" |> fun d -> Key.Parse(d, n)
+    let commitKey =
+        "cVuzKWCszfvjkoJyUasvsrRdECriz8hSd1BDinRNzytwnXmX7m1g"
+        |> fun d -> Key.Parse(d, n)
+
+    let finalKey =
+        "cRUfvpbRtMSqCFD1ADdvgPn5HfRLYuHCFYAr2noWnaRDNger2AoA"
+        |> fun d -> Key.Parse(d, n)
+
     let r = Hashes.SHA256("This is Alice's R" |> utf8.GetBytes)
     let revokeCommit = "Alice foo" |> utf8.GetBytes
+
     {|
-      CommitKey = commitKey
-      FinalKey = finalKey
-      CommitPubKey = commitKey.PubKey
-      finalPubKey = finalKey.PubKey
-      R = r
-      RHash = Hashes.SHA256(r)
-      RevokeCommit = revokeCommit
-      RevokeCommitHash = Hashes.SHA256(revokeCommit)
-     |}
+        CommitKey = commitKey
+        FinalKey = finalKey
+        CommitPubKey = commitKey.PubKey
+        finalPubKey = finalKey.PubKey
+        R = r
+        RHash = Hashes.SHA256(r)
+        RevokeCommit = revokeCommit
+        RevokeCommitHash = Hashes.SHA256(revokeCommit)
+    |}
 
 [<Tests>]
 let tests =
-    testList "Claim Received HTLC Tests" [
-        testCase "Should accept accept_channel" <| fun _ ->
-            ()
-    ]
+    testList
+        "Claim Received HTLC Tests"
+        [
+            testCase "Should accept accept_channel" <| fun _ -> ()
+        ]

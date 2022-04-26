@@ -3,13 +3,13 @@ module AssemblyInfo
 open System.Reflection
 open System.Runtime.CompilerServices
 
-[<assembly:AssemblyTitleAttribute("DotNetLightning")>]
-[<assembly:AssemblyProductAttribute("DotNetLightning")>]
-[<assembly:AssemblyVersionAttribute("0.1.0")>]
-[<assembly:AssemblyFileVersionAttribute("0.1.0")>]
-[<assembly:AssemblyInformationalVersionAttribute("0.1.0")>]
-[<assembly:AssemblyMetadataAttribute("ReleaseChannel", "release")>]
-[<assembly:AssemblyDescriptionAttribute("Lightning Network Daemon for DotNet")>]
+[<assembly: AssemblyTitleAttribute("DotNetLightning")>]
+[<assembly: AssemblyProductAttribute("DotNetLightning")>]
+[<assembly: AssemblyVersionAttribute("0.1.0")>]
+[<assembly: AssemblyFileVersionAttribute("0.1.0")>]
+[<assembly: AssemblyInformationalVersionAttribute("0.1.0")>]
+[<assembly: AssemblyMetadataAttribute("ReleaseChannel", "release")>]
+[<assembly: AssemblyDescriptionAttribute("Lightning Network Daemon for DotNet")>]
 [<assembly: InternalsVisibleTo("DotNetLightning.Core.Tests")>]
 [<assembly: InternalsVisibleTo("DotNetLightning.Infrastructure")>]
 [<assembly: InternalsVisibleTo("DotNetLightning.Infrastructure.Tests")>]
@@ -34,4 +34,3 @@ module internal AssemblyVersionInformation =
 
     [<Literal>]
     let AssemblyMetadata_ReleaseChannel = "release"
-
