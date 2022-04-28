@@ -21,9 +21,13 @@ jobs:
         dotnet build tests/DotNetLightning.Core.Tests -p:Portability=True
         dotnet run --no-build --project tests/DotNetLightning.Core.Tests --fail-on-focused-tests
 
-    - name: Build/pack in release mode
+    - name: Build/pack in release mode (DotNetLighting.Core)
       run: |
         dotnet pack -p:Configuration=Release src/DotNetLightning.Core -p:Portability=True
+
+    - name: Build/pack in release mode (DotNetLightning.ClnRpc)
+      run: |
+        dotnet pack -p:Configuration=Release src/DotNetLightning.ClnRpc -p:Portability=True
 
     - name: Clean to prepare for NSec build
       run: |
