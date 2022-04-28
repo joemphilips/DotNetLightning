@@ -1,12 +1,13 @@
 ## DotNetLightning: The utility to work with the Bitcoin Lightning Network (LN) in .NET
 
-The main API is in `DotNetLightning.Core` project/assembly.
 
 ![logo](./docs/img/logo.png)
 
+The main API is in `DotNetLightning.Core` project/assembly.
+
 ## Installation
 
-The package is compiled and published with two variants:
+The package is compiled and published with three variants:
 
 * [`DotNetLightning`](https://www.nuget.org/packages/DotNetLightning/)
   * This does not use native bindings for cryptographic operations.
@@ -15,6 +16,8 @@ The package is compiled and published with two variants:
   * This uses a pre-compiled `libsodium` for cryptographic operations.
   * It only supports `windows`, `mac` and `linux` environments.
   * This is what you want if you need performance and the environments above are the only ones you are planning to support.
+* [`DotNetLightning.ClnRpc`](https://www.nuget.org/packages/DotNetLightning.ClnRpc/)
+  * The wrapper for `DotNetLightning` which includes a [Core Lightning](https://github.com/ElementsProject/lightning) Json Rpc Client
 
 Run `dotnet add package` with the one you want.
 
