@@ -12,6 +12,7 @@ open System
 open System.Text.Json
 open System.Text.Json.Serialization
 
+open DotNetLightning.Utils
 open NBitcoin
 open NBitcoin.Scripting
 open DotNetLightning.Utils
@@ -88,7 +89,7 @@ module private PrimitiveExtensions =
 module private ClnRpcJsonConverters =
   type MSatJsonConverter() =
       inherit JsonConverter<int64<msat>>()
-      override this.Write(writer, value, options) =
+      override this.Write(writer, value, _options) =
           writer.WriteStringValue(value.ToString() + "msat")
       override this.Read(reader, _typeToConvert, _options) =
           reader.GetString()
@@ -144,7 +145,7 @@ module private ClnRpcJsonConverters =
   type AmountOrAnyJsonConverter() =
       inherit JsonConverter<AmountOrAny>()
 
-      override this.Write(writer, value, options) =
+      override this.Write(writer, value, _options) =
           match value with
           | AmountOrAny.Any ->
               writer.WriteStringValue "any"
@@ -161,7 +162,7 @@ module private ClnRpcJsonConverters =
   type AmountOrAllJsonConverter() =
       inherit JsonConverter<AmountOrAll>()
 
-      override this.Write(writer, value, options) =
+      override this.Write(writer, value, _options) =
           match value with
           | AmountOrAll.All ->
               writer.WriteStringValue "all"
@@ -178,7 +179,7 @@ module private ClnRpcJsonConverters =
   type OutPointJsonConverter() =
       inherit JsonConverter<OutPoint>()
 
-      override this.Write(writer, value, options) =
+      override this.Write(writer, value, _options) =
         writer.WriteStringValue(value.ToString())
 
       override this.Read(reader, _typeToConvert, _options) =
@@ -195,7 +196,7 @@ module private ClnRpcJsonConverters =
   type FeerateJsonConverter() =
       inherit JsonConverter<Feerate>()
 
-      override this.Write(writer, value, options) =
+      override this.Write(writer, value, _options) =
           value.ToString() |> writer.WriteStringValue
 
       override this.Read(reader, _typeToConvert, _options) =
@@ -222,7 +223,7 @@ module private ClnRpcJsonConverters =
   type OutputDescriptorJsonConverter(network: Network) =
       inherit JsonConverter<OutputDescriptor>()
 
-      override this.Write(writer, value, options) =
+      override this.Write(writer, value, _options) =
           value.ToString() |> writer.WriteStringValue
 
       override this.Read(reader, _typeToConvert, _options) =
