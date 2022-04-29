@@ -19,7 +19,7 @@ jobs:
       if: startsWith(matrix.os, 'ubuntu-20')
       run: |
         dotnet build tests/DotNetLightning.Core.Tests -p:Portability=True
-        dotnet run --no-build --project tests/DotNetLightning.Core.Tests
+        dotnet run --no-build --project tests/DotNetLightning.Core.Tests --fail-on-focused-tests
 
     - name: Build/pack in release mode
       run: |
@@ -31,7 +31,7 @@ jobs:
 
     - name: Run core tests
       run: |
-        dotnet run --project tests/DotNetLightning.Core.Tests
+        dotnet run --project tests/DotNetLightning.Core.Tests --fail-on-focused-tests
 
     - name: Run other tests
       run: |
