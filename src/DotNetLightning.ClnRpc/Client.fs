@@ -134,6 +134,7 @@ type CLightningRPCError =
 
 exception CLightningRPCException of CLightningRPCError
 
+/// c-lightning rpc client.
 type ClnClient(address: Uri, network: Network) =
 
     let getAddr(domain: string) =
