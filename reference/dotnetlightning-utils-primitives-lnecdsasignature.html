@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>LNECDSASignature (DotNetLightning)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="joemphilips">
+
+    <link rel="stylesheet" id="theme_link" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.6.0/materia/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
+
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+    <link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico">
+    <link type="text/css" rel="stylesheet" href="https://github.com/joemphilips/DotNetLightning/content/navbar-fixed-left.css" />
+    <link type="text/css" rel="stylesheet" href="https://github.com/joemphilips/DotNetLightning/content/fsdocs-default.css" />
+    <link type="text/css" rel="stylesheet" href="https://github.com/joemphilips/DotNetLightning/content/fsdocs-custom.css" />
+    <script type="text/javascript" src="https://github.com/joemphilips/DotNetLightning/content/fsdocs-tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+    <!-- END SEARCH BOX: this adds support for the search box -->
+    
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md navbar-light bg-secondary fixed-left" id="fsdocs-nav">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse navbar-nav-scroll" id="navbarsExampleDefault">
+            <a href="https://github.com/joemphilips/DotNetLightning/"><img id="fsdocs-logo" src="https://github.com/joemphilips/DotNetLightning/img/logo.png" /></a>
+            <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+            <div id="header">
+                <div class="searchbox" id="fsdocs-searchbox">
+                    <label for="search-by">
+                        <i class="fas fa-search"></i>
+                    </label>
+                    <input data-search-input="" id="search-by" type="search" placeholder="Search..." />
+                    <span data-search-clear="">
+                        <i class="fas fa-times"></i>
+                    </span>
+                </div>
+            </div>
+
+            <!-- END SEARCH BOX: this adds support for the search box -->
+            <ul class="navbar-nav">
+                <li class="nav-header">Links</li>
+                <li class="nav-item" id="fsdocs-license-link"><a class="nav-link" href="https://github.com/joemphilips/DotNetLightning/blob/master/LICENSE.txt">License</a></li>
+                <li class="nav-item" id="fsdocs-release-notes-link"><a class="nav-link" href="https://github.com/joemphilips/DotNetLightning/releases">Release Notes</a></li>
+                <li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://github.com/joemphilips/DotNetLightning/">Source Repository</a></li>
+                
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://github.com/joemphilips/DotNetLightning/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="masthead">
+            <h3 class="muted"><a href="/">DotNetLightning</a></h3>
+        </div>
+        <hr />
+        <div class="container" id="fsdocs-content">
+            <div>
+  <h2>
+    LNECDSASignature Type
+  </h2>
+  <dl class="fsdocs-metadata">
+    <dt>
+      Namespace: 
+      <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils.html">
+        DotNetLightning.Utils
+      </a>
+    </dt>
+    <dt>
+      Assembly: DotNetLightning.Core.dll
+    </dt>
+    <dt>
+      Parent Module: 
+      <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives.html">
+        Primitives
+      </a>
+    </dt>
+    <dt>
+      Base Type: 
+      <code>obj</code>
+    </dt>
+    <dt>
+      All Interfaces: 
+      <code><a href="https://docs.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
+      , 
+      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-lnecdsasignature.html">LNECDSASignature</a>&gt;</span></code>
+    </dt>
+  </dl>
+  <div class="fsdocs-xmldoc">
+    <div>
+      <p class="fsdocs-summary">
+        
+ Wrapper around NBitcoin's ECDSASignature type for convenience. It has following difference
+ 1. It is equatable
+ 2. Some Convenience methods for serialization
+ 3. Custom `ToString`
+
+      </p>
+    </div>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div>
+    <h3>
+      Union cases
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Union case
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1607', 1607)" onmouseover="showTip(event, '1607', 1607)">
+                <p>
+                  <a id="Empty">
+                    <a href="#Empty">
+                      <code><span>Empty</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1607">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Empty</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Primitives.fs#L131-131" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1608', 1608)" onmouseover="showTip(event, '1608', 1608)">
+                <p>
+                  <a id="LNECDSASignature">
+                    <a href="#LNECDSASignature">
+                      <code><span>LNECDSASignature&#32;<a href="https://docs.microsoft.com/dotnet/api/nbitcoin.crypto.ecdsasignature">ECDSASignature</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1608">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>LNECDSASignature&#32;<a href="https://docs.microsoft.com/dotnet/api/nbitcoin.crypto.ecdsasignature">ECDSASignature</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.crypto.ecdsasignature">ECDSASignature</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Primitives.fs#L130-130" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.crypto.ecdsasignature">ECDSASignature</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div>
+    <h3>
+      Instance members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Instance member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1609', 1609)" onmouseover="showTip(event, '1609', 1609)">
+                <p>
+                  <a id="AsString">
+                    <a href="#AsString">
+                      <code><span>this.AsString</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1609">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.AsString</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>string</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:DotNetLightning.Utils.Primitives.LNECDSASignature.AsString`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:DotNetLightning.Utils.Primitives.LNECDSASignature.AsString\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Primitives.fs#L155-155" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1610', 1610)" onmouseover="showTip(event, '1610', 1610)">
+                <p>
+                  <a id="CompareTo">
+                    <a href="#CompareTo">
+                      <code><span>this.CompareTo</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1610">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.CompareTo</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        e
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-lnecdsasignature.html">LNECDSASignature</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>int</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Utils.Primitives.LNECDSASignature.CompareTo`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Utils.Primitives.LNECDSASignature.CompareTo\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Primitives.fs#L173-173" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Logic does not really matter here. This is just for making life easier by enabling automatic implementation
+ of `StructuralComparison` for wrapper types.
+
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  e
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-lnecdsasignature.html">LNECDSASignature</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>int</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1611', 1611)" onmouseover="showTip(event, '1611', 1611)">
+                <p>
+                  <a id="ToBytesCompact">
+                    <a href="#ToBytesCompact">
+                      <code><span>this.ToBytesCompact</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1611">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ToBytesCompact</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>byte[]</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Utils.Primitives.LNECDSASignature.ToBytesCompact`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Utils.Primitives.LNECDSASignature.ToBytesCompact\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Primitives.fs#L168-168" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ ** Description **
+
+ Bitcoin Layer 1 forces (by consensus) DER encoding for the signatures.
+ This is not optimal, but remaining as a rule since changing consensus is not easy.
+ However in layer2, there are no such rules. So we use more optimal serialization by
+ This function.
+ Note it does not include the recovery id. so its always 64 bytes
+
+ **Output**
+
+ (serialized R value + S value) in byte array.
+
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span>byte[]</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1612', 1612)" onmouseover="showTip(event, '1612', 1612)">
+                <p>
+                  <a id="ToDER">
+                    <a href="#ToDER">
+                      <code><span>this.ToDER</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1612">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ToDER</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>byte[]</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Utils.Primitives.LNECDSASignature.ToDER`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Utils.Primitives.LNECDSASignature.ToDER\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Primitives.fs#L184-184" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span>byte[]</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1613', 1613)" onmouseover="showTip(event, '1613', 1613)">
+                <p>
+                  <a id="Value">
+                    <a href="#Value">
+                      <code><span>this.Value</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1613">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Value</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.crypto.ecdsasignature">ECDSASignature</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:DotNetLightning.Utils.Primitives.LNECDSASignature.Value`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:DotNetLightning.Utils.Primitives.LNECDSASignature.Value\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Primitives.fs#L133-133" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.crypto.ecdsasignature">ECDSASignature</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <h3>
+      Static members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Static member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1614', 1614)" onmouseover="showTip(event, '1614', 1614)">
+                <p>
+                  <a id="FromBytesCompact">
+                    <a href="#FromBytesCompact">
+                      <code><span>LNECDSASignature.FromBytesCompact<span><span>(<span>bytes,&#32;?withRecId</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1614">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>LNECDSASignature.FromBytesCompact<span><span>(<span>bytes,&#32;?withRecId</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        bytes
+                      </b>
+                      :
+                      <code><span>byte&#32;array</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        ?withRecId
+                      </b>
+                      :
+                      <code>bool</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-lnecdsasignature.html">LNECDSASignature</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Utils.Primitives.LNECDSASignature.FromBytesCompact`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Utils.Primitives.LNECDSASignature.FromBytesCompact\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Primitives.fs#L189-189" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+ Read 64 bytes as r(32 bytes) and s(32 bytes) value
+ If `withRecId` is `true`, skip first 1 byte
+
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  bytes
+                </span>
+                :
+                <code><span>byte&#32;array</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  ?withRecId
+                </span>
+                :
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-lnecdsasignature.html">LNECDSASignature</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1615', 1615)" onmouseover="showTip(event, '1615', 1615)">
+                <p>
+                  <a id="op_Implicit">
+                    <a href="#op_Implicit">
+                      <code><span>op_Implicit<span>ec</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1615">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>op_Implicit<span>ec</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        ec
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.crypto.ecdsasignature">ECDSASignature</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-lnecdsasignature.html">LNECDSASignature</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Utils.Primitives.LNECDSASignature.op_Implicit`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Utils.Primitives.LNECDSASignature.op_Implicit\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Primitives.fs#L212-212" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  ec
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.crypto.ecdsasignature">ECDSASignature</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-lnecdsasignature.html">LNECDSASignature</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+            
+        </div>
+
+        <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+        <script type="text/javascript">var fsdocs_search_baseurl = 'https://github.com/joemphilips/DotNetLightning/';</script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.8/lunr.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.min.js"></script>
+        <script type="text/javascript" src="https://github.com/joemphilips/DotNetLightning/content/fsdocs-search.js"></script>
+        <!-- END SEARCH BOX: this adds support for the search box -->
+    </div>
+</body>
+
+</html>

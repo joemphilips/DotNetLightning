@@ -1,0 +1,2246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>LightningReaderStream (DotNetLightning)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="joemphilips">
+
+    <link rel="stylesheet" id="theme_link" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.6.0/materia/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
+
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+    <link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico">
+    <link type="text/css" rel="stylesheet" href="https://github.com/joemphilips/DotNetLightning/content/navbar-fixed-left.css" />
+    <link type="text/css" rel="stylesheet" href="https://github.com/joemphilips/DotNetLightning/content/fsdocs-default.css" />
+    <link type="text/css" rel="stylesheet" href="https://github.com/joemphilips/DotNetLightning/content/fsdocs-custom.css" />
+    <script type="text/javascript" src="https://github.com/joemphilips/DotNetLightning/content/fsdocs-tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+    <!-- END SEARCH BOX: this adds support for the search box -->
+    
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md navbar-light bg-secondary fixed-left" id="fsdocs-nav">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse navbar-nav-scroll" id="navbarsExampleDefault">
+            <a href="https://github.com/joemphilips/DotNetLightning/"><img id="fsdocs-logo" src="https://github.com/joemphilips/DotNetLightning/img/logo.png" /></a>
+            <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+            <div id="header">
+                <div class="searchbox" id="fsdocs-searchbox">
+                    <label for="search-by">
+                        <i class="fas fa-search"></i>
+                    </label>
+                    <input data-search-input="" id="search-by" type="search" placeholder="Search..." />
+                    <span data-search-clear="">
+                        <i class="fas fa-times"></i>
+                    </span>
+                </div>
+            </div>
+
+            <!-- END SEARCH BOX: this adds support for the search box -->
+            <ul class="navbar-nav">
+                <li class="nav-header">Links</li>
+                <li class="nav-item" id="fsdocs-license-link"><a class="nav-link" href="https://github.com/joemphilips/DotNetLightning/blob/master/LICENSE.txt">License</a></li>
+                <li class="nav-item" id="fsdocs-release-notes-link"><a class="nav-link" href="https://github.com/joemphilips/DotNetLightning/releases">Release Notes</a></li>
+                <li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://github.com/joemphilips/DotNetLightning/">Source Repository</a></li>
+                
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://github.com/joemphilips/DotNetLightning/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="masthead">
+            <h3 class="muted"><a href="/">DotNetLightning</a></h3>
+        </div>
+        <hr />
+        <div class="container" id="fsdocs-content">
+            <div>
+  <h2>
+    LightningReaderStream Type
+  </h2>
+  <dl class="fsdocs-metadata">
+    <dt>
+      Namespace: 
+      <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization.html">
+        DotNetLightning.Serialization
+      </a>
+    </dt>
+    <dt>
+      Assembly: DotNetLightning.Core.dll
+    </dt>
+    <dt>
+      Base Type: 
+      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-lightningstream.html">LightningStream</a></code>
+    </dt>
+    <dt>
+      All Interfaces: 
+      <code><a href="https://docs.microsoft.com/dotnet/api/system.iasyncdisposable">IAsyncDisposable</a></code>
+      , 
+      <code><a href="https://docs.microsoft.com/dotnet/api/system.idisposable">IDisposable</a></code>
+    </dt>
+  </dl>
+  <div class="fsdocs-xmldoc">
+    <div>
+      <p class="fsdocs-summary">
+        
+      </p>
+    </div>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div>
+    <h3>
+      Constructors
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Constructor
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1160', 1160)" onmouseover="showTip(event, '1160', 1160)">
+                <p>
+                  <a id="``.ctor``">
+                    <a href="#``.ctor``">
+                      <code><span>LightningReaderStream<span><span>(<span>inner</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1160">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>LightningReaderStream<span><span>(<span>inner</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        inner
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.io.stream">Stream</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-lightningreaderstream.html">LightningReaderStream</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.#ctor`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.#ctor\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L211-211" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  inner
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.io.stream">Stream</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-lightningreaderstream.html">LightningReaderStream</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <h3>
+      Instance members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Instance member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1161', 1161)" onmouseover="showTip(event, '1161', 1161)">
+                <p>
+                  <a id="ReadAll">
+                    <a href="#ReadAll">
+                      <code><span>this.ReadAll</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1161">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadAll</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>byte&#32;array</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadAll`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadAll\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L224-224" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span>byte&#32;array</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1162', 1162)" onmouseover="showTip(event, '1162', 1162)">
+                <p>
+                  <a id="ReadAllAsBigSize">
+                    <a href="#ReadAllAsBigSize">
+                      <code><span>this.ReadAllAsBigSize</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1162">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadAllAsBigSize</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>uint64&#32;array</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadAllAsBigSize`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadAllAsBigSize\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L469-469" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span>uint64&#32;array</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1163', 1163)" onmouseover="showTip(event, '1163', 1163)">
+                <p>
+                  <a id="ReadBigSize">
+                    <a href="#ReadBigSize">
+                      <code><span>this.ReadBigSize</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1163">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadBigSize</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>uint64</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadBigSize`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadBigSize\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L442-442" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>uint64</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1164', 1164)" onmouseover="showTip(event, '1164', 1164)">
+                <p>
+                  <a id="ReadBoolean">
+                    <a href="#ReadBoolean">
+                      <code><span>this.ReadBoolean</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1164">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadBoolean</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadBoolean`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadBoolean\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L266-266" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1165', 1165)" onmouseover="showTip(event, '1165', 1165)">
+                <p>
+                  <a id="ReadByte">
+                    <a href="#ReadByte">
+                      <code><span>this.ReadByte</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1165">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadByte</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>byte</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadByte`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadByte\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L270-270" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>byte</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1166', 1166)" onmouseover="showTip(event, '1166', 1166)">
+                <p>
+                  <a id="ReadChannelFlags">
+                    <a href="#ReadChannelFlags">
+                      <code><span>this.ReadChannelFlags</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1166">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadChannelFlags</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-channelflags.html">ChannelFlags</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadChannelFlags`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadChannelFlags\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L383-383" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-channelflags.html">ChannelFlags</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1167', 1167)" onmouseover="showTip(event, '1167', 1167)">
+                <p>
+                  <a id="ReadCommitmentNumber">
+                    <a href="#ReadCommitmentNumber">
+                      <code><span>this.ReadCommitmentNumber</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1167">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadCommitmentNumber</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-commitmentnumber.html">CommitmentNumber</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadCommitmentNumber`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadCommitmentNumber\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L419-419" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-commitmentnumber.html">CommitmentNumber</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1168', 1168)" onmouseover="showTip(event, '1168', 1168)">
+                <p>
+                  <a id="ReadDelayedPaymentBasepoint">
+                    <a href="#ReadDelayedPaymentBasepoint">
+                      <code><span>this.ReadDelayedPaymentBasepoint</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1168">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadDelayedPaymentBasepoint</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-delayedpaymentbasepoint.html">DelayedPaymentBasepoint</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadDelayedPaymentBasepoint`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadDelayedPaymentBasepoint\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L413-413" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-delayedpaymentbasepoint.html">DelayedPaymentBasepoint</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1169', 1169)" onmouseover="showTip(event, '1169', 1169)">
+                <p>
+                  <a id="ReadECDSACompact">
+                    <a href="#ReadECDSACompact">
+                      <code><span>this.ReadECDSACompact</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1169">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadECDSACompact</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-lnecdsasignature.html">LNECDSASignature</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadECDSACompact`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadECDSACompact\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L423-423" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-lnecdsasignature.html">LNECDSASignature</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1170', 1170)" onmouseover="showTip(event, '1170', 1170)">
+                <p>
+                  <a id="ReadFundingPubKey">
+                    <a href="#ReadFundingPubKey">
+                      <code><span>this.ReadFundingPubKey</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1170">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadFundingPubKey</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-fundingpubkey.html">FundingPubKey</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadFundingPubKey`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadFundingPubKey\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L404-404" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-fundingpubkey.html">FundingPubKey</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1171', 1171)" onmouseover="showTip(event, '1171', 1171)">
+                <p>
+                  <a id="ReadHtlcBasepoint">
+                    <a href="#ReadHtlcBasepoint">
+                      <code><span>this.ReadHtlcBasepoint</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1171">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadHtlcBasepoint</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-htlcbasepoint.html">HtlcBasepoint</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadHtlcBasepoint`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadHtlcBasepoint\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L416-416" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-htlcbasepoint.html">HtlcBasepoint</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1172', 1172)" onmouseover="showTip(event, '1172', 1172)">
+                <p>
+                  <a id="ReadInt16">
+                    <a href="#ReadInt16">
+                      <code><span>this.ReadInt16</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1172">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadInt16</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        lendian
+                      </b>
+                      :
+                      <code>bool</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>int16</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadInt16`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadInt16\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L287-287" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  lendian
+                </span>
+                :
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>int16</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1173', 1173)" onmouseover="showTip(event, '1173', 1173)">
+                <p>
+                  <a id="ReadInt32">
+                    <a href="#ReadInt32">
+                      <code><span>this.ReadInt32</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1173">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadInt32</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        lendian
+                      </b>
+                      :
+                      <code>bool</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>int32</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadInt32`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadInt32\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L303-303" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  lendian
+                </span>
+                :
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>int32</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1174', 1174)" onmouseover="showTip(event, '1174', 1174)">
+                <p>
+                  <a id="ReadInt64">
+                    <a href="#ReadInt64">
+                      <code><span>this.ReadInt64</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1174">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadInt64</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        lendian
+                      </b>
+                      :
+                      <code>bool</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>int64</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadInt64`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadInt64\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L331-331" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  lendian
+                </span>
+                :
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>int64</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1175', 1175)" onmouseover="showTip(event, '1175', 1175)">
+                <p>
+                  <a id="ReadKey">
+                    <a href="#ReadKey">
+                      <code><span>this.ReadKey</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1175">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadKey</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.key">Key</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadKey`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadKey\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L387-387" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.key">Key</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1176', 1176)" onmouseover="showTip(event, '1176', 1176)">
+                <p>
+                  <a id="ReadPaymentBasepoint">
+                    <a href="#ReadPaymentBasepoint">
+                      <code><span>this.ReadPaymentBasepoint</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1176">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadPaymentBasepoint</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-paymentbasepoint.html">PaymentBasepoint</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadPaymentBasepoint`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadPaymentBasepoint\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L410-410" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-paymentbasepoint.html">PaymentBasepoint</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1177', 1177)" onmouseover="showTip(event, '1177', 1177)">
+                <p>
+                  <a id="ReadPerCommitmentPoint">
+                    <a href="#ReadPerCommitmentPoint">
+                      <code><span>this.ReadPerCommitmentPoint</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1177">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadPerCommitmentPoint</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-percommitmentpoint.html">PerCommitmentPoint</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadPerCommitmentPoint`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadPerCommitmentPoint\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L401-401" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-percommitmentpoint.html">PerCommitmentPoint</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1178', 1178)" onmouseover="showTip(event, '1178', 1178)">
+                <p>
+                  <a id="ReadPerCommitmentSecret">
+                    <a href="#ReadPerCommitmentSecret">
+                      <code><span>this.ReadPerCommitmentSecret</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1178">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadPerCommitmentSecret</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-percommitmentsecret.html">PerCommitmentSecret</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadPerCommitmentSecret`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadPerCommitmentSecret\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L398-398" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-percommitmentsecret.html">PerCommitmentSecret</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1179', 1179)" onmouseover="showTip(event, '1179', 1179)">
+                <p>
+                  <a id="ReadPubKey">
+                    <a href="#ReadPubKey">
+                      <code><span>this.ReadPubKey</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1179">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadPubKey</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.pubkey">PubKey</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadPubKey`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadPubKey\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L391-391" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.pubkey">PubKey</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1180', 1180)" onmouseover="showTip(event, '1180', 1180)">
+                <p>
+                  <a id="ReadRGB">
+                    <a href="#ReadRGB">
+                      <code><span>this.ReadRGB</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1180">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadRGB</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-rgb.html">RGB</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadRGB`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadRGB\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L431-431" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-rgb.html">RGB</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1181', 1181)" onmouseover="showTip(event, '1181', 1181)">
+                <p>
+                  <a id="ReadRevocationBasepoint">
+                    <a href="#ReadRevocationBasepoint">
+                      <code><span>this.ReadRevocationBasepoint</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1181">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadRevocationBasepoint</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-revocationbasepoint.html">RevocationBasepoint</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadRevocationBasepoint`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadRevocationBasepoint\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L407-407" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-revocationbasepoint.html">RevocationBasepoint</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1182', 1182)" onmouseover="showTip(event, '1182', 1182)">
+                <p>
+                  <a id="ReadSByte">
+                    <a href="#ReadSByte">
+                      <code><span>this.ReadSByte</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1182">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadSByte</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>sbyte</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadSByte`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadSByte\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L283-283" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>sbyte</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1183', 1183)" onmouseover="showTip(event, '1183', 1183)">
+                <p>
+                  <a id="ReadScript">
+                    <a href="#ReadScript">
+                      <code><span>this.ReadScript</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1183">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadScript</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.script">Script</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadScript`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadScript\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L427-427" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.script">Script</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1184', 1184)" onmouseover="showTip(event, '1184', 1184)">
+                <p>
+                  <a id="ReadShutdownScriptPubKey">
+                    <a href="#ReadShutdownScriptPubKey">
+                      <code><span>this.ReadShutdownScriptPubKey</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1184">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadShutdownScriptPubKey</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-shutdownscriptpubkey.html">ShutdownScriptPubKey</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadShutdownScriptPubKey`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadShutdownScriptPubKey\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L499-499" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-shutdownscriptpubkey.html">ShutdownScriptPubKey</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1185', 1185)" onmouseover="showTip(event, '1185', 1185)">
+                <p>
+                  <a id="ReadTLV">
+                    <a href="#ReadTLV">
+                      <code><span>this.ReadTLV</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1185">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadTLV</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-generictlv.html">GenericTLV</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadTLV`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadTLV\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L479-479" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-generictlv.html">GenericTLV</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1186', 1186)" onmouseover="showTip(event, '1186', 1186)">
+                <p>
+                  <a id="ReadTLVStream">
+                    <a href="#ReadTLVStream">
+                      <code><span>this.ReadTLVStream</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1186">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadTLVStream</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-generictlv.html">GenericTLV</a>&#32;array</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadTLVStream`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadTLVStream\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L489-489" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-generictlv.html">GenericTLV</a>&#32;array</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1187', 1187)" onmouseover="showTip(event, '1187', 1187)">
+                <p>
+                  <a id="ReadUInt16">
+                    <a href="#ReadUInt16">
+                      <code><span>this.ReadUInt16</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1187">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadUInt16</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        lendian
+                      </b>
+                      :
+                      <code>bool</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>uint16</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadUInt16`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadUInt16\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L295-295" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  lendian
+                </span>
+                :
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>uint16</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1188', 1188)" onmouseover="showTip(event, '1188', 1188)">
+                <p>
+                  <a id="ReadUInt256">
+                    <a href="#ReadUInt256">
+                      <code><span>this.ReadUInt256</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1188">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadUInt256</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        ?lendian
+                      </b>
+                      :
+                      <code>bool</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.uint256">uint256</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadUInt256`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadUInt256\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L375-375" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  ?lendian
+                </span>
+                :
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.uint256">uint256</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1189', 1189)" onmouseover="showTip(event, '1189', 1189)">
+                <p>
+                  <a id="ReadUInt32">
+                    <a href="#ReadUInt32">
+                      <code><span>this.ReadUInt32</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1189">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadUInt32</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        lendian
+                      </b>
+                      :
+                      <code>bool</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>uint32</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadUInt32`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadUInt32\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L317-317" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  lendian
+                </span>
+                :
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>uint32</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1190', 1190)" onmouseover="showTip(event, '1190', 1190)">
+                <p>
+                  <a id="ReadUInt64">
+                    <a href="#ReadUInt64">
+                      <code><span>this.ReadUInt64</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1190">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadUInt64</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        lendian
+                      </b>
+                      :
+                      <code>bool</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>uint64</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadUInt64`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadUInt64\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L353-353" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  lendian
+                </span>
+                :
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>uint64</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1191', 1191)" onmouseover="showTip(event, '1191', 1191)">
+                <p>
+                  <a id="ReadUInt8">
+                    <a href="#ReadUInt8">
+                      <code><span>this.ReadUInt8</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1191">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadUInt8</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>uint8</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadUInt8`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadUInt8\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L280-280" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>uint8</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1192', 1192)" onmouseover="showTip(event, '1192', 1192)">
+                <p>
+                  <a id="ReadWithLen">
+                    <a href="#ReadWithLen">
+                      <code><span>this.ReadWithLen</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1192">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ReadWithLen</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span>byte&#32;array</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.ReadWithLen`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.ReadWithLen\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L379-379" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span>byte&#32;array</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1193', 1193)" onmouseover="showTip(event, '1193', 1193)">
+                <p>
+                  <a id="TryReadAll">
+                    <a href="#TryReadAll">
+                      <code><span>this.TryReadAll</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1193">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.TryReadAll</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><span>byte&#32;array</span>&#32;option</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.LightningReaderStream.TryReadAll`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.LightningReaderStream.TryReadAll\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L227-227" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><span>byte&#32;array</span>&#32;option</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div></div>
+</div>
+            
+        </div>
+
+        <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+        <script type="text/javascript">var fsdocs_search_baseurl = 'https://github.com/joemphilips/DotNetLightning/';</script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.8/lunr.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.min.js"></script>
+        <script type="text/javascript" src="https://github.com/joemphilips/DotNetLightning/content/fsdocs-search.js"></script>
+        <!-- END SEARCH BOX: this adds support for the search box -->
+    </div>
+</body>
+
+</html>

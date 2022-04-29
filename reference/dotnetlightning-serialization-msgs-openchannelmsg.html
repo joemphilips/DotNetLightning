@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>OpenChannelMsg (DotNetLightning)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="joemphilips">
+
+    <link rel="stylesheet" id="theme_link" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.6.0/materia/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
+
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+    <link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico">
+    <link type="text/css" rel="stylesheet" href="https://github.com/joemphilips/DotNetLightning/content/navbar-fixed-left.css" />
+    <link type="text/css" rel="stylesheet" href="https://github.com/joemphilips/DotNetLightning/content/fsdocs-default.css" />
+    <link type="text/css" rel="stylesheet" href="https://github.com/joemphilips/DotNetLightning/content/fsdocs-custom.css" />
+    <script type="text/javascript" src="https://github.com/joemphilips/DotNetLightning/content/fsdocs-tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+    <!-- END SEARCH BOX: this adds support for the search box -->
+    
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md navbar-light bg-secondary fixed-left" id="fsdocs-nav">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse navbar-nav-scroll" id="navbarsExampleDefault">
+            <a href="https://github.com/joemphilips/DotNetLightning/"><img id="fsdocs-logo" src="https://github.com/joemphilips/DotNetLightning/img/logo.png" /></a>
+            <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+            <div id="header">
+                <div class="searchbox" id="fsdocs-searchbox">
+                    <label for="search-by">
+                        <i class="fas fa-search"></i>
+                    </label>
+                    <input data-search-input="" id="search-by" type="search" placeholder="Search..." />
+                    <span data-search-clear="">
+                        <i class="fas fa-times"></i>
+                    </span>
+                </div>
+            </div>
+
+            <!-- END SEARCH BOX: this adds support for the search box -->
+            <ul class="navbar-nav">
+                <li class="nav-header">Links</li>
+                <li class="nav-item" id="fsdocs-license-link"><a class="nav-link" href="https://github.com/joemphilips/DotNetLightning/blob/master/LICENSE.txt">License</a></li>
+                <li class="nav-item" id="fsdocs-release-notes-link"><a class="nav-link" href="https://github.com/joemphilips/DotNetLightning/releases">Release Notes</a></li>
+                <li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://github.com/joemphilips/DotNetLightning/">Source Repository</a></li>
+                
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://github.com/joemphilips/DotNetLightning/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="masthead">
+            <h3 class="muted"><a href="/">DotNetLightning</a></h3>
+        </div>
+        <hr />
+        <div class="container" id="fsdocs-content">
+            <div>
+  <h2>
+    OpenChannelMsg Type
+  </h2>
+  <dl class="fsdocs-metadata">
+    <dt>
+      Namespace: 
+      <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs.html">
+        DotNetLightning.Serialization.Msgs
+      </a>
+    </dt>
+    <dt>
+      Assembly: DotNetLightning.Core.dll
+    </dt>
+    <dt>
+      Base Type: 
+      <code>obj</code>
+    </dt>
+    <dt>
+      All Interfaces: 
+      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-openchannelmsg.html">OpenChannelMsg</a>&gt;</span></code>
+      , 
+      <code><a href="https://docs.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
+      , 
+      <code><span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-ilightningserializable-1.html">ILightningSerializable</a>&lt;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-openchannelmsg.html">OpenChannelMsg</a>&gt;</span></code>
+      , 
+      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-ichannelmsg.html">IChannelMsg</a></code>
+      , 
+      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-ilightningmsg.html">ILightningMsg</a></code>
+    </dt>
+  </dl>
+  <div class="fsdocs-xmldoc">
+    <div>
+      <p class="fsdocs-summary">
+        
+      </p>
+    </div>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div>
+    <h3>
+      Record fields
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Record Field
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1397', 1397)" onmouseover="showTip(event, '1397', 1397)">
+                <p>
+                  <a id="Chainhash">
+                    <a href="#Chainhash">
+                      <code>Chainhash</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1397">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>Chainhash</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.uint256">uint256</a></code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  mutable
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/Msgs/Msgs.fs#L625-625" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.uint256">uint256</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1398', 1398)" onmouseover="showTip(event, '1398', 1398)">
+                <p>
+                  <a id="ChannelFlags">
+                    <a href="#ChannelFlags">
+                      <code>ChannelFlags</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1398">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>ChannelFlags</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-channelflags.html">ChannelFlags</a></code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  mutable
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/Msgs/Msgs.fs#L642-642" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-channelflags.html">ChannelFlags</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1399', 1399)" onmouseover="showTip(event, '1399', 1399)">
+                <p>
+                  <a id="ChannelReserveSatoshis">
+                    <a href="#ChannelReserveSatoshis">
+                      <code>ChannelReserveSatoshis</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1399">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>ChannelReserveSatoshis</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.money">Money</a></code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  mutable
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/Msgs/Msgs.fs#L631-631" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.money">Money</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1400', 1400)" onmouseover="showTip(event, '1400', 1400)">
+                <p>
+                  <a id="DelayedPaymentBasepoint">
+                    <a href="#DelayedPaymentBasepoint">
+                      <code>DelayedPaymentBasepoint</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1400">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>DelayedPaymentBasepoint</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-delayedpaymentbasepoint.html">DelayedPaymentBasepoint</a></code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  mutable
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/Msgs/Msgs.fs#L639-639" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-delayedpaymentbasepoint.html">DelayedPaymentBasepoint</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1401', 1401)" onmouseover="showTip(event, '1401', 1401)">
+                <p>
+                  <a id="DustLimitSatoshis">
+                    <a href="#DustLimitSatoshis">
+                      <code>DustLimitSatoshis</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1401">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>DustLimitSatoshis</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.money">Money</a></code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  mutable
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/Msgs/Msgs.fs#L629-629" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.money">Money</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1402', 1402)" onmouseover="showTip(event, '1402', 1402)">
+                <p>
+                  <a id="FeeRatePerKw">
+                    <a href="#FeeRatePerKw">
+                      <code>FeeRatePerKw</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1402">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>FeeRatePerKw</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-feerateperkw.html">FeeRatePerKw</a></code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  mutable
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/Msgs/Msgs.fs#L633-633" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-feerateperkw.html">FeeRatePerKw</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1403', 1403)" onmouseover="showTip(event, '1403', 1403)">
+                <p>
+                  <a id="FirstPerCommitmentPoint">
+                    <a href="#FirstPerCommitmentPoint">
+                      <code>FirstPerCommitmentPoint</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1403">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>FirstPerCommitmentPoint</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-percommitmentpoint.html">PerCommitmentPoint</a></code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  mutable
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/Msgs/Msgs.fs#L641-641" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-percommitmentpoint.html">PerCommitmentPoint</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1404', 1404)" onmouseover="showTip(event, '1404', 1404)">
+                <p>
+                  <a id="FundingPubKey">
+                    <a href="#FundingPubKey">
+                      <code>FundingPubKey</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1404">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>FundingPubKey</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-fundingpubkey.html">FundingPubKey</a></code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  mutable
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/Msgs/Msgs.fs#L636-636" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-fundingpubkey.html">FundingPubKey</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1405', 1405)" onmouseover="showTip(event, '1405', 1405)">
+                <p>
+                  <a id="FundingSatoshis">
+                    <a href="#FundingSatoshis">
+                      <code>FundingSatoshis</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1405">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>FundingSatoshis</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.money">Money</a></code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  mutable
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/Msgs/Msgs.fs#L627-627" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.money">Money</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1406', 1406)" onmouseover="showTip(event, '1406', 1406)">
+                <p>
+                  <a id="HTLCBasepoint">
+                    <a href="#HTLCBasepoint">
+                      <code>HTLCBasepoint</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1406">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>HTLCBasepoint</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-htlcbasepoint.html">HtlcBasepoint</a></code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  mutable
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/Msgs/Msgs.fs#L640-640" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-htlcbasepoint.html">HtlcBasepoint</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1407', 1407)" onmouseover="showTip(event, '1407', 1407)">
+                <p>
+                  <a id="HTLCMinimumMsat">
+                    <a href="#HTLCMinimumMsat">
+                      <code>HTLCMinimumMsat</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1407">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>HTLCMinimumMsat</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-lnmoney.html">LNMoney</a></code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  mutable
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/Msgs/Msgs.fs#L632-632" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-lnmoney.html">LNMoney</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1408', 1408)" onmouseover="showTip(event, '1408', 1408)">
+                <p>
+                  <a id="MaxAcceptedHTLCs">
+                    <a href="#MaxAcceptedHTLCs">
+                      <code>MaxAcceptedHTLCs</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1408">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>MaxAcceptedHTLCs</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code>uint16</code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  mutable
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/Msgs/Msgs.fs#L635-635" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code>uint16</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1409', 1409)" onmouseover="showTip(event, '1409', 1409)">
+                <p>
+                  <a id="MaxHTLCValueInFlightMsat">
+                    <a href="#MaxHTLCValueInFlightMsat">
+                      <code>MaxHTLCValueInFlightMsat</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1409">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>MaxHTLCValueInFlightMsat</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-lnmoney.html">LNMoney</a></code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  mutable
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/Msgs/Msgs.fs#L630-630" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-lnmoney.html">LNMoney</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1410', 1410)" onmouseover="showTip(event, '1410', 1410)">
+                <p>
+                  <a id="PaymentBasepoint">
+                    <a href="#PaymentBasepoint">
+                      <code>PaymentBasepoint</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1410">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>PaymentBasepoint</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-paymentbasepoint.html">PaymentBasepoint</a></code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  mutable
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/Msgs/Msgs.fs#L638-638" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-paymentbasepoint.html">PaymentBasepoint</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1411', 1411)" onmouseover="showTip(event, '1411', 1411)">
+                <p>
+                  <a id="PushMSat">
+                    <a href="#PushMSat">
+                      <code>PushMSat</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1411">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>PushMSat</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-lnmoney.html">LNMoney</a></code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  mutable
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/Msgs/Msgs.fs#L628-628" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-lnmoney.html">LNMoney</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1412', 1412)" onmouseover="showTip(event, '1412', 1412)">
+                <p>
+                  <a id="RevocationBasepoint">
+                    <a href="#RevocationBasepoint">
+                      <code>RevocationBasepoint</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1412">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>RevocationBasepoint</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-revocationbasepoint.html">RevocationBasepoint</a></code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  mutable
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/Msgs/Msgs.fs#L637-637" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-revocationbasepoint.html">RevocationBasepoint</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1413', 1413)" onmouseover="showTip(event, '1413', 1413)">
+                <p>
+                  <a id="TLVs">
+                    <a href="#TLVs">
+                      <code>TLVs</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1413">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>TLVs</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-openchanneltlv.html">OpenChannelTLV</a>&#32;array</span></code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  mutable
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/Msgs/Msgs.fs#L643-643" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-openchanneltlv.html">OpenChannelTLV</a>&#32;array</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1414', 1414)" onmouseover="showTip(event, '1414', 1414)">
+                <p>
+                  <a id="TemporaryChannelId">
+                    <a href="#TemporaryChannelId">
+                      <code>TemporaryChannelId</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1414">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>TemporaryChannelId</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-channelid.html">ChannelId</a></code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  mutable
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/Msgs/Msgs.fs#L626-626" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-channelid.html">ChannelId</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1415', 1415)" onmouseover="showTip(event, '1415', 1415)">
+                <p>
+                  <a id="ToSelfDelay">
+                    <a href="#ToSelfDelay">
+                      <code>ToSelfDelay</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1415">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>ToSelfDelay</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-blockheightoffset16.html">BlockHeightOffset16</a></code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  mutable
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/Msgs/Msgs.fs#L634-634" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-blockheightoffset16.html">BlockHeightOffset16</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div></div>
+  <div></div>
+  <div>
+    <h3>
+      Instance members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Instance member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1416', 1416)" onmouseover="showTip(event, '1416', 1416)">
+                <p>
+                  <a id="ShutdownScriptPubKey">
+                    <a href="#ShutdownScriptPubKey">
+                      <code><span>this.ShutdownScriptPubKey</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1416">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ShutdownScriptPubKey</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-shutdownscriptpubkey.html">ShutdownScriptPubKey</a>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.Msgs.OpenChannelMsg.ShutdownScriptPubKey`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.Msgs.OpenChannelMsg.ShutdownScriptPubKey\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/Msgs/Msgs.fs#L699-699" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-shutdownscriptpubkey.html">ShutdownScriptPubKey</a>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div></div>
+</div>
+            
+        </div>
+
+        <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+        <script type="text/javascript">var fsdocs_search_baseurl = 'https://github.com/joemphilips/DotNetLightning/';</script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.8/lunr.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.min.js"></script>
+        <script type="text/javascript" src="https://github.com/joemphilips/DotNetLightning/content/fsdocs-search.js"></script>
+        <!-- END SEARCH BOX: this adds support for the search box -->
+    </div>
+</body>
+
+</html>
