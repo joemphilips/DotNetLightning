@@ -1,4 +1,4 @@
-module DotNetLightning.Core.Utils.Extensions
+module internal DotNetLightning.Core.Utils.Extensions
 
 open NBitcoin
 open System.Linq

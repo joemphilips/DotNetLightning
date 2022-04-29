@@ -13,6 +13,7 @@ module Utils =
         else
             ()
 
+    /// Shorthand for op_Implicit for any types which implements.
     let inline (!>)(x: ^a) : ^b =
         ((^a or ^b): (static member op_Implicit: ^a -> ^b) x)
 

@@ -1,0 +1,36 @@
+name: publish api docs to gh-pages
+on:
+  push:
+    branches:
+      - "master"
+
+jobs:
+  deploy_fsdocs_html:
+    name: push fsdocs to to gh-pages 📕
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup .NET 6
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.x
+
+      - name: build project assemblies so that fsdocs can read assemblies and .xml files from bin/ .
+        run:
+          dotnet build
+
+      - name: install fsdocs
+        run:
+          dotnet tool install -g fsdocs-tool
+
+      - name: build fsdocs
+        run:
+          $HOME/.dotnet/tools/fsdocs build --output output --strict --mdcomments
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@v4.2.2
+        with:
+          branch: gh-pages
+          folder: output

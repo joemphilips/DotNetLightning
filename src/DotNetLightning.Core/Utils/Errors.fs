@@ -108,6 +108,9 @@ module OnionError =
     [<Literal>]
     let CHANNEL_DISABLED = UPDATE ||| 20us
 
+    /// P2P onion msg error.
+    /// See [bolt02](https://github.com/lightning/bolts/blob/f6c4d7604150986894bcb46d67c5c88680740b12/04-onion-routing.md#failure-messages)
+    /// For the detail.
     [<Flags>]
 #if !NoDUsAsStructs
     [<Struct>]

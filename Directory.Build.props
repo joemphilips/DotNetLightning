@@ -11,6 +11,13 @@
     <Portability>True</Portability>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <PackageProjectUrl>https://github.com/joemphilips/DotNetLightning/</PackageProjectUrl>
+    <FsDocsLicenseLink>https://github.com/joemphilips/DotNetLightning/blob/master/LICENSE.txt</FsDocsLicenseLink>
+    <FsDocsReleaseNotesLink>https://github.com/joemphilips/DotNetLightning/releases</FsDocsReleaseNotesLink>
+    <RepositoryUrl>https://github.com/joemphilips/DotNetLightning</RepositoryUrl>
+    <Authors>joemphilips</Authors>
+  </PropertyGroup>
 
   <Choose>
     <When Condition="'$(Portability)'=='true'">
@@ -28,6 +35,7 @@
 
   <PropertyGroup>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+    <OtherFlags>$(OtherFlags) --warnon:3390</OtherFlags> <!-- xml document checking -->
   </PropertyGroup>
   <ItemGroup>
    <None Include="$(MSBuildThisFileDirectory)\LICENSE.txt" Pack="true" PackagePath="" Visible="false" />

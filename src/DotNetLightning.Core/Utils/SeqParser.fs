@@ -3,29 +3,31 @@ namespace DotNetLightning.Utils
 open ResultUtils
 open ResultUtils.Portability
 
-/// A SeqParser is a parser for sequences. It wraps a function which takes a
+/// A `SeqParser` is a parser for sequences. It wraps a function which takes a
 /// sequence and optionally returns a value successfully-parsed from the start of
 /// the sequence along with the rest of the sequence. If parsing fails it returns
 /// None.
 ///
-/// You can construct a SeqParser using the seqParser compuation expression.
+/// You can construct a `SeqParser` using the `seqParser` computation expression.
 /// The bind operation of the computation expression will return the value parsed
 /// from the sequence and advance the sequence to the position where the next value
 /// can be parsed from. For example, given a parser parseValue, you can construct a
 /// parser which parses three values like this:
 ///
+/// ```fsharp
 /// seqParser {
 ///    let! value0 = parseValue()
 ///    let! value1 = parseValue()
 ///    let! value2 = parseValue()
 ///    return (value0, value1, value2)
 /// }
+/// ```
 ///
-/// You can also call SeqParser.next and SeqParser.abort from within a
+/// You can also call `SeqParser.next` and `SeqParser.abort` from within a
 /// seqParser to pop the next element of the sequence or to abort parsing
 /// respectively.
 ///
-/// The function SeqParser.parseToCompletion takes a sequence and a SeqParser
+/// The function `SeqParser.parseToCompletion` takes a sequence and a `SeqParser`
 /// and will attempt to parse the sequence to completion.
 
 [<AutoOpen>]

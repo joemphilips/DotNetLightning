@@ -3,6 +3,8 @@
     <VersionPrefix>1.1.2</VersionPrefix>
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <WarningLevel>3</WarningLevel>
