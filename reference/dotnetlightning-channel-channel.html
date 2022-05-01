@@ -1,0 +1,2674 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Channel (DotNetLightning)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="joemphilips">
+
+    <link rel="stylesheet" id="theme_link" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.6.0/materia/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
+
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+    <link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico">
+    <link type="text/css" rel="stylesheet" href="https://github.com/joemphilips/DotNetLightning/content/navbar-fixed-left.css" />
+    <link type="text/css" rel="stylesheet" href="https://github.com/joemphilips/DotNetLightning/content/fsdocs-default.css" />
+    <link type="text/css" rel="stylesheet" href="https://github.com/joemphilips/DotNetLightning/content/fsdocs-custom.css" />
+    <script type="text/javascript" src="https://github.com/joemphilips/DotNetLightning/content/fsdocs-tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+    <!-- END SEARCH BOX: this adds support for the search box -->
+    
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md navbar-light bg-secondary fixed-left" id="fsdocs-nav">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse navbar-nav-scroll" id="navbarsExampleDefault">
+            <a href="https://github.com/joemphilips/DotNetLightning/"><img id="fsdocs-logo" src="https://github.com/joemphilips/DotNetLightning/img/logo.png" /></a>
+            <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+            <div id="header">
+                <div class="searchbox" id="fsdocs-searchbox">
+                    <label for="search-by">
+                        <i class="fas fa-search"></i>
+                    </label>
+                    <input data-search-input="" id="search-by" type="search" placeholder="Search..." />
+                    <span data-search-clear="">
+                        <i class="fas fa-times"></i>
+                    </span>
+                </div>
+            </div>
+
+            <!-- END SEARCH BOX: this adds support for the search box -->
+            <ul class="navbar-nav">
+                <li class="nav-header">Links</li>
+                <li class="nav-item" id="fsdocs-license-link"><a class="nav-link" href="https://github.com/joemphilips/DotNetLightning/blob/master/LICENSE.txt">License</a></li>
+                <li class="nav-item" id="fsdocs-release-notes-link"><a class="nav-link" href="https://github.com/joemphilips/DotNetLightning/releases">Release Notes</a></li>
+                <li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://github.com/joemphilips/DotNetLightning/">Source Repository</a></li>
+                
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://github.com/joemphilips/DotNetLightning/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="masthead">
+            <h3 class="muted"><a href="https://github.com/joemphilips/DotNetLightning/">DotNetLightning</a></h3>
+        </div>
+        <hr />
+        <div class="container" id="fsdocs-content">
+            <div>
+  <h2>
+    Channel Type
+  </h2>
+  <dl class="fsdocs-metadata">
+    <dt>
+      Namespace: 
+      <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel.html">
+        DotNetLightning.Channel
+      </a>
+    </dt>
+    <dt>
+      Assembly: DotNetLightning.Core.dll
+    </dt>
+    <dt>
+      Base Type: 
+      <code>obj</code>
+    </dt>
+    <dt>
+      All Interfaces: 
+      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>&gt;</span></code>
+      , 
+      <code><a href="https://docs.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
+    </dt>
+  </dl>
+  <div class="fsdocs-xmldoc">
+    <div>
+      <p class="fsdocs-summary">
+        
+      </p>
+    </div>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div>
+    <h3>
+      Record fields
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Record Field
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '352', 352)" onmouseover="showTip(event, '352', 352)">
+                <p>
+                  <a id="ChannelOptions">
+                    <a href="#ChannelOptions">
+                      <code>ChannelOptions</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="352">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>ChannelOptions</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channeloptions.html">ChannelOptions</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L461-461" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channeloptions.html">ChannelOptions</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '353', 353)" onmouseover="showTip(event, '353', 353)">
+                <p>
+                  <a id="ChannelPrivKeys">
+                    <a href="#ChannelPrivKeys">
+                      <code>ChannelPrivKeys</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="353">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>ChannelPrivKeys</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-channelprivkeys.html">ChannelPrivKeys</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L462-462" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-channelprivkeys.html">ChannelPrivKeys</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '354', 354)" onmouseover="showTip(event, '354', 354)">
+                <p>
+                  <a id="Commitments">
+                    <a href="#Commitments">
+                      <code>Commitments</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="354">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>Commitments</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-commitments.html">Commitments</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L466-466" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-commitments.html">Commitments</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '355', 355)" onmouseover="showTip(event, '355', 355)">
+                <p>
+                  <a id="NegotiatingState">
+                    <a href="#NegotiatingState">
+                      <code>NegotiatingState</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="355">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>NegotiatingState</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-data-negotiatingstate.html">NegotiatingState</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L465-465" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-data-negotiatingstate.html">NegotiatingState</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '356', 356)" onmouseover="showTip(event, '356', 356)">
+                <p>
+                  <a id="NodeSecret">
+                    <a href="#NodeSecret">
+                      <code>NodeSecret</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="356">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>NodeSecret</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-nodesecret.html">NodeSecret</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L463-463" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-nodesecret.html">NodeSecret</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '357', 357)" onmouseover="showTip(event, '357', 357)">
+                <p>
+                  <a id="RemoteNextCommitInfo">
+                    <a href="#RemoteNextCommitInfo">
+                      <code>RemoteNextCommitInfo</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="357">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>RemoteNextCommitInfo</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-remotenextcommitinfo.html">RemoteNextCommitInfo</a>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L464-464" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-remotenextcommitinfo.html">RemoteNextCommitInfo</a>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '358', 358)" onmouseover="showTip(event, '358', 358)">
+                <p>
+                  <a id="SavedChannelState">
+                    <a href="#SavedChannelState">
+                      <code>SavedChannelState</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="358">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>SavedChannelState</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-savedchannelstate.html">SavedChannelState</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L460-460" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-savedchannelstate.html">SavedChannelState</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div></div>
+  <div></div>
+  <div>
+    <h3>
+      Instance members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Instance member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '359', 359)" onmouseover="showTip(event, '359', 359)">
+                <p>
+                  <a id="AddHTLC">
+                    <a href="#AddHTLC">
+                      <code><span>this.AddHTLC</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="359">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.AddHTLC</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        op
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-operationaddhtlc.html">OperationAddHTLC</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>&#32;*&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-updateaddhtlcmsg.html">UpdateAddHTLCMsg</a></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Channel.Channel.AddHTLC`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Channel.Channel.AddHTLC\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L793-793" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  op
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-operationaddhtlc.html">OperationAddHTLC</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>&#32;*&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-updateaddhtlcmsg.html">UpdateAddHTLCMsg</a></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '360', 360)" onmouseover="showTip(event, '360', 360)">
+                <p>
+                  <a id="ApplyClosingSigned">
+                    <a href="#ApplyClosingSigned">
+                      <code><span>this.ApplyClosingSigned</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="360">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ApplyClosingSigned</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        msg
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-closingsignedmsg.html">ClosingSignedMsg</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>&#32;*&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-closingsignedresponse.html">ClosingSignedResponse</a></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Channel.Channel.ApplyClosingSigned`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Channel.Channel.ApplyClosingSigned\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L1448-1448" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  msg
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-closingsignedmsg.html">ClosingSignedMsg</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>&#32;*&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-closingsignedresponse.html">ClosingSignedResponse</a></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '361', 361)" onmouseover="showTip(event, '361', 361)">
+                <p>
+                  <a id="ApplyCommitmentSigned">
+                    <a href="#ApplyCommitmentSigned">
+                      <code><span>this.ApplyCommitmentSigned</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="361">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ApplyCommitmentSigned</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        msg
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-commitmentsignedmsg.html">CommitmentSignedMsg</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>&#32;*&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-revokeandackmsg.html">RevokeAndACKMsg</a></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Channel.Channel.ApplyCommitmentSigned`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Channel.Channel.ApplyCommitmentSigned\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L1096-1096" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  msg
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-commitmentsignedmsg.html">CommitmentSignedMsg</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>&#32;*&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-revokeandackmsg.html">RevokeAndACKMsg</a></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '362', 362)" onmouseover="showTip(event, '362', 362)">
+                <p>
+                  <a id="ApplyFundingConfirmedOnBC">
+                    <a href="#ApplyFundingConfirmedOnBC">
+                      <code><span>this.ApplyFundingConfirmedOnBC</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="362">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ApplyFundingConfirmedOnBC</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        height
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-blockheight.html">BlockHeight</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        txindex
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-txindexinblock.html">TxIndexInBlock</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        depth
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-blockheightoffset32.html">BlockHeightOffset32</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>&#32;*&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-fundinglockedmsg.html">FundingLockedMsg</a></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Channel.Channel.ApplyFundingConfirmedOnBC`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Channel.Channel.ApplyFundingConfirmedOnBC\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L739-739" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  height
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-blockheight.html">BlockHeight</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  txindex
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-txindexinblock.html">TxIndexInBlock</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  depth
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-blockheightoffset32.html">BlockHeightOffset32</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>&#32;*&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-fundinglockedmsg.html">FundingLockedMsg</a></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '363', 363)" onmouseover="showTip(event, '363', 363)">
+                <p>
+                  <a id="ApplyFundingLocked">
+                    <a href="#ApplyFundingLocked">
+                      <code><span>this.ApplyFundingLocked</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="363">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ApplyFundingLocked</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        fundingLockedMsg
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-fundinglockedmsg.html">FundingLockedMsg</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Channel.Channel.ApplyFundingLocked`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Channel.Channel.ApplyFundingLocked\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L712-712" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  fundingLockedMsg
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-fundinglockedmsg.html">FundingLockedMsg</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '364', 364)" onmouseover="showTip(event, '364', 364)">
+                <p>
+                  <a id="ApplyRevokeAndACK">
+                    <a href="#ApplyRevokeAndACK">
+                      <code><span>this.ApplyRevokeAndACK</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="364">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ApplyRevokeAndACK</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        msg
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-revokeandackmsg.html">RevokeAndACKMsg</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Channel.Channel.ApplyRevokeAndACK`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Channel.Channel.ApplyRevokeAndACK\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L1108-1108" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  msg
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-revokeandackmsg.html">RevokeAndACKMsg</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '365', 365)" onmouseover="showTip(event, '365', 365)">
+                <p>
+                  <a id="ApplyUpdateAddHTLC">
+                    <a href="#ApplyUpdateAddHTLC">
+                      <code><span>this.ApplyUpdateAddHTLC</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="365">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ApplyUpdateAddHTLC</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        msg
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-updateaddhtlcmsg.html">UpdateAddHTLCMsg</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        height
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-blockheight.html">BlockHeight</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Channel.Channel.ApplyUpdateAddHTLC`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Channel.Channel.ApplyUpdateAddHTLC\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L866-866" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  msg
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-updateaddhtlcmsg.html">UpdateAddHTLCMsg</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  height
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-blockheight.html">BlockHeight</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '366', 366)" onmouseover="showTip(event, '366', 366)">
+                <p>
+                  <a id="ApplyUpdateFailHTLC">
+                    <a href="#ApplyUpdateFailHTLC">
+                      <code><span>this.ApplyUpdateFailHTLC</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="366">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ApplyUpdateFailHTLC</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        msg
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-updatefailhtlcmsg.html">UpdateFailHTLCMsg</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Channel.Channel.ApplyUpdateFailHTLC`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Channel.Channel.ApplyUpdateFailHTLC\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L991-991" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  msg
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-updatefailhtlcmsg.html">UpdateFailHTLCMsg</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '367', 367)" onmouseover="showTip(event, '367', 367)">
+                <p>
+                  <a id="ApplyUpdateFailMalformedHTLC">
+                    <a href="#ApplyUpdateFailMalformedHTLC">
+                      <code><span>this.ApplyUpdateFailMalformedHTLC</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="367">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ApplyUpdateFailMalformedHTLC</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        msg
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-updatefailmalformedhtlcmsg.html">UpdateFailMalformedHTLCMsg</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Channel.Channel.ApplyUpdateFailMalformedHTLC`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Channel.Channel.ApplyUpdateFailMalformedHTLC\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L1012-1012" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  msg
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-updatefailmalformedhtlcmsg.html">UpdateFailMalformedHTLCMsg</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '368', 368)" onmouseover="showTip(event, '368', 368)">
+                <p>
+                  <a id="ApplyUpdateFee">
+                    <a href="#ApplyUpdateFee">
+                      <code><span>this.ApplyUpdateFee</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="368">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ApplyUpdateFee</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        msg
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-updatefeemsg.html">UpdateFeeMsg</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Channel.Channel.ApplyUpdateFee`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Channel.Channel.ApplyUpdateFee\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L1051-1051" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  msg
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-updatefeemsg.html">UpdateFeeMsg</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '369', 369)" onmouseover="showTip(event, '369', 369)">
+                <p>
+                  <a id="ApplyUpdateFulfillHTLC">
+                    <a href="#ApplyUpdateFulfillHTLC">
+                      <code><span>this.ApplyUpdateFulfillHTLC</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="369">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.ApplyUpdateFulfillHTLC</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        msg
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-updatefulfillhtlcmsg.html">UpdateFulfillHTLCMsg</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Channel.Channel.ApplyUpdateFulfillHTLC`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Channel.Channel.ApplyUpdateFulfillHTLC\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L924-924" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  msg
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-updatefulfillhtlcmsg.html">UpdateFulfillHTLCMsg</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '370', 370)" onmouseover="showTip(event, '370', 370)">
+                <p>
+                  <a id="Close">
+                    <a href="#Close">
+                      <code><span>this.Close</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="370">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Close</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        localShutdownScriptPubKey
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-shutdownscriptpubkey.html">ShutdownScriptPubKey</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>&#32;*&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-shutdownmsg.html">ShutdownMsg</a></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Channel.Channel.Close`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Channel.Channel.Close\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L1169-1169" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  localShutdownScriptPubKey
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-shutdownscriptpubkey.html">ShutdownScriptPubKey</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>&#32;*&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-shutdownmsg.html">ShutdownMsg</a></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '371', 371)" onmouseover="showTip(event, '371', 371)">
+                <p>
+                  <a id="CreateChannelReestablish">
+                    <a href="#CreateChannelReestablish">
+                      <code><span>this.CreateChannelReestablish</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="371">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.CreateChannelReestablish</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-channelreestablishmsg.html">ChannelReestablishMsg</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Channel.Channel.CreateChannelReestablish`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Channel.Channel.CreateChannelReestablish\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L682-682" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-channelreestablishmsg.html">ChannelReestablishMsg</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '372', 372)" onmouseover="showTip(event, '372', 372)">
+                <p>
+                  <a id="FailHTLC">
+                    <a href="#FailHTLC">
+                      <code><span>this.FailHTLC</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="372">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.FailHTLC</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        op
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-operationfailhtlc.html">OperationFailHTLC</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>&#32;*&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-updatefailhtlcmsg.html">UpdateFailHTLCMsg</a></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Channel.Channel.FailHTLC`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Channel.Channel.FailHTLC\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L945-945" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  op
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-operationfailhtlc.html">OperationFailHTLC</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>&#32;*&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-updatefailhtlcmsg.html">UpdateFailHTLCMsg</a></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '373', 373)" onmouseover="showTip(event, '373', 373)">
+                <p>
+                  <a id="FailMalformedHTLC">
+                    <a href="#FailMalformedHTLC">
+                      <code><span>this.FailMalformedHTLC</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="373">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.FailMalformedHTLC</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        op
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-operationfailmalformedhtlc.html">OperationFailMalformedHTLC</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>&#32;*&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-updatefailmalformedhtlcmsg.html">UpdateFailMalformedHTLCMsg</a></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Channel.Channel.FailMalformedHTLC`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Channel.Channel.FailMalformedHTLC\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L968-968" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  op
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-operationfailmalformedhtlc.html">OperationFailMalformedHTLC</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>&#32;*&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-updatefailmalformedhtlcmsg.html">UpdateFailMalformedHTLCMsg</a></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '374', 374)" onmouseover="showTip(event, '374', 374)">
+                <p>
+                  <a id="FulFillHTLC">
+                    <a href="#FulFillHTLC">
+                      <code><span>this.FulFillHTLC</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="374">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.FulFillHTLC</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        cmd
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-operationfulfillhtlc.html">OperationFulfillHTLC</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>&#32;*&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-updatefulfillhtlcmsg.html">UpdateFulfillHTLCMsg</a></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Channel.Channel.FulFillHTLC`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Channel.Channel.FulFillHTLC\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L902-902" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  cmd
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-operationfulfillhtlc.html">OperationFulfillHTLC</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>&#32;*&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-updatefulfillhtlcmsg.html">UpdateFulfillHTLCMsg</a></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '375', 375)" onmouseover="showTip(event, '375', 375)">
+                <p>
+                  <a id="LocalHasChanges">
+                    <a href="#LocalHasChanges">
+                      <code><span>this.LocalHasChanges</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="375">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.LocalHasChanges</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Channel.Channel.LocalHasChanges`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Channel.Channel.LocalHasChanges\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L1570-1570" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '376', 376)" onmouseover="showTip(event, '376', 376)">
+                <p>
+                  <a id="RemoteHasChanges">
+                    <a href="#RemoteHasChanges">
+                      <code><span>this.RemoteHasChanges</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="376">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.RemoteHasChanges</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Channel.Channel.RemoteHasChanges`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Channel.Channel.RemoteHasChanges\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L1574-1574" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '377', 377)" onmouseover="showTip(event, '377', 377)">
+                <p>
+                  <a id="RemoteShutdown">
+                    <a href="#RemoteShutdown">
+                      <code><span>this.RemoteShutdown</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="377">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.RemoteShutdown</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        msg
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-shutdownmsg.html">ShutdownMsg</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        localShutdownScriptPubKey
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-shutdownscriptpubkey.html">ShutdownScriptPubKey</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>&#32;*&#32;<span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-shutdownmsg.html">ShutdownMsg</a>&gt;</span>&#32;*&#32;<span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-closingsignedmsg.html">ClosingSignedMsg</a>&gt;</span></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Channel.Channel.RemoteShutdown`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Channel.Channel.RemoteShutdown\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L1316-1316" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  msg
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-shutdownmsg.html">ShutdownMsg</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  localShutdownScriptPubKey
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-shutdownscriptpubkey.html">ShutdownScriptPubKey</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>&#32;*&#32;<span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-shutdownmsg.html">ShutdownMsg</a>&gt;</span>&#32;*&#32;<span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-closingsignedmsg.html">ClosingSignedMsg</a>&gt;</span></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '378', 378)" onmouseover="showTip(event, '378', 378)">
+                <p>
+                  <a id="SignCommitment">
+                    <a href="#SignCommitment">
+                      <code><span>this.SignCommitment</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="378">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.SignCommitment</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>&#32;*&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-commitmentsignedmsg.html">CommitmentSignedMsg</a></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Channel.Channel.SignCommitment`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Channel.Channel.SignCommitment\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L1077-1077" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>&#32;*&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-commitmentsignedmsg.html">CommitmentSignedMsg</a></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '379', 379)" onmouseover="showTip(event, '379', 379)">
+                <p>
+                  <a id="UpdateFee">
+                    <a href="#UpdateFee">
+                      <code><span>this.UpdateFee</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="379">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.UpdateFee</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        op
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-operationupdatefee.html">OperationUpdateFee</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>&#32;*&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-updatefeemsg.html">UpdateFeeMsg</a></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Channel.Channel.UpdateFee`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Channel.Channel.UpdateFee\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L1033-1033" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  op
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-operationupdatefee.html">OperationUpdateFee</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channel.html">Channel</a>&#32;*&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-updatefeemsg.html">UpdateFeeMsg</a></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <h3>
+      Static members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Static member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '380', 380)" onmouseover="showTip(event, '380', 380)">
+                <p>
+                  <a id="NewInbound">
+                    <a href="#NewInbound">
+                      <code><span>Channel.NewInbound<span><span>(<span>channelHandshakeLimits,&#32;channelOptions,&#32;announceChannel,&#32;nodeMasterPrivKey,&#32;channelIndex,&#32;network,&#32;remoteNodeId,&#32;minimumDepth,&#32;shutdownScriptPubKey,&#32;openChannelMsg,&#32;localParams,&#32;remoteInit</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="380">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Channel.NewInbound<span><span>(<span>channelHandshakeLimits,&#32;channelOptions,&#32;announceChannel,&#32;nodeMasterPrivKey,&#32;channelIndex,&#32;network,&#32;remoteNodeId,&#32;minimumDepth,&#32;shutdownScriptPubKey,&#32;openChannelMsg,&#32;localParams,&#32;remoteInit</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        channelHandshakeLimits
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-channelhandshakelimits.html">ChannelHandshakeLimits</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        channelOptions
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channeloptions.html">ChannelOptions</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        announceChannel
+                      </b>
+                      :
+                      <code>bool</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        nodeMasterPrivKey
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-nodemasterprivkey.html">NodeMasterPrivKey</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        channelIndex
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        network
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.network">Network</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        remoteNodeId
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-nodeid.html">NodeId</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        minimumDepth
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-blockheightoffset32.html">BlockHeightOffset32</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        shutdownScriptPubKey
+                      </b>
+                      :
+                      <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-shutdownscriptpubkey.html">ShutdownScriptPubKey</a>&gt;</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        openChannelMsg
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-openchannelmsg.html">OpenChannelMsg</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        localParams
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-localparams.html">LocalParams</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        remoteInit
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-initmsg.html">InitMsg</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-acceptchannelmsg.html">AcceptChannelMsg</a>&#32;*&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelwaitingforfundingcreated.html">ChannelWaitingForFundingCreated</a></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Channel.Channel.NewInbound`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Channel.Channel.NewInbound\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L578-578" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  channelHandshakeLimits
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-channelhandshakelimits.html">ChannelHandshakeLimits</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  channelOptions
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channeloptions.html">ChannelOptions</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  announceChannel
+                </span>
+                :
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  nodeMasterPrivKey
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-nodemasterprivkey.html">NodeMasterPrivKey</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  channelIndex
+                </span>
+                :
+                <code>int</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  network
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.network">Network</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  remoteNodeId
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-nodeid.html">NodeId</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  minimumDepth
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-blockheightoffset32.html">BlockHeightOffset32</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  shutdownScriptPubKey
+                </span>
+                :
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-shutdownscriptpubkey.html">ShutdownScriptPubKey</a>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  openChannelMsg
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-openchannelmsg.html">OpenChannelMsg</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  localParams
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-localparams.html">LocalParams</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  remoteInit
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-initmsg.html">InitMsg</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-acceptchannelmsg.html">AcceptChannelMsg</a>&#32;*&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelwaitingforfundingcreated.html">ChannelWaitingForFundingCreated</a></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '381', 381)" onmouseover="showTip(event, '381', 381)">
+                <p>
+                  <a id="NewOutbound">
+                    <a href="#NewOutbound">
+                      <code><span>Channel.NewOutbound<span><span>(<span>channelHandshakeLimits,&#32;channelOptions,&#32;announceChannel,&#32;nodeMasterPrivKey,&#32;channelIndex,&#32;network,&#32;remoteNodeId,&#32;shutdownScriptPubKey,&#32;temporaryChannelId,&#32;fundingSatoshis,&#32;pushMSat,&#32;initFeeRatePerKw,&#32;localParams,&#32;remoteInit</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="381">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Channel.NewOutbound<span><span>(<span>channelHandshakeLimits,&#32;channelOptions,&#32;announceChannel,&#32;nodeMasterPrivKey,&#32;channelIndex,&#32;network,&#32;remoteNodeId,&#32;shutdownScriptPubKey,&#32;temporaryChannelId,&#32;fundingSatoshis,&#32;pushMSat,&#32;initFeeRatePerKw,&#32;localParams,&#32;remoteInit</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        channelHandshakeLimits
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-channelhandshakelimits.html">ChannelHandshakeLimits</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        channelOptions
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channeloptions.html">ChannelOptions</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        announceChannel
+                      </b>
+                      :
+                      <code>bool</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        nodeMasterPrivKey
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-nodemasterprivkey.html">NodeMasterPrivKey</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        channelIndex
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        network
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.network">Network</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        remoteNodeId
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-nodeid.html">NodeId</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        shutdownScriptPubKey
+                      </b>
+                      :
+                      <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-shutdownscriptpubkey.html">ShutdownScriptPubKey</a>&gt;</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        temporaryChannelId
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-channelid.html">ChannelId</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        fundingSatoshis
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.money">Money</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        pushMSat
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-lnmoney.html">LNMoney</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        initFeeRatePerKw
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-feerateperkw.html">FeeRatePerKw</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        localParams
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-localparams.html">LocalParams</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        remoteInit
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-initmsg.html">InitMsg</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-openchannelmsg.html">OpenChannelMsg</a>&#32;*&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelwaitingforacceptchannel.html">ChannelWaitingForAcceptChannel</a></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Channel.Channel.NewOutbound`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Channel.Channel.NewOutbound\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Channel.fs#L491-491" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  channelHandshakeLimits
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-channelhandshakelimits.html">ChannelHandshakeLimits</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  channelOptions
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channeloptions.html">ChannelOptions</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  announceChannel
+                </span>
+                :
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  nodeMasterPrivKey
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-nodemasterprivkey.html">NodeMasterPrivKey</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  channelIndex
+                </span>
+                :
+                <code>int</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  network
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.network">Network</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  remoteNodeId
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-nodeid.html">NodeId</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  shutdownScriptPubKey
+                </span>
+                :
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpoption-1">Option</a>&lt;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-shutdownscriptpubkey.html">ShutdownScriptPubKey</a>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  temporaryChannelId
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-channelid.html">ChannelId</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  fundingSatoshis
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.money">Money</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  pushMSat
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-lnmoney.html">LNMoney</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  initFeeRatePerKw
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-feerateperkw.html">FeeRatePerKw</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  localParams
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-localparams.html">LocalParams</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  remoteInit
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-initmsg.html">InitMsg</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-core-fsharpresult-2">Result</a>&lt;<span><span>(<span><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-msgs-openchannelmsg.html">OpenChannelMsg</a>&#32;*&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelwaitingforacceptchannel.html">ChannelWaitingForAcceptChannel</a></span>)</span>,&#32;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-channelerror.html">ChannelError</a></span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+            
+        </div>
+
+        <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+        <script type="text/javascript">var fsdocs_search_baseurl = 'https://github.com/joemphilips/DotNetLightning/';</script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.8/lunr.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.min.js"></script>
+        <script type="text/javascript" src="https://github.com/joemphilips/DotNetLightning/content/fsdocs-search.js"></script>
+        <!-- END SEARCH BOX: this adds support for the search box -->
+    </div>
+</body>
+
+</html>
