@@ -98,13 +98,13 @@
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-        
- When we verify a macaroon for its caveats, usually it check each caveats independently.
- In case of LSAT, this does not work since the validity of a caveat depends on a previous caveat
- (more specifically, if there were two caveats with a same Condition, we usually check that whether the restriction
- does not get more loose than before.)
- So we can not just rely on Macaroon's <see cref="Verifier"/> . The additional check is done with this ISatisfier
- Interface
+        <p>When we verify a macaroon for its caveats, usually it check each caveats independently.
+In case of LSAT, this does not work since the validity of a caveat depends on a previous caveat
+(more specifically, if there were two caveats with a same Condition, we usually check that whether the restriction
+does not get more loose than before.)
+So we can not just rely on Macaroon's <see cref="Verifier"/> . The additional check is done with this ISatisfier
+Interface</p>
+
 
       </p>
     </div>
@@ -135,7 +135,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '819', 819)" onmouseover="showTip(event, '819', 819)">
+              <code onmouseout="hideTip(event, '821', 821)" onmouseover="showTip(event, '821', 821)">
                 <p>
                   <a id="Condition">
                     <a href="#Condition">
@@ -144,7 +144,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="819">
+              <div class="fsdocs-tip" id="821">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.Condition</span></code>
@@ -177,8 +177,8 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
               <p class="fsdocs-summary">
-                
- This is the left side of caveat equation. e.g. for caveat "service=my_awesome_service", it is "service"
+                <p>This is the left side of caveat equation. e.g. for caveat "service=my<em>awesome</em>service", it is "service"</p>
+
 
               </p>
             </div>
@@ -196,7 +196,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '820', 820)" onmouseover="showTip(event, '820', 820)">
+              <code onmouseout="hideTip(event, '822', 822)" onmouseover="showTip(event, '822', 822)">
                 <p>
                   <a id="SatisfyFinal">
                     <a href="#SatisfyFinal">
@@ -205,7 +205,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="820">
+              <div class="fsdocs-tip" id="822">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.SatisfyFinal</span></code>
@@ -250,9 +250,9 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
               <p class="fsdocs-summary">
-                
- Satisfies the final caveat of an LSAT. If multiple caveats with the same condition exist, this will only
- be executed once all previous caveats are also satisfied.
+                <p>Satisfies the final caveat of an LSAT. If multiple caveats with the same condition exist, this will only
+be executed once all previous caveats are also satisfied.</p>
+
 
               </p>
             </div>
@@ -280,7 +280,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '821', 821)" onmouseover="showTip(event, '821', 821)">
+              <code onmouseout="hideTip(event, '823', 823)" onmouseover="showTip(event, '823', 823)">
                 <p>
                   <a id="SatisfyPrevious">
                     <a href="#SatisfyPrevious">
@@ -289,7 +289,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="821">
+              <div class="fsdocs-tip" id="823">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.SatisfyPrevious</span></code>
@@ -342,12 +342,11 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
               <p class="fsdocs-summary">
-                
- ensures a caveat is in accordance with a previous one with the same condition. This is needed since caveats
- of the same condition can be used multiple times as long as they enforce more permissions than the previous.
+                <p>ensures a caveat is in accordance with a previous one with the same condition. This is needed since caveats
+of the same condition can be used multiple times as long as they enforce more permissions than the previous.</p>
+<p>For example, we have a caveat that only allows us to use an LSAT for 7 more days. we can add another caveat
+that only allows for 3 more days of use and lend it to another party.</p>
 
- For example, we have a caveat that only allows us to use an LSAT for 7 more days. we can add another caveat
- that only allows for 3 more days of use and lend it to another party.
 
               </p>
             </div>

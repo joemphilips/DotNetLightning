@@ -285,8 +285,8 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
               <p class="fsdocs-summary">
-                
- The cumulative weight of a set of edges (path in the graph).
+                <p>The cumulative weight of a set of edges (path in the graph).</p>
+
 
               </p>
             </div>
@@ -317,9 +317,9 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
               <p class="fsdocs-summary">
-                
- We use heuristics to calculate the weight of an edge based on channel age, cltv delta and capacity.
- We favor older channels, with bigger capacity and small cltv delta
+                <p>We use heuristics to calculate the weight of an edge based on channel age, cltv delta and capacity.
+We favor older channels, with bigger capacity and small cltv delta</p>
+
 
               </p>
             </div>
@@ -530,18 +530,17 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
               <p class="fsdocs-summary">
-                
- Finds the shortest path in the graph, uses a modified version of Dijkstra's algorithm that computes
- the shortest path from the target to the source (this is because we )
+                <p>Finds the shortest path in the graph, uses a modified version of Dijkstra's algorithm that computes
+the shortest path from the target to the source (this is because we )</p>
+<param name="g"> The graph on which will be performed the search </param>
+<param name="sourceNode"> The starting node of the path we're looking for </param>
+<param name="targetNode"> The destination node of the path </param>
+<param name="ignoredEdges"> a list of edges we do not want to consider </param>
+<param name="extraEdges"> a list of extra edges we want to consider but are not currently in the graph </param>
+<param name="wr"> an object containing the ratios used to 'weight' edges when searching for the shortest path </param>
+<param name="currentBlockHeight"> the height of the chain tip (latest block) </param>
+<param name="boundaries"> a predicate function that can used to impose limits </param>
 
- <param name="g"> The graph on which will be performed the search </param>
- <param name="sourceNode"> The starting node of the path we're looking for </param>
- <param name="targetNode"> The destination node of the path </param>
- <param name="ignoredEdges"> a list of edges we do not want to consider </param>
- <param name="extraEdges"> a list of extra edges we want to consider but are not currently in the graph </param>
- <param name="wr"> an object containing the ratios used to 'weight' edges when searching for the shortest path </param>
- <param name="currentBlockHeight"> the height of the chain tip (latest block) </param>
- <param name="boundaries"> a predicate function that can used to impose limits </param>
 
               </p>
             </div>
@@ -724,9 +723,9 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
               <p class="fsdocs-summary">
-                
- Calculates the total cost of a path (amount + fees),
- direct channels with the source will have a cost of 0 (pay no fees)
+                <p>Calculates the total cost of a path (amount + fees),
+direct channels with the source will have a cost of 0 (pay no fees)</p>
+
 
               </p>
             </div>

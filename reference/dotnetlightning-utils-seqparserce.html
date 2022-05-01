@@ -90,31 +90,37 @@
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-        
- A SeqParser is a parser for sequences. It wraps a function which takes a
- sequence and optionally returns a value successfully-parsed from the start of
- the sequence along with the rest of the sequence. If parsing fails it returns
- None.
+        <p>A <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-seqparser.html" title="SeqParser"><code>SeqParser</code></a> is a parser for sequences. It wraps a function which takes a
+sequence and optionally returns a value successfully-parsed from the start of
+the sequence along with the rest of the sequence. If parsing fails it returns
+None.</p>
+<p>You can construct a <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-seqparser.html" title="SeqParser"><code>SeqParser</code></a> using the <code>seqParser</code> computation expression.
+The bind operation of the computation expression will return the value parsed
+from the sequence and advance the sequence to the position where the next value
+can be parsed from. For example, given a parser parseValue, you can construct a
+parser which parses three values like this:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="id">seqParser</span> <span class="pn">{</span>
+   <span class="k">let!</span> <span class="id">value0</span> <span class="o">=</span> <span class="id">parseValue</span><span class="pn">(</span><span class="pn">)</span>
+   <span class="k">let!</span> <span class="id">value1</span> <span class="o">=</span> <span class="id">parseValue</span><span class="pn">(</span><span class="pn">)</span>
+   <span class="k">let!</span> <span class="id">value2</span> <span class="o">=</span> <span class="id">parseValue</span><span class="pn">(</span><span class="pn">)</span>
+   <span class="k">return</span> <span class="pn">(</span><span class="id">value0</span><span class="pn">,</span> <span class="id">value1</span><span class="pn">,</span> <span class="id">value2</span><span class="pn">)</span>
+<span class="pn">}</span>
+</code></pre></td>
+</tr>
+</table>
+<p>You can also call <code>SeqParser.next</code> and <code>SeqParser.abort</code> from within a
+seqParser to pop the next element of the sequence or to abort parsing
+respectively.</p>
+<p>The function <code>SeqParser.parseToCompletion</code> takes a sequence and a <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-seqparser.html" title="SeqParser"><code>SeqParser</code></a>
+and will attempt to parse the sequence to completion.</p>
 
- You can construct a SeqParser using the seqParser compuation expression.
- The bind operation of the computation expression will return the value parsed
- from the sequence and advance the sequence to the position where the next value
- can be parsed from. For example, given a parser parseValue, you can construct a
- parser which parses three values like this:
-
- seqParser {
-    let! value0 = parseValue()
-    let! value1 = parseValue()
-    let! value2 = parseValue()
-    return (value0, value1, value2)
- }
-
- You can also call SeqParser.next and SeqParser.abort from within a
- seqParser to pop the next element of the sequence or to abort parsing
- respectively.
-
- The function SeqParser.parseToCompletion takes a sequence and a SeqParser
- and will attempt to parse the sequence to completion.
 
       </p>
     </div>
@@ -155,7 +161,7 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/SeqParser.fs#L33-33" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/SeqParser.fs#L35-35" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -185,7 +191,7 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/SeqParser.fs#L38-38" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/SeqParser.fs#L40-40" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -251,7 +257,7 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/SeqParser.fs#L97-97" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/SeqParser.fs#L99-99" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>

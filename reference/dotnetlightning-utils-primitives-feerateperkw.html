@@ -112,8 +112,8 @@
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-        
- feerate per kilo weight
+        <p>feerate per kilo weight</p>
+
 
       </p>
     </div>
@@ -140,7 +140,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1589', 1589)" onmouseover="showTip(event, '1589', 1589)">
+              <code onmouseout="hideTip(event, '1591', 1591)" onmouseover="showTip(event, '1591', 1591)">
                 <p>
                   <a id="FeeRatePerKw">
                     <a href="#FeeRatePerKw">
@@ -149,7 +149,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1589">
+              <div class="fsdocs-tip" id="1591">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>FeeRatePerKw&#32;uint32</span></code>
@@ -218,7 +218,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1590', 1590)" onmouseover="showTip(event, '1590', 1590)">
+              <code onmouseout="hideTip(event, '1592', 1592)" onmouseover="showTip(event, '1592', 1592)">
                 <p>
                   <a id="AsNBitcoinFeeRate">
                     <a href="#AsNBitcoinFeeRate">
@@ -227,7 +227,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1590">
+              <div class="fsdocs-tip" id="1592">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.AsNBitcoinFeeRate</span></code>
@@ -274,7 +274,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1591', 1591)" onmouseover="showTip(event, '1591', 1591)">
+              <code onmouseout="hideTip(event, '1593', 1593)" onmouseover="showTip(event, '1593', 1593)">
                 <p>
                   <a id="CalculateFeeFromVirtualSize">
                     <a href="#CalculateFeeFromVirtualSize">
@@ -283,7 +283,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1591">
+              <div class="fsdocs-tip" id="1593">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.CalculateFeeFromVirtualSize</span></code>
@@ -352,7 +352,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1592', 1592)" onmouseover="showTip(event, '1592', 1592)">
+              <code onmouseout="hideTip(event, '1594', 1594)" onmouseover="showTip(event, '1594', 1594)">
                 <p>
                   <a id="CalculateFeeFromVirtualSize">
                     <a href="#CalculateFeeFromVirtualSize">
@@ -361,7 +361,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1592">
+              <div class="fsdocs-tip" id="1594">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.CalculateFeeFromVirtualSize</span></code>
@@ -430,7 +430,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1593', 1593)" onmouseover="showTip(event, '1593', 1593)">
+              <code onmouseout="hideTip(event, '1595', 1595)" onmouseover="showTip(event, '1595', 1595)">
                 <p>
                   <a id="CalculateFeeFromWeight">
                     <a href="#CalculateFeeFromWeight">
@@ -439,7 +439,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1593">
+              <div class="fsdocs-tip" id="1595">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.CalculateFeeFromWeight</span></code>
@@ -508,7 +508,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1594', 1594)" onmouseover="showTip(event, '1594', 1594)">
+              <code onmouseout="hideTip(event, '1596', 1596)" onmouseover="showTip(event, '1596', 1596)">
                 <p>
                   <a id="MismatchRatio">
                     <a href="#MismatchRatio">
@@ -517,7 +517,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1594">
+              <div class="fsdocs-tip" id="1596">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.MismatchRatio</span></code>
@@ -559,17 +559,17 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
               <p class="fsdocs-summary">
-                
-     Suppose remote = 3.0 and local = 1.0. This formula will calculate the mismatch "ratio" to be:
-         abs (2.0 * (remote - local) / (remote + local)) == abs (2.0 * (3.0 - 1.0) / (3.0 + 1.0)) == abs (2.0 * 2.0 / 4.0) == 1.0
-     If remote instead equals 0.33 we get the same mismatch ratio:
-         abs (2.0 * (remote - local) / (remote + local)) == abs (2.0 * (0.33 - 1.0) / (0.33 + 1.0)) == abs (2.0 * 0.66 / 1.33) == 1.0
-     This example demonstrates how the formula is both symmetrical and invariant in
-     the scale of the parameters. ie. swapping remote and local, or scaling them
-     both by a constant factor, will produce the same mismatch ratio.
-     See this wikipedia entry for more info on ways of calculating relative differences:
-         https://en.wikipedia.org/wiki/Relative_change_and_difference
- 
+                <p>Suppose remote = 3.0 and local = 1.0. This formula will calculate the mismatch "ratio" to be:
+abs (2.0 <em> (remote - local) / (remote + local)) == abs (2.0 </em> (3.0 - 1.0) / (3.0 + 1.0)) == abs (2.0 <em> 2.0 / 4.0) == 1.0
+If remote instead equals 0.33 we get the same mismatch ratio:
+abs (2.0 </em> (remote - local) / (remote + local)) == abs (2.0 <em> (0.33 - 1.0) / (0.33 + 1.0)) == abs (2.0 </em> 0.66 / 1.33) == 1.0
+This example demonstrates how the formula is both symmetrical and invariant in
+the scale of the parameters. ie. swapping remote and local, or scaling them
+both by a constant factor, will produce the same mismatch ratio.
+See this wikipedia entry for more info on ways of calculating relative differences:
+<a href="https://en.wikipedia.org/wiki/Relative_change_and_difference">https://en.wikipedia.org/wiki/Relative_change_and_difference</a></p>
+
+
               </p>
             </div>
             <dl class="fsdocs-params">
@@ -596,7 +596,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1595', 1595)" onmouseover="showTip(event, '1595', 1595)">
+              <code onmouseout="hideTip(event, '1597', 1597)" onmouseover="showTip(event, '1597', 1597)">
                 <p>
                   <a id="Value">
                     <a href="#Value">
@@ -605,7 +605,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1595">
+              <div class="fsdocs-tip" id="1597">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.Value</span></code>
@@ -671,7 +671,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1596', 1596)" onmouseover="showTip(event, '1596', 1596)">
+              <code onmouseout="hideTip(event, '1598', 1598)" onmouseover="showTip(event, '1598', 1598)">
                 <p>
                   <a id="(*)">
                     <a href="#(*)">
@@ -680,7 +680,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1596">
+              <div class="fsdocs-tip" id="1598">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span><span>a</span>&#32;*&#32;<span>b</span></span></code>
@@ -765,7 +765,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1597', 1597)" onmouseover="showTip(event, '1597', 1597)">
+              <code onmouseout="hideTip(event, '1599', 1599)" onmouseover="showTip(event, '1599', 1599)">
                 <p>
                   <a id="(+)">
                     <a href="#(+)">
@@ -774,7 +774,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1597">
+              <div class="fsdocs-tip" id="1599">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span><span>a</span>&#32;+&#32;<span>b</span></span></code>
@@ -859,7 +859,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1598', 1598)" onmouseover="showTip(event, '1598', 1598)">
+              <code onmouseout="hideTip(event, '1600', 1600)" onmouseover="showTip(event, '1600', 1600)">
                 <p>
                   <a id="FromFee">
                     <a href="#FromFee">
@@ -868,7 +868,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1598">
+              <div class="fsdocs-tip" id="1600">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>FeeRatePerKw.FromFee<span><span>(<span>fee,&#32;weight</span>)</span></span></span></code>
@@ -953,7 +953,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1599', 1599)" onmouseover="showTip(event, '1599', 1599)">
+              <code onmouseout="hideTip(event, '1601', 1601)" onmouseover="showTip(event, '1601', 1601)">
                 <p>
                   <a id="FromFeeAndVSize">
                     <a href="#FromFeeAndVSize">
@@ -962,7 +962,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1599">
+              <div class="fsdocs-tip" id="1601">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>FeeRatePerKw.FromFeeAndVSize<span><span>(<span>fee,&#32;vsize</span>)</span></span></span></code>
@@ -1047,7 +1047,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1600', 1600)" onmouseover="showTip(event, '1600', 1600)">
+              <code onmouseout="hideTip(event, '1602', 1602)" onmouseover="showTip(event, '1602', 1602)">
                 <p>
                   <a id="Max">
                     <a href="#Max">
@@ -1056,7 +1056,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1600">
+              <div class="fsdocs-tip" id="1602">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>FeeRatePerKw.Max<span><span>(<span>a,&#32;b</span>)</span></span></span></code>

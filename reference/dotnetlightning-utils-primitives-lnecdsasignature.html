@@ -106,11 +106,11 @@
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-        
- Wrapper around NBitcoin's ECDSASignature type for convenience. It has following difference
- 1. It is equatable
- 2. Some Convenience methods for serialization
- 3. Custom `ToString`
+        <p>Wrapper around NBitcoin's ECDSASignature type for convenience. It has following difference
+1. It is equatable
+2. Some Convenience methods for serialization
+3. Custom <code>ToString</code></p>
+
 
       </p>
     </div>
@@ -137,7 +137,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1605', 1605)" onmouseover="showTip(event, '1605', 1605)">
+              <code onmouseout="hideTip(event, '1607', 1607)" onmouseover="showTip(event, '1607', 1607)">
                 <p>
                   <a id="Empty">
                     <a href="#Empty">
@@ -146,7 +146,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1605">
+              <div class="fsdocs-tip" id="1607">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Empty</span></code>
@@ -171,7 +171,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1606', 1606)" onmouseover="showTip(event, '1606', 1606)">
+              <code onmouseout="hideTip(event, '1608', 1608)" onmouseover="showTip(event, '1608', 1608)">
                 <p>
                   <a id="LNECDSASignature">
                     <a href="#LNECDSASignature">
@@ -180,7 +180,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1606">
+              <div class="fsdocs-tip" id="1608">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>LNECDSASignature&#32;<a href="https://docs.microsoft.com/dotnet/api/nbitcoin.crypto.ecdsasignature">ECDSASignature</a></span></code>
@@ -249,7 +249,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1607', 1607)" onmouseover="showTip(event, '1607', 1607)">
+              <code onmouseout="hideTip(event, '1609', 1609)" onmouseover="showTip(event, '1609', 1609)">
                 <p>
                   <a id="AsString">
                     <a href="#AsString">
@@ -258,7 +258,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1607">
+              <div class="fsdocs-tip" id="1609">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.AsString</span></code>
@@ -305,7 +305,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1608', 1608)" onmouseover="showTip(event, '1608', 1608)">
+              <code onmouseout="hideTip(event, '1610', 1610)" onmouseover="showTip(event, '1610', 1610)">
                 <p>
                   <a id="CompareTo">
                     <a href="#CompareTo">
@@ -314,7 +314,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1608">
+              <div class="fsdocs-tip" id="1610">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.CompareTo</span></code>
@@ -356,9 +356,9 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
               <p class="fsdocs-summary">
-                
- Logic does not really matter here. This is just for making life easier by enabling automatic implementation
- of `StructuralComparison` for wrapper types.
+                <p>Logic does not really matter here. This is just for making life easier by enabling automatic implementation
+of <code>StructuralComparison</code> for wrapper types.</p>
+
 
               </p>
             </div>
@@ -386,7 +386,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1609', 1609)" onmouseover="showTip(event, '1609', 1609)">
+              <code onmouseout="hideTip(event, '1611', 1611)" onmouseover="showTip(event, '1611', 1611)">
                 <p>
                   <a id="ToBytesCompact">
                     <a href="#ToBytesCompact">
@@ -395,7 +395,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1609">
+              <div class="fsdocs-tip" id="1611">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.ToBytesCompact</span></code>
@@ -425,18 +425,15 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
               <p class="fsdocs-summary">
-                
- ** Description **
+                <p><strong> Description </strong></p>
+<p>Bitcoin Layer 1 forces (by consensus) DER encoding for the signatures.
+This is not optimal, but remaining as a rule since changing consensus is not easy.
+However in layer2, there are no such rules. So we use more optimal serialization by
+This function.
+Note it does not include the recovery id. so its always 64 bytes</p>
+<p><strong>Output</strong></p>
+<p>(serialized R value + S value) in byte array.</p>
 
- Bitcoin Layer 1 forces (by consensus) DER encoding for the signatures.
- This is not optimal, but remaining as a rule since changing consensus is not easy.
- However in layer2, there are no such rules. So we use more optimal serialization by
- This function.
- Note it does not include the recovery id. so its always 64 bytes
-
- **Output**
-
- (serialized R value + S value) in byte array.
 
               </p>
             </div>
@@ -454,7 +451,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1610', 1610)" onmouseover="showTip(event, '1610', 1610)">
+              <code onmouseout="hideTip(event, '1612', 1612)" onmouseover="showTip(event, '1612', 1612)">
                 <p>
                   <a id="ToDER">
                     <a href="#ToDER">
@@ -463,7 +460,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1610">
+              <div class="fsdocs-tip" id="1612">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.ToDER</span></code>
@@ -510,7 +507,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1611', 1611)" onmouseover="showTip(event, '1611', 1611)">
+              <code onmouseout="hideTip(event, '1613', 1613)" onmouseover="showTip(event, '1613', 1613)">
                 <p>
                   <a id="Value">
                     <a href="#Value">
@@ -519,7 +516,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1611">
+              <div class="fsdocs-tip" id="1613">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.Value</span></code>
@@ -585,7 +582,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1612', 1612)" onmouseover="showTip(event, '1612', 1612)">
+              <code onmouseout="hideTip(event, '1614', 1614)" onmouseover="showTip(event, '1614', 1614)">
                 <p>
                   <a id="FromBytesCompact">
                     <a href="#FromBytesCompact">
@@ -594,7 +591,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1612">
+              <div class="fsdocs-tip" id="1614">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>LNECDSASignature.FromBytesCompact<span><span>(<span>bytes,&#32;?withRecId</span>)</span></span></span></code>
@@ -644,9 +641,9 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
               <p class="fsdocs-summary">
-                
- Read 64 bytes as r(32 bytes) and s(32 bytes) value
- If `withRecId` is `true`, skip first 1 byte
+                <p>Read 64 bytes as r(32 bytes) and s(32 bytes) value
+If <code>withRecId</code> is <code>true</code>, skip first 1 byte</p>
+
 
               </p>
             </div>
@@ -682,7 +679,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1613', 1613)" onmouseover="showTip(event, '1613', 1613)">
+              <code onmouseout="hideTip(event, '1615', 1615)" onmouseover="showTip(event, '1615', 1615)">
                 <p>
                   <a id="op_Implicit">
                     <a href="#op_Implicit">
@@ -691,7 +688,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1613">
+              <div class="fsdocs-tip" id="1615">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>op_Implicit<span>ec</span></span></code>

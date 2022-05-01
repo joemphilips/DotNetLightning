@@ -94,7 +94,7 @@
     </dt>
     <dt>
       Base Type: 
-      <code>obj</code>
+      <code><a href="https://docs.microsoft.com/dotnet/api/system.valuetype">ValueType</a></code>
     </dt>
     <dt>
       All Interfaces: 
@@ -108,19 +108,22 @@
       , 
       <code><a href="https://docs.microsoft.com/dotnet/api/system.collections.istructuralcomparable">IStructuralComparable</a></code>
     </dt>
+    <dt>
+      Kind: Struct
+    </dt>
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-        
- Unique index for the tx output in the blockchain (as long as there is no
- competing fork).
- In LN, this is used for funding txo. which corresponds 1-by-1 to the
- channel. Thus works as a unique identifier for the specific channel.
- This is only used when the channel is confirmed enough (thus "opened").
- Before it gets open, ChannelId is used instead, which is a xor of the
- tx hash and the output index.
- <seealso cref="DotNetLightning.Utils.ChannelId" />
+        <p>Unique index for the tx output in the blockchain (as long as there is no
+competing fork).
+In LN, this is used for funding txo. which corresponds 1-by-1 to the
+channel. Thus works as a unique identifier for the specific channel.
+This is only used when the channel is confirmed enough (thus "opened").
+Before it gets open, ChannelId is used instead, which is a xor of the
+tx hash and the output index.
+<seealso cref="DotNetLightning.Utils.ChannelId" /></p>
+
 
       </p>
     </div>
@@ -148,7 +151,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1640', 1640)" onmouseover="showTip(event, '1640', 1640)">
+              <code onmouseout="hideTip(event, '1642', 1642)" onmouseover="showTip(event, '1642', 1642)">
                 <p>
                   <a id="BlockHeight">
                     <a href="#BlockHeight">
@@ -157,7 +160,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1640">
+              <div class="fsdocs-tip" id="1642">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>BlockHeight</code>
@@ -196,7 +199,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1641', 1641)" onmouseover="showTip(event, '1641', 1641)">
+              <code onmouseout="hideTip(event, '1643', 1643)" onmouseover="showTip(event, '1643', 1643)">
                 <p>
                   <a id="BlockIndex">
                     <a href="#BlockIndex">
@@ -205,7 +208,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1641">
+              <div class="fsdocs-tip" id="1643">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>BlockIndex</code>
@@ -244,7 +247,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1642', 1642)" onmouseover="showTip(event, '1642', 1642)">
+              <code onmouseout="hideTip(event, '1644', 1644)" onmouseover="showTip(event, '1644', 1644)">
                 <p>
                   <a id="TxOutIndex">
                     <a href="#TxOutIndex">
@@ -253,7 +256,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1642">
+              <div class="fsdocs-tip" id="1644">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>TxOutIndex</code>
@@ -313,7 +316,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1643', 1643)" onmouseover="showTip(event, '1643', 1643)">
+              <code onmouseout="hideTip(event, '1645', 1645)" onmouseover="showTip(event, '1645', 1645)">
                 <p>
                   <a id="AsString">
                     <a href="#AsString">
@@ -322,7 +325,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1643">
+              <div class="fsdocs-tip" id="1645">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.AsString</span></code>
@@ -369,7 +372,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1644', 1644)" onmouseover="showTip(event, '1644', 1644)">
+              <code onmouseout="hideTip(event, '1646', 1646)" onmouseover="showTip(event, '1646', 1646)">
                 <p>
                   <a id="ToBytes">
                     <a href="#ToBytes">
@@ -378,7 +381,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1644">
+              <div class="fsdocs-tip" id="1646">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.ToBytes</span></code>
@@ -425,7 +428,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1645', 1645)" onmouseover="showTip(event, '1645', 1645)">
+              <code onmouseout="hideTip(event, '1647', 1647)" onmouseover="showTip(event, '1647', 1647)">
                 <p>
                   <a id="ToUInt64">
                     <a href="#ToUInt64">
@@ -434,7 +437,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1645">
+              <div class="fsdocs-tip" id="1647">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.ToUInt64</span></code>
@@ -500,7 +503,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1646', 1646)" onmouseover="showTip(event, '1646', 1646)">
+              <code onmouseout="hideTip(event, '1648', 1648)" onmouseover="showTip(event, '1648', 1648)">
                 <p>
                   <a id="From8Bytes">
                     <a href="#From8Bytes">
@@ -509,7 +512,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1646">
+              <div class="fsdocs-tip" id="1648">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>ShortChannelId.From8Bytes<span><span>(<span>b</span>)</span></span></span></code>
@@ -578,7 +581,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1647', 1647)" onmouseover="showTip(event, '1647', 1647)">
+              <code onmouseout="hideTip(event, '1649', 1649)" onmouseover="showTip(event, '1649', 1649)">
                 <p>
                   <a id="FromUInt64">
                     <a href="#FromUInt64">
@@ -587,7 +590,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1647">
+              <div class="fsdocs-tip" id="1649">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>ShortChannelId.FromUInt64<span><span>(<span>rawData</span>)</span></span></span></code>
@@ -656,7 +659,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1648', 1648)" onmouseover="showTip(event, '1648', 1648)">
+              <code onmouseout="hideTip(event, '1650', 1650)" onmouseover="showTip(event, '1650', 1650)">
                 <p>
                   <a id="ParseUnsafe">
                     <a href="#ParseUnsafe">
@@ -665,7 +668,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1648">
+              <div class="fsdocs-tip" id="1650">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>ShortChannelId.ParseUnsafe<span><span>(<span>s</span>)</span></span></span></code>
@@ -734,7 +737,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1649', 1649)" onmouseover="showTip(event, '1649', 1649)">
+              <code onmouseout="hideTip(event, '1651', 1651)" onmouseover="showTip(event, '1651', 1651)">
                 <p>
                   <a id="TryParse">
                     <a href="#TryParse">
@@ -743,7 +746,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1649">
+              <div class="fsdocs-tip" id="1651">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>ShortChannelId.TryParse<span><span>(<span>s</span>)</span></span></span></code>

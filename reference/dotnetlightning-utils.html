@@ -120,9 +120,9 @@
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
- Indicates an error on the client's part ( usually some variant of attempting to use too-low or
- too high values)
+              <p>Indicates an error on the client's part ( usually some variant of attempting to use too-low or
+too high values)</p>
+
 
             </p>
           </div>
@@ -213,9 +213,9 @@
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
- Optional Channel limits which are applied during channel creation.
- These limits are only applied to our counterparty's limits, not our own
+              <p>Optional Channel limits which are applied during channel creation.
+These limits are only applied to our counterparty's limits, not our own</p>
+
 
             </p>
           </div>
@@ -241,12 +241,17 @@
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/ChannelId.fs#L5-5" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/ChannelId.fs#L12-12" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>see <a href="https://github.com/lightning/bolts/blob/master/02-peer-protocol.md#definition-of-channel_id">bolt2</a>
+for the detail.
+This is mainly used when the channel funding tx is not confirmed in to the
+blockchain. After confirmation, <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-shortchannelid.html" title="ShortChannelId"><code>ShortChannelId</code></a> is used</p>
+
+
             </p>
           </div>
         </td>
@@ -276,8 +281,8 @@
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
- Set of lightning keys needed to operate a channel as describe in BOLT 3
+              <p>Set of lightning keys needed to operate a channel as describe in BOLT 3</p>
+
 
             </p>
           </div>
@@ -308,8 +313,8 @@
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
- In usual operation we should not hold secrets on memory. So only hold pubkey
+              <p>In usual operation we should not hold secrets on memory. So only hold pubkey</p>
+
 
             </p>
           </div>
@@ -700,13 +705,13 @@
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
- Heap is an ordered linear structure where the ordering is ascending or descending.
- "head" inspects the first element in the ordering, "tail" takes the remaining structure
- after head, and "insert" places elements within the ordering. PriorityQueue is available
- as an alternate interface.
- According to Okasaki the time complexity of the heap functions in this Heap implementation
- (based on the "pairing" heap) have resisted time complexity analysis.
+              <p>Heap is an ordered linear structure where the ordering is ascending or descending.
+"head" inspects the first element in the ordering, "tail" takes the remaining structure
+after head, and "insert" places elements within the ordering. PriorityQueue is available
+as an alternate interface.
+According to Okasaki the time complexity of the heap functions in this Heap implementation
+(based on the "pairing" heap) have resisted time complexity analysis.</p>
+
 
             </p>
           </div>
@@ -887,9 +892,9 @@
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
- Based on FSharpx's PriorityQueue
- refs: https://github.com/fsprojects/FSharpx.Collections/blob/master/src/FSharpx.Collections/PriorityQueue.fs
+              <p>Based on FSharpx's PriorityQueue
+refs: <a href="https://github.com/fsprojects/FSharpx.Collections/blob/master/src/FSharpx.Collections/PriorityQueue.fs">https://github.com/fsprojects/FSharpx.Collections/blob/master/src/FSharpx.Collections/PriorityQueue.fs</a></p>
+
 
             </p>
           </div>
@@ -950,9 +955,9 @@
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
- Port from `LightMoney` class in BTCPayServer.Lightning
- Represents millisatoshi amount of money
+              <p>Port from <code>LightMoney</code> class in <code>BTCPayServer.Lightning</code>
+Represents millisatoshi amount of money</p>
+
 
             </p>
           </div>
@@ -1043,11 +1048,11 @@
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
- This is the node-wide master key which is also used for
- transport-level encryption. The channel's keys are derived from
- this via BIP32 key derivation where `channelIndex` is the child
- index used to derive the channel's master key.
+              <p>This is the node-wide master key which is also used for
+transport-level encryption. The channel's keys are derived from
+this via BIP32 key derivation where <code>channelIndex</code> is the child
+index used to derive the channel's master key.</p>
+
 
             </p>
           </div>
@@ -1138,8 +1143,8 @@
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
- TODO: rename?
+              <p>TODO: rename?</p>
+
 
             </p>
           </div>
@@ -1530,8 +1535,8 @@
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
- This should not exceed 20 (as a protocol rule).
+              <p>This should not exceed 20 (as a protocol rule).</p>
+
 
             </p>
           </div>
@@ -1562,8 +1567,8 @@
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
- A hop in route
+              <p>A hop in route</p>
+
 
             </p>
           </div>
@@ -1619,7 +1624,7 @@
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/SeqParser.fs#L100-100" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/SeqParser.fs#L102-102" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
@@ -1649,36 +1654,42 @@
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/SeqParser.fs#L32-32" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/SeqParser.fs#L34-34" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
- A SeqParser is a parser for sequences. It wraps a function which takes a
- sequence and optionally returns a value successfully-parsed from the start of
- the sequence along with the rest of the sequence. If parsing fails it returns
- None.
+              <p>A <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-seqparser.html" title="SeqParser"><code>SeqParser</code></a> is a parser for sequences. It wraps a function which takes a
+sequence and optionally returns a value successfully-parsed from the start of
+the sequence along with the rest of the sequence. If parsing fails it returns
+None.</p>
+<p>You can construct a <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-seqparser.html" title="SeqParser"><code>SeqParser</code></a> using the <code>seqParser</code> computation expression.
+The bind operation of the computation expression will return the value parsed
+from the sequence and advance the sequence to the position where the next value
+can be parsed from. For example, given a parser parseValue, you can construct a
+parser which parses three values like this:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="id">seqParser</span> <span class="pn">{</span>
+   <span class="k">let!</span> <span class="id">value0</span> <span class="o">=</span> <span class="id">parseValue</span><span class="pn">(</span><span class="pn">)</span>
+   <span class="k">let!</span> <span class="id">value1</span> <span class="o">=</span> <span class="id">parseValue</span><span class="pn">(</span><span class="pn">)</span>
+   <span class="k">let!</span> <span class="id">value2</span> <span class="o">=</span> <span class="id">parseValue</span><span class="pn">(</span><span class="pn">)</span>
+   <span class="k">return</span> <span class="pn">(</span><span class="id">value0</span><span class="pn">,</span> <span class="id">value1</span><span class="pn">,</span> <span class="id">value2</span><span class="pn">)</span>
+<span class="pn">}</span>
+</code></pre></td>
+</tr>
+</table>
+<p>You can also call <code>SeqParser.next</code> and <code>SeqParser.abort</code> from within a
+seqParser to pop the next element of the sequence or to abort parsing
+respectively.</p>
+<p>The function <code>SeqParser.parseToCompletion</code> takes a sequence and a <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-seqparser.html" title="SeqParser"><code>SeqParser</code></a>
+and will attempt to parse the sequence to completion.</p>
 
- You can construct a SeqParser using the seqParser compuation expression.
- The bind operation of the computation expression will return the value parsed
- from the sequence and advance the sequence to the position where the next value
- can be parsed from. For example, given a parser parseValue, you can construct a
- parser which parses three values like this:
-
- seqParser {
-    let! value0 = parseValue()
-    let! value1 = parseValue()
-    let! value2 = parseValue()
-    return (value0, value1, value2)
- }
-
- You can also call SeqParser.next and SeqParser.abort from within a
- seqParser to pop the next element of the sequence or to abort parsing
- respectively.
-
- The function SeqParser.parseToCompletion takes a sequence and a SeqParser
- and will attempt to parse the sequence to completion.
 
             </p>
           </div>
@@ -1734,12 +1745,15 @@
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/TxId.fs#L6-6" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/TxId.fs#L8-8" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>Simple wrapper type for transaction id.
+Its only purpose is to annotate the inner hash is a txid and nothing else</p>
+
+
             </p>
           </div>
         </td>
@@ -1764,12 +1778,17 @@
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/UInt48.fs#L9-9" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/UInt48.fs#L13-13" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>Integral type to represent the commitment number.
+The commitment number is a number set to commitment tx locktime
+(in obscured form), see <a href="https://github.com/lightning/bolts/blob/master/03-transactions.md">bolt03-transactions</a>
+for more detail.</p>
+
+
             </p>
           </div>
         </td>
