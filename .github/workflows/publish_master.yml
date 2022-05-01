@@ -7,7 +7,20 @@ on:
       - 'nightly*' # to workaround regular publishing process
 
 jobs:
+  check_nuget_secret:
+    runs-on: ubuntu-20.04
+    outputs:
+      nuget-api-key: ${{ steps.nuget-api-key.outputs.defined }}
+    steps:
+    - id: nuget-api-key
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      if: "${{ env.NUGET_API_KEY != '' }}"
+      run: echo "::set-output name=defined::true"
+
   pack_and_push:
+    needs: [check_nuget_secret]
+    if: needs.check_nuget_secret.outputs.nuget-api-key == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
