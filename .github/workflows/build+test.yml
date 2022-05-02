@@ -6,26 +6,20 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-20.04, macos-latest, windows-latest]
-        dotnet: ['3.1.200', '5.0.x']
-        include:
-          - dotnet: '3.1.200'
-            framework: netcoreapp3.0
-          - dotnet: '5.0.x'
-            framework: net5
       fail-fast: true
     steps:
     - uses: actions/checkout@v2
-    - name: Setup ${{ matrix.dotnet }} .NET Core
+    - name: Setup .NET SDK 6.0
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: ${{ matrix.dotnet }}
+        dotnet-version: 6.0.x
 
     - name: Run tests (Portability)
       # we want to run only once.
       if: startsWith(matrix.os, 'ubuntu-20')
       run: |
-        dotnet build tests/DotNetLightning.Core.Tests -p:Portability=True --framework=${{ matrix.framework }}
-        dotnet run --no-build --project tests/DotNetLightning.Core.Tests --framework=${{ matrix.framework }}
+        dotnet build tests/DotNetLightning.Core.Tests -p:Portability=True
+        dotnet run --no-build --project tests/DotNetLightning.Core.Tests --fail-on-focused-tests
 
     - name: Build/pack in release mode
       run: |
@@ -34,12 +28,14 @@ jobs:
     - name: Clean to prepare for NSec build
       run: |
         dotnet clean
+
     - name: Run core tests
       run: |
-        dotnet run --project tests/DotNetLightning.Core.Tests --framework=${{ matrix.framework }}
+        dotnet run --project tests/DotNetLightning.Core.Tests --fail-on-focused-tests
+
     - name: Run other tests
       run: |
-        dotnet test --filter "FullyQualifiedName!~Macaroon" --framework=${{ matrix.framework }} # see https://github.com/joemphilips/DotNetLightning/issues/153
+        dotnet test --filter "FullyQualifiedName!~Macaroon" # see https://github.com/joemphilips/DotNetLightning/issues/153
 
   build_with_fsharp_from_mono:
     runs-on: ubuntu-20.04

@@ -17,10 +17,6 @@ type LNMoneyUnit =
 
 /// Port from `LightMoney` class in BTCPayServer.Lightning
 /// Represents millisatoshi amount of money
-///
-/// Why not use the package directly? because it might cause circular dependency in the future.
-/// (i.e. We might want to support this package in BTCPayServer.Lightning)
-/// refs: https://github.com/btcpayserver/BTCPayServer.Lightning/blob/f65a883a63bf607176a3b7b0baa94527ac592f5e/src/BTCPayServer.Lightning.Common/LightMoney.cs
 #if !NoDUsAsStructs
 [<Struct>]
 #endif
