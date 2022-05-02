@@ -106,7 +106,16 @@
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-        
+        <p>TLV with unknown types.
+TLV represents Type-Length-Value format. and it is designed to be
+ignorable if the semantics is not clear to the node.
+So that P2P messages can be forward compatible.
+See <a href="https://github.com/lightning/bolts/blob/master/01-messaging.md">bolt01</a>
+For the detail.</p>
+<p>All other concrete TLV types (e.g. ) has method
+To convert to/from this type.</p>
+
+
       </p>
     </div>
   </div>
@@ -133,7 +142,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1144', 1144)" onmouseover="showTip(event, '1144', 1144)">
+              <code onmouseout="hideTip(event, '1080', 1080)" onmouseover="showTip(event, '1080', 1080)">
                 <p>
                   <a id="Type">
                     <a href="#Type">
@@ -142,7 +151,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1144">
+              <div class="fsdocs-tip" id="1080">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>Type</code>
@@ -159,7 +168,7 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/GenericTLV.fs#L19-19" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/GenericTLV.fs#L30-30" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -181,7 +190,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1145', 1145)" onmouseover="showTip(event, '1145', 1145)">
+              <code onmouseout="hideTip(event, '1081', 1081)" onmouseover="showTip(event, '1081', 1081)">
                 <p>
                   <a id="Value">
                     <a href="#Value">
@@ -190,7 +199,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1145">
+              <div class="fsdocs-tip" id="1081">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code>Value</code>
@@ -207,7 +216,7 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/GenericTLV.fs#L20-20" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/GenericTLV.fs#L31-31" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -250,7 +259,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1146', 1146)" onmouseover="showTip(event, '1146', 1146)">
+              <code onmouseout="hideTip(event, '1082', 1082)" onmouseover="showTip(event, '1082', 1082)">
                 <p>
                   <a id="ToBytes">
                     <a href="#ToBytes">
@@ -259,7 +268,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1146">
+              <div class="fsdocs-tip" id="1082">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.ToBytes</span></code>
@@ -284,7 +293,7 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/GenericTLV.fs#L68-68" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/GenericTLV.fs#L79-79" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -325,7 +334,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1147', 1147)" onmouseover="showTip(event, '1147', 1147)">
+              <code onmouseout="hideTip(event, '1083', 1083)" onmouseover="showTip(event, '1083', 1083)">
                 <p>
                   <a id="TryCreateFromBytes">
                     <a href="#TryCreateFromBytes">
@@ -334,7 +343,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1147">
+              <div class="fsdocs-tip" id="1083">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>GenericTLV.TryCreateFromBytes<span><span>(<span>b</span>)</span></span></span></code>
@@ -371,7 +380,7 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/GenericTLV.fs#L23-23" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/GenericTLV.fs#L34-34" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -403,7 +412,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1148', 1148)" onmouseover="showTip(event, '1148', 1148)">
+              <code onmouseout="hideTip(event, '1084', 1084)" onmouseover="showTip(event, '1084', 1084)">
                 <p>
                   <a id="TryCreateManyFromBytes">
                     <a href="#TryCreateManyFromBytes">
@@ -412,7 +421,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1148">
+              <div class="fsdocs-tip" id="1084">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>GenericTLV.TryCreateManyFromBytes<span><span>(<span>bytes</span>)</span></span></span></code>
@@ -449,7 +458,7 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/GenericTLV.fs#L53-53" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/GenericTLV.fs#L64-64" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
