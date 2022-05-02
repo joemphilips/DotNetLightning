@@ -139,7 +139,7 @@
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L403-403" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L427-427" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
@@ -174,11 +174,11 @@
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              <p>CipherSeed is a fully decoded instance of the aezeed scheme. At a high level, the encoded cipherseed is the
-enciphering off
-1. 1 byte version byte
-2. 2 bytes timestamp
-3.</p>
+              <p>CipherSeed is a fully decoded instance of the
+<a href="https://github.com/lightningnetwork/lnd/tree/master/aezeed">aezeed scheme</a>.
+You can convert from/to <code>NBitcoin.Mnemonic</code> by
+<code>CipherSeed.ToMnemonic</code>
+<code>Mnemonic.ToCipherSeed</code></p>
 
 
             </p>
@@ -205,12 +205,16 @@ enciphering off
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L18-18" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L35-35" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>An error on cryptography layer.
+If this happens, normally you should close the connection against the peer.
+Since it is clear protocol violation.</p>
+
+
             </p>
           </div>
         </td>
@@ -235,7 +239,7 @@ enciphering off
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L552-552" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L576-576" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
@@ -295,7 +299,7 @@ enciphering off
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L78-78" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L102-102" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
@@ -355,12 +359,20 @@ enciphering off
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L46-46" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L70-70" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>An interface responsible for set of low-level cryptographic operation.
+We need this because there are several types of secp256k1 implementation
+<em> 1. <code>NBitcoinSecp256k1</code>
+</em> The one we usually want to use. Which depends on <a href="https://github.com/MetacoSA/NBitcoin/tree/master/NBitcoin.Secp256k1">NBitcoin's implementation</a>
+<em> 2. <code>BouncySecp256k1</code>
+</em> Fallback when we are compiling with <code>netstandard2.0</code>, since <code>NBitcoin.Secp256k1</code> does not support older netstandard version.
+* This will be obsolete when we drop the support for <code>netstandard2.1</code></p>
+
+
             </p>
           </div>
         </td>
@@ -565,7 +577,7 @@ enciphering off
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L41-41" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L58-58" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
@@ -655,12 +667,17 @@ enciphering off
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/Sphinx.fs#L13-13" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/Sphinx.fs#L17-17" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>Module to work with sphinx encryption.
+Which is used in lightning network p2p onion routing.
+see <a href="https://github.com/lightning/bolts/blob/master/04-onion-routing.md">bolt04</a>
+for more detail.</p>
+
+
             </p>
           </div>
         </td>

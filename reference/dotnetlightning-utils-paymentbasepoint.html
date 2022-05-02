@@ -100,7 +100,18 @@
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-        
+        <p>elliptic curve point (a.k.a. pubkey) to derive <code>remotepubkey</code>.
+This is static for each channel and it is negotiated
+during channel opening.
+We don't want to use same pubkeys for each commitments more than once,
+so the key derivation needs new <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-percommitmentpoint.html" title="PerCommitmentPoint"><code>PerCommitmentPoint</code></a> for each HTLCs.
+see <a href="https://github.com/lightning/bolts/blob/master/03-transactions.md">bolt03</a>
+for more detail.</p>
+<p>In case of <code>option_static_remotekey</code> feature bit is
+negotiated, this corresponds to <code>remotepubkey</code> which the public key that
+counterparty gets paid to when the channel closes.</p>
+
+
       </p>
     </div>
   </div>
@@ -159,7 +170,7 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L85-85" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L118-118" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -238,7 +249,7 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L87-87" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L120-120" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -294,7 +305,7 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L91-91" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L124-124" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>

@@ -100,7 +100,15 @@
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-        
+        <p>An interface responsible for set of low-level cryptographic operation.
+We need this because there are several types of secp256k1 implementation
+<em> 1. <code>NBitcoinSecp256k1</code>
+</em> The one we usually want to use. Which depends on <a href="https://github.com/MetacoSA/NBitcoin/tree/master/NBitcoin.Secp256k1">NBitcoin's implementation</a>
+<em> 2. <code>BouncySecp256k1</code>
+</em> Fallback when we are compiling with <code>netstandard2.0</code>, since <code>NBitcoin.Secp256k1</code> does not support older netstandard version.
+* This will be obsolete when we drop the support for <code>netstandard2.1</code></p>
+
+
       </p>
     </div>
   </div>
@@ -187,7 +195,7 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L67-67" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L91-91" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -286,7 +294,7 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L71-71" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L95-95" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -385,7 +393,7 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L62-62" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L86-86" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -476,7 +484,7 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L50-50" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L74-74" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -559,7 +567,7 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L58-58" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L82-82" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -642,7 +650,7 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L54-54" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L78-78" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -733,7 +741,7 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L75-75" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L99-99" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>

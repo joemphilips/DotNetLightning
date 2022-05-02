@@ -278,7 +278,7 @@ blockchain. After confirmation, <a href="https://github.com/joemphilips/DotNetLi
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L335-335" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L422-422" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
@@ -310,12 +310,13 @@ blockchain. After confirmation, <a href="https://github.com/joemphilips/DotNetLi
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L236-236" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L306-306" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              <p>In usual operation we should not hold secrets on memory. So only hold pubkey</p>
+              <p>set of static pubkeys for each channel.
+corresponds to <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-channelprivkeys.html" title="ChannelPrivKeys"><code>ChannelPrivKeys</code></a> in case of our own keys.</p>
 
 
             </p>
@@ -342,12 +343,17 @@ blockchain. After confirmation, <a href="https://github.com/joemphilips/DotNetLi
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L271-271" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L352-352" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>48-bit incrementing counter for each commitment transaction
+This is set to commitment tx locktime
+(in obscured form), see <a href="https://github.com/lightning/bolts/blob/master/03-transactions.md">bolt03-transactions</a>
+for more detail.</p>
+
+
             </p>
           </div>
         </td>
@@ -372,12 +378,15 @@ blockchain. After confirmation, <a href="https://github.com/joemphilips/DotNetLi
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L245-245" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L317-317" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>set of pubkeys which get rotated for every commitment in the channel.
+Generated from <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-channelpubkeys.html" title="ChannelPubKeys"><code>ChannelPubKeys</code></a> and <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-percommitmentpoint.html" title="PerCommitmentPoint"><code>PerCommitmentPoint</code></a></p>
+
+
             </p>
           </div>
         </td>
@@ -402,12 +411,15 @@ blockchain. After confirmation, <a href="https://github.com/joemphilips/DotNetLi
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L327-327" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L414-414" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>Seed to generate all other <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-percommitmentsecret.html" title="PerCommitmentSecret"><code>PerCommitmentSecret</code></a>.
+The generation algorithm is described in <a href="https://github.com/lightning/bolts/blob/master/03-transactions.md">bolt03</a></p>
+
+
             </p>
           </div>
         </td>
@@ -432,12 +444,20 @@ blockchain. After confirmation, <a href="https://github.com/joemphilips/DotNetLi
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L130-130" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L179-179" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>elliptic curve point (a.k.a. pubkey) to derive <code>[remote|local]_delayedpubkey</code>.
+This is static for each channel and it is negotiated
+during channel opening.
+We don't want to use same pubkeys for each commitments more than once,
+so the key derivation needs new <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-percommitmentpoint.html" title="PerCommitmentPoint"><code>PerCommitmentPoint</code></a> for each HTLCs.
+see <a href="https://github.com/lightning/bolts/blob/master/03-transactions.md">bolt03</a>
+for more detail.</p>
+
+
             </p>
           </div>
         </td>
@@ -462,12 +482,16 @@ blockchain. After confirmation, <a href="https://github.com/joemphilips/DotNetLi
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L143-143" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L195-195" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>secret which corresponds to <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-delayedpaymentbasepoint.html" title="DelayedPaymentBasepoint"><code>DelayedPaymentBasepoint</code></a>
+This is not part of the p2p msg, and it must be kept secret for whole
+channel lifetime.</p>
+
+
             </p>
           </div>
         </td>
@@ -492,12 +516,14 @@ blockchain. After confirmation, <a href="https://github.com/joemphilips/DotNetLi
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L169-169" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L223-223" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>The private key which corresponds to <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-delayedpaymentpubkey.html" title="DelayedPaymentPubKey"><code>DelayedPaymentPubKey</code></a>.</p>
+
+
             </p>
           </div>
         </td>
@@ -522,12 +548,14 @@ blockchain. After confirmation, <a href="https://github.com/joemphilips/DotNetLi
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L153-153" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L206-206" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>The pubkey used for <code>to_self</code> output in htlc-success/htlc-timeout tx.</p>
+
+
             </p>
           </div>
         </td>
@@ -612,12 +640,15 @@ blockchain. After confirmation, <a href="https://github.com/joemphilips/DotNetLi
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L22-22" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L27-27" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>Type wrapper to annotate that this privkey corresponds to the pubkey which
+is locking the funding txo.</p>
+
+
             </p>
           </div>
         </td>
@@ -642,12 +673,16 @@ blockchain. After confirmation, <a href="https://github.com/joemphilips/DotNetLi
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L9-9" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L12-12" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>Type wrapper to annotate that this pubkey is used for locking the funding
+txo with 2-of-2 multisig.
+Which is exchanged in <code>open_channel</code> to create funding tx.</p>
+
+
             </p>
           </div>
         </td>
@@ -769,12 +804,20 @@ According to Okasaki the time complexity of the heap functions in this Heap impl
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L179-179" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L240-240" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>elliptic curve point (a.k.a. pubkey) to derive <code>[remote|local]_htlcpubkey</code>.
+This is static for each channel and it is negotiated
+during channel opening.
+We don't want to use same pubkeys for each commitments more than once,
+so the key derivation needs new <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-percommitmentpoint.html" title="PerCommitmentPoint"><code>PerCommitmentPoint</code></a> for each HTLCs.
+see <a href="https://github.com/lightning/bolts/blob/master/03-transactions.md">bolt03</a>
+for more detail.</p>
+
+
             </p>
           </div>
         </td>
@@ -799,12 +842,16 @@ According to Okasaki the time complexity of the heap functions in this Heap impl
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L192-192" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L256-256" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>secret which corresponds to <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-delayedpaymentbasepoint.html" title="DelayedPaymentBasepoint"><code>DelayedPaymentBasepoint</code></a>
+This is not part of the p2p msg, and it must be kept secret for whole
+channel lifetime.</p>
+
+
             </p>
           </div>
         </td>
@@ -829,12 +876,14 @@ According to Okasaki the time complexity of the heap functions in this Heap impl
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L215-215" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L282-282" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>The private key which corresponds to <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-htlcpubkey.html" title="HtlcPubKey"><code>HtlcPubKey</code></a>.</p>
+
+
             </p>
           </div>
         </td>
@@ -859,12 +908,15 @@ According to Okasaki the time complexity of the heap functions in this Heap impl
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L202-202" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L268-268" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>The pubkey used in htlc output to ensure that no one else other
+than the 2-party can have chance to claim the htlc.</p>
+
+
             </p>
           </div>
         </td>
@@ -1045,15 +1097,15 @@ Represents millisatoshi amount of money</p>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L360-360" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L447-447" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
               <p>This is the node-wide master key which is also used for
-transport-level encryption. The channel's keys are derived from
-this via BIP32 key derivation where <code>channelIndex</code> is the child
-index used to derive the channel's master key.</p>
+transport-level encryption. The channel's keys can be derived from
+this via BIP32 key derivation.
+It is basically <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-nodesecret.html" title="NodeSecret"><code>NodeSecret</code></a> + "ChainCode (an entropy for deriving the children)"</p>
 
 
             </p>
@@ -1080,12 +1132,15 @@ index used to derive the channel's master key.</p>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L225-225" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L294-294" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>Private key which corresponds to <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-nodeid.html" title="NodeId"><code>NodeId</code></a> 1-by-1.
+Which is necessary for ECDH key exchange for transport encryption.</p>
+
+
             </p>
           </div>
         </td>
@@ -1110,12 +1165,14 @@ index used to derive the channel's master key.</p>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L299-299" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L381-381" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>An actual value set to commitment tx locktime.</p>
+
+
             </p>
           </div>
         </td>
@@ -1172,12 +1229,23 @@ index used to derive the channel's master key.</p>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L84-84" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L117-117" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>elliptic curve point (a.k.a. pubkey) to derive <code>remotepubkey</code>.
+This is static for each channel and it is negotiated
+during channel opening.
+We don't want to use same pubkeys for each commitments more than once,
+so the key derivation needs new <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-percommitmentpoint.html" title="PerCommitmentPoint"><code>PerCommitmentPoint</code></a> for each HTLCs.
+see <a href="https://github.com/lightning/bolts/blob/master/03-transactions.md">bolt03</a>
+for more detail.</p>
+<p>In case of <code>option_static_remotekey</code> feature bit is
+negotiated, this corresponds to <code>remotepubkey</code> which the public key that
+counterparty gets paid to when the channel closes.</p>
+
+
             </p>
           </div>
         </td>
@@ -1202,12 +1270,16 @@ index used to derive the channel's master key.</p>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L97-97" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L133-133" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>secret which corresponds to <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-paymentbasepoint.html" title="PaymentBasepoint"><code>PaymentBasepoint</code></a>
+This is not part of the p2p msg, and it must be kept secret for whole
+channel lifetime.</p>
+
+
             </p>
           </div>
         </td>
@@ -1232,12 +1304,15 @@ index used to derive the channel's master key.</p>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L120-120" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L162-162" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>Private key corresponds to <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-paymentpubkey.html" title="PaymentPubKey"><code>PaymentPubKey</code></a>. Usually not part of the p2p
+messaging. and it is only for spending the funds after channel closure.</p>
+
+
             </p>
           </div>
         </td>
@@ -1262,12 +1337,17 @@ index used to derive the channel's master key.</p>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L107-107" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L147-147" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>The pubkey for <code>to_local</code> or <code>to_remote</code> output scriptpubkey.
+Usually rotated for each new HTLC, but it corresponds directly to
+<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-paymentbasepoint.html" title="PaymentBasepoint"><code>PaymentBasepoint</code></a> in case that <code>option_static_remotekey</code> feature bit is
+negotiated. Thus static for whole channel lifetime.</p>
+
+
             </p>
           </div>
         </td>
@@ -1292,12 +1372,18 @@ index used to derive the channel's master key.</p>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L253-253" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L330-330" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>Instead of sending actual pubkeys necessary for commitment,
+Lighting Nodes send <code>per_commitment_point</code> for each commitment
+which enables to derive all other pubkeys.
+This is a type to annotate such commitment point, an actual value is
+elliptic curve point (a.k.a. public key).</p>
+
+
             </p>
           </div>
         </td>
@@ -1322,12 +1408,16 @@ index used to derive the channel's master key.</p>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L309-309" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L394-394" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p><code>per_commitment_secret</code> in bolt.
+By revealing this value to counterparty, you can revoke the commitment.
+And thus complete the state transition in LN channel.</p>
+
+
             </p>
           </div>
         </td>
@@ -1412,12 +1502,16 @@ index used to derive the channel's master key.</p>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L32-32" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L40-40" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>Type wrapper for <code>revocation_basepoint</code>. Which is exchange in channel
+creation, and used later to create <code>revocationpubkey</code> see <a href="https://github.com/lightning/bolts/blob/master/03-transactions.md">bolt03</a>
+For the detail.</p>
+
+
             </p>
           </div>
         </td>
@@ -1442,12 +1536,14 @@ index used to derive the channel's master key.</p>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L45-45" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L54-54" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>The secret which corresponds to <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-revocationbasepoint.html" title="RevocationBasepoint"><code>RevocationBasepoint</code></a>.</p>
+
+
             </p>
           </div>
         </td>
@@ -1472,12 +1568,19 @@ index used to derive the channel's master key.</p>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L74-74" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L96-96" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>Privkey corresponds to <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-revocationpubkey.html" title="RevocationPubKey"><code>RevocationPubKey</code></a>.
+Which is necessary in a dirty-close (that is, when the counterparty
+tries to cheat by publishing an old commitment tx.)
+This can be derived from <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-percommitmentsecret.html" title="PerCommitmentSecret"><code>PerCommitmentSecret</code></a>, thus your node doesn't have
+to remember this. Instead, use <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-crypto-percommitmentsecretstore.html" title="PerCommitmentSecretStore"><code>PerCommitmentSecretStore</code></a> to remember
+<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-percommitmentsecret.html" title="PerCommitmentSecret"><code>PerCommitmentSecret</code></a> and derive this from it.</p>
+
+
             </p>
           </div>
         </td>
@@ -1502,12 +1605,20 @@ index used to derive the channel's master key.</p>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L58-58" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L74-74" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
+              <p>PubKey which is necessary for each new commitment tx.
+Which can be derived from <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-revocationbasepoint.html" title="RevocationBasepoint"><code>RevocationBasepoint</code></a> and <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-percommitmentpoint.html" title="PerCommitmentPoint"><code>PerCommitmentPoint</code></a>
+The corresponding privkey (i.e. <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-revocationprivkey.html" title="RevocationPrivKey"><code>RevocationPrivKey</code></a>) can be derived when
+The counterparty reveals the <code>per_commitment_secret</code> Thus ensures the revocation
+Of the commitment. (Which is a crucial step for LN payment.)
+See <a href="https://github.com/lightning/bolts/blob/master/03-transactions.md">bolt03</a>
+For more detail.</p>
+
+
             </p>
           </div>
         </td>

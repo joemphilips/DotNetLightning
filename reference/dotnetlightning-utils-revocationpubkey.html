@@ -100,7 +100,15 @@
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-        
+        <p>PubKey which is necessary for each new commitment tx.
+Which can be derived from <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-revocationbasepoint.html" title="RevocationBasepoint"><code>RevocationBasepoint</code></a> and <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-percommitmentpoint.html" title="PerCommitmentPoint"><code>PerCommitmentPoint</code></a>
+The corresponding privkey (i.e. <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-revocationprivkey.html" title="RevocationPrivKey"><code>RevocationPrivKey</code></a>) can be derived when
+The counterparty reveals the <code>per_commitment_secret</code> Thus ensures the revocation
+Of the commitment. (Which is a crucial step for LN payment.)
+See <a href="https://github.com/lightning/bolts/blob/master/03-transactions.md">bolt03</a>
+For more detail.</p>
+
+
       </p>
     </div>
   </div>
@@ -159,7 +167,7 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L59-59" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L75-75" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -238,7 +246,7 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L61-61" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L77-77" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -294,7 +302,7 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L68-68" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L84-84" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -381,7 +389,7 @@
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L65-65" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Utils/Keys.fs#L81-81" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
