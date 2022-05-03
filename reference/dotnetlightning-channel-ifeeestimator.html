@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>ConfirmationTarget (DotNetLightning)</title>
+    <title>IFeeEstimator (DotNetLightning)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="author" content="joemphilips">
 
@@ -74,13 +74,13 @@
         <div class="container" id="fsdocs-content">
             <div>
   <h2>
-    ConfirmationTarget Type
+    IFeeEstimator Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-chain.html">
-        DotNetLightning.Chain
+      <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel.html">
+        DotNetLightning.Channel
       </a>
     </dt>
     <dt>
@@ -92,15 +92,7 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-chain-confirmationtarget.html">ConfirmationTarget</a>&gt;</span></code>
-      , 
-      <code><a href="https://docs.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
-      , 
-      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-chain-confirmationtarget.html">ConfirmationTarget</a>&gt;</span></code>
-      , 
-      <code><a href="https://docs.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
-      , 
-      <code><a href="https://docs.microsoft.com/dotnet/api/system.collections.istructuralcomparable">IStructuralComparable</a></code>
+      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-ifeeestimator.html">IFeeEstimator</a></code>
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
@@ -113,15 +105,19 @@
   <div></div>
   <div></div>
   <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
   <div>
     <h3>
-      Union cases
+      Instance members
     </h3>
     <table class="table outer-list fsdocs-member-list">
       <thead>
         <tr>
           <td class="fsdocs-member-list-header">
-            Union case
+            Instance member
           </td>
           <td class="fsdocs-member-list-header">
             Description
@@ -132,20 +128,40 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '279', 279)" onmouseover="showTip(event, '279', 279)">
+              <code onmouseout="hideTip(event, '486', 486)" onmouseover="showTip(event, '486', 486)">
                 <p>
-                  <a id="Background">
-                    <a href="#Background">
-                      <code><span>Background</span></code>
+                  <a id="GetEstSatPer1000Weight">
+                    <a href="#GetEstSatPer1000Weight">
+                      <code><span>this.GetEstSatPer1000Weight</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="279">
+              <div class="fsdocs-tip" id="486">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>Background</span></code>
+                  <code><span>this.GetEstSatPer1000Weight</span></code>
                   <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        arg0
+                      </b>
+                      :
+                      <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-confirmationtarget.html">ConfirmationTarget</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-feerateperkw.html">FeeRatePerKw</a></code>
+                  </span>
+                  <br/>
+                  Modifiers: 
+                  abstract
                   <br/>
                 </div>
               </div>
@@ -153,75 +169,15 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Chain/ChainInterface.fs#L35-35" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
-                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '280', 280)" onmouseover="showTip(event, '280', 280)">
-                <p>
-                  <a id="HighPriority">
-                    <a href="#HighPriority">
-                      <code><span>HighPriority</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="280">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>HighPriority</span></code>
-                  <br/>
-                  <br/>
-                </div>
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Channel.IFeeEstimator.GetEstSatPer1000Weight`')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
               </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Chain/ChainInterface.fs#L37-37" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
-                <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '281', 281)" onmouseover="showTip(event, '281', 281)">
-                <p>
-                  <a id="Normal">
-                    <a href="#Normal">
-                      <code><span>Normal</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="281">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>Normal</span></code>
-                  <br/>
-                  <br/>
-                </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Channel.IFeeEstimator.GetEstSatPer1000Weight\'/>')">
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Chain/ChainInterface.fs#L36-36" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Channel/Interfaces.fs#L11-11" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -229,15 +185,30 @@
                 
               </p>
             </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  arg0
+                </span>
+                :
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-channel-confirmationtarget.html">ConfirmationTarget</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-utils-primitives-feerateperkw.html">FeeRatePerKw</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
           </td>
         </tr>
       </tbody>
     </table>
   </div>
-  <div></div>
-  <div></div>
-  <div></div>
-  <div></div>
   <div></div>
 </div>
             
