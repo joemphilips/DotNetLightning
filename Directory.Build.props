@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <PackageProjectUrl>https://github.com/joemphilips/DotNetLightning/</PackageProjectUrl>
+    <PackageProjectUrl>https://joemphilips.github.io/DotNetLightning/</PackageProjectUrl>
     <FsDocsLicenseLink>https://github.com/joemphilips/DotNetLightning/blob/master/LICENSE.txt</FsDocsLicenseLink>
     <FsDocsReleaseNotesLink>https://github.com/joemphilips/DotNetLightning/releases</FsDocsReleaseNotesLink>
     <RepositoryUrl>https://github.com/joemphilips/DotNetLightning</RepositoryUrl>
