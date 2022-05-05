@@ -8,6 +8,7 @@ open DotNetLightning.Core.Utils.Extensions
 open ResultUtils
 open ResultUtils.Portability
 
+/// legacy `hop_data` payload format described in [bolt04](https://github.com/lightning/bolts/blob/master/04-onion-routing.md)
 type OnionRealm0HopData =
     {
         ShortChannelId: ShortChannelId
@@ -57,6 +58,8 @@ type OnionRealm0HopData =
                 pad
             ]
 
+/// data foreach `hop_payloads` in `onion_packet`
+/// described in [bolt04](https://github.com/lightning/bolts/blob/master/04-onion-routing.md)
 type OnionPayload =
     | Legacy of OnionRealm0HopData
     | TLVPayload of tlvs: array<HopPayloadTLV> * hmac: uint256

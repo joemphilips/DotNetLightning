@@ -3,7 +3,6 @@ namespace DotNetLightning.Serialization
     Encoder-Decoder for TLV serialization
 *)
 
-open DotNetLightning.Core.Utils.Extensions
 open DotNetLightning.Utils.Primitives
 open System
 open System.IO
@@ -12,7 +11,7 @@ open System.IO.Compression
 open ResultUtils
 open ResultUtils.Portability
 
-module Decoder =
+module private Decoder =
     let private tryDecode (encodingType: EncodingType) (bytes: array<byte>) =
         if bytes.Length = 0 then
             bytes |> Ok
@@ -154,7 +153,7 @@ module Decoder =
     let decodeTimestampPairs encodingType (d: array<byte>) =
         tryDecodeTimestampPairs encodingType d |> unwrap
 
-module Encoder =
+module private Encoder =
     let private encode (ty: EncodingType) (value: array<byte>) : array<byte> =
         if value.Length = 0 then
             [||]

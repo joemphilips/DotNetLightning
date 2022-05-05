@@ -8,6 +8,11 @@ open NBitcoin
 open ResultUtils
 open ResultUtils.Portability
 
+/// <summary>
+///     data for TLV stream in `init` message
+///     See [bolt01](https://github.com/lightning/bolts/blob/master/01-messaging.md)
+/// </summary>
+/// <seealso cref="Msgs.InitMsg" />
 type InitTLV =
     /// genesis chain hash that the node is interested in
     | Networks of array<uint256>
@@ -49,6 +54,11 @@ type InitTLV =
             }
         | Unknown tlv -> tlv
 
+/// <summary>
+///     data for TLV stream in `open_channel` message
+///     See [bolt02](https://github.com/lightning/bolts/blob/master/02-peer-protocol.md)
+/// </summary>
+/// <seealso cref="Msgs.OpenChannelMsg" />
 type OpenChannelTLV =
     | UpfrontShutdownScript of Option<ShutdownScriptPubKey>
     | Unknown of GenericTLV
@@ -85,6 +95,11 @@ type OpenChannelTLV =
             }
         | Unknown tlv -> tlv
 
+/// <summary>
+///     data for TLV stream in `accept_channel` message
+///     See [bolt02](https://github.com/lightning/bolts/blob/master/02-peer-protocol.md)
+/// </summary>
+/// <seealso cref="Msgs.AcceptChannelMsg" />
 type AcceptChannelTLV =
     | UpfrontShutdownScript of Option<ShutdownScriptPubKey>
     | Unknown of GenericTLV
@@ -121,6 +136,11 @@ type AcceptChannelTLV =
             }
         | Unknown tlv -> tlv
 
+/// <summary>
+///     data for TLV stream in `query_short_channel_ids` message
+///     See [bolt07](https://github.com/lightning/bolts/blob/master/07-routing-gossip.md)
+/// </summary>
+/// <seealso cref="Msgs.QueryShortChannelIdsTLV" />
 type QueryShortChannelIdsTLV =
     | QueryFlags of
         encodingType: EncodingType *
@@ -159,6 +179,11 @@ type QueryShortChannelIdsTLV =
             }
         | Unknown tlv -> tlv
 
+/// <summary>
+///     data for TLV stream in `query_channel_range` message
+///     See [bolt07](https://github.com/lightning/bolts/blob/master/07-routing-gossip.md)
+/// </summary>
+/// <seealso cref="Msgs.QueryChannelRangeMsg" />
 type QueryChannelRangeTLV =
     | Opt of QueryOption
     | Unknown of GenericTLV
@@ -179,6 +204,11 @@ type QueryChannelRangeTLV =
             }
         | Unknown tlv -> tlv
 
+/// <summary>
+///     data for TLV stream in `reply_channel_range` message.
+///     See [bolt07](https://github.com/lightning/bolts/blob/master/07-routing-gossip.md)
+/// </summary>
+/// <seealso cref="Msgs.ReplyChannelRangeMsg" />
 type ReplyChannelRangeTLV =
     | Timestamp of
         encodingType: EncodingType *
@@ -221,6 +251,10 @@ type ReplyChannelRangeTLV =
             }
         | Unknown x -> x
 
+/// <summary>
+///     data for `tlv_payload` defined in [bolt04](https://github.com/lightning/bolts/blob/master/04-onion-routing.md)
+/// </summary>
+/// <seealso cref="OnionPayload" />
 type HopPayloadTLV =
     | AmountToForward of LNMoney
     | OutgoingCLTV of uint32
