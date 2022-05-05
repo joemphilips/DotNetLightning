@@ -36,15 +36,15 @@
             "maxComplexity": 40
         }
     },
-    "reimplementsFunction": { "enabled": true },
-    "canBeReplacedWithComposition": { "enabled": true },
+    "reimplementsFunction": { "enabled": false },
+    "canBeReplacedWithComposition": { "enabled": false },
     "failwithWithSingleArgument": { "enabled": true },
     "raiseWithSingleArgument": { "enabled": true },
     "nullArgWithSingleArgument": { "enabled": true },
     "invalidOpWithSingleArgument": { "enabled": true },
     "invalidArgWithTwoArguments": { "enabled": true },
     "failwithfWithArgumentsMatchingFormatString": { "enabled": true },
-    "failwithBadUsage": { "enabled": true },
+    "failwithBadUsage": { "enabled": false },
     "maxLinesInLambdaFunction": {
         "enabled": false,
         "config": {
@@ -134,14 +134,14 @@
         }
     },
     "typeNames": {
-        "enabled": true,
+        "enabled": false,
         "config": {
             "naming": "PascalCase",
             "underscores": "None"
         }
     },
     "recordFieldNames": {
-        "enabled": true,
+        "enabled": false,
         "config":  {
             "naming": "PascalCase",
             "underscores": "None"
@@ -169,7 +169,7 @@
         }
     },
     "literalNames": {
-        "enabled": true,
+        "enabled": false,
         "config": {
             "naming": "PascalCase",
             "underscores": "None"
@@ -183,14 +183,14 @@
         }
     },
     "memberNames": {
-        "enabled": true,
+        "enabled": false,
         "config": {
             "naming": "PascalCase",
             "underscores": "None"
         }
     },
     "parameterNames": {
-        "enabled": true,
+        "enabled": false,
         "config": {
             "naming": "CamelCase",
             "underscores": "AllowPrefix"
@@ -210,14 +210,14 @@
         }
     },
     "genericTypesNames": {
-        "enabled": true,
+        "enabled": false,
         "config": {
             "naming": "PascalCase",
             "underscores": "None"
         }
     },
     "publicValuesNames": {
-        "enabled": true,
+        "enabled": false,
         "config": {
             "naming": "CamelCase",
             "underscores": "None"
@@ -261,19 +261,19 @@
             "maxItems": 4
         }
     },
-    "favourIgnoreOverLetWild": { "enabled": true },
+    "favourIgnoreOverLetWild": { "enabled": false },
     "wildcardNamedWithAsPattern": { "enabled": true },
     "uselessBinding": { "enabled": true },
-    "tupleOfWildcards": { "enabled": true },
-    "favourTypedIgnore": { "enabled": true },
+    "tupleOfWildcards": { "enabled": false },
+    "favourTypedIgnore": { "enabled": false },
     "favourReRaise": { "enabled": true },
     "favourConsistentThis": {
-        "enabled": true,
+        "enabled": false,
         "config": {
             "symbol": "this"
         }
     },
-    "avoidTooShortNames": { "enabled": true },
+    "avoidTooShortNames": { "enabled": false },
     "indentation": {
         "enabled": false
     },
@@ -300,7 +300,7 @@
     "trailingNewLineInFile": { "enabled": false },
     "noTabCharacters": { "enabled": true },
     "noPartialFunctions": {
-        "enabled": true,
+        "enabled": false,
         "config": {
             "allowedPartials": [],
             "additionalPartials": []
@@ -328,7 +328,6 @@
             "List.head (List.sort x) ===> List.min x",
             "List.head (List.sortBy f x) ===> List.minBy f x",
 
-            "List.map f (List.map g x) ===> List.map (g >> f) x",
             "Array.map f (Array.map g x) ===> Array.map (g >> f) x",
             "Seq.map f (Seq.map g x) ===> Seq.map (g >> f) x",
             "List.nth x 0 ===> List.head x",
@@ -341,7 +340,6 @@
             "Seq.map id x ===> id x",
             "(List.length x) = 0 ===> List.isEmpty x",
             "(Array.length x) = 0 ===> Array.isEmpty x",
-            "(Seq.length x) = 0 ===> Seq.isEmpty x",
             "x = [] ===> List.isEmpty x",
             "x = [||] ===> Array.isEmpty x",
             "(List.length x) <> 0 ===> not (List.isEmpty x)",
@@ -352,8 +350,6 @@
             "(Seq.length x) <> 0 ===> not (Seq.isEmpty x)",
 
             "List.concat (List.map f x) ===> List.collect f x",
-            "Array.concat (Array.map f x) ===> Array.collect f x",
-            "Seq.concat (Seq.map f x) ===> Seq.collect f x",
 
             "List.isEmpty (List.filter f x) ===> not (List.exists f x)",
             "Array.isEmpty (Array.filter f x) ===> not (Array.exists f x)",
@@ -412,7 +408,6 @@
             "List.empty ===> []",
             "Array.empty ===> [||]",
 
-            "x::[] ===> [x]",
             "pattern: x::[] ===> [x]",
 
             "x @ [] ===> x",
@@ -420,8 +415,6 @@
             "List.isEmpty [] ===> true",
             "Array.isEmpty [||] ===> true",
 
-            "fun _ -> () ===> ignore",
-            "fun x -> x ===> id",
             "id x ===> x",
             "id >> f ===> f",
             "f >> id ===> f",
