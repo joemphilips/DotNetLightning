@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>DotNetLightning.* namespaces</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="joemphilips">
+
+    <link rel="stylesheet" id="theme_link" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.6.0/materia/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
+
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+    <link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico">
+    <link type="text/css" rel="stylesheet" href="https://joemphilips.github.io/DotNetLightning/content/navbar-fixed-left.css" />
+    <link type="text/css" rel="stylesheet" href="https://joemphilips.github.io/DotNetLightning/content/fsdocs-default.css" />
+    <link type="text/css" rel="stylesheet" href="https://joemphilips.github.io/DotNetLightning/content/fsdocs-custom.css" />
+    <script type="text/javascript" src="https://joemphilips.github.io/DotNetLightning/content/fsdocs-tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+    <!-- END SEARCH BOX: this adds support for the search box -->
+    
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md navbar-light bg-secondary fixed-left" id="fsdocs-nav">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse navbar-nav-scroll" id="navbarsExampleDefault">
+            <a href="https://joemphilips.github.io/DotNetLightning/"><img id="fsdocs-logo" src="https://joemphilips.github.io/DotNetLightning/img/logo.png" /></a>
+            <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+            <div id="header">
+                <div class="searchbox" id="fsdocs-searchbox">
+                    <label for="search-by">
+                        <i class="fas fa-search"></i>
+                    </label>
+                    <input data-search-input="" id="search-by" type="search" placeholder="Search..." />
+                    <span data-search-clear="">
+                        <i class="fas fa-times"></i>
+                    </span>
+                </div>
+            </div>
+
+            <!-- END SEARCH BOX: this adds support for the search box -->
+            <ul class="navbar-nav">
+                <li class="nav-header">Links</li>
+                <li class="nav-item" id="fsdocs-license-link"><a class="nav-link" href="https://github.com/joemphilips/DotNetLightning/blob/master/LICENSE.txt">License</a></li>
+                <li class="nav-item" id="fsdocs-release-notes-link"><a class="nav-link" href="https://github.com/joemphilips/DotNetLightning/releases">Release Notes</a></li>
+                <li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://github.com/joemphilips/DotNetLightning/">Source Repository</a></li>
+                <li class="nav-header">
+  overview
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://joemphilips.github.io/DotNetLightning/features/dnl-namespace.html">
+    DotNetLightning.* namespaces
+  </a>
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://joemphilips.github.io/DotNetLightning/features/other_namespaces.html">
+    other namespaces
+  </a>
+</li>
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://joemphilips.github.io/DotNetLightning/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="masthead">
+            <h3 class="muted"><a href="https://joemphilips.github.io/DotNetLightning/">DotNetLightning</a></h3>
+        </div>
+        <hr />
+        <div class="container" id="fsdocs-content">
+            
+<h1><a name="Overview-of-the-features-in-DotNetLightning-sub-namespaces" class="anchor" href="#Overview-of-the-features-in-DotNetLightning-sub-namespaces">Overview of the features in "DotNetLightning.*" sub-namespaces.</a></h1>
+<h2><a name="DotNetLightning-Utils" class="anchor" href="#DotNetLightning-Utils">DotNetLightning.Utils</a></h2>
+<p>Contains a low-level primitives for LN.
+Mostly it is for internal usage but some are useful for consumer's point of view.
+(e.g. LNMoney to represent milli-satoshis value)</p>
+<h2><a name="DotNetLightning-Serialization" class="anchor" href="#DotNetLightning-Serialization">DotNetLightning.Serialization</a></h2>
+<p>Contains items for wire-protocol. FeatureBits, TLV, and P2P messages.</p>
+<h2><a name="DotNetLightning-Crypto" class="anchor" href="#DotNetLightning-Crypto">DotNetLightning.Crypto</a></h2>
+<p>Contains modules and types for working with Cryptographic operations.
+For example LN-onion network encoding, <a href="https://github.com/lightningnetwork/lnd/tree/master/aezeed">aezeed</a> for seed
+backups.</p>
+<h2><a name="DotNetLightning-Transactions" class="anchor" href="#DotNetLightning-Transactions">DotNetLightning.Transactions</a></h2>
+<p>A module for creating LN-specific transactions. Mostly for internal usage.</p>
+<h2><a name="DotNetLightning-Peer" class="anchor" href="#DotNetLightning-Peer">DotNetLightning.Peer</a></h2>
+<p>Handles handshake and encryption against other peers.</p>
+<h2><a name="DotNetLightning-Channel" class="anchor" href="#DotNetLightning-Channel">DotNetLightning.Channel</a></h2>
+<p>Handles channel state.
+This module is pretty much WIP (not sure when it will be finished, as this is the most complex part in the LN protocol).</p>
+<h2><a name="DotNetLightning-Payment" class="anchor" href="#DotNetLightning-Payment">DotNetLightning.Payment</a></h2>
+<p>Contains primitives for Payment-related operations. The most important class is <code>PaymentRequest</code>,
+a.k.a. bolt11-invoice, LN-invoice.</p>
+<p>It also contains primitives for <a href="https://github.com/lightninglabs/LSATI">LSAT</a>, the LN based http authentication mechanism.
+See <a href="https://github.com/joemphilips/LSATAuthentication">here</a> for PoC of AspNetCore middleware for LSAT.</p>
+<h2><a name="DotNetLightning-Routing" class="anchor" href="#DotNetLightning-Routing">DotNetLightning.Routing</a></h2>
+<p>Module for calculating payment routes. (WIP)</p>
+
+            
+        </div>
+
+        <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+        <script type="text/javascript">var fsdocs_search_baseurl = 'https://joemphilips.github.io/DotNetLightning/';</script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.8/lunr.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.min.js"></script>
+        <script type="text/javascript" src="https://joemphilips.github.io/DotNetLightning/content/fsdocs-search.js"></script>
+        <!-- END SEARCH BOX: this adds support for the search box -->
+    </div>
+</body>
+
+</html>
