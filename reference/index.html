@@ -97,7 +97,12 @@
             DotNetLightning.Channel
           </a>
         </td>
-        <td></td>
+        <td>
+          
+         "DotNetLightning.Channel" contains a functions/types for LN Channel
+         management. It is still WIP.
+     
+        </td>
       </tr>
       <tr>
         <td>
@@ -105,7 +110,20 @@
             DotNetLightning.Crypto
           </a>
         </td>
-        <td></td>
+        <td>
+          
+     "DotNetLightning.Crypto" contains a cryptographic utilities to work with
+      LN. e.g.
+     1. Extension methods for key types to tweak/multiply
+         e.g. <code>NBitcoin.Key.Mul</code>
+     2. Aezeed <code>CipherSeed</code> for managing node master key in seed phrase with
+        its birthday encoded. (useful when rescanning the blockchain)
+        This is a port of the aezeed in lnd.
+     3. Sphinx packet decoding/encoding described in bolt04
+     4. <code>PerCommitmentSecretStore</code> to hold "per_commitment_secret" in an
+         efficient way.
+     
+        </td>
       </tr>
       <tr>
         <td>
@@ -113,7 +131,13 @@
             DotNetLightning.Payment
           </a>
         </td>
-        <td></td>
+        <td>
+          
+         This namespace contains utilities for working with LN payment. e.g.
+         1. BOLT11 invoice (PaymentRequest)
+         2. LSAT authentication token
+     
+        </td>
       </tr>
       <tr>
         <td>
@@ -121,7 +145,13 @@
             DotNetLightning.Payment.LSAT
           </a>
         </td>
-        <td></td>
+        <td>
+          
+         "DotNetLightning.Payment.LSAT" contains a utility to work with
+         Lightning Service Authentication Token (LSAT).
+         Which is a wrapper around Macaroons.
+     
+        </td>
       </tr>
       <tr>
         <td>
@@ -129,7 +159,17 @@
             DotNetLightning.Peer
           </a>
         </td>
-        <td></td>
+        <td>
+          
+         "DotNetLighting.Peer" contains an facade for sphinx cryptography
+         scheme. e.g. `PeerChannelEncryptor` to track/verify the state of
+         initial 3 way handshake for noise protocol.
+         This namespace is unmaintained. It was originally intended for
+         building complete Lightning Node.
+         see e.g. https://github.com/joemphilips/DotNetLightning/tree/f893a4a606341d01511d0c9f05ebb11de397f301/src/DotNetLightning.Infrastructure
+         for the past effort.
+     
+        </td>
       </tr>
       <tr>
         <td>
@@ -137,7 +177,13 @@
             DotNetLightning.Routing
           </a>
         </td>
-        <td></td>
+        <td>
+          
+         "DotNetLightning.Routing" contains a functions/types for calculating
+         the route for payment. and to track the routing information.
+         It is still WIP.
+     
+        </td>
       </tr>
       <tr>
         <td>
@@ -145,7 +191,14 @@
             DotNetLightning.Serialization
           </a>
         </td>
-        <td></td>
+        <td>
+          
+         "DotNetLightning.Serialization" contains a low-level primitives for
+         Working with P2P network data serialization.
+         Such as general use TLV, lightning-rfc-defined message types,
+         bit-level serializers, etc.
+     
+        </td>
       </tr>
       <tr>
         <td>
@@ -155,6 +208,8 @@
         </td>
         <td>
           
+         This namespace contains a p2p messages for lightning network.
+     
         </td>
       </tr>
       <tr>
@@ -165,6 +220,9 @@
         </td>
         <td>
           
+         "DotNetLightning.Transactions" contains a types/functions
+         to work with LN-specific transactions.
+     
         </td>
       </tr>
       <tr>

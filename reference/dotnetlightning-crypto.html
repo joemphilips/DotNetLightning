@@ -76,7 +76,22 @@
   <h2 id="dotnetlightning-crypto">
     DotNetLightning.Crypto Namespace
   </h2>
-  <div class="fsdocs-xmldoc"></div>
+  <div class="fsdocs-xmldoc">
+    <p>
+      
+     "DotNetLightning.Crypto" contains a cryptographic utilities to work with
+      LN. e.g.
+     1. Extension methods for key types to tweak/multiply
+         e.g. <code>NBitcoin.Key.Mul</code>
+     2. Aezeed <code>CipherSeed</code> for managing node master key in seed phrase with
+        its birthday encoded. (useful when rescanning the blockchain)
+        This is a port of the aezeed in lnd.
+     3. Sphinx packet decoding/encoding described in bolt04
+     4. <code>PerCommitmentSecretStore</code> to hold "per_commitment_secret" in an
+         efficient way.
+     
+    </p>
+  </div>
   <table class="table outer-list fsdocs-entity-list">
     <thead>
       <tr>
@@ -139,7 +154,7 @@
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L427-427" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L434-434" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
@@ -169,7 +184,7 @@
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/Aezeed.fs#L188-188" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/Aezeed.fs#L189-189" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
@@ -178,7 +193,8 @@
 <a href="https://github.com/lightningnetwork/lnd/tree/master/aezeed">aezeed scheme</a>.
 You can convert from/to <code>NBitcoin.Mnemonic</code> by
 <code>CipherSeed.ToMnemonic</code>
-<code>Mnemonic.ToCipherSeed</code></p>
+<code>Mnemonic.ToCipherSeed</code>
+<seealso href ="https://github.com/lightningnetwork/lnd/tree/master/aezeed">Aezeed in lnd </seealso></p>
 
 
             </p>
@@ -205,7 +221,7 @@ You can convert from/to <code>NBitcoin.Mnemonic</code> by
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L35-35" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L42-42" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
@@ -239,7 +255,7 @@ Since it is clear protocol violation.</p>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L576-576" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L583-583" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
@@ -299,7 +315,7 @@ Since it is clear protocol violation.</p>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L102-102" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L109-109" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
@@ -359,7 +375,7 @@ Since it is clear protocol violation.</p>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L70-70" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L77-77" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
@@ -427,7 +443,7 @@ We need this because there are several types of secp256k1 implementation
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/Aezeed.fs#L399-399" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/Aezeed.fs#L400-400" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
@@ -577,7 +593,7 @@ We need this because there are several types of secp256k1 implementation
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L58-58" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/CryptoUtils.fs#L65-65" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
@@ -667,7 +683,7 @@ We need this because there are several types of secp256k1 implementation
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/Sphinx.fs#L17-17" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Crypto/Sphinx.fs#L20-20" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
@@ -676,6 +692,8 @@ We need this because there are several types of secp256k1 implementation
 Which is used in lightning network p2p onion routing.
 see <a href="https://github.com/lightning/bolts/blob/master/04-onion-routing.md">bolt04</a>
 for more detail.</p>
+<p>Usually you want to use high-level wrapper in <code>DotNetLightning.Peer</code>
+for e.g. 3-way handshake and establishing the connection.</p>
 
 
             </p>

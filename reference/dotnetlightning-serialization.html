@@ -76,7 +76,16 @@
   <h2 id="dotnetlightning-serialization">
     DotNetLightning.Serialization Namespace
   </h2>
-  <div class="fsdocs-xmldoc"></div>
+  <div class="fsdocs-xmldoc">
+    <p>
+      
+         "DotNetLightning.Serialization" contains a low-level primitives for
+         Working with P2P network data serialization.
+         Such as general use TLV, lightning-rfc-defined message types,
+         bit-level serializers, etc.
+     
+    </p>
+  </div>
   <table class="table outer-list fsdocs-entity-list">
     <thead>
       <tr>
@@ -118,36 +127,6 @@
 See <a href="https://github.com/lightning/bolts/blob/master/02-peer-protocol.md">bolt02</a></p>
 
 
-            </p>
-          </div>
-        </td>
-      </tr>
-      <tr>
-        <td class="fsdocs-entity-name">
-          <p>
-            <a name="D">
-              <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-d.html">
-                D
-              </a>
-            </a>
-          </p>
-        </td>
-        <td class="fsdocs-entity-xmldoc">
-          <div>
-            <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:DotNetLightning.Serialization.D`')">
-              <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
-              <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
-            </div>
-            <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:DotNetLightning.Serialization.D\'/>')">
-              <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
-              <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
-            </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L21-21" class="fsdocs-source-link" title="Source on GitHub">
-              <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
-              <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
-            </a>
-            <p class="fsdocs-summary">
-              
             </p>
           </div>
         </td>
@@ -304,7 +283,7 @@ This union is to represent which.</p>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/GenericTLV.fs#L28-28" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/GenericTLV.fs#L32-32" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
@@ -315,7 +294,7 @@ ignorable if the semantics is not clear to the node.
 So that P2P messages can be forward compatible.
 See <a href="https://github.com/lightning/bolts/blob/master/01-messaging.md">bolt01</a>
 For the detail.</p>
-<p>All other concrete TLV types (e.g. ) has method
+<p>All other concrete TLV types (e.g. <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-inittlv.html" title="InitTLV"><code>InitTLV</code></a>) has methods
 To convert to/from this type.</p>
 
 
@@ -343,7 +322,7 @@ To convert to/from this type.</p>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/TLVs.fs#L253-253" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/TLVs.fs#L258-258" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
@@ -408,7 +387,7 @@ See <a href="https://github.com/lightning/bolts/blob/master/01-messaging.md">bol
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L219-219" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L210-210" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
@@ -440,7 +419,7 @@ See <a href="https://github.com/lightning/bolts/blob/master/01-messaging.md">bol
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L27-27" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L18-18" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
@@ -474,7 +453,7 @@ We might want to extend it in the future.</p>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L70-70" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L61-61" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
@@ -482,36 +461,6 @@ We might want to extend it in the future.</p>
               <p>stream for writing lightning p2p msg</p>
 
 
-            </p>
-          </div>
-        </td>
-      </tr>
-      <tr>
-        <td class="fsdocs-entity-name">
-          <p>
-            <a name="O">
-              <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-o.html">
-                O
-              </a>
-            </a>
-          </p>
-        </td>
-        <td class="fsdocs-entity-xmldoc">
-          <div>
-            <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:DotNetLightning.Serialization.O`')">
-              <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
-              <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
-            </div>
-            <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:DotNetLightning.Serialization.O\'/>')">
-              <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
-              <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
-            </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L20-20" class="fsdocs-source-link" title="Source on GitHub">
-              <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
-              <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
-            </a>
-            <p class="fsdocs-summary">
-              
             </p>
           </div>
         </td>
@@ -768,42 +717,15 @@ See <a href="https://github.com/lightning/bolts/blob/master/07-routing-gossip.md
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
             </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/TLVs.fs#L207-207" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/TLVs.fs#L212-212" class="fsdocs-source-link" title="Source on GitHub">
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
               <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
             </a>
             <p class="fsdocs-summary">
-              
-            </p>
-          </div>
-        </td>
-      </tr>
-      <tr>
-        <td class="fsdocs-entity-name">
-          <p>
-            <a name="Scope">
-              <a href="https://github.com/joemphilips/DotNetLightning/reference/dotnetlightning-serialization-scope.html">
-                Scope
-              </a>
-            </a>
-          </p>
-        </td>
-        <td class="fsdocs-entity-xmldoc">
-          <div>
-            <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:DotNetLightning.Serialization.Scope`')">
-              <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md.png" class="normal"/>
-              <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
-            </div>
-            <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:DotNetLightning.Serialization.Scope\'/>')">
-              <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml.png" class="normal"/>
-              <img src="https://github.com/joemphilips/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
-            </div>
-            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Serialization/LightningStream.fs#L11-11" class="fsdocs-source-link" title="Source on GitHub">
-              <img src="https://github.com/joemphilips/DotNetLightning/content/img/github.png" class="normal"/>
-              <img src="https://github.com/joemphilips/DotNetLightning/content/img/github-hover.png" class="hover"/>
-            </a>
-            <p class="fsdocs-summary">
-              
+              <p>data for TLV stream in <code>reply_channel_range</code> message.
+See <a href="https://github.com/lightning/bolts/blob/master/07-routing-gossip.md">bolt07</a></p>
+
+
             </p>
           </div>
         </td>
