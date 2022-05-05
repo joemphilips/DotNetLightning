@@ -1,24 +1,18 @@
 namespace DotNetLightning.Chain
 
-open System.Collections.Concurrent
-open System.Text
-open System.Threading
+open System
 open NBitcoin
-open NBitcoin.Crypto
-open DotNetLightning.Utils
-open DotNetLightning.Utils.NBitcoinExtensions
 
-/// OutPoint
+#nowarn "0044" // "This construct is deprecated" warning
+
+[<Obsolete>]
 type StaticOutput =
     {
         outPoint: OutPoint
         output: TxOut
     }
 
-/// Outpoint commits to p2wsh
-/// P2WSH should be spend by the following witness
-/// `<local_delayedsig> 0 <witnessScript>` (with input nSequence set to self_delay)
-/// Outputs from HTLC-Success/Timeout tx/commitment tx
+[<Obsolete>]
 type DynamicOutputP2WSH =
     {
         outPoint: OutPoint
@@ -28,10 +22,7 @@ type DynamicOutputP2WSH =
         output: TxOut
     }
 
-/// Outpoint commits to a P2WPKH
-/// P2WPKH should be spend by the following witness.
-/// `<local_sig> <local_pubkey>`
-/// Outputs to_remote from a commitment tx
+[<Obsolete>]
 type DynamicOutputP2WPKH =
     {
         /// Output spendable by user wallet
@@ -42,8 +33,7 @@ type DynamicOutputP2WPKH =
         output: TxOut
     }
 
-/// When on-chain outputs are created by DotNetLightning an event is generated which informs the user thereof.
-/// This enum describes the format of the output and provides the OutPoint.
+[<Obsolete>]
 type SpendableOutputDescriptor =
     | StaticOutput of StaticOutput
     | DynamicOutputP2WSH of DynamicOutputP2WSH

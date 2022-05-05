@@ -13,6 +13,13 @@ open DotNetLightning.Core.Utils.Extensions
 open ResultUtils
 open ResultUtils.Portability
 
+/// <namespacedoc>
+///   <summary>
+///     "DotNetLightning.Utils" contains
+///     1. a lightning-related primitive types.
+///     2. very basic helper methods.
+///   </summary>
+/// </namespacedoc>
 [<AutoOpen>]
 module Primitives =
 
@@ -207,6 +214,7 @@ module Primitives =
         static member op_Implicit(ec: ECDSASignature) =
             ec |> LNECDSASignature
 
+    /// Simple wrapper type for NBitcoin.uint256.
     type PaymentHash =
         | PaymentHash of uint256
 
@@ -220,6 +228,8 @@ module Primitives =
             let b = x.Value.ToBytes() |> Array.rev
             Crypto.Hashes.RIPEMD160(b, b.Length)
 
+    /// The preimage for HTLC which the LN payment recipient must reveal when
+    /// receiving the payment. Thus it also works as proof of payment (receipt)
     type PaymentPreimage =
         private
         | PaymentPreimage of seq<byte>
@@ -303,6 +313,9 @@ module Primitives =
                 | :? PeerId as p -> this.CompareTo(p)
                 | _ -> -1
 
+    /// wrapper for `NBitcoin.PubKey` which supports IComparable.
+    /// Used for only those which is not `NodeId`
+    /// <seealso cref="NodeId">
     [<CustomEquality; CustomComparison>]
     type ComparablePubKey =
         | ComparablePubKey of PubKey
@@ -326,6 +339,11 @@ module Primitives =
         static member op_Implicit(pk: PubKey) =
             pk |> ComparablePubKey
 
+    /// PubKey for node master private key.
+    /// Which is unique for each lightning network nodes.
+    /// Used extensively in the protocol. e.g. to
+    /// * distinguish each nodes.
+    /// * ECDH key-exchange to encrypt all p2p messages.
     [<CustomEquality; CustomComparison>]
     type NodeId =
         | NodeId of PubKey
@@ -450,12 +468,13 @@ module Primitives =
         static member (*)(a: FeeRatePerKw, b: uint32) =
             (a.Value * b) |> FeeRatePerKw
 
-    /// Block Hash
+    /// a.k.a. Block Header Hash
     type BlockId =
         | BlockId of uint256
 
         member this.Value = let (BlockId v) = this in v
 
+    /// serial id for each HTLC in the channel.
 #if !NoDUsAsStructs
     [<Struct>]
 #endif
@@ -468,6 +487,7 @@ module Primitives =
         static member (+)(a: HTLCId, b: uint64) =
             (a.Value + b) |> HTLCId
 
+    /// a.k.a. vout, index number for the txo in the specific tx.
 #if !NoDUsAsStructs
     [<Struct>]
 #endif
@@ -476,6 +496,7 @@ module Primitives =
 
         member this.Value = let (TxOutIndex v) = this in v
 
+    /// index number for the tx in the specific block.
 #if !NoDUsAsStructs
     [<Struct>]
 #endif
@@ -484,6 +505,14 @@ module Primitives =
 
         member this.Value = let (TxIndexInBlock v) = this in v
 
+    /// Unique index for the tx output in the blockchain (as long as there is no
+    /// competing fork).
+    /// In LN, this is used for funding txo. which corresponds 1-by-1 to the
+    /// channel. Thus works as a unique identifier for the specific channel.
+    /// This is only used when the channel is confirmed enough (thus "opened").
+    /// Before it gets open, ChannelId is used instead, which is a xor of the
+    /// tx hash and the output index.
+    /// <seealso cref="DotNetLightning.Utils.ChannelId" />
 #if !NoDUsAsStructs
     [<Struct; StructuredFormatDisplay("{AsString}")>]
 #else
@@ -567,9 +596,16 @@ module Primitives =
                 raise <| FormatException(sprintf "Failed to parse %s" s)
             )
 
+    [<Obsolete>]
     type UserId = UserId of uint64
+
+    [<Obsolete>]
     type Delimiter = Delimiter of array<byte>
 
+    /// Each lightning node can specify its own RGB color in node_announcement.
+    /// Used for e.g. lightning node explorer.
+    /// <seealso cref="DotNetLightning.Serialization.Msgs.UnsignedNodeAnnouncementMsg" />
+    [<Struct>]
     type RGB =
         {
             Red: uint8
@@ -577,10 +613,20 @@ module Primitives =
             Blue: uint8
         }
 
+    /// Some p2p messages (e.g. [querying the gossip messages for syncing the routing info](https://github.com/lightning/bolts/blob/master/07-routing-gossip.md#query-messages))
+    /// Supports compressed message format, This enum is used to annotate
+    /// which type of the message format is used.
+    /// <seealso cref="DotNetLightning.Serialization.Encoder" />
+    /// <seealso cref="DotNetLightning.Serialization.Decoder" />
+#if !NoDUsAsStructs
+    [<Struct>]
+#endif
     type EncodingType =
         | SortedPlain = 0uy
         | ZLib = 1uy
 
+    /// destination script pubkey when closing channel in a cooperative way.
+    /// typesafe wrapper for the raw scriptpubkey.
     type ShutdownScriptPubKey =
         private
             {
@@ -644,6 +690,8 @@ module Primitives =
         member this.ToBytes() : array<byte> =
             this.ShutdownScript.ToBytes()
 
+    /// see [bolt 07](https://github.com/lightning/bolts/blob/master/07-routing-gossip.md#the-channel_update-message)
+    /// <seealso cref="DotNetLightning.Serialization.Msgs.UnsignedChannelUpdateMsg" />
     type ChannelFlags =
         {
             // Set to announce the channel publicly and notify all nodes that they

@@ -9,10 +9,14 @@ open DotNetLightning.Core.Utils.Extensions
 open ResultUtils
 open ResultUtils.Portability
 
+/// The feature bit in LN can tell other node that specific feature is
+/// required or optional.
+/// This union is to represent which.
 type FeaturesSupport =
     | Mandatory
     | Optional
 
+/// Error related to feature bits.
 type FeatureError =
     | UnknownRequiredFeature of msg: string
     | BogusFeatureDependency of msg: string
@@ -22,8 +26,8 @@ type FeatureError =
         | UnknownRequiredFeature msg
         | BogusFeatureDependency msg -> msg
 
-/// Feature bits specified in BOLT 9.
-/// It has no constructors, use its static members to instantiate
+/// Feature bits specified in [BOLT 9](https://github.com/lightning/bolts/blob/master/09-features.md).
+/// It has no constructors, use its static members to instantiate.
 type Feature =
     private
         {
@@ -205,7 +209,8 @@ module internal Feature =
         }
         |> Set
 
-
+/// Feature bits described in [BOLT 9](https://github.com/lightning/bolts/blob/master/09-features.md)
+/// Use `HasFeature` to see if it has specific feature or not.
 [<StructuredFormatDisplay("{PrettyPrint}")>]
 type FeatureBits private (bitArray: BitArray) =
     member __.BitArray
@@ -303,9 +308,13 @@ type FeatureBits private (bitArray: BitArray) =
         newBitArray.[newBitArray.Length - index - 1] <- on
         FeatureBits newBitArray
 
+    /// If second argument is not specified. It will check both `mandatory`
+    /// and `optional` and return true if either bit is set.
     member this.HasFeature(f, ?featureType) =
         Feature.hasFeature this.BitArray (f) (featureType)
 
+    /// Returns human-readable string for which feature it has,
+    /// and it is mandatory or not.
     member this.PrettyPrint =
         let sb = StringBuilder()
         let reversed = this.BitArray.Reverse()

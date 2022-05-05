@@ -3,6 +3,16 @@ namespace DotNetLightning.Transactions
 open DotNetLightning.Utils.Primitives
 open NBitcoin
 
+/// <namespacedoc>
+///     <summary>
+///         "DotNetLightning.Transactions" contains a types/functions
+///         to work with LN-specific transactions.
+///     </summary>
+/// </namespacedoc>
+/// <exclude />
+module NamespaceDocDummy =
+    ()
+
 type TransactionError =
     | UnknownHTLC of HTLCId
     | FailedToFinalizeScript of errorMsg: string

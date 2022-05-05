@@ -8,7 +8,8 @@ open System.Text
 open ResultUtils
 open ResultUtils.Portability
 
-type BitReader(ba: BitArray, bitCount: int) =
+/// simple wrapper reading from BitArray.
+type internal BitReader(ba: BitArray, bitCount: int) =
 
     member val Count = bitCount
     member val Position = 0 with get, set

@@ -15,6 +15,31 @@ open NBitcoin.Secp256k1
 open ResultUtils
 open ResultUtils.Portability
 
+
+/// <namespacedoc>
+///     <summary>
+///     "DotNetLightning.Crypto" contains a cryptographic utilities to work with
+///      LN. e.g.
+///     1. Extension methods for key types to tweak/multiply
+///         e.g. <c>NBitcoin.Key.Mul</c>
+///     2. Aezeed <c>CipherSeed</c> for managing node master key in seed phrase with
+///        its birthday encoded. (useful when rescanning the blockchain)
+///        This is a port of the aezeed in lnd.
+///     3. Sphinx packet decoding/encoding described in bolt04
+///     4. <c>PerCommitmentSecretStore</c> to hold "per_commitment_secret" in an
+///         efficient way.
+///     </summary>
+/// </namespacedoc>
+/// <seealso href ="https://github.com/lightningnetwork/lnd/tree/master/aezeed">Aezeed in lnd </seealso>
+/// <exclude />
+module NamespaceDocDummy =
+    ()
+
+/// <summary>
+///     An error on cryptography layer.
+///     If this happens, normally you should close the connection against the peer.
+///     Since it is clear protocol violation.
+/// </summary>
 type CryptoError =
     | BadMac
     | InvalidErrorPacketLength of expected: int * actual: int
@@ -43,6 +68,13 @@ module Secret =
         let ba = pub.GetSharedPubkey(priv).ToBytes()
         Hashes.SHA256 ba
 
+/// An interface responsible for set of low-level cryptographic operation.
+/// We need this because there are several types of secp256k1 implementation
+/// * 1. `NBitcoinSecp256k1`
+///   * The one we usually want to use. Which depends on [NBitcoin's implementation](https://github.com/MetacoSA/NBitcoin/tree/master/NBitcoin.Secp256k1)
+/// * 2. `BouncySecp256k1`
+///   * Fallback when we are compiling with `netstandard2.0`, since `NBitcoin.Secp256k1` does not support older netstandard version.
+///   * This will be obsolete when we drop the support for `netstandard2.1`
 type ISecp256k1 =
     inherit IDisposable
 
