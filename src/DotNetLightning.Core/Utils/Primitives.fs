@@ -602,6 +602,10 @@ module Primitives =
     [<Obsolete>]
     type Delimiter = Delimiter of array<byte>
 
+    /// Each lightning node can specify its own RGB color in node_announcement.
+    /// Used for e.g. lightning node explorer.
+    /// <seealso cref="DotNetLightning.Serialization.Msgs.UnsignedNodeAnnouncementMsg" />
+    [<Struct>]
     type RGB =
         {
             Red: uint8
