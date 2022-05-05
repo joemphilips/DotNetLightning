@@ -6,7 +6,7 @@
     </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\NSec\Experimental\NSec.Experimental.csproj" PrivateAssets="all" />
+    <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\NSec\Experimental\NSec.Experimental.csproj" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
