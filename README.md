@@ -2,6 +2,8 @@
 
 The main API is in `DotNetLightning.Core` project/assembly.
 
+![logo](./docs/img/logo.png)
+
 ## Installation
 
 The package is compiled and published with two variants:
