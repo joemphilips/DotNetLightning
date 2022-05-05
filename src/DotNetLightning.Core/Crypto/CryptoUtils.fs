@@ -15,20 +15,25 @@ open NBitcoin.Secp256k1
 open ResultUtils
 open ResultUtils.Portability
 
+
 /// <namespacedoc>
-///     `DotNetLightning.Crypto` contains a cryptographic utilities to work with
+///     <summary>
+///     "DotNetLightning.Crypto" contains a cryptographic utilities to work with
 ///      LN. e.g.
 ///     1. Extension methods for key types to tweak/multiply
-///         e.g. `NBitcoin.Key.Mul`
-///     2. Aezeed `CipherSeed` for managing node master key in seed phrase with
+///         e.g. <c>NBitcoin.Key.Mul</c>
+///     2. Aezeed <c>CipherSeed</c> for managing node master key in seed phrase with
 ///        its birthday encoded. (useful when rescanning the blockchain)
-///        This is a port of the [aezeed in lnd](https://github.com/lightningnetwork/lnd/tree/master/aezeed)
-///     3. Sphinx packet decoding/encoding described in [bolt04](https://github.com/lightning/bolts/blob/master/04-onion-routing.md)
-///     4. `PerCommitmentSecretStore` to hold `per_commitment_secret` in an
+///        This is a port of the aezeed in lnd.
+///     3. Sphinx packet decoding/encoding described in bolt04
+///     4. <c>PerCommitmentSecretStore</c> to hold "per_commitment_secret" in an
 ///         efficient way.
+///     </summary>
 /// </namespacedoc>
+/// <seealso href ="https://github.com/lightningnetwork/lnd/tree/master/aezeed">Aezeed in lnd </seealso>
 /// <exclude />
-module NamespaceDocDummy = ()
+module NamespaceDocDummy =
+    ()
 
 /// <summary>
 ///     An error on cryptography layer.

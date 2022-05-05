@@ -21,10 +21,13 @@ open ResultUtils.Portability
 // todo: stop using mutable state and go for more F# idiomatic way.
 
 /// <namespacedoc>
-///     This namespace contains a p2p messages for lightning network.
+///     <summary>
+///         This namespace contains a p2p messages for lightning network.
+///     </summary>
 /// </namespacedoc>
 /// <exclude />
-module NamespaceDocDummy = ()
+module NamespaceDocDummy =
+    ()
 
 type P2PDecodeError =
     | UnknownVersion

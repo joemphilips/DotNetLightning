@@ -14,7 +14,10 @@ open ResultUtils.Portability
 ///         bit-level serializers, etc.
 ///     </summary>
 /// </namespacedoc>
-///
+/// <exclude />
+module NamespaceDocDummy =
+    ()
+
 /// <summary>
 ///     TLV with unknown types.
 ///     TLV represents Type-Length-Value format. and it is designed to be
@@ -23,9 +26,10 @@ open ResultUtils.Portability
 ///     See [bolt01](https://github.com/lightning/bolts/blob/master/01-messaging.md)
 ///     For the detail.
 ///
-///     All other concrete TLV types (e.g. <see cref="InitTLV" />) has method
+///     All other concrete TLV types (e.g. `InitTLV`) has methods
 ///     To convert to/from this type.
 /// </summary>
+/// <seealso cref="InitTLV" />
 type GenericTLV =
     {
         Type: uint64
