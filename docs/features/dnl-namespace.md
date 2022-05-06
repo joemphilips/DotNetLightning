@@ -1,6 +1,6 @@
 ---
 title: DotNetLightning.* namespaces
-category: overview
+category: Overview
 index: 1
 categoryindex: 1
 ---
