@@ -1,11 +1,11 @@
 ---
-title: other namespaces
-category: overview
+title: Other namespaces
+category: Overview
 index: 2
 categoryindex: 2
 ---
 
-# features which is not in "DotNetLightning.*" namespace
+# Features which are not in the "DotNetLightning.*" namespace
 
 Some sibling assemblies come together when you install `DotNetLightning` or `DotNetLightning.Core`. These are mostly for internal usages but some might be useful for you:
 
@@ -23,6 +23,6 @@ Which contains macaroon authentication token.
 The API is mostly the same as [libmacaroon](https://github.com/rescrv/libmacaroons) (see libmacaroon's readme for the
 usage).
 
-(Currently it is only supported in BouncyCastle build (which means not in `DotNetLightning.Core`),
+(Currently it is only supported in the BouncyCastle build, that is, not in the `DotNetLightning.Core` nuget package;
 see https://github.com/joemphilips/DotNetLightning/issues/153 for more info.)
 
