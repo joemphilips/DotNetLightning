@@ -17,11 +17,18 @@
     <Compile Include="Requests.fs" />
     <Compile Include="Client.fs" />
     <Compile Include="Client.Methods.fs" />
+    <Compile Include="Plugin/DTOs.fs" />
+    <Compile Include="Plugin/PluginServerBase.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\DotNetLightning.Core\DotNetLightning.Core.fsproj" />
     <ProjectReference Include="..\ResultUtils\ResultUtils.fsproj" />
+    <ProjectReference Include="..\PluginLogger\PluginLogger.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StreamJsonRpc" Version="2.10.44" />
   </ItemGroup>
 
 </Project>
