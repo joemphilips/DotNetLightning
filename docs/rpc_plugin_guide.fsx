@@ -22,16 +22,12 @@ open DotNetLightning.ClnRpc
     This guide shows you how to use `DotNetLightning.ClnRpc` to call c-lightning rpc.
 *)
 
-let uri =
-    Uri("tcp://127.0.0.1:9835")
-    // or Uri("unix:///path/to/your/lightning-rpc")
+let uri = Uri("tcp://127.0.0.1:9835")
+// or Uri("unix:///path/to/your/lightning-rpc")
 
 let client = ClnClient(uri, Network.RegTest)
 
-let getPeerTask =
-    client.GetinfoAsync()
+let getPeerTask = client.GetinfoAsync()
 
 let info = getPeerTask.GetAwaiter().GetResult()
 (*** include-value: info ***)
-
-

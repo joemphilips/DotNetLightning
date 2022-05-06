@@ -10,6 +10,10 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Primitives.fs" />
+    <Compile Include="SystemTextJsonConverters.fs" />
+    <Compile Include="NewtonsoftJsonConverters.fs" />
+    <Compile Include="ManuallyDefinedTypes.fs" />
     <Compile Include="Requests.fs" />
     <Compile Include="Client.fs" />
     <Compile Include="Client.Methods.fs" />
