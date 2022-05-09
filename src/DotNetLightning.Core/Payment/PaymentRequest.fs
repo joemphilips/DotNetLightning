@@ -111,20 +111,20 @@ module private Helpers =
             )
         | Some prefix -> Ok(prefix)
 
-    /// maxInvoiceLength is the maximum total length an invoice can have.
+    /// MaxInvoiceLength is the maximum total length an invoice can have.
     /// This is chosen to be the maximum number of bytes that can fit into a
     /// single QR code: https://en.wikipedia.org/wiki/QR_code#Storage
     [<Literal>]
-    let maxInvoiceLength = 7089
+    let MaxInvoiceLength = 7089
 
     let checkMaxInvoiceLength(invoice: string) =
-        if invoice.Length <= maxInvoiceLength then
+        if invoice.Length <= MaxInvoiceLength then
             Ok()
         else
             Error(
                 sprintf
                     "Invoice length too large! max size is %i but it was %i"
-                    maxInvoiceLength
+                    MaxInvoiceLength
                     invoice.Length
             )
 
