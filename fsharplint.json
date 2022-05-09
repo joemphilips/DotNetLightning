@@ -261,7 +261,7 @@
             "maxItems": 4
         }
     },
-    "favourIgnoreOverLetWild": { "enabled": false },
+    "favourIgnoreOverLetWild": { "enabled": true },
     "wildcardNamedWithAsPattern": { "enabled": true },
     "uselessBinding": { "enabled": true },
     "tupleOfWildcards": { "enabled": false },
