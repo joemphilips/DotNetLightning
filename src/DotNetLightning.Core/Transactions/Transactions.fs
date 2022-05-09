@@ -475,7 +475,7 @@ module Transactions =
                 (spec.ToLocal.Satoshi |> Money.Satoshis),
                 (spec.ToRemote.Satoshi |> Money.Satoshis) - commitFee
 
-        let toLocalDelayedOutput_opt =
+        let toLocalDelayedOutputOpt =
             if (toLocalAmount >= localDustLimit) then
                 Some(
                     TxOut(
@@ -491,7 +491,7 @@ module Transactions =
             else
                 None
 
-        let toRemoteOutput_opt =
+        let toRemoteOutputOpt =
             if (toRemoteAmount >= localDustLimit) then
                 Some(
                     TxOut(
@@ -557,8 +557,8 @@ module Transactions =
 
                 let txOuts =
                     ([
-                        toLocalDelayedOutput_opt
-                        toRemoteOutput_opt
+                        toLocalDelayedOutputOpt
+                        toRemoteOutputOpt
                      ]
                      |> List.choose id
                      |> List.map(fun x -> x, None))

@@ -190,7 +190,7 @@
         }
     },
     "parameterNames": {
-        "enabled": false,
+        "enabled": true,
         "config": {
             "naming": "CamelCase",
             "underscores": "AllowPrefix"

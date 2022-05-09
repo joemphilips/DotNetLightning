@@ -1285,12 +1285,12 @@ type UnsignedNodeAnnouncementMsg =
             this.Alias <- ls.ReadUInt256(true)
             let addrLen = ls.ReadUInt16(false)
             let mutable addresses: list<NetAddress> = []
-            let mutable addr_readPos = 0us
+            let mutable addrReadPos = 0us
             let mutable foundUnknown = false
             let mutable excessAddressDataByte = 0uy
 
             this.Addresses <-
-                while addr_readPos < addrLen && (not foundUnknown) do
+                while addrReadPos < addrLen && (not foundUnknown) do
                     let addr = NetAddress.ReadFrom ls
 
                     ignore
@@ -1328,25 +1328,25 @@ type UnsignedNodeAnnouncementMsg =
                        | Result.Error v ->
                            excessAddressDataByte <- v
                            foundUnknown <- true
-                           addr_readPos <- addr_readPos + 1us
+                           addrReadPos <- addrReadPos + 1us
 
                     if (not foundUnknown) then
                         match addr with
                         | Ok addr ->
-                            addr_readPos <- addr_readPos + (1us + addr.Length)
+                            addrReadPos <- addrReadPos + (1us + addr.Length)
                             addresses <- addr :: addresses
                         | Result.Error _ -> failwith "Unreachable"
 
                 addresses |> List.rev |> Array.ofList
 
             this.ExcessAddressData <-
-                if addr_readPos < addrLen then
+                if addrReadPos < addrLen then
                     if foundUnknown then
                         Array.append
                             [| excessAddressDataByte |]
-                            (ls.ReadBytes(int(addrLen - addr_readPos)))
+                            (ls.ReadBytes(int(addrLen - addrReadPos)))
                     else
-                        (ls.ReadBytes(int(addrLen - addr_readPos)))
+                        (ls.ReadBytes(int(addrLen - addrReadPos)))
                 else if foundUnknown then
                     [| excessAddressDataByte |]
                 else
