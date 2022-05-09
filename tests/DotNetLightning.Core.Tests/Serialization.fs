@@ -759,7 +759,7 @@ module SerializationTest =
                                 @ [
                                     NetAddress.OnionV3(
                                         {
-                                            ed25519PubKey =
+                                            Ed25519PubKey =
                                                 [|
                                                     255uy
                                                     254uy

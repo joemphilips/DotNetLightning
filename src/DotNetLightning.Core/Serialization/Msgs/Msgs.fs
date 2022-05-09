@@ -1178,7 +1178,7 @@ type NetAddress =
             ls.Write(d.Addr)
             ls.Write(d.Port, false)
         | OnionV3 d ->
-            ls.Write(d.ed25519PubKey)
+            ls.Write(d.Ed25519PubKey)
             ls.Write(d.CheckSum, false)
             ls.Write(d.Version)
             ls.Write(d.Port, false)
@@ -1227,7 +1227,7 @@ type NetAddress =
 
             OnionV3
                 {
-                    OnionV3EndPoint.ed25519PubKey = ed25519PK
+                    OnionV3EndPoint.Ed25519PubKey = ed25519PK
                     CheckSum = checkSum
                     Version = v
                     Port = port
@@ -1251,7 +1251,7 @@ and OnionV2EndPoint =
 
 and OnionV3EndPoint =
     {
-        ed25519PubKey: array<byte>
+        Ed25519PubKey: array<byte>
         CheckSum: uint16
         Version: uint8
         Port: uint16
