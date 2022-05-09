@@ -340,6 +340,7 @@
             "Seq.map id x ===> id x",
             "(List.length x) = 0 ===> List.isEmpty x",
             "(Array.length x) = 0 ===> Array.isEmpty x",
+            "(Seq.length x) = 0 ===> Seq.isEmpty x",
             "x = [] ===> List.isEmpty x",
             "x = [||] ===> Array.isEmpty x",
             "(List.length x) <> 0 ===> not (List.isEmpty x)",
