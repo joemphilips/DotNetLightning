@@ -105,15 +105,15 @@ type System.Int64 with
 
 type System.Byte with
 
-    member a.FlipBit() =
-        ((a &&& 0x1uy) <<< 7)
-        ||| ((a &&& 0x2uy) <<< 5)
-        ||| ((a &&& 0x4uy) <<< 3)
-        ||| ((a &&& 0x8uy) <<< 1)
-        ||| ((a &&& 0x10uy) >>> 1)
-        ||| ((a &&& 0x20uy) >>> 3)
-        ||| ((a &&& 0x40uy) >>> 5)
-        ||| ((a &&& 0x80uy) >>> 7)
+    member this.FlipBit() =
+        ((this &&& 0x1uy) <<< 7)
+        ||| ((this &&& 0x2uy) <<< 5)
+        ||| ((this &&& 0x4uy) <<< 3)
+        ||| ((this &&& 0x8uy) <<< 1)
+        ||| ((this &&& 0x10uy) >>> 1)
+        ||| ((this &&& 0x20uy) >>> 3)
+        ||| ((this &&& 0x40uy) >>> 5)
+        ||| ((this &&& 0x80uy) >>> 7)
 
 [<Extension; AbstractClass; Sealed>]
 type BitArrayExtensions() =

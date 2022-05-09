@@ -22,7 +22,7 @@ type QueryFlags =
         else
             QueryFlags(uint8 data) |> Ok
 
-    member private x.Value = let (QueryFlags v) = x in v
+    member private this.Value = let (QueryFlags v) = this in v
 
     member this.RequiresChannelAnnouncement =
         (this.Value &&& 0b00000001uy) = 1uy
@@ -59,7 +59,7 @@ type QueryOption =
         else
             QueryFlags(uint8 data) |> Ok
 
-    member private x.Value = let (QueryOption v) = x in v
+    member private this.Value = let (QueryOption v) = this in v
     member this.SenderWantsTimestamps = (this.Value &&& 0b00000001uy) = 1uy
     member this.SenderWantsChecksums = (this.Value &&& 0b00000010uy) = 1uy
 
