@@ -202,7 +202,7 @@ module ClosingHelpers =
                 let toLocalScriptPubKey =
                     Scripts.toLocalDelayed
                         remoteCommitmentPubKeys.RevocationPubKey
-                        staticChannelConfig.LocalParams.ToSelfDelay
+                        staticChannelConfig.RemoteParams.ToSelfDelay
                         localCommitmentPubKeys.DelayedPaymentPubKey
 
                 let toLocalIndexOpt =
@@ -242,7 +242,7 @@ module ClosingHelpers =
                                     (Nullable
                                      <| Sequence(
                                          uint32
-                                             staticChannelConfig.LocalParams.ToSelfDelay.Value
+                                             staticChannelConfig.RemoteParams.ToSelfDelay.Value
                                      ))
                             )
                         )
