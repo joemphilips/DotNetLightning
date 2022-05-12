@@ -1,6 +1,7 @@
 namespace DotNetLightning.ClnRpc.Plugin
 
 open System.Runtime.Serialization
+open DotNetLightning.ClnRpc.NewtonsoftJsonConverters
 open DotNetLightning.Serialization
 open DotNetLightning.Utils
 open NBitcoin.JsonConverters
@@ -27,7 +28,7 @@ type PluginOptType =
     | [<EnumMember(Value = "bool")>] Bool = 2
     | [<EnumMember(Value = "flag")>] Flag = 3
 
-[<NoComparison; NoEquality; CLIMutable>]
+[<CLIMutable>]
 type RPCMethod =
     {
         [<Newtonsoft.Json.JsonProperty "name">]
@@ -37,13 +38,16 @@ type RPCMethod =
         Usage: string
 
         [<Newtonsoft.Json.JsonProperty "description">]
-        Description: string option
+        Description: string
 
         [<Newtonsoft.Json.JsonProperty "long_description">]
-        LongDescription: string option
+        LongDescription: string
+
+        [<Newtonsoft.Json.JsonProperty "deprecated">]
+        Deprecated: bool
     }
 
-[<NoComparison; NoEquality; CLIMutable>]
+[<CLIMutable>]
 type PluginOptions =
     {
         [<Newtonsoft.Json.JsonProperty "name">]
@@ -76,10 +80,10 @@ type FeatureSetDTO =
         Node: FeatureBits option
 
         [<Newtonsoft.Json.JsonProperty "channel">]
-        Channel: string option
+        Channel: FeatureBits option
 
         [<Newtonsoft.Json.JsonProperty "invoice">]
-        Invoice: string option
+        Invoice: FeatureBits option
     }
 
 [<CLIMutable>]
@@ -94,27 +98,37 @@ type Manifest =
     {
         [<Newtonsoft.Json.JsonProperty "options">]
         Options: PluginOptions seq
+
         [<Newtonsoft.Json.JsonProperty "rpcmethods">]
         RPCMethods: RPCMethod seq
+
         [<Newtonsoft.Json.JsonProperty "subscriptions">]
         Subscriptions: string seq
+
         [<Newtonsoft.Json.JsonProperty "hooks">]
         Hooks: obj seq
+
         [<Newtonsoft.Json.JsonProperty "dynamic">]
         Dynamic: bool
+
         [<Newtonsoft.Json.JsonProperty "notifications">]
         Notifications: NotificationsDTO seq
+
         [<Newtonsoft.Json.JsonProperty "featurebits">]
-        FeatureBits: FeatureSetDTO option
+        FeatureBits: FeatureSetDTO
     }
 
 [<CLIMutable>]
 type ProxyDTO =
     {
         [<Newtonsoft.Json.JsonProperty "type">]
-        ty: string
-        address: string
-        port: int
+        Ty: string
+
+        [<Newtonsoft.Json.JsonProperty "address">]
+        Address: string
+
+        [<Newtonsoft.Json.JsonProperty "port">]
+        Port: int
     }
 
 [<CLIMutable>]
@@ -122,6 +136,7 @@ type LightningInitConfigurationDTO =
     {
         [<Newtonsoft.Json.JsonProperty "lightning-dir">]
         LightningDir: string
+
         [<Newtonsoft.Json.JsonProperty "rpc-file">]
         RpcFile: string
 
@@ -142,4 +157,16 @@ type LightningInitConfigurationDTO =
 
         [<Newtonsoft.Json.JsonProperty "always_use_proxy">]
         AlwaysUseProxy: bool
+    }
+
+open System.Collections.Generic
+
+[<CLIMutable>]
+type InitDTO =
+    {
+        [<Newtonsoft.Json.JsonProperty "configuration">]
+        Configuration: LightningInitConfigurationDTO
+
+        [<Newtonsoft.Json.JsonProperty "options">]
+        Options: Dictionary<string, obj>
     }

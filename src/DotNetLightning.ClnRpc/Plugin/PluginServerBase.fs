@@ -2,17 +2,24 @@ namespace DotNetLightning.ClnRpc.Plugin
 
 open System
 open System.Collections.Generic
+open System.IO
+open System.IO.Pipelines
 open System.Reflection
 open System.Runtime.InteropServices
 open System.Threading
 open System.Threading.Tasks
 open DotNetLightning.ClnRpc
+open DotNetLightning.ClnRpc.NewtonsoftJsonConverters
 open DotNetLightning.Serialization
 open DotNetLightning.Utils
+open Microsoft.Extensions.Logging
 open Microsoft.VisualStudio.Threading
 open NBitcoin
 open NBitcoin.JsonConverters
 open StreamJsonRpc
+
+open DotNetLightning.ClnRpc.SystemTextJsonConverters.ClnSharpClientHelpers
+open DotNetLightning.ClnRpc.NewtonsoftJsonConverters.NewtonsoftJsonHelpers
 
 type internal O = OptionalArgumentAttribute
 type internal D = DefaultParameterValueAttribute
@@ -35,8 +42,8 @@ type PluginJsonRpcMethodAttribute
         [<O; D(null)>] longDescription: string
     ) =
     inherit JsonRpcMethodAttribute(name)
-    member val Description = description |> Option.ofObj
-    member val LongDescription = longDescription |> Option.ofObj
+    member val Description = description
+    member val LongDescription = longDescription
 
 /// <summary>
 /// Marker attribute for the rpc handler to be an subscription handler.
@@ -55,6 +62,31 @@ type PluginInitializationStatus =
     | NotYet = 0
     | InitializedSuccessfully = 1
     | Failed = 2
+
+/// interface for plugin server
+/// It might be useful when you want to call "init"/"getmanifest" in typed client.
+type IPluginServer =
+    abstract member Init:
+        configuration: LightningInitConfigurationDTO *
+        options: Dictionary<string, obj> ->
+            Task<obj>
+
+    abstract member GetManifest:
+        ``allow-deprecated-apis``: bool * _otherparams: obj -> Task<Manifest>
+
+/// If the plugin throws this, we will disconnect the plugin.
+exception PluginInitializationException of Exception
+
+[<AllowNullLiteral>]
+type PluginJsonRpc(handler: IJsonRpcMessageHandler) =
+    inherit JsonRpc(handler)
+
+    override this.IsFatalException(ex) =
+        match ex with
+        | :? PluginInitializationException -> true
+        | _ -> ``base``.IsFatalException(ex)
+
+type GetClientOutputStream = Func<CancellationToken, Task<Stream>>
 
 /// abstract base class for your c-lightning plugin.
 /// It talks to c-lightning through stdin/stdout.
@@ -109,46 +141,80 @@ type PluginInitializationStatus =
 /// For other features, e.g. taking cli options, validating c-lightning init
 /// message, etc, see corresponding abstract properties or methods.
 ///
+/// If you set `ObsoleteAttribute` to methods, those will not be shown to users
+/// unless they specify "allow-deprecated-apis" to true.
+///
 /// Hooks are currently unsupported since it is a quite advanced feature.
 /// Please send a PR if you really want it.
 [<AbstractClass>]
 type PluginServerBase
     (
-        [<O; D(null)>] notificationTopics: seq<string>,
-        [<O; D(false)>] dynamic
+        notificationTopics: seq<string>,
+        dynamic,
+        logger: ILogger<PluginServerBase>
     ) =
-    let semaphore = new AsyncSemaphore(1)
+
+    let logger = logger |> Option.ofObj
+
+    let mutable getClientStream: GetClientOutputStream =
+        Func<_, _>(fun ct -> Console.OpenStandardOutput() |> Task.FromResult)
+
+    let mutable jsonRpc = null
+    new(dynamic) = PluginServerBase(Seq.empty, dynamic, null)
+    new() = PluginServerBase(Seq.empty, false, null)
+    new(topics) = PluginServerBase(topics, false, null)
+    new(topics, dynamic) = PluginServerBase(topics, dynamic, null)
+    new(topics, logger) = PluginServerBase(topics, false, logger)
+    new(logger) = PluginServerBase(Seq.empty, false, logger)
 
     /// <summary>
     /// When the c-lightning gets ready, it will send you `init` rpc call.
     /// You probably want to validate the init msg and abort the plugin
     /// when the value passed in is not the one expected.
     /// You may also want to store the configuration object as your need.
+    /// If this method throws exception, the plugin shuts down.
     /// </summary>
     abstract member InitCore:
         configuration: LightningInitConfigurationDTO *
         cliOptions: Dictionary<string, obj> ->
             unit
 
+
+    /// <summary>
+    /// If this value is false, c-lightning will never try to stop this plugin.
+    /// default: false
+    /// </summary>
+    member this.Dynamic = dynamic
+
     /// <summary>
     /// Semaphore to assure the thread safety when writing to the stdout.
     /// </summary>
-    member val AsyncSemaphore = semaphore
+    member val AsyncSemaphore = new AsyncSemaphore(1)
 
     /// <summary>
     /// Plugins can overwrite the lightning node feature bits.
     /// </summary>
-    abstract member FeatureBits: FeatureSetDTO option
+    abstract member FeatureBits: FeatureSetDTO with get, set
 
-    override this.FeatureBits = None
+    default val FeatureBits = Unchecked.defaultof<_> with get, set
+
+    /// <summary>
+    /// You can add optional JsonConverters for your own type with this property.
+    /// </summary>
+    member val JsonConverters: seq<Newtonsoft.Json.JsonConverter> =
+        null with get, set
+
+    member this.JsonRpc
+        with private get (): PluginJsonRpc = jsonRpc
+        and private set v = jsonRpc <- v
 
     /// <summary>
     /// CLI options that plugin takes from users
     /// (via `lightningd`'s initialization options).
     /// </summary>
-    abstract member Options: PluginOptions seq
+    abstract member Options: PluginOptions seq with get, set
 
-    override this.Options = seq []
+    default val Options = seq [] with get, set
 
     /// <summary>
     /// The status of how we have processed the `init` message from c-lightning
@@ -158,21 +224,37 @@ type PluginServerBase
 
     member val Network = Network.RegTest with get, set
 
-    member this.GetStdoutClient() =
-        let getStdoutStream(_ct: CancellationToken) =
-            Task.FromResult(Console.OpenStandardOutput())
+    /// <summary>
+    /// output stream for client to send notification.
+    /// Default is STDOUT. you can replace your own in test.
+    /// </summary>
+    member val GetClientOutputStream: GetClientOutputStream =
+        getClientStream with get, set
 
-        ClnClient(
-            this.Network,
-            getTransport = Func<_, _>(getStdoutStream),
-            jsonLibrary = JsonLibraryType.Newtonsoft
-        )
+    member this.GetStdoutClient() =
+        let cli =
+            ClnClient(
+                this.Network,
+                getTransport = this.GetClientOutputStream,
+                jsonLibrary = JsonLibraryType.Newtonsoft
+            )
+
+        if this.JsonConverters |> isNull |> not then
+            for c in this.JsonConverters do
+                cli.NewtonSoftJsonOpts.Converters.Add(c)
+
+        cli
 
     /// <summary>
     /// Send notification to the c-lightning, the `topic` must be
     /// registered in constructor parameter of `PluginServerBase`
     /// </summary>
-    member this.SendNotification(topic: string, arg: 'T) =
+    member this.SendNotification
+        (
+            topic: string,
+            arg: 'T,
+            [<Optional; DefaultParameterValue(CancellationToken())>] cancellationToken: CancellationToken
+        ) =
         task {
             if notificationTopics |> Seq.contains topic |> not then
                 raise
@@ -180,12 +262,12 @@ type PluginServerBase
                     $"topic {topic} is not part of {nameof(notificationTopics)}"
                 )
             else
-                use _ = this.AsyncSemaphore.EnterAsync()
+                use _ = this.AsyncSemaphore.EnterAsync(cancellationToken)
 
                 do!
                     this
                         .GetStdoutClient()
-                        .SendCommandAsync(topic, arg, noReturn = true)
+                        .SendNotification(topic, arg, cancellationToken)
         }
 
     [<JsonRpcMethod("init")>]
@@ -195,7 +277,7 @@ type PluginServerBase
             options: Dictionary<string, obj>
         ) : Task<obj> =
         task {
-            use! _releaser = semaphore.EnterAsync()
+            use! _releaser = this.AsyncSemaphore.EnterAsync()
 
             try
                 this.InitCore(configuration, options)
@@ -206,19 +288,23 @@ type PluginServerBase
                 return () |> box
             with
             | x ->
+                logger
+                |> Option.iter(fun l ->
+                    l.LogCritical(x, $"Failed to start plugin.")
+                )
+
                 this.InitializationStatus <- PluginInitializationStatus.Failed
-                return raise <| AggregateException("Error in ValidateInit", x)
+                return raise(x |> PluginInitializationException)
         }
 
     [<JsonRpcMethod("getmanifest")>]
     member this.GetManifest
         (
             [<O; D(false)>] ``allow-deprecated-apis``: bool,
-            [<O; D(null)>] _otherparams: obj
+            [<O; D(null)>] _otherparams: obj // for future compatibility
         ) : Task<Manifest> =
         task {
-            use! _releaser = semaphore.EnterAsync()
-            let _ = ``allow-deprecated-apis``
+            use! _releaser = this.AsyncSemaphore.EnterAsync()
 
             let rpcMethodInfo, subscriptionMethodInfo =
                 let equalStr a b =
@@ -236,30 +322,58 @@ type PluginServerBase
                     && not <| (equalStr "init" m.Name)
                     && not <| (equalStr "getmanifest" m.Name)
                 )
-                |> Seq.toList
-                |> List.partition(fun methodInfo ->
-                    methodInfo.GetCustomAttribute(
-                        typeof<PluginJsonRpcSubscriptionAttribute>
-                    )
-                    |> isNull
+                |> Seq.choose(fun methodInfo ->
+                    let subscA =
+                        methodInfo.GetCustomAttribute<PluginJsonRpcSubscriptionAttribute>
+                            ()
+
+                    let methodA =
+                        methodInfo.GetCustomAttribute<PluginJsonRpcMethodAttribute>
+                            ()
+
+                    if subscA |> box |> isNull |> not
+                       || methodA |> box |> isNull |> not then
+                        Some(subscA, methodA, methodInfo)
+                    else
+                        None
                 )
+                |> Seq.toList
+                |> List.partition(fun (subscA, _, _) -> subscA |> box |> isNull)
 
             return
                 {
-                    Options = this.Options
+                    Options =
+                        if ``allow-deprecated-apis`` then
+                            this.Options
+                        else
+                            this.Options
+                            |> Seq.filter(fun opts -> not <| opts.Deprecated)
                     RPCMethods =
                         rpcMethodInfo
-                        |> List.map(fun methodInfo ->
-                            let attr =
-                                methodInfo.GetCustomAttribute<PluginJsonRpcMethodAttribute>
+                        |> List.map(fun (_, attr, methodInfo) ->
+                            assert (attr |> box |> isNull |> not)
+
+                            let obsoleteAttr =
+                                methodInfo.GetCustomAttribute<ObsoleteAttribute>
                                     ()
 
-                            assert (attr |> box |> isNull |> not)
+                            let isDeprecated = obsoleteAttr |> isNull |> not
 
                             {
                                 Name = attr.Name
-                                Description = attr.Description
-                                LongDescription = attr.LongDescription
+                                Deprecated = isDeprecated
+                                Description =
+                                    attr.Description
+                                    + if isDeprecated then
+                                          $" (this rpc is deprecated: {obsoleteAttr.Message})"
+                                      else
+                                          String.Empty
+                                LongDescription =
+                                    attr.LongDescription
+                                    + if isDeprecated then
+                                          $" (this rpc is deprecated: {obsoleteAttr.Message})"
+                                      else
+                                          String.Empty
                                 Usage =
                                     let argSpec = methodInfo.GetParameters()
 
@@ -307,11 +421,7 @@ type PluginServerBase
                         )
                     Subscriptions =
                         subscriptionMethodInfo
-                        |> Seq.choose(fun m ->
-                            let attr =
-                                m.GetCustomAttribute<PluginJsonRpcSubscriptionAttribute>
-                                    ()
-
+                        |> Seq.choose(fun (attr, _, _methodInfo) ->
                             Some <| attr.Topic
                         )
                     Hooks = []
@@ -320,33 +430,122 @@ type PluginServerBase
                 }
         }
 
+    interface IPluginServer with
+        member this.Init(configuration, options) =
+            this.Init(configuration, options)
 
-    /// Start listening to the server, returns a task when finish processing
+        member this.GetManifest(``allow-deprecated-apis``, _otherparams) =
+            this.GetManifest(``allow-deprecated-apis``, _otherparams)
+
+
+    /// <summary>
+    /// Start listening as a rpc server, returns a task when finish processing
     /// "init" message from c-lightning.
-    member this.StartAsync() =
+    ///
+    /// You can inject streams other than STDIN/STDOUT with parameters.
+    /// This feature might be useful for testing.
+    /// </summary>
+    member this.StartAsync
+        (
+            writer: PipeWriter,
+            reader: PipeReader,
+            cancellationToken: CancellationToken
+        ) =
+#if !DEBUG
         if Environment.GetEnvironmentVariable("LIGHTNINGD_PLUGIN") <> "1" then
             failwith
                 $"{nameof(this.StartAsync)} must not be called when you are not running a binary as a c-lightning plugin"
         else
+#endif
             let formatter = new JsonMessageFormatter()
 
-            let handler =
-                new NewLineDelimitedMessageHandler(
-                    Console.OpenStandardOutput(),
-                    Console.OpenStandardInput(),
-                    formatter
-                )
+            formatter.JsonSerializer.Converters.AddDNLJsonConverters(
+                this.Network
+            )
 
-            let rpc = new JsonRpc(handler)
+            if this.JsonConverters |> isNull |> not then
+                for c in this.JsonConverters do
+                    formatter.JsonSerializer.Converters.Add(c)
+
+            let handler =
+                new NewLineDelimitedMessageHandler(writer, reader, formatter)
+
+            handler.NewLine <- NewLineDelimitedMessageHandler.NewLineStyle.Lf
+
+            let rpc = new PluginJsonRpc(handler)
             rpc.AddLocalRpcTarget(this, JsonRpcTargetOptions())
             rpc.StartListening()
+            this.JsonRpc <- rpc
 
-            backgroundTask {
-                while this.InitializationStatus = PluginInitializationStatus.NotYet do
-                    ()
+            // usually this never completes until the transport is disconnected.
+            // But when the plugin throws error while initialization,
+            // this is the only task which completes.
+            let completionTask = this.JsonRpc.Completion
 
-                if this.InitializationStatus = PluginInitializationStatus.Failed then
-                    failwith "Initialization Failed."
-                else
-                    ()
+            // completes when the initialization process goes successfully.
+            let initializationTask =
+                backgroundTask {
+                    while this.InitializationStatus
+                          <> PluginInitializationStatus.InitializedSuccessfully do
+                        ()
+                }
+                :> Task
+
+            task {
+                let! t =
+                    Task.WhenAny(
+                        [
+                            completionTask
+                            initializationTask
+                            Task.Delay(-1, cancellationToken)
+                        ]
+                    )
+
+                do! t
+                return rpc
             }
+
+    member this.StartAsync(pipeWriter: PipeWriter, pipeReader: PipeReader) =
+        this.StartAsync(pipeWriter, pipeReader, CancellationToken.None)
+
+    member this.StartAsync
+        (
+            outStream: Stream,
+            inStream: Stream,
+            [<O; D(CancellationToken())>] ct
+        ) =
+        let outStream =
+            if outStream |> isNull then
+                Console.OpenStandardOutput()
+            else
+                outStream
+
+        let inStream =
+            if inStream |> isNull then
+                Console.OpenStandardInput()
+            else
+                inStream
+
+        let writer =
+            PipeWriter.Create(
+                outStream,
+                StreamPipeWriterOptions(leaveOpen = true)
+            )
+
+        let reader =
+            PipeReader.Create(
+                inStream,
+                StreamPipeReaderOptions(leaveOpen = true)
+            )
+
+        this.StartAsync(writer, reader, ct)
+
+    member this.StartAsync() =
+        let o: Stream = null
+        let i: Stream = null
+        this.StartAsync(o, i)
+
+    member this.StartAsync(cancellationToken) =
+        let o: Stream = null
+        let i: Stream = null
+        this.StartAsync(o, i, cancellationToken)

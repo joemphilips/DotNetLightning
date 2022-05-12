@@ -13,61 +13,8 @@ open System.Threading.Tasks
 open Newtonsoft.Json.Linq
 open NBitcoin
 
-[<AutoOpen>]
-module private ClnSharpClientHelpers =
-    type JsonSerializerOptions with
-
-        member this.AddDNLJsonConverters(n: Network) =
-            this.Converters.Add(SystemTextJsonConverters.MSatJsonConverter())
-            this.Converters.Add(SystemTextJsonConverters.PubKeyJsonConverter())
-
-            this.Converters.Add(
-                SystemTextJsonConverters.ShortChannelIdJsonConverter()
-            )
-
-            this.Converters.Add(SystemTextJsonConverters.KeyJsonConverter())
-            this.Converters.Add(SystemTextJsonConverters.uint256JsonConverter())
-
-            this.Converters.Add(
-                SystemTextJsonConverters.AmountOrAnyJsonConverter()
-            )
-
-            this.Converters.Add(
-                SystemTextJsonConverters.OutPointJsonConverter()
-            )
-
-            this.Converters.Add(SystemTextJsonConverters.FeerateJsonConverter())
-
-            this.Converters.Add(
-                SystemTextJsonConverters.OutputDescriptorJsonConverter(n)
-            )
-
-    type Newtonsoft.Json.JsonSerializerSettings with
-
-        member this.AddDNLJsonConverters(n: Network) =
-            this.Converters.Add(NewtonsoftJsonConverters.MSatJsonConverter())
-            this.Converters.Add(NewtonsoftJsonConverters.PubKeyJsonConverter())
-
-            this.Converters.Add(
-                NewtonsoftJsonConverters.ShortChannelIdJsonConverter()
-            )
-
-            this.Converters.Add(NewtonsoftJsonConverters.KeyJsonConverter())
-            this.Converters.Add(NewtonsoftJsonConverters.uint256JsonConverter())
-
-            this.Converters.Add(
-                NewtonsoftJsonConverters.AmountOrAnyJsonConverter()
-            )
-
-            this.Converters.Add(
-                NewtonsoftJsonConverters.OutPointJsonConverter()
-            )
-
-            this.Converters.Add(NewtonsoftJsonConverters.FeerateJsonConverter())
-
-            this.Converters.Add(
-                NewtonsoftJsonConverters.OutputDescriptorJsonConverter(n)
-            )
+open DotNetLightning.ClnRpc.SystemTextJsonConverters.ClnSharpClientHelpers
+open DotNetLightning.ClnRpc.NewtonsoftJsonConverters.NewtonsoftJsonHelpers
 
 type CLightningClientErrorCodeEnum =
     // -- errors from `pay`, `sendpay` or `waitsendpay` commands --
@@ -211,10 +158,10 @@ type ClnClient
 
     let getTransportStream =
         if getTransport |> isNull then
-            Func<CancellationToken, Task<Stream>>(fun (ct: CancellationToken) ->
+            Func<CancellationToken, Task<Stream>>(fun ct ->
                 task {
                     let! socket = this.Connect(ct)
-                    return new NetworkStream(socket) :> Stream
+                    return new NetworkStream(socket) |> unbox
                 }
             )
         else
@@ -230,7 +177,7 @@ type ClnClient
         if address |> isNull && getTransport |> isNull then
             raise
             <| ArgumentException(
-                $"you must specify either {nameof(address)} or {nameof(getTransport)} as {nameof(ClnClient)} constructor option"
+                $"you must specify either {nameof(address)} or {nameof getTransport} as {nameof(ClnClient)} constructor option"
             )
         else
             match jsonLibrary with
@@ -239,6 +186,9 @@ type ClnClient
             | JsonLibraryType.Newtonsoft ->
                 newtonSoftJsonOpts.AddDNLJsonConverters(network)
             | _ -> invalidArg (nameof(jsonLibrary)) "Unknown json library type"
+
+    member val JsonOpts = jsonOpts
+    member val NewtonSoftJsonOpts = Newtonsoft.Json.JsonSerializerSettings()
 
     member this.NextId
         with private get () =
@@ -303,117 +253,181 @@ type ClnClient
             req: obj,
             returnType: Type,
             [<Optional; DefaultParameterValue(false)>] noReturn: bool,
+            [<Optional; DefaultParameterValue(false)>] notification: bool,
             [<Optional; DefaultParameterValue(CancellationToken())>] ct: CancellationToken
         ) : Task<'T> =
         backgroundTask {
-            let! networkStream = getTransportStream.Invoke(ct)
-            use jsonWriter = new Utf8JsonWriter(networkStream)
-
-            let _ =
-                let reqObject = JsonObject()
-                reqObject.set_Item("id", JsonNode.op_Implicit(this.NextId))
-                reqObject.set_Item("method", JsonNode.op_Implicit(methodName))
-
-                if req |> isNull then
-                    reqObject.set_Item("params", JsonArray())
-                else
-                    reqObject.set_Item(
-                        "params",
-                        JsonSerializer.SerializeToNode(req)
-                    )
-
-                reqObject.WriteTo(jsonWriter)
-
-            do! jsonWriter.FlushAsync(ct)
-            do! networkStream.FlushAsync(ct)
-
             match jsonLibrary with
             | JsonLibraryType.Newtonsoft ->
-                use textReader =
-                    new StreamReader(
-                        networkStream,
-                        utf8,
-                        false,
-                        1024 * 10,
-                        true
-                    )
+                use! networkStream = getTransportStream.Invoke(ct)
 
-                use jsonReader = new Newtonsoft.Json.JsonTextReader(textReader)
-                let resultAsync = JObject.LoadAsync(jsonReader, ct)
+                use textWriter =
+                    new StreamWriter(networkStream, utf8, 1024 * 10, true)
 
-                try
-                    let! result = resultAsync
+                use jsonWriter = new Newtonsoft.Json.JsonTextWriter(textWriter)
 
-                    match result.Property "error" with
-                    | err when err |> isNull |> not ->
-                        return
-                            raise
-                            <| CLightningRPCException
-                                {
-                                    Code =
-                                        err.Value.["code"].Value<int>()
-                                        |> CLightningClientErrorCode.FromInt
-                                    Msg = err.Value.["message"].Value<string>()
-                                }
-                    | _ ->
-                        if noReturn then
-                            return Activator.CreateInstance returnType |> unbox
-                        else
-                            let jsonSer =
+                let! _ =
+                    let reqO = JObject()
+
+                    if not <| notification then
+                        reqO.Add("id", JToken.op_Implicit(this.NextId))
+
+                    reqO.Add("method", JToken.op_Implicit(methodName))
+                    reqO.Add("jsonrpc", JToken.op_Implicit("2.0"))
+
+                    if req |> isNull then
+                        reqO.Add("params", JArray())
+                    else
+                        reqO.Add(
+                            "params",
+                            JToken.FromObject(
+                                req,
                                 Newtonsoft.Json.JsonSerializer.Create(
-                                    newtonSoftJsonOpts
+                                    this.NewtonSoftJsonOpts
                                 )
-
-                            return
-                                result.Property("result").ToObject<'T>(jsonSer)
-                with
-                | _ ->
-                    ct.ThrowIfCancellationRequested()
-                    return failwith "unreachable"
-
-            | JsonLibraryType.SystemTextJson ->
-                let buf = Array.zeroCreate(65535)
-                let length = networkStream.Read(buf.AsSpan())
-
-                if length = 0 then
-                    return Activator.CreateInstance()
-                else
-                    let result =
-                        let bufSpan = ReadOnlySpan.op_Implicit buf
-
-                        JsonSerializer.Deserialize<JsonElement>(
-                            bufSpan.Slice(0, length),
-                            jsonOpts
+                            )
                         )
 
+                    reqO.WriteToAsync(jsonWriter)
+
+                do! jsonWriter.FlushAsync(ct)
+                do! textWriter.FlushAsync()
+                do! networkStream.FlushAsync(ct)
+
+                if notification then
+                    // we don't have to read response in case of notification.
+                    return Activator.CreateInstance returnType |> unbox
+                else
+                    // read response.
+                    use textReader =
+                        new StreamReader(
+                            networkStream,
+                            utf8,
+                            false,
+                            1024 * 10,
+                            true
+                        )
+
+                    use jsonReader =
+                        new Newtonsoft.Json.JsonTextReader(textReader)
+
+                    let resultAsync = JObject.LoadAsync(jsonReader, ct)
+
                     try
-                        match result.TryGetProperty("error") with
-                        | true, err ->
-                            let code =
-                                err.GetProperty("code").GetInt32()
-                                |> CLightningClientErrorCode.FromInt
+                        let! result = resultAsync
 
-                            let msg = err.GetProperty("message").GetString()
-
+                        match result.Property "error" with
+                        | err when err |> isNull |> not ->
                             return
                                 raise
                                 <| CLightningRPCException
                                     {
-                                        Code = code
-                                        Msg = msg
+                                        Code =
+                                            err.Value.["code"].Value<int>()
+                                            |> CLightningClientErrorCode.FromInt
+                                        Msg =
+                                            err.Value.["message"]
+                                                .Value<string>()
                                     }
-                        | false, _ ->
+                        | _ ->
                             if noReturn then
                                 return
                                     Activator.CreateInstance returnType |> unbox
                             else
-                                let jObj = result.GetProperty("result")
-                                return jObj.Deserialize(jsonOpts)
+                                let jsonSer =
+                                    Newtonsoft.Json.JsonSerializer.Create(
+                                        this.NewtonSoftJsonOpts
+                                    )
+
+                                return
+                                    result
+                                        .Property("result")
+                                        .ToObject<'T>(jsonSer)
                     with
                     | _ when ct.IsCancellationRequested ->
                         ct.ThrowIfCancellationRequested()
                         return failwith "unreachable"
-            | _ -> return failwith "unreachable"
+
+            | JsonLibraryType.SystemTextJson ->
+                use! networkStream = getTransportStream.Invoke(ct)
+                use jsonWriter = new Utf8JsonWriter(networkStream)
+
+                let _ =
+                    let reqObject = JsonObject()
+
+                    if not <| notification then
+                        reqObject.set_Item(
+                            "id",
+                            JsonNode.op_Implicit(this.NextId)
+                        )
+
+                    reqObject.set_Item(
+                        "method",
+                        JsonNode.op_Implicit(methodName)
+                    )
+
+                    reqObject.set_Item("jsonrpc", JsonNode.op_Implicit("2.0"))
+
+                    if req |> isNull then
+                        reqObject.set_Item("params", JsonArray())
+                    else
+                        reqObject.set_Item(
+                            "params",
+                            JsonSerializer.SerializeToNode(req)
+                        )
+
+                    reqObject.WriteTo(jsonWriter)
+
+                do! jsonWriter.FlushAsync(ct)
+                do! networkStream.FlushAsync(ct)
+
+                if notification then
+                    // we don't have to read response in case of notification.
+                    return Activator.CreateInstance returnType |> unbox
+                else
+                    let buf = Array.zeroCreate(65535)
+                    let length = networkStream.Read(buf.AsSpan())
+
+                    if length = 0 then
+                        return Activator.CreateInstance()
+                    else
+                        let result =
+                            let bufSpan = ReadOnlySpan.op_Implicit buf
+
+                            JsonSerializer.Deserialize<JsonElement>(
+                                bufSpan.Slice(0, length),
+                                this.JsonOpts
+                            )
+
+                        try
+                            match result.TryGetProperty("error") with
+                            | true, err ->
+                                let code =
+                                    err.GetProperty("code").GetInt32()
+                                    |> CLightningClientErrorCode.FromInt
+
+                                let msg = err.GetProperty("message").GetString()
+
+                                return
+                                    raise
+                                    <| CLightningRPCException
+                                        {
+                                            Code = code
+                                            Msg = msg
+                                        }
+                            | false, _ ->
+                                if noReturn then
+                                    return
+                                        Activator.CreateInstance returnType
+                                        |> unbox
+                                else
+                                    let jObj = result.GetProperty("result")
+                                    return jObj.Deserialize(this.JsonOpts)
+                        with
+                        | _ when ct.IsCancellationRequested ->
+                            ct.ThrowIfCancellationRequested()
+                            return failwith "unreachable"
+            | x -> return failwith $"Unknown json library type: {x}"
         }
 
     member this.SendCommandAsync<'T>
@@ -423,7 +437,16 @@ type ClnClient
             [<Optional; DefaultParameterValue(false)>] noReturn: bool,
             [<Optional; DefaultParameterValue(CancellationToken())>] ct: CancellationToken
         ) : Task<'T> =
-        this.SendCommandAsync(methodName, req, typeof<'T>, noReturn, ct)
+        this.SendCommandAsync(methodName, req, typeof<'T>, noReturn, false, ct)
+
+    member this.SendNotification<'T>
+        (
+            methodName: string,
+            req: obj,
+            [<Optional; DefaultParameterValue(CancellationToken())>] ct: CancellationToken
+        ) : Task =
+        this.SendCommandAsync(methodName, req, typeof<obj>, true, true, ct)
+        :> Task
 
     member internal this.SendCommandAsync<'T>(req: Request, ct) =
         this.SendCommandAsync<'T>(req.MethodName, req.Data, false, ct)
