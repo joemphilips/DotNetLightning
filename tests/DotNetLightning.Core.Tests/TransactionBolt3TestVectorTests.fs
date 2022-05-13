@@ -254,7 +254,6 @@ let paymentPreImages =
 
     _s |> List.map(hex.DecodeData) |> List.map(PaymentPreimage.Create)
 
-type h = DirectedHTLC
 
 log(sprintf "first payment hash is %A" paymentPreImages.[0].Hash)
 

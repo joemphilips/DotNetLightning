@@ -8,29 +8,29 @@ open NBitcoin
 [<Obsolete>]
 type StaticOutput =
     {
-        outPoint: OutPoint
-        output: TxOut
+        OutPoint: OutPoint
+        Output: TxOut
     }
 
 [<Obsolete>]
 type DynamicOutputP2WSH =
     {
-        outPoint: OutPoint
-        key: Key
-        witnessScript: Script
-        toSelfDelay: uint16
-        output: TxOut
+        OutPoint: OutPoint
+        Key: Key
+        WitnessScript: Script
+        ToSelfDelay: uint16
+        Output: TxOut
     }
 
 [<Obsolete>]
 type DynamicOutputP2WPKH =
     {
         /// Output spendable by user wallet
-        outpoint: OutPoint
+        Outpoint: OutPoint
         /// localkey = payment_basepoint_secret + SHA256(per_commitment_point || payment_basepoint)
-        key: Key
+        Key: Key
         /// The output which is reference by the given outpoint
-        output: TxOut
+        Output: TxOut
     }
 
 [<Obsolete>]

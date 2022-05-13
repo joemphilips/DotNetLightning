@@ -224,8 +224,8 @@ module Primitives =
             let e = defaultArg lEndian false
             this.Value.ToBytes e
 
-        member x.GetRIPEMD160() =
-            let b = x.Value.ToBytes() |> Array.rev
+        member this.GetRIPEMD160() =
+            let b = this.Value.ToBytes() |> Array.rev
             Crypto.Hashes.RIPEMD160(b, b.Length)
 
     /// The preimage for HTLC which the LN payment recipient must reveal when

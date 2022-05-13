@@ -519,7 +519,7 @@ let private onionV3AddressGen =
             NetAddress.OnionV3
                 {
                     OnionV3EndPoint.CheckSum = cs
-                    ed25519PubKey = pk
+                    Ed25519PubKey = pk
                     Version = v
                     Port = port
                 }

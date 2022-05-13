@@ -519,8 +519,7 @@ module TplPrimitives =
             else
                 let mutable mutAwt = awt
 
-                Binder<'u>
-                    .Await<'methods, _, _>(&mutAwt, (fun x -> cont x))
+                Binder<'u>.Await<'methods, _, _>(&mutAwt, cont)
 
         // We have special treatment for unknown taskLike types where we wrap the continuation in a unit func
         // This allows us to use a single GenericAwaiterMethods type (zero alloc, small drop in perf) instead of an object expression.
@@ -542,13 +541,13 @@ module TplPrimitives =
                     )
 
         static member PlyAwait(ply: Ply<'t>, cont: 't -> Ply<'u>) =
-            Ply(await = PlyAwaitable(ply.awaitable, (fun x -> cont x)))
+            Ply(await = PlyAwaitable(ply.awaitable, cont))
 
         static member inline Ply(ply: Ply<'t>, cont: 't -> Ply<'u>) =
             if ply.IsCompletedSuccessfully then
                 cont ply.Result
             else
-                Binder<'u>.PlyAwait (ply, (fun x -> cont x))
+                Binder<'u>.PlyAwait (ply, cont)
 
     // Supporting types to have the compiler do what we want with respect to overload resolution.
     type Id<'t> =

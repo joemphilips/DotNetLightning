@@ -590,7 +590,7 @@ module Graph =
                 CLTV = BlockHeightOffset16.Zero
             }
 
-        if path |> Seq.length = 0 then
+        if path |> Seq.isEmpty then
             zero
         else
             path
