@@ -1063,6 +1063,7 @@ type private Bolt11Data =
         this.ToBytesBase32() |> Helpers.convert5BitsTo8
 
 
+/// [bolt11](https://github.com/lightning/bolts/blob/master/11-payment-encoding.md) invoice.
 [<CustomEquality; NoComparison>]
 type PaymentRequest =
     private

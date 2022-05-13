@@ -2,6 +2,8 @@ namespace DotNetLightning.Utils
 
 open NBitcoin
 
+/// Simple wrapper type for transaction id.
+/// Its only purpose is to annotate the inner hash is a txid and nothing else
 [<StructuralComparison; StructuralEquality>]
 type TxId =
     | TxId of uint256

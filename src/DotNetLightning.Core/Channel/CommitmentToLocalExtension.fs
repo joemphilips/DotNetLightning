@@ -9,6 +9,16 @@ open DotNetLightning.Crypto
 open ResultUtils
 open ResultUtils.Portability
 
+/// <namespacedoc>
+///     <summary>
+///         "DotNetLightning.Channel" contains a functions/types for LN Channel
+///         management. It is still WIP.
+///     </summary>
+/// </namespacedoc>
+/// <exclude />
+module NamespaceDocDummy =
+    ()
+
 type CommitmentToLocalParameters =
     {
         RevocationPubKey: RevocationPubKey

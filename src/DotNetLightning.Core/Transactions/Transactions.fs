@@ -309,6 +309,9 @@ type SortableTxOut =
                             else
                                 0
 
+/// <summary>
+///     This module contains a functions to work with LN-specific transactions.
+/// </summary>
 module Transactions =
 
     [<AutoOpen>]

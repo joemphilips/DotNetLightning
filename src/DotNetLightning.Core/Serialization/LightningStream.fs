@@ -8,17 +8,8 @@ open NBitcoin
 open ResultUtils
 open ResultUtils.Portability
 
-type Scope(openAction: Action, closeAction: Action) =
-    let _close = closeAction
-    do openAction.Invoke()
-    member private this.Close = _close
-
-    interface IDisposable with
-        member this.Dispose() =
-            this.Close.Invoke()
-
-type O = OptionalArgumentAttribute
-type D = System.Runtime.InteropServices.DefaultParameterValueAttribute
+type internal O = OptionalArgumentAttribute
+type internal D = System.Runtime.InteropServices.DefaultParameterValueAttribute
 
 /// Simple Wrapper stream for serializing Lightning Network p2p messages.
 /// Why not use BitWriter/Reader? Because it does not support big endian and
@@ -63,6 +54,10 @@ type LightningStream(inner: Stream) =
     override this.Read(buf: array<byte>, offset: int, count: int) =
         this.Inner.Read(buf, offset, count)
 
+/// <summary>
+///     stream for writing lightning p2p msg
+/// </summary>
+/// <seealso cref="LightningStream"/>
 type LightningWriterStream(inner: Stream) =
     inherit LightningStream(inner)
 
@@ -208,6 +203,10 @@ type LightningWriterStream(inner: Stream) =
     member this.WriteTLVStream(tlvs: #seq<GenericTLV>) =
         tlvs |> Seq.iter(fun tlv -> this.WriteTLV(tlv))
 
+/// <summary>
+///     stream for reading lightning p2p msg
+/// </summary>
+/// <seealso cref="LightningStream"/>
 type LightningReaderStream(inner: Stream) =
     inherit LightningStream(inner)
 

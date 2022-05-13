@@ -8,6 +8,7 @@ open DotNetLightning.Crypto
 open ResultUtils
 open ResultUtils.Portability
 
+/// Functions to work wth LN-specific bitcoin scripts.
 module Scripts =
 
     let inline private encodeInt n =

@@ -5,6 +5,9 @@ open System.IO
 open ResultUtils
 open ResultUtils.Portability
 
+/// See `query_short_channel_ids` msg description in
+/// [bolt07](https://github.com/lightning/bolts/blob/master/07-routing-gossip.md)
+/// For the detail
 type QueryFlags =
     private
     | QueryFlags of uint8
@@ -42,6 +45,9 @@ type QueryFlags =
     member this.ToBytes() =
         [| (byte) this.Value |]
 
+/// See `query_channel_range` msg description in
+/// [bolt07](https://github.com/lightning/bolts/blob/master/07-routing-gossip.md)
+/// For the detail
 type QueryOption =
     private
     | QueryOption of uint8
@@ -66,6 +72,8 @@ type QueryOption =
     member this.ToBytes() =
         [| (byte) this.Value |]
 
+/// This is a type described in [bolt07](https://github.com/lightning/bolts/blob/master/07-routing-gossip.md) as
+/// `channel_update_timestamps`
 type TwoTimestamps =
     {
         NodeId1: uint32
@@ -79,6 +87,8 @@ type TwoTimestamps =
         ls.Write(this.NodeId2, false)
         ms.ToArray()
 
+/// This is a type described in [bolt07](https://github.com/lightning/bolts/blob/master/07-routing-gossip.md) as
+/// `channel_update_checksums`
 type TwoChecksums =
     {
         NodeId1: uint32

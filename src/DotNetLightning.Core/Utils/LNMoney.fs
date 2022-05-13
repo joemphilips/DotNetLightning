@@ -15,7 +15,7 @@ type LNMoneyUnit =
     | MilliSatoshi = 1UL
     | Pico = 1UL
 
-/// Port from `LightMoney` class in BTCPayServer.Lightning
+/// Port from `LightMoney` class in `BTCPayServer.Lightning`
 /// Represents millisatoshi amount of money
 #if !NoDUsAsStructs
 [<Struct>]

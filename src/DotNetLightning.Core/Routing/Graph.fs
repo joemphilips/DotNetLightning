@@ -1,6 +1,18 @@
 namespace DotNetLightning.Routing
 
 open System
+
+/// <namespacedoc>
+///     <summary>
+///         "DotNetLightning.Routing" contains a functions/types for calculating
+///         the route for payment. and to track the routing information.
+///         It is still WIP.
+///     </summary>
+/// </namespacedoc>
+/// <exclude />
+module NamespaceDocDummy =
+    ()
+
 open System.Collections.Generic
 open DotNetLightning.Utils
 open DotNetLightning.Serialization.Msgs

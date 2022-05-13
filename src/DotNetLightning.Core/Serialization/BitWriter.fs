@@ -9,8 +9,8 @@ open DotNetLightning.Core.Utils.Extensions
 open ResultUtils
 open ResultUtils.Portability
 
-// Based on: https://github.com/MetacoSA/NBitcoin/blob/d822f191441b2da5abdd3ab4765cf82296dbea18/NBitcoin/BitWriter.cs
-type BitWriter() =
+/// Based on: https://github.com/MetacoSA/NBitcoin/blob/d822f191441b2da5abdd3ab4765cf82296dbea18/NBitcoin/BitWriter.cs
+type internal BitWriter() =
     let values = ResizeArray<bool>()
 
     member this.Count = values.Count

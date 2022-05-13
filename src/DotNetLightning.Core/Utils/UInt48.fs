@@ -3,6 +3,10 @@ namespace DotNetLightning.Utils
 open System
 open DotNetLightning.Core.Utils.Extensions
 
+/// Integral type to represent the commitment number.
+/// The commitment number is a number set to commitment tx locktime
+/// (in obscured form), see [bolt03-transactions](https://github.com/lightning/bolts/blob/master/03-transactions.md)
+/// for more detail.
 #if !NoDUsAsStructs
 [<Struct>]
 #endif

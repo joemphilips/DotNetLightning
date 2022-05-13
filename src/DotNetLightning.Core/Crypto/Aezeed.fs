@@ -179,11 +179,12 @@ module internal AezeedHelpers =
         let wordInt = writer.ToIntegers()
         wordInt |> lang.GetWords
 
-/// CipherSeed is a fully decoded instance of the aezeed scheme. At a high level, the encoded cipherseed is the
-/// enciphering off
-/// 1. 1 byte version byte
-/// 2. 2 bytes timestamp
-/// 3.
+/// CipherSeed is a fully decoded instance of the
+/// [aezeed scheme](https://github.com/lightningnetwork/lnd/tree/master/aezeed).
+/// You can convert from/to `NBitcoin.Mnemonic` by
+/// `CipherSeed.ToMnemonic`
+/// `Mnemonic.ToCipherSeed`
+/// <seealso href ="https://github.com/lightningnetwork/lnd/tree/master/aezeed">Aezeed in lnd </seealso>
 [<Struct; CustomEquality; NoComparison>]
 type CipherSeed =
     {

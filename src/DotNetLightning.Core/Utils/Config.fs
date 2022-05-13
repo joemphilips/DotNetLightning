@@ -41,6 +41,7 @@ type ChannelHandshakeLimits =
         MaxToSelfDelay: BlockHeightOffset16
     }
 
+    /// Returns default value
     static member Zero =
         {
             MinFundingSatoshis = Money.Satoshis(1000m)
@@ -56,6 +57,7 @@ type ChannelHandshakeLimits =
         }
 
 
+/// Configuration for router module.
 type RouterConfig() =
     member val RandomizeRouteSelection: bool = true with get, set
 
