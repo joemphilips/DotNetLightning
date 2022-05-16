@@ -3,6 +3,7 @@
 // Copyright (c) 2019 Crowded B.V.
 // Distributed under the MIT License (https://opensource.org/licenses/MIT).
 
+// fsharplint:disable GenericTypeNames
 namespace rec Ply
 
 open System
@@ -770,3 +771,5 @@ module TplPrimitives =
 
         member inline __.For(sequence: seq<_>, body: _ -> Ply<unit>) =
             forLoop sequence body
+
+// fsharplint:enable
