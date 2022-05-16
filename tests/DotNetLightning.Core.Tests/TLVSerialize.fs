@@ -107,4 +107,4 @@ let bigSizeVarIntTests =
 let bolt4Tests2 =
     // let dataPath1 = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "../../..", ("Data/bolt04/onion-test-multi-frame.json"))
     // let testData1 = dataPath1 |> File.ReadAllText |> JsonDocument.Parse
-    testList "bolt04 test vectors" [ testCase "" <| fun _ -> () ]
+    testList "bolt04 test vectors" [ testCase "" <| ignore ]

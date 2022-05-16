@@ -19,7 +19,7 @@ open ResultUtils.Portability
 let log =
     // uncomment this if you want to see the debug message for this test
     // logger.LogSimple
-    fun _s -> ()
+    ignore
 
 
 /// data formatted to json

@@ -737,7 +737,7 @@ let peerChannelEncryptorTests =
                         inboundPeer <- inboundPeer3
                     | _ -> failwith "Fail: inboundPeer3.NoiseState not Finished"
 
-                let log = fun _s -> ()
+                let log = ignore
                 // eventX >> logger.info
                 let rec loop (i: int) localOutBound localInbound =
                     log(sprintf "%d th iteration ----\n\n" i)
