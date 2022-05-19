@@ -6,6 +6,7 @@ open System
 open System.Text
 open DotNetLightning.Core.Utils.Extensions
 
+open NBitcoin.DataEncoders
 open ResultUtils
 open ResultUtils.Portability
 
@@ -107,6 +108,8 @@ type Feature =
         }
 
 module internal Feature =
+    let hex = HexEncoder()
+
     /// Features may depend on other features, as specified in BOLT 9
     let private featuresDependency =
         Map.empty
@@ -263,6 +266,7 @@ type FeatureBits private (bitArray: BitArray) =
     static member CreateUnsafe(ba: BitArray) =
         FeatureBits.TryCreate ba |> FeatureBits.Unwrap
 
+    /// Parse from bit-array string. returns result.
     static member TryParse(str: string) =
         result {
             let! ba = BitArray.TryParse str
@@ -272,6 +276,16 @@ type FeatureBits private (bitArray: BitArray) =
                 |> FeatureBits.TryCreate
                 |> Result.mapError(fun fe -> fe.ToString())
         }
+
+    static member ParseHex(str: string) =
+        Feature.hex.DecodeData str |> FeatureBits.TryCreate
+
+    static member ParseHexUnsafe(str: string) =
+        FeatureBits.ParseHex str |> FeatureBits.Unwrap
+
+    member this.ToHex() =
+        let d: byte [] = this.ToByteArray()
+        d |> Feature.hex.EncodeData
 
     override this.ToString() =
         this.BitArray.PrintBits()

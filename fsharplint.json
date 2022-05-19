@@ -1,6 +1,7 @@
 {
     "ignoreFiles": [
-        "assemblyinfo.*"
+        "assemblyinfo.*",
+        "src/DotNetLightning.ClnRpc/Requests.fs"
     ],
     "global": {
         "numIndentationSpaces": 4

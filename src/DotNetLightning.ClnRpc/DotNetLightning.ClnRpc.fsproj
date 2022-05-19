@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Authors>joemphilips</Authors>
+    <Version>1.1.2</Version>
+    <Description>Core Lightning json rpc client for .NET</Description>
+    <PackageProjectUrl>https://github.com/joemphilips/DotNetLightning</PackageProjectUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Primitives.fs" />
+    <Compile Include="SystemTextJsonConverters.fs" />
+    <Compile Include="NewtonsoftJsonConverters.fs" />
+    <Compile Include="ManuallyDefinedTypes.fs" />
+    <Compile Include="Requests.fs" />
+    <Compile Include="Client.fs" />
+    <Compile Include="Client.Methods.fs" />
+    <Compile Include="Plugin/DTOs.fs" />
+    <Compile Include="Plugin/PluginServerBase.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DotNetLightning.Core\DotNetLightning.Core.fsproj" />
+    <ProjectReference Include="..\ResultUtils\ResultUtils.fsproj" />
+    <ProjectReference Include="..\PluginLogger\PluginLogger.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StreamJsonRpc" Version="2.10.44" />
+  </ItemGroup>
+
+</Project>

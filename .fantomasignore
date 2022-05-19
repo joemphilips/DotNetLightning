@@ -1,0 +1,2 @@
+src/DotNetLightning.ClnRpc/Requests.fs
+src/DotNetLightning.ClnRpc/Client.Methods.fs
