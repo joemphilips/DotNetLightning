@@ -39,7 +39,7 @@ jobs:
 
     - name: Run other tests
       run: |
-        dotnet test --filter "FullyQualifiedName!~Macaroon" # see https://github.com/joemphilips/DotNetLightning/issues/153
+        dotnet test --blame-hang --blame-hang-timeout 3m --filter "FullyQualifiedName!~Macaroon" # see https://github.com/joemphilips/DotNetLightning/issues/153
 
   build_with_fsharp_from_mono:
     runs-on: ubuntu-20.04
