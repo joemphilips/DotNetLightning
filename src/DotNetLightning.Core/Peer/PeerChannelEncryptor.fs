@@ -944,9 +944,9 @@ module PeerChannelEncryptor =
 /// Might remove in the future
 [<AutoOpen>]
 module PeerChannelEncryptorMonad =
-    type PeerChannelEncryptorComputation<'a> =
+    type PeerChannelEncryptorComputation<'T> =
         | PeerChannelEncryptorComputation of
-            (PeerChannelEncryptor -> Result<'a * PeerChannelEncryptor, PeerError>)
+            (PeerChannelEncryptor -> Result<'T * PeerChannelEncryptor, PeerError>)
 
     let runP pcec initialState =
         let (PeerChannelEncryptorComputation innerFn) = pcec
@@ -959,9 +959,9 @@ module PeerChannelEncryptorMonad =
         PeerChannelEncryptorComputation innerFn
 
     let bindP
-        (f: 'a -> PeerChannelEncryptorComputation<'b>)
-        (xT: PeerChannelEncryptorComputation<'a>)
-        : PeerChannelEncryptorComputation<'b> =
+        (f: 'T1 -> PeerChannelEncryptorComputation<'T2>)
+        (xT: PeerChannelEncryptorComputation<'T1>)
+        : PeerChannelEncryptorComputation<'T2> =
         let innerFn state =
             runP xT state
             >>= fun (res, state2) ->
@@ -975,7 +975,7 @@ module PeerChannelEncryptorMonad =
 
     /// Lift non-failable function to monadic world
     let fromPlainFunction
-        (f: PeerChannelEncryptor -> 'a * PeerChannelEncryptor)
+        (f: PeerChannelEncryptor -> 'T * PeerChannelEncryptor)
         =
         let innerFn state =
             let (result, newState) = f state
@@ -984,7 +984,7 @@ module PeerChannelEncryptorMonad =
         PeerChannelEncryptorComputation innerFn
 
     /// Lift non-failable reader function to monadic world
-    let fromReaderFunction(f: PeerChannelEncryptor -> 'a) =
+    let fromReaderFunction(f: PeerChannelEncryptor -> 'T) =
         let innerFn state =
             let result = f state
             result, state
@@ -999,11 +999,11 @@ module PeerChannelEncryptorMonad =
         fromPlainFunction f2
 
     let fromFailableFunction
-        (f: PeerChannelEncryptor -> Result<'a * PeerChannelEncryptor, _>)
+        (f: PeerChannelEncryptor -> Result<'T * PeerChannelEncryptor, _>)
         =
         PeerChannelEncryptorComputation f
 
-    let fromFailableReaderFunction(f: PeerChannelEncryptor -> Result<'a, _>) =
+    let fromFailableReaderFunction(f: PeerChannelEncryptor -> Result<'T, _>) =
         let innerFn state =
             f state >>= fun result -> Ok(result, state)
 

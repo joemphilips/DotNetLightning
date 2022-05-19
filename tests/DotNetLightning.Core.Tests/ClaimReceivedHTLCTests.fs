@@ -41,5 +41,5 @@ let tests =
     testList
         "Claim Received HTLC Tests"
         [
-            testCase "Should accept accept_channel" <| fun _ -> ()
+            testCase "Should accept accept_channel" <| ignore
         ]
