@@ -63,7 +63,7 @@ module Requests =
     type SendpayRequest = {
         [<JsonPropertyName("route")>]
         Route: SendpayRoute []
-        [<JsonConverter(typeof<uint256JsonConverter>)>]
+        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         [<JsonPropertyName("label")>]
@@ -354,7 +354,7 @@ module Requests =
     type SendonionRequest = {
         [<JsonPropertyName("onion")>]
         Onion: string
-        [<JsonConverter(typeof<uint256JsonConverter>)>]
+        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         [<JsonPropertyName("label")>]
@@ -377,7 +377,7 @@ module Requests =
         [<JsonPropertyName("destination")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Destination: PubKey option
-        [<JsonConverter(typeof<uint256JsonConverter>)>]
+        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("localofferid")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Localofferid: uint256 option
@@ -399,7 +399,7 @@ module Requests =
         [<JsonPropertyName("bolt11")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt11: string option
-        [<JsonConverter(typeof<uint256JsonConverter>)>]
+        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaymentHash: uint256 option
@@ -483,7 +483,7 @@ module Requests =
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type WaitsendpayRequest = {
-        [<JsonConverter(typeof<uint256JsonConverter>)>]
+        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         [<JsonPropertyName("timeout")>]
@@ -766,7 +766,7 @@ module Requests =
         [<JsonPropertyName("bolt11")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt11: string option
-        [<JsonConverter(typeof<uint256JsonConverter>)>]
+        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaymentHash: uint256 option
@@ -1048,7 +1048,7 @@ module Responses =
         AmountMsat: int64<msat>
         [<JsonPropertyName("expiry")>]
         Expiry: uint32
-        [<JsonConverter(typeof<uint256JsonConverter>)>]
+        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         [<JsonPropertyName("local_trimmed")>]
@@ -1076,7 +1076,7 @@ module Responses =
         [<JsonPropertyName("short_channel_id")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         ShortChannelId: ShortChannelId option
-        [<JsonConverter(typeof<uint256JsonConverter>)>]
+        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("channel_id")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         ChannelId: uint256 option
@@ -1337,7 +1337,7 @@ module Responses =
         [<JsonPropertyName("groupid")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Groupid: uint64 option
-        [<JsonConverter(typeof<uint256JsonConverter>)>]
+        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         // Path `SendPay.status`
@@ -1544,7 +1544,7 @@ module Responses =
         [<JsonPropertyName("bolt12")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt12: string option
-        [<JsonConverter(typeof<uint256JsonConverter>)>]
+        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         [<JsonConverter(typeof<MSatJsonConverter>)>]
@@ -1650,7 +1650,7 @@ module Responses =
         [<JsonPropertyName("description")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Description: string option
-        [<JsonConverter(typeof<uint256JsonConverter>)>]
+        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         // Path `DelInvoice.status`
@@ -1672,7 +1672,7 @@ module Responses =
     type InvoiceResponse = {
         [<JsonPropertyName("bolt11")>]
         Bolt11: string
-        [<JsonConverter(typeof<uint256JsonConverter>)>]
+        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         [<JsonConverter(typeof<KeyJsonConverter>)>]
@@ -1736,7 +1736,7 @@ module Responses =
         [<JsonPropertyName("description")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Description: string option
-        [<JsonConverter(typeof<uint256JsonConverter>)>]
+        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         // Path `ListInvoices.invoices[].status`
@@ -1796,7 +1796,7 @@ module Responses =
     type SendonionResponse = {
         [<JsonPropertyName("id")>]
         Id: uint64
-        [<JsonConverter(typeof<uint256JsonConverter>)>]
+        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         // Path `SendOnion.status`
@@ -1853,7 +1853,7 @@ module Responses =
         [<JsonPropertyName("groupid")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Groupid: uint64 option
-        [<JsonConverter(typeof<uint256JsonConverter>)>]
+        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         // Path `ListSendPays.payments[].status`
@@ -2020,7 +2020,7 @@ module Responses =
         [<JsonPropertyName("destination")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Destination: PubKey option
-        [<JsonConverter(typeof<uint256JsonConverter>)>]
+        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         [<JsonPropertyName("created_at")>]
@@ -2111,7 +2111,7 @@ module Responses =
         Label: string
         [<JsonPropertyName("description")>]
         Description: string
-        [<JsonConverter(typeof<uint256JsonConverter>)>]
+        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         // Path `WaitAnyInvoice.status`
@@ -2160,7 +2160,7 @@ module Responses =
         Label: string
         [<JsonPropertyName("description")>]
         Description: string
-        [<JsonConverter(typeof<uint256JsonConverter>)>]
+        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         // Path `WaitInvoice.status`
@@ -2209,7 +2209,7 @@ module Responses =
         [<JsonPropertyName("groupid")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Groupid: uint64 option
-        [<JsonConverter(typeof<uint256JsonConverter>)>]
+        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         // Path `WaitSendPay.status`
@@ -2285,7 +2285,7 @@ module Responses =
         [<JsonPropertyName("destination")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Destination: PubKey option
-        [<JsonConverter(typeof<uint256JsonConverter>)>]
+        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         [<JsonPropertyName("created_at")>]

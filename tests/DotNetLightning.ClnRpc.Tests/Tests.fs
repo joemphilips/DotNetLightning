@@ -127,11 +127,11 @@ type PluginServer1(?dynamic: bool) =
 [<AutoOpen>]
 module TestHelpers =
     [<Literal>]
-    let pipeName = "SamplePipe1"
+    let PipeName = "SamplePipe1"
 
     let serverPipe() =
         new NamedPipeServerStream(
-            pipeName,
+            PipeName,
             PipeDirection.InOut,
             NamedPipeServerStream.MaxAllowedServerInstances,
             PipeTransmissionMode.Byte,
@@ -141,7 +141,7 @@ module TestHelpers =
     let clientPipe() =
         new NamedPipeClientStream(
             ".",
-            pipeName,
+            PipeName,
             PipeDirection.InOut,
             PipeOptions.Asynchronous
         )
@@ -269,7 +269,7 @@ type PluginTests() =
             let! _ = client.Init(initConfigDTO, initOptionsDTO)
             Assert.True(server.Initialized)
             let arg = "this is \"name\" argument"
-            let _ = client.Test1(arg)
+            client.Test1(arg)
             do! server.Test1Task.Task
             Assert.Equal(arg, server.Name)
             ()

@@ -526,6 +526,7 @@ type PluginServerBase
             else
                 inStream
 
+        // fsharplint:disable
         let writer =
             PipeWriter.Create(
                 outStream,
@@ -537,6 +538,7 @@ type PluginServerBase
                 inStream,
                 StreamPipeReaderOptions(leaveOpen = true)
             )
+        // fsharplint:enable
 
         this.StartAsync(writer, reader, ct)
 

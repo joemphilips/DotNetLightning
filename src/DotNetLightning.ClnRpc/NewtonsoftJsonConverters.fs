@@ -178,7 +178,7 @@ type KeyJsonConverter() =
                 raise
                 <| JsonObjectException($"invalid key {reader.Value}", reader)
 
-type uint256JsonConverter() =
+type UInt256JsonConverter() =
     inherit JsonConverter<uint256>()
 
     override this.WriteJson
@@ -466,13 +466,13 @@ type HexFeatureBitsJsonConverter() =
 type OptionConverter() =
     inherit JsonConverter()
 
-    override x.CanConvert t =
+    override this.CanConvert t =
         t.IsGenericType
         && typedefof<option<_>>.Equals (t.GetGenericTypeDefinition())
 
-    override x.WriteJson(writer, value, serializer) =
+    override _.WriteJson(writer, value, serializer) =
         let value =
-            if value = null then
+            if value |> isNull then
                 null
             else
                 let _, fields =
@@ -482,7 +482,7 @@ type OptionConverter() =
 
         serializer.Serialize(writer, value)
 
-    override x.ReadJson(reader, t, _existingValue, serializer) =
+    override _.ReadJson(reader, t, _existingValue, serializer) =
         let innerType = t.GetGenericArguments().[0]
 
         let innerType =
@@ -494,7 +494,7 @@ type OptionConverter() =
         let value = serializer.Deserialize(reader, innerType)
         let cases = FSharpType.GetUnionCases t
 
-        if value = null then
+        if value |> isNull then
             FSharpValue.MakeUnion(cases.[0], [||])
         else
             FSharpValue.MakeUnion(cases.[1], [| value |])
@@ -508,7 +508,7 @@ module NewtonsoftJsonHelpers =
             this.Add(PubKeyJsonConverter())
             this.Add(ShortChannelIdJsonConverter())
             this.Add(KeyJsonConverter())
-            this.Add(uint256JsonConverter())
+            this.Add(UInt256JsonConverter())
             this.Add(AmountOrAnyJsonConverter())
             this.Add(AmountOrAllJsonConverter())
             this.Add(OutPointJsonConverter())
@@ -524,7 +524,7 @@ module NewtonsoftJsonHelpers =
             this.Converters.Add(PubKeyJsonConverter())
             this.Converters.Add(ShortChannelIdJsonConverter())
             this.Converters.Add(KeyJsonConverter())
-            this.Converters.Add(uint256JsonConverter())
+            this.Converters.Add(UInt256JsonConverter())
             this.Converters.Add(AmountOrAnyJsonConverter())
             this.Converters.Add(AmountOrAllJsonConverter())
             this.Converters.Add(OutPointJsonConverter())

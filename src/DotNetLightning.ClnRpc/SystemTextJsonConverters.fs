@@ -58,7 +58,7 @@ type KeyJsonConverter() =
         let b = reader.GetString() |> Convert.FromHexString
         new Key(b)
 
-type uint256JsonConverter() =
+type UInt256JsonConverter() =
     inherit JsonConverter<uint256>()
 
     override this.Write(writer, value, _options) =
@@ -162,7 +162,7 @@ module ClnSharpClientHelpers =
             this.Converters.Add(PubKeyJsonConverter())
             this.Converters.Add(ShortChannelIdJsonConverter())
             this.Converters.Add(KeyJsonConverter())
-            this.Converters.Add(uint256JsonConverter())
+            this.Converters.Add(UInt256JsonConverter())
             this.Converters.Add(AmountOrAnyJsonConverter())
             this.Converters.Add(OutPointJsonConverter())
             this.Converters.Add(FeerateJsonConverter())

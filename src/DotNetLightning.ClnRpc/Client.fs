@@ -16,6 +16,7 @@ open NBitcoin
 open DotNetLightning.ClnRpc.SystemTextJsonConverters.ClnSharpClientHelpers
 open DotNetLightning.ClnRpc.NewtonsoftJsonConverters.NewtonsoftJsonHelpers
 
+// fsharplint:disable enumCasesNames
 type CLightningClientErrorCodeEnum =
     // -- errors from `pay`, `sendpay` or `waitsendpay` commands --
     | IN_PROGRESS = 200
@@ -83,6 +84,8 @@ type CLightningClientErrorCodeEnum =
 
     // -- Errors from `wait` commands --
     | WAIT_TIMEOUT = 2000
+
+// fsharplint:enable
 
 /// see 5.1: "Error object" in https://www.jsonrpc.org/specification
 type JsonRPCErrorCodeEnum =
@@ -352,34 +355,27 @@ type ClnClient
                 use! networkStream = getTransportStream.Invoke(ct)
                 use jsonWriter = new Utf8JsonWriter(networkStream)
 
-                let _ =
-                    let reqObject = JsonObject()
+                // -- write --
+                let reqObject = JsonObject()
 
-                    if not <| notification then
-                        reqObject.set_Item(
-                            "id",
-                            JsonNode.op_Implicit(this.NextId)
-                        )
+                if not <| notification then
+                    reqObject.set_Item("id", JsonNode.op_Implicit(this.NextId))
 
+                reqObject.set_Item("method", JsonNode.op_Implicit(methodName))
+                reqObject.set_Item("jsonrpc", JsonNode.op_Implicit("2.0"))
+
+                if req |> isNull then
+                    reqObject.set_Item("params", JsonArray())
+                else
                     reqObject.set_Item(
-                        "method",
-                        JsonNode.op_Implicit(methodName)
+                        "params",
+                        JsonSerializer.SerializeToNode(req)
                     )
 
-                    reqObject.set_Item("jsonrpc", JsonNode.op_Implicit("2.0"))
-
-                    if req |> isNull then
-                        reqObject.set_Item("params", JsonArray())
-                    else
-                        reqObject.set_Item(
-                            "params",
-                            JsonSerializer.SerializeToNode(req)
-                        )
-
-                    reqObject.WriteTo(jsonWriter)
-
+                reqObject.WriteTo(jsonWriter)
                 do! jsonWriter.FlushAsync(ct)
                 do! networkStream.FlushAsync(ct)
+                // -- --
 
                 if notification then
                     // we don't have to read response in case of notification.

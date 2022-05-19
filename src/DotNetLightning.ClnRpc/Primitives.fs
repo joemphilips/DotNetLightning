@@ -2,6 +2,8 @@ namespace DotNetLightning.ClnRpc
 
 open System
 
+// fsharplint:disable enumCasesNames
+
 type ChannelState =
     | OPENINGD = 0
     | CHANNELD_AWAITING_LOCKIN = 1
@@ -14,6 +16,8 @@ type ChannelState =
     | ONCHAIN = 8
     | DUALOPEND_OPEN_INIT = 9
     | DUALOPEND_AWAITING_LOCKIN = 10
+
+// fsharplint:enable
 
 type ChannelStateChangeCause =
     | [<System.Runtime.Serialization.EnumMember(Value = "unknown")>] UNKNOWN = 0

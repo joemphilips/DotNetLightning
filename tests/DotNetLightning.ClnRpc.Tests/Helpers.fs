@@ -94,9 +94,11 @@ let setupRawStream<'T when 'T :> PluginServerBase>
         let outStream =
             let outS = new MemoryStream()
 
+            // fsharplint:disable
             PipeWriter
                 .Create(outS, StreamPipeWriterOptions(leaveOpen = true))
                 .AsStream()
+        // fsharplint:enable
 
         let buf =
             Array.concat
@@ -108,9 +110,11 @@ let setupRawStream<'T when 'T :> PluginServerBase>
         let inStream =
             let inMemStream = new MemoryStream(buf)
 
+            // fsharplint:disable
             PipeReader
                 .Create(inMemStream, StreamPipeReaderOptions(leaveOpen = true))
                 .AsStream()
+        // fsharplint:enable
 
         let! _listener = p.StartAsync(outStream, inStream, ct)
         inStream.Flush()
