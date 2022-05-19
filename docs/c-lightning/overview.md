@@ -1,8 +1,8 @@
 ---
-title: calling c-lightning rpc and building plugins.
-category: c-lightning support
+title: Overview
+category: c-lightning
 index: 1
-categoryindex: 1
+categoryindex: 2
 ---
 
 Package `DotNetLightning.ClnRpc` contains a utility to work with [c-lightning](https://github.com/ElementsProject/lightning)
