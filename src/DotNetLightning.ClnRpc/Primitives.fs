@@ -2,8 +2,17 @@ namespace DotNetLightning.ClnRpc
 
 open System
 
-// fsharplint:disable enumCasesNames
+/// <namespacedoc>
+///     <summary>
+///        "DotNetLightning.ClnRpc" contains a type-safe client for calling
+///        c-lightning rpc.
+///     </summary>
+/// </namespacedoc>
+/// <exclude />
+module NamespaceDocDummy =
+    ()
 
+// fsharplint:disable enumCasesNames
 type ChannelState =
     | OPENINGD = 0
     | CHANNELD_AWAITING_LOCKIN = 1
