@@ -47,7 +47,7 @@ namespace HelloWorldPlugin
         greeting = (string)greetingValue;
     }
 
-    public override IEnumerable<PluginOptions> Options { get; }
+    sealed public override IEnumerable<PluginOptions> Options { get; set; }
 
     const string HelloLongDesc =
       "This is a documentation for \"hello\" rpc method. It gets reported when registering the" +
