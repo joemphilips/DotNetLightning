@@ -129,25 +129,11 @@ module TestHelpers =
     [<Literal>]
     let PipeName = "SamplePipe1"
 
-    let serverPipe() =
-        new NamedPipeServerStream(
-            PipeName,
-            PipeDirection.InOut,
-            NamedPipeServerStream.MaxAllowedServerInstances,
-            PipeTransmissionMode.Byte,
-            PipeOptions.Asynchronous
-        )
-
-    let clientPipe() =
-        new NamedPipeClientStream(
-            ".",
-            PipeName,
-            PipeDirection.InOut,
-            PipeOptions.Asynchronous
-        )
+    let struct (serverPipe, clientPipe) =
+        Nerdbank.Streams.FullDuplexStream.CreatePair()
 
     let inline getClientProxy<'T when 'T: not struct>() =
-        let pipe = clientPipe()
+        let pipe = clientPipe
 
         let handler =
             let formatter = new JsonMessageFormatter()
@@ -158,16 +144,12 @@ module TestHelpers =
 
             new NewLineDelimitedMessageHandler(pipe, pipe, formatter)
 
-        task {
-            do! pipe.ConnectAsync()
-            return JsonRpc.Attach<'T>(handler)
-        }
+        task { return JsonRpc.Attach<'T>(handler) }
 
     let inline createRpcServer<'T when 'T: not struct>(server: 'T) =
         task {
             while true do
-                let pipe = serverPipe()
-                do! pipe.WaitForConnectionAsync()
+                let pipe = serverPipe
 
                 let handler =
                     let formatter = new JsonMessageFormatter()
