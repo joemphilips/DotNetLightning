@@ -52,6 +52,30 @@ jobs:
         dotnet restore -p:Portability=True DotNetLightning.sln
         msbuild src/DotNetLightning.Core/DotNetLightning.Core.fsproj -p:Portability=True -p:TargetFramework=netstandard2.0
 
+  build_fsdocs_html:
+    name: build fsdocs 📕
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup .NET 6
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.x
+
+      - name: build project assemblies so that fsdocs can read assemblies and .xml files from bin/ .
+        run:
+          dotnet build
+
+      - name: install fsdocs
+        run:
+          dotnet tool install -g fsdocs-tool
+
+      - name: build fsdocs
+        run:
+          $HOME/.dotnet/tools/fsdocs build --output output --strict --mdcomments
+
   sanitycheck:
     runs-on: ubuntu-20.04
     steps:
