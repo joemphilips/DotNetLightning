@@ -25,7 +25,7 @@ open DotNetLightning.ClnRpc
 let uri = Uri("tcp://127.0.0.1:9835")
 // or Uri("unix:///path/to/your/lightning-rpc")
 
-let client = ClnClient(uri, Network.RegTest)
+let client = ClnClient(Network.RegTest, uri)
 
 let getPeerTask = client.GetinfoAsync()
 
