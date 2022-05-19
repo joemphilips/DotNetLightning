@@ -76,8 +76,8 @@ type PluginServer1(?dynamic: bool) =
 
     override this.InitCore(configuration, cliOptions) =
         // do nothing
-        this.InitTask.SetResult()
         this.Initialized <- true
+        this.InitTask.SetResult()
         ()
 
     [<PluginJsonRpcMethod("test1",
@@ -333,8 +333,11 @@ type PluginTests() =
 type BogusPlugin() =
     inherit PluginServerBase()
 
+    member val InitTaskCompletionSource = TaskCompletionSource()
+
     override this.InitCore(_conf, _opts) =
         failwith "InitCore fails"
+        this.InitTaskCompletionSource.SetResult()
         ()
 
 type ExceptionTest() =
@@ -346,12 +349,16 @@ type ExceptionTest() =
                 |> utf8.GetBytes
 
             use cts = new CancellationTokenSource()
-            cts.CancelAfter(3000)
+            cts.CancelAfter(2000)
             let p = BogusPlugin()
 
             let! _e =
                 Assert.ThrowsAsync<PluginInitializationException>(fun () ->
-                    setupRawStream(p, [| initB; req |], cts.Token) :> Task
+                    task {
+                        let! p = setupRawStream(p, [| initB; req |], cts.Token)
+                        do! p.InitTaskCompletionSource.Task
+                    }
+                    :> Task
                 )
 
             ()

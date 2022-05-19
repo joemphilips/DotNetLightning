@@ -182,6 +182,11 @@ type ClnClient
             <| ArgumentException(
                 $"you must specify either {nameof(address)} or {nameof getTransport} as {nameof(ClnClient)} constructor option"
             )
+        else if address |> isNull |> not && getTransport |> isNull |> not then
+            raise
+            <| ArgumentException(
+                $"you must specify either {nameof(address)} or {nameof getTransport} as {nameof(ClnClient)} constructor option. not both"
+            )
         else
             match jsonLibrary with
             | JsonLibraryType.SystemTextJson ->
