@@ -164,6 +164,7 @@ jobs:
         bash -c "dotnet nuget push ./src/DotNetLightning.Core/bin/Release/DotNetLightning.Core.1*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json"
 
     - name: Upload nuget packages (DotNetLightning.ClnRpc)
+      if: startsWith(matrix.os, 'ubuntu')
       run: |
         dotnet pack src/DotNetLightning.ClnRpc -p:Configuration=Release --version-suffix date`date +%Y%m%d-%H%M`-git-`git rev-parse --short=7 HEAD` -p:Portability=True
         dotnet nuget push ./src/DotNetLightning.ClnRpc/bin/Release/DotNetLightning.ClnRpc.*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
