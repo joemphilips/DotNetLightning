@@ -1,0 +1,2770 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Request (DotNetLightning)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="joemphilips">
+
+    <link rel="stylesheet" id="theme_link" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.6.0/materia/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
+
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+    <link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico">
+    <link type="text/css" rel="stylesheet" href="https://joemphilips.github.io/DotNetLightning/content/navbar-fixed-left.css" />
+    <link type="text/css" rel="stylesheet" href="https://joemphilips.github.io/DotNetLightning/content/fsdocs-default.css" />
+    <link type="text/css" rel="stylesheet" href="https://joemphilips.github.io/DotNetLightning/content/fsdocs-custom.css" />
+    <script type="text/javascript" src="https://joemphilips.github.io/DotNetLightning/content/fsdocs-tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+    <!-- END SEARCH BOX: this adds support for the search box -->
+    
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md navbar-light bg-secondary fixed-left" id="fsdocs-nav">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse navbar-nav-scroll" id="navbarsExampleDefault">
+            <a href="https://github.com/joemphilips/DotNetLightning/"><img id="fsdocs-logo" src="https://joemphilips.github.io/DotNetLightning/img/logo.png" /></a>
+            <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+            <div id="header">
+                <div class="searchbox" id="fsdocs-searchbox">
+                    <label for="search-by">
+                        <i class="fas fa-search"></i>
+                    </label>
+                    <input data-search-input="" id="search-by" type="search" placeholder="Search..." />
+                    <span data-search-clear="">
+                        <i class="fas fa-times"></i>
+                    </span>
+                </div>
+            </div>
+
+            <!-- END SEARCH BOX: this adds support for the search box -->
+            <ul class="navbar-nav">
+                <li class="nav-header">Links</li>
+                <li class="nav-item" id="fsdocs-license-link"><a class="nav-link" href="https://github.com/joemphilips/DotNetLightning/blob/master/LICENSE.txt">License</a></li>
+                <li class="nav-item" id="fsdocs-release-notes-link"><a class="nav-link" href="https://github.com/joemphilips/DotNetLightning/releases">Release Notes</a></li>
+                <li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://github.com/joemphilips/DotNetLightning/">Source Repository</a></li>
+                <li class="nav-header">
+  Overview
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://joemphilips.github.io/DotNetLightning/features/dnl-namespace.html">
+    DotNetLightning.* namespaces
+  </a>
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://joemphilips.github.io/DotNetLightning/features/other_namespaces.html">
+    Other namespaces
+  </a>
+</li>             
+<li class="nav-header">
+  c-lightning
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://joemphilips.github.io/DotNetLightning/c-lightning/overview.html">
+    Overview
+  </a>
+</li>             
+<li class="nav-header">
+  examples
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://joemphilips.github.io/DotNetLightning/examples/cln_rpc_example.html">
+    calling c-lightning rpc
+  </a>
+</li>
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://joemphilips.github.io/DotNetLightning/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="masthead">
+            <h3 class="muted"><a href="https://github.com/joemphilips/DotNetLightning/">DotNetLightning</a></h3>
+        </div>
+        <hr />
+        <div class="container" id="fsdocs-content">
+            <div>
+  <h2>
+    Request Type
+  </h2>
+  <dl class="fsdocs-metadata">
+    <dt>
+      Namespace: 
+      <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc.html">
+        DotNetLightning.ClnRpc
+      </a>
+    </dt>
+    <dt>
+      Assembly: DotNetLightning.ClnRpc.dll
+    </dt>
+    <dt>
+      Base Type: 
+      <code>obj</code>
+    </dt>
+    <dt>
+      All Interfaces: 
+      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-request.html">Request</a>&gt;</span></code>
+      , 
+      <code><a href="https://docs.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
+    </dt>
+  </dl>
+  <div class="fsdocs-xmldoc">
+    <div>
+      <p class="fsdocs-summary">
+        
+      </p>
+    </div>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div>
+    <h3>
+      Union cases
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Union case
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1481', 1481)" onmouseover="showTip(event, '1481', 1481)">
+                <p>
+                  <a id="AddGossip">
+                    <a href="#AddGossip">
+                      <code><span>AddGossip&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-addgossiprequest.html">AddgossipRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1481">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>AddGossip&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-addgossiprequest.html">AddgossipRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-addgossiprequest.html">AddgossipRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2682-2682" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-addgossiprequest.html">AddgossipRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1482', 1482)" onmouseover="showTip(event, '1482', 1482)">
+                <p>
+                  <a id="AutoCleanInvoice">
+                    <a href="#AutoCleanInvoice">
+                      <code><span>AutoCleanInvoice&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-autocleaninvoicerequest.html">AutocleaninvoiceRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1482">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>AutoCleanInvoice&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-autocleaninvoicerequest.html">AutocleaninvoiceRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-autocleaninvoicerequest.html">AutocleaninvoiceRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2683-2683" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-autocleaninvoicerequest.html">AutocleaninvoiceRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1483', 1483)" onmouseover="showTip(event, '1483', 1483)">
+                <p>
+                  <a id="CheckMessage">
+                    <a href="#CheckMessage">
+                      <code><span>CheckMessage&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-checkmessagerequest.html">CheckmessageRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1483">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>CheckMessage&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-checkmessagerequest.html">CheckmessageRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-checkmessagerequest.html">CheckmessageRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2684-2684" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-checkmessagerequest.html">CheckmessageRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1484', 1484)" onmouseover="showTip(event, '1484', 1484)">
+                <p>
+                  <a id="Close">
+                    <a href="#Close">
+                      <code><span>Close&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-closerequest.html">CloseRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1484">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Close&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-closerequest.html">CloseRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-closerequest.html">CloseRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2685-2685" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-closerequest.html">CloseRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1485', 1485)" onmouseover="showTip(event, '1485', 1485)">
+                <p>
+                  <a id="ConnectPeer">
+                    <a href="#ConnectPeer">
+                      <code><span>ConnectPeer&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-connectrequest.html">ConnectRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1485">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>ConnectPeer&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-connectrequest.html">ConnectRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-connectrequest.html">ConnectRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2686-2686" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-connectrequest.html">ConnectRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1486', 1486)" onmouseover="showTip(event, '1486', 1486)">
+                <p>
+                  <a id="CreateInvoice">
+                    <a href="#CreateInvoice">
+                      <code><span>CreateInvoice&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-createinvoicerequest.html">CreateinvoiceRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1486">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>CreateInvoice&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-createinvoicerequest.html">CreateinvoiceRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-createinvoicerequest.html">CreateinvoiceRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2687-2687" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-createinvoicerequest.html">CreateinvoiceRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1487', 1487)" onmouseover="showTip(event, '1487', 1487)">
+                <p>
+                  <a id="CreateOnion">
+                    <a href="#CreateOnion">
+                      <code><span>CreateOnion&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-createonionrequest.html">CreateonionRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1487">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>CreateOnion&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-createonionrequest.html">CreateonionRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-createonionrequest.html">CreateonionRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2689-2689" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-createonionrequest.html">CreateonionRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1488', 1488)" onmouseover="showTip(event, '1488', 1488)">
+                <p>
+                  <a id="Datastore">
+                    <a href="#Datastore">
+                      <code><span>Datastore&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-datastorerequest.html">DatastoreRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1488">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Datastore&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-datastorerequest.html">DatastoreRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-datastorerequest.html">DatastoreRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2688-2688" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-datastorerequest.html">DatastoreRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1489', 1489)" onmouseover="showTip(event, '1489', 1489)">
+                <p>
+                  <a id="DelDatastore">
+                    <a href="#DelDatastore">
+                      <code><span>DelDatastore&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-deldatastorerequest.html">DeldatastoreRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1489">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>DelDatastore&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-deldatastorerequest.html">DeldatastoreRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-deldatastorerequest.html">DeldatastoreRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2690-2690" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-deldatastorerequest.html">DeldatastoreRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1490', 1490)" onmouseover="showTip(event, '1490', 1490)">
+                <p>
+                  <a id="DelExpiredInvoice">
+                    <a href="#DelExpiredInvoice">
+                      <code><span>DelExpiredInvoice&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-delexpiredinvoicerequest.html">DelexpiredinvoiceRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1490">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>DelExpiredInvoice&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-delexpiredinvoicerequest.html">DelexpiredinvoiceRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-delexpiredinvoicerequest.html">DelexpiredinvoiceRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2691-2691" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-delexpiredinvoicerequest.html">DelexpiredinvoiceRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1491', 1491)" onmouseover="showTip(event, '1491', 1491)">
+                <p>
+                  <a id="DelInvoice">
+                    <a href="#DelInvoice">
+                      <code><span>DelInvoice&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-delinvoicerequest.html">DelinvoiceRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1491">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>DelInvoice&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-delinvoicerequest.html">DelinvoiceRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-delinvoicerequest.html">DelinvoiceRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2692-2692" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-delinvoicerequest.html">DelinvoiceRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1492', 1492)" onmouseover="showTip(event, '1492', 1492)">
+                <p>
+                  <a id="Disconnect">
+                    <a href="#Disconnect">
+                      <code><span>Disconnect&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-disconnectrequest.html">DisconnectRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1492">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Disconnect&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-disconnectrequest.html">DisconnectRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-disconnectrequest.html">DisconnectRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2714-2714" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-disconnectrequest.html">DisconnectRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1493', 1493)" onmouseover="showTip(event, '1493', 1493)">
+                <p>
+                  <a id="Feerates">
+                    <a href="#Feerates">
+                      <code><span>Feerates&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-feeratesrequest.html">FeeratesRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1493">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Feerates&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-feeratesrequest.html">FeeratesRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-feeratesrequest.html">FeeratesRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2715-2715" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-feeratesrequest.html">FeeratesRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1494', 1494)" onmouseover="showTip(event, '1494', 1494)">
+                <p>
+                  <a id="FundPsbt">
+                    <a href="#FundPsbt">
+                      <code><span>FundPsbt&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-fundpsbtrequest.html">FundpsbtRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1494">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>FundPsbt&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-fundpsbtrequest.html">FundpsbtRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-fundpsbtrequest.html">FundpsbtRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2707-2707" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-fundpsbtrequest.html">FundpsbtRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1495', 1495)" onmouseover="showTip(event, '1495', 1495)">
+                <p>
+                  <a id="GetRoute">
+                    <a href="#GetRoute">
+                      <code><span>GetRoute&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-getrouterequest.html">GetrouteRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1495">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>GetRoute&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-getrouterequest.html">GetrouteRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-getrouterequest.html">GetrouteRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2716-2716" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-getrouterequest.html">GetrouteRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1496', 1496)" onmouseover="showTip(event, '1496', 1496)">
+                <p>
+                  <a id="Getinfo">
+                    <a href="#Getinfo">
+                      <code><span>Getinfo&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-getinforequest.html">GetinfoRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1496">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Getinfo&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-getinforequest.html">GetinfoRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-getinforequest.html">GetinfoRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2677-2677" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-getinforequest.html">GetinfoRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1497', 1497)" onmouseover="showTip(event, '1497', 1497)">
+                <p>
+                  <a id="Invoice">
+                    <a href="#Invoice">
+                      <code><span>Invoice&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-invoicerequest.html">InvoiceRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1497">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Invoice&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-invoicerequest.html">InvoiceRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-invoicerequest.html">InvoiceRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2693-2693" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-invoicerequest.html">InvoiceRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1498', 1498)" onmouseover="showTip(event, '1498', 1498)">
+                <p>
+                  <a id="KeySend">
+                    <a href="#KeySend">
+                      <code><span>KeySend&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-keysendrequest.html">KeysendRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1498">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>KeySend&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-keysendrequest.html">KeysendRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-keysendrequest.html">KeysendRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2706-2706" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-keysendrequest.html">KeysendRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1499', 1499)" onmouseover="showTip(event, '1499', 1499)">
+                <p>
+                  <a id="ListChannels">
+                    <a href="#ListChannels">
+                      <code><span>ListChannels&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listchannelsrequest.html">ListchannelsRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1499">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>ListChannels&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listchannelsrequest.html">ListchannelsRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listchannelsrequest.html">ListchannelsRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2681-2681" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listchannelsrequest.html">ListchannelsRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1500', 1500)" onmouseover="showTip(event, '1500', 1500)">
+                <p>
+                  <a id="ListDatastore">
+                    <a href="#ListDatastore">
+                      <code><span>ListDatastore&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listdatastorerequest.html">ListdatastoreRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1500">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>ListDatastore&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listdatastorerequest.html">ListdatastoreRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listdatastorerequest.html">ListdatastoreRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2694-2694" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listdatastorerequest.html">ListdatastoreRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1501', 1501)" onmouseover="showTip(event, '1501', 1501)">
+                <p>
+                  <a id="ListForwards">
+                    <a href="#ListForwards">
+                      <code><span>ListForwards&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listforwardsrequest.html">ListforwardsRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1501">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>ListForwards&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listforwardsrequest.html">ListforwardsRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listforwardsrequest.html">ListforwardsRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2717-2717" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listforwardsrequest.html">ListforwardsRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1502', 1502)" onmouseover="showTip(event, '1502', 1502)">
+                <p>
+                  <a id="ListFunds">
+                    <a href="#ListFunds">
+                      <code><span>ListFunds&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listfundsrequest.html">ListfundsRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1502">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>ListFunds&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listfundsrequest.html">ListfundsRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listfundsrequest.html">ListfundsRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2679-2679" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listfundsrequest.html">ListfundsRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1503', 1503)" onmouseover="showTip(event, '1503', 1503)">
+                <p>
+                  <a id="ListInvoices">
+                    <a href="#ListInvoices">
+                      <code><span>ListInvoices&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listinvoicesrequest.html">ListinvoicesRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1503">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>ListInvoices&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listinvoicesrequest.html">ListinvoicesRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listinvoicesrequest.html">ListinvoicesRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2695-2695" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listinvoicesrequest.html">ListinvoicesRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1504', 1504)" onmouseover="showTip(event, '1504', 1504)">
+                <p>
+                  <a id="ListNodes">
+                    <a href="#ListNodes">
+                      <code><span>ListNodes&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listnodesrequest.html">ListnodesRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1504">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>ListNodes&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listnodesrequest.html">ListnodesRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listnodesrequest.html">ListnodesRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2700-2700" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listnodesrequest.html">ListnodesRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1505', 1505)" onmouseover="showTip(event, '1505', 1505)">
+                <p>
+                  <a id="ListPays">
+                    <a href="#ListPays">
+                      <code><span>ListPays&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listpaysrequest.html">ListpaysRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1505">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>ListPays&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listpaysrequest.html">ListpaysRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listpaysrequest.html">ListpaysRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2718-2718" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listpaysrequest.html">ListpaysRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1506', 1506)" onmouseover="showTip(event, '1506', 1506)">
+                <p>
+                  <a id="ListPeers">
+                    <a href="#ListPeers">
+                      <code><span>ListPeers&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listpeersrequest.html">ListpeersRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1506">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>ListPeers&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listpeersrequest.html">ListpeersRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listpeersrequest.html">ListpeersRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2678-2678" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listpeersrequest.html">ListpeersRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1507', 1507)" onmouseover="showTip(event, '1507', 1507)">
+                <p>
+                  <a id="ListSendPays">
+                    <a href="#ListSendPays">
+                      <code><span>ListSendPays&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listsendpaysrequest.html">ListsendpaysRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1507">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>ListSendPays&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listsendpaysrequest.html">ListsendpaysRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listsendpaysrequest.html">ListsendpaysRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2697-2697" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listsendpaysrequest.html">ListsendpaysRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1508', 1508)" onmouseover="showTip(event, '1508', 1508)">
+                <p>
+                  <a id="ListTransactions">
+                    <a href="#ListTransactions">
+                      <code><span>ListTransactions&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listtransactionsrequest.html">ListtransactionsRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1508">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>ListTransactions&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listtransactionsrequest.html">ListtransactionsRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listtransactionsrequest.html">ListtransactionsRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2698-2698" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-listtransactionsrequest.html">ListtransactionsRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1509', 1509)" onmouseover="showTip(event, '1509', 1509)">
+                <p>
+                  <a id="NewAddr">
+                    <a href="#NewAddr">
+                      <code><span>NewAddr&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-newaddrrequest.html">NewaddrRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1509">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>NewAddr&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-newaddrrequest.html">NewaddrRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-newaddrrequest.html">NewaddrRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2704-2704" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-newaddrrequest.html">NewaddrRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1510', 1510)" onmouseover="showTip(event, '1510', 1510)">
+                <p>
+                  <a id="Pay">
+                    <a href="#Pay">
+                      <code><span>Pay&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-payrequest.html">PayRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1510">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Pay&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-payrequest.html">PayRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-payrequest.html">PayRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2699-2699" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-payrequest.html">PayRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1511', 1511)" onmouseover="showTip(event, '1511', 1511)">
+                <p>
+                  <a id="Ping">
+                    <a href="#Ping">
+                      <code><span>Ping&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-pingrequest.html">PingRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1511">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Ping&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-pingrequest.html">PingRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-pingrequest.html">PingRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2719-2719" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-pingrequest.html">PingRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1512', 1512)" onmouseover="showTip(event, '1512', 1512)">
+                <p>
+                  <a id="SendOnion">
+                    <a href="#SendOnion">
+                      <code><span>SendOnion&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-sendonionrequest.html">SendonionRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1512">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>SendOnion&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-sendonionrequest.html">SendonionRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-sendonionrequest.html">SendonionRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2696-2696" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-sendonionrequest.html">SendonionRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1513', 1513)" onmouseover="showTip(event, '1513', 1513)">
+                <p>
+                  <a id="SendPay">
+                    <a href="#SendPay">
+                      <code><span>SendPay&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-sendpayrequest.html">SendpayRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1513">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>SendPay&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-sendpayrequest.html">SendpayRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-sendpayrequest.html">SendpayRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2680-2680" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-sendpayrequest.html">SendpayRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1514', 1514)" onmouseover="showTip(event, '1514', 1514)">
+                <p>
+                  <a id="SendPsbt">
+                    <a href="#SendPsbt">
+                      <code><span>SendPsbt&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-sendpsbtrequest.html">SendpsbtRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1514">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>SendPsbt&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-sendpsbtrequest.html">SendpsbtRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-sendpsbtrequest.html">SendpsbtRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2708-2708" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-sendpsbtrequest.html">SendpsbtRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1515', 1515)" onmouseover="showTip(event, '1515', 1515)">
+                <p>
+                  <a id="SignMessage">
+                    <a href="#SignMessage">
+                      <code><span>SignMessage&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-signmessagerequest.html">SignmessageRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1515">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>SignMessage&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-signmessagerequest.html">SignmessageRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-signmessagerequest.html">SignmessageRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2720-2720" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-signmessagerequest.html">SignmessageRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1516', 1516)" onmouseover="showTip(event, '1516', 1516)">
+                <p>
+                  <a id="SignPsbt">
+                    <a href="#SignPsbt">
+                      <code><span>SignPsbt&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-signpsbtrequest.html">SignpsbtRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1516">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>SignPsbt&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-signpsbtrequest.html">SignpsbtRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-signpsbtrequest.html">SignpsbtRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2709-2709" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-signpsbtrequest.html">SignpsbtRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1517', 1517)" onmouseover="showTip(event, '1517', 1517)">
+                <p>
+                  <a id="TxDiscard">
+                    <a href="#TxDiscard">
+                      <code><span>TxDiscard&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-txdiscardrequest.html">TxdiscardRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1517">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>TxDiscard&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-txdiscardrequest.html">TxdiscardRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-txdiscardrequest.html">TxdiscardRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2711-2711" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-txdiscardrequest.html">TxdiscardRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1518', 1518)" onmouseover="showTip(event, '1518', 1518)">
+                <p>
+                  <a id="TxPrepare">
+                    <a href="#TxPrepare">
+                      <code><span>TxPrepare&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-txpreparerequest.html">TxprepareRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1518">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>TxPrepare&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-txpreparerequest.html">TxprepareRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-txpreparerequest.html">TxprepareRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2712-2712" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-txpreparerequest.html">TxprepareRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1519', 1519)" onmouseover="showTip(event, '1519', 1519)">
+                <p>
+                  <a id="TxSend">
+                    <a href="#TxSend">
+                      <code><span>TxSend&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-txsendrequest.html">TxsendRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1519">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>TxSend&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-txsendrequest.html">TxsendRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-txsendrequest.html">TxsendRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2713-2713" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-txsendrequest.html">TxsendRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1520', 1520)" onmouseover="showTip(event, '1520', 1520)">
+                <p>
+                  <a id="UtxoPsbt">
+                    <a href="#UtxoPsbt">
+                      <code><span>UtxoPsbt&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-utxopsbtrequest.html">UtxopsbtRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1520">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>UtxoPsbt&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-utxopsbtrequest.html">UtxopsbtRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-utxopsbtrequest.html">UtxopsbtRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2710-2710" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-utxopsbtrequest.html">UtxopsbtRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1521', 1521)" onmouseover="showTip(event, '1521', 1521)">
+                <p>
+                  <a id="WaitAnyInvoice">
+                    <a href="#WaitAnyInvoice">
+                      <code><span>WaitAnyInvoice&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-waitanyinvoicerequest.html">WaitanyinvoiceRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1521">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>WaitAnyInvoice&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-waitanyinvoicerequest.html">WaitanyinvoiceRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-waitanyinvoicerequest.html">WaitanyinvoiceRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2701-2701" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-waitanyinvoicerequest.html">WaitanyinvoiceRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1522', 1522)" onmouseover="showTip(event, '1522', 1522)">
+                <p>
+                  <a id="WaitInvoice">
+                    <a href="#WaitInvoice">
+                      <code><span>WaitInvoice&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-waitinvoicerequest.html">WaitinvoiceRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1522">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>WaitInvoice&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-waitinvoicerequest.html">WaitinvoiceRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-waitinvoicerequest.html">WaitinvoiceRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2702-2702" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-waitinvoicerequest.html">WaitinvoiceRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1523', 1523)" onmouseover="showTip(event, '1523', 1523)">
+                <p>
+                  <a id="WaitSendPay">
+                    <a href="#WaitSendPay">
+                      <code><span>WaitSendPay&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-waitsendpayrequest.html">WaitsendpayRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1523">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>WaitSendPay&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-waitsendpayrequest.html">WaitsendpayRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-waitsendpayrequest.html">WaitsendpayRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2703-2703" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-waitsendpayrequest.html">WaitsendpayRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1524', 1524)" onmouseover="showTip(event, '1524', 1524)">
+                <p>
+                  <a id="Withdraw">
+                    <a href="#Withdraw">
+                      <code><span>Withdraw&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-withdrawrequest.html">WithdrawRequest</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1524">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Withdraw&#32;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-withdrawrequest.html">WithdrawRequest</a></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-withdrawrequest.html">WithdrawRequest</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2705-2705" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-requests-withdrawrequest.html">WithdrawRequest</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div>
+    <h3>
+      Instance members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Instance member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1525', 1525)" onmouseover="showTip(event, '1525', 1525)">
+                <p>
+                  <a id="Data">
+                    <a href="#Data">
+                      <code><span>this.Data</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1525">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Data</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>obj</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:DotNetLightning.ClnRpc.Request.Data`')">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:DotNetLightning.ClnRpc.Request.Data\'/>')">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2768-2768" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>obj</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1526', 1526)" onmouseover="showTip(event, '1526', 1526)">
+                <p>
+                  <a id="MethodName">
+                    <a href="#MethodName">
+                      <code><span>this.MethodName</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1526">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.MethodName</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>string</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:DotNetLightning.ClnRpc.Request.MethodName`')">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:DotNetLightning.ClnRpc.Request.MethodName\'/>')">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Requests.fs#L2722-2722" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div></div>
+</div>
+            
+        </div>
+
+        <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+        <script type="text/javascript">var fsdocs_search_baseurl = 'https://joemphilips.github.io/DotNetLightning/';</script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.8/lunr.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.min.js"></script>
+        <script type="text/javascript" src="https://joemphilips.github.io/DotNetLightning/content/fsdocs-search.js"></script>
+        <!-- END SEARCH BOX: this adds support for the search box -->
+    </div>
+</body>
+
+</html>

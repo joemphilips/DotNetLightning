@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>DotNetLightning.ClnRpc.Plugin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="joemphilips">
+
+    <link rel="stylesheet" id="theme_link" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.6.0/materia/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
+
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+    <link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico">
+    <link type="text/css" rel="stylesheet" href="https://joemphilips.github.io/DotNetLightning/content/navbar-fixed-left.css" />
+    <link type="text/css" rel="stylesheet" href="https://joemphilips.github.io/DotNetLightning/content/fsdocs-default.css" />
+    <link type="text/css" rel="stylesheet" href="https://joemphilips.github.io/DotNetLightning/content/fsdocs-custom.css" />
+    <script type="text/javascript" src="https://joemphilips.github.io/DotNetLightning/content/fsdocs-tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+    <!-- END SEARCH BOX: this adds support for the search box -->
+    
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md navbar-light bg-secondary fixed-left" id="fsdocs-nav">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse navbar-nav-scroll" id="navbarsExampleDefault">
+            <a href="https://joemphilips.github.io/DotNetLightning/"><img id="fsdocs-logo" src="https://joemphilips.github.io/DotNetLightning/img/logo.png" /></a>
+            <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+            <div id="header">
+                <div class="searchbox" id="fsdocs-searchbox">
+                    <label for="search-by">
+                        <i class="fas fa-search"></i>
+                    </label>
+                    <input data-search-input="" id="search-by" type="search" placeholder="Search..." />
+                    <span data-search-clear="">
+                        <i class="fas fa-times"></i>
+                    </span>
+                </div>
+            </div>
+
+            <!-- END SEARCH BOX: this adds support for the search box -->
+            <ul class="navbar-nav">
+                <li class="nav-header">Links</li>
+                <li class="nav-item" id="fsdocs-license-link"><a class="nav-link" href="https://github.com/joemphilips/DotNetLightning/blob/master/LICENSE.txt">License</a></li>
+                <li class="nav-item" id="fsdocs-release-notes-link"><a class="nav-link" href="https://github.com/joemphilips/DotNetLightning/releases">Release Notes</a></li>
+                <li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://github.com/joemphilips/DotNetLightning/">Source Repository</a></li>
+                <li class="nav-header">
+  Overview
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://joemphilips.github.io/DotNetLightning/features/dnl-namespace.html">
+    DotNetLightning.* namespaces
+  </a>
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://joemphilips.github.io/DotNetLightning/features/other_namespaces.html">
+    Other namespaces
+  </a>
+</li>             
+<li class="nav-header">
+  c-lightning
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://joemphilips.github.io/DotNetLightning/c-lightning/overview.html">
+    Overview
+  </a>
+</li>             
+<li class="nav-header">
+  examples
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://joemphilips.github.io/DotNetLightning/examples/cln_rpc_example.html">
+    calling c-lightning rpc
+  </a>
+</li>
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://joemphilips.github.io/DotNetLightning/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="masthead">
+            <h3 class="muted"><a href="https://joemphilips.github.io/DotNetLightning/">DotNetLightning</a></h3>
+        </div>
+        <hr />
+        <div class="container" id="fsdocs-content">
+            <div>
+  <h2 id="dotnetlightning-clnrpc-plugin">
+    DotNetLightning.ClnRpc.Plugin Namespace
+  </h2>
+  <div class="fsdocs-xmldoc">
+    <p>
+      
+         "DotNetLightning.ClnRpc.Plugin" contains a utility to build your own
+         c-lightning plugins.
+         All you have to do is
+         1. write a class which inherits from <code>PluginServerBase</code>.
+         2. instantiate and run <code>StartAsync</code> method.
+         3. Compile as a single binary and put it into c-lightning's plugin directory.
+
+         there is also "PluginLogger" type which can be used for logging
+         in plugin.
+     
+    </p>
+  </div>
+  <table class="table outer-list fsdocs-entity-list">
+    <thead>
+      <tr>
+        <td>
+          Type
+        </td>
+        <td>
+          Description
+        </td>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="fsdocs-entity-name">
+          <p>
+            <a name="FeatureSetDTO">
+              <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-plugin-featuresetdto.html">
+                FeatureSetDTO
+              </a>
+            </a>
+          </p>
+        </td>
+        <td class="fsdocs-entity-xmldoc">
+          <div>
+            <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:DotNetLightning.ClnRpc.Plugin.FeatureSetDTO`')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+            </div>
+            <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:DotNetLightning.ClnRpc.Plugin.FeatureSetDTO\'/>')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+            </div>
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/DTOs.fs#L76-76" class="fsdocs-source-link" title="Source on GitHub">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+            </a>
+            <p class="fsdocs-summary">
+              
+            </p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="fsdocs-entity-name">
+          <p>
+            <a name="GetClientOutputStream">
+              <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-plugin-getclientoutputstream.html">
+                GetClientOutputStream
+              </a>
+            </a>
+          </p>
+        </td>
+        <td class="fsdocs-entity-xmldoc">
+          <div>
+            <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:DotNetLightning.ClnRpc.Plugin.GetClientOutputStream`')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+            </div>
+            <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:DotNetLightning.ClnRpc.Plugin.GetClientOutputStream\'/>')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+            </div>
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/PluginServerBase.fs#L89-89" class="fsdocs-source-link" title="Source on GitHub">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+            </a>
+            <p class="fsdocs-summary">
+              
+            </p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="fsdocs-entity-name">
+          <p>
+            <a name="InitDTO">
+              <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-plugin-initdto.html">
+                InitDTO
+              </a>
+            </a>
+          </p>
+        </td>
+        <td class="fsdocs-entity-xmldoc">
+          <div>
+            <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:DotNetLightning.ClnRpc.Plugin.InitDTO`')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+            </div>
+            <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:DotNetLightning.ClnRpc.Plugin.InitDTO\'/>')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+            </div>
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/DTOs.fs#L167-167" class="fsdocs-source-link" title="Source on GitHub">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+            </a>
+            <p class="fsdocs-summary">
+              
+            </p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="fsdocs-entity-name">
+          <p>
+            <a name="IPluginServer">
+              <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-plugin-ipluginserver.html">
+                IPluginServer
+              </a>
+            </a>
+          </p>
+        </td>
+        <td class="fsdocs-entity-xmldoc">
+          <div>
+            <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:DotNetLightning.ClnRpc.Plugin.IPluginServer`')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+            </div>
+            <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:DotNetLightning.ClnRpc.Plugin.IPluginServer\'/>')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+            </div>
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/PluginServerBase.fs#L68-68" class="fsdocs-source-link" title="Source on GitHub">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+            </a>
+            <p class="fsdocs-summary">
+              <p>interface for plugin server
+It might be useful when you want to call "init"/"getmanifest" in typed client.</p>
+
+
+            </p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="fsdocs-entity-name">
+          <p>
+            <a name="LightningInitConfigurationDTO">
+              <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-plugin-lightninginitconfigurationdto.html">
+                LightningInitConfigurationDTO
+              </a>
+            </a>
+          </p>
+        </td>
+        <td class="fsdocs-entity-xmldoc">
+          <div>
+            <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:DotNetLightning.ClnRpc.Plugin.LightningInitConfigurationDTO`')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+            </div>
+            <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:DotNetLightning.ClnRpc.Plugin.LightningInitConfigurationDTO\'/>')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+            </div>
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/DTOs.fs#L137-137" class="fsdocs-source-link" title="Source on GitHub">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+            </a>
+            <p class="fsdocs-summary">
+              
+            </p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="fsdocs-entity-name">
+          <p>
+            <a name="Manifest">
+              <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-plugin-manifest.html">
+                Manifest
+              </a>
+            </a>
+          </p>
+        </td>
+        <td class="fsdocs-entity-xmldoc">
+          <div>
+            <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:DotNetLightning.ClnRpc.Plugin.Manifest`')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+            </div>
+            <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:DotNetLightning.ClnRpc.Plugin.Manifest\'/>')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+            </div>
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/DTOs.fs#L99-99" class="fsdocs-source-link" title="Source on GitHub">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+            </a>
+            <p class="fsdocs-summary">
+              
+            </p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="fsdocs-entity-name">
+          <p>
+            <a name="NotificationsDTO">
+              <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-plugin-notificationsdto.html">
+                NotificationsDTO
+              </a>
+            </a>
+          </p>
+        </td>
+        <td class="fsdocs-entity-xmldoc">
+          <div>
+            <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:DotNetLightning.ClnRpc.Plugin.NotificationsDTO`')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+            </div>
+            <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:DotNetLightning.ClnRpc.Plugin.NotificationsDTO\'/>')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+            </div>
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/DTOs.fs#L92-92" class="fsdocs-source-link" title="Source on GitHub">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+            </a>
+            <p class="fsdocs-summary">
+              
+            </p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="fsdocs-entity-name">
+          <p>
+            <a name="PluginInitializationException">
+              <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-plugin-plugininitializationexception.html">
+                PluginInitializationException
+              </a>
+            </a>
+          </p>
+        </td>
+        <td class="fsdocs-entity-xmldoc">
+          <div>
+            <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:DotNetLightning.ClnRpc.Plugin.PluginInitializationException`')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+            </div>
+            <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:DotNetLightning.ClnRpc.Plugin.PluginInitializationException\'/>')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+            </div>
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/PluginServerBase.fs#L78-78" class="fsdocs-source-link" title="Source on GitHub">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+            </a>
+            <p class="fsdocs-summary">
+              <p>If the plugin throws this, we will disconnect the plugin.</p>
+
+
+            </p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="fsdocs-entity-name">
+          <p>
+            <a name="PluginInitializationStatus">
+              <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-plugin-plugininitializationstatus.html">
+                PluginInitializationStatus
+              </a>
+            </a>
+          </p>
+        </td>
+        <td class="fsdocs-entity-xmldoc">
+          <div>
+            <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:DotNetLightning.ClnRpc.Plugin.PluginInitializationStatus`')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+            </div>
+            <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:DotNetLightning.ClnRpc.Plugin.PluginInitializationStatus\'/>')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+            </div>
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/PluginServerBase.fs#L61-61" class="fsdocs-source-link" title="Source on GitHub">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+            </a>
+            <p class="fsdocs-summary">
+              
+            </p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="fsdocs-entity-name">
+          <p>
+            <a name="PluginJsonRpc">
+              <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-plugin-pluginjsonrpc.html">
+                PluginJsonRpc
+              </a>
+            </a>
+          </p>
+        </td>
+        <td class="fsdocs-entity-xmldoc">
+          <div>
+            <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:DotNetLightning.ClnRpc.Plugin.PluginJsonRpc`')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+            </div>
+            <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:DotNetLightning.ClnRpc.Plugin.PluginJsonRpc\'/>')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+            </div>
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/PluginServerBase.fs#L81-81" class="fsdocs-source-link" title="Source on GitHub">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+            </a>
+            <p class="fsdocs-summary">
+              
+            </p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="fsdocs-entity-name">
+          <p>
+            <a name="PluginJsonRpcMethodAttribute">
+              <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-plugin-pluginjsonrpcmethodattribute.html">
+                PluginJsonRpcMethodAttribute
+              </a>
+            </a>
+          </p>
+        </td>
+        <td class="fsdocs-entity-xmldoc">
+          <div>
+            <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:DotNetLightning.ClnRpc.Plugin.PluginJsonRpcMethodAttribute`')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+            </div>
+            <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:DotNetLightning.ClnRpc.Plugin.PluginJsonRpcMethodAttribute\'/>')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+            </div>
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/PluginServerBase.fs#L38-38" class="fsdocs-source-link" title="Source on GitHub">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+            </a>
+            <p class="fsdocs-summary">
+              <p>Marker attribute for the rpc method handler.
+It is mostly the same with <code>StreamJsonRpc.JsonRpcMethodAttribute</code>
+Using this instead of <code>StreamJsonRpc.JsonRpcMethodAttribute</code>
+will affect the startup behavior of the plugin,
+so that c-lightning will expose the rpc endpoint to users
+and the call to c-lightning will be bypassed to the plugin.
+An argument <code>description</code> and <code>longDescription</code> is a message that users
+will see in a <code>help</code> call to c-lightning.</p>
+
+
+            </p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="fsdocs-entity-name">
+          <p>
+            <a name="PluginJsonRpcSubscriptionAttribute">
+              <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-plugin-pluginjsonrpcsubscriptionattribute.html">
+                PluginJsonRpcSubscriptionAttribute
+              </a>
+            </a>
+          </p>
+        </td>
+        <td class="fsdocs-entity-xmldoc">
+          <div>
+            <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:DotNetLightning.ClnRpc.Plugin.PluginJsonRpcSubscriptionAttribute`')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+            </div>
+            <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:DotNetLightning.ClnRpc.Plugin.PluginJsonRpcSubscriptionAttribute\'/>')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+            </div>
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/PluginServerBase.fs#L57-57" class="fsdocs-source-link" title="Source on GitHub">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+            </a>
+            <p class="fsdocs-summary">
+              <p>Marker attribute for the rpc handler to be an subscription handler.
+Using this instead of <code>PluginJsonRpcMethod</code> will affect the behavior of the
+<code>getmanifest</code>, so that c-lightning does not expose the method to users.
+Instead, c-lightning will send a notification topic to the handler with
+this attribute.
+pass the topic name of an argument to this attribute.</p>
+
+
+            </p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="fsdocs-entity-name">
+          <p>
+            <a name="PluginOptions">
+              <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-plugin-pluginoptions.html">
+                PluginOptions
+              </a>
+            </a>
+          </p>
+        </td>
+        <td class="fsdocs-entity-xmldoc">
+          <div>
+            <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:DotNetLightning.ClnRpc.Plugin.PluginOptions`')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+            </div>
+            <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:DotNetLightning.ClnRpc.Plugin.PluginOptions\'/>')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+            </div>
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/DTOs.fs#L53-53" class="fsdocs-source-link" title="Source on GitHub">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+            </a>
+            <p class="fsdocs-summary">
+              
+            </p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="fsdocs-entity-name">
+          <p>
+            <a name="PluginOptType">
+              <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-plugin-pluginopttype.html">
+                PluginOptType
+              </a>
+            </a>
+          </p>
+        </td>
+        <td class="fsdocs-entity-xmldoc">
+          <div>
+            <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:DotNetLightning.ClnRpc.Plugin.PluginOptType`')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+            </div>
+            <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:DotNetLightning.ClnRpc.Plugin.PluginOptType\'/>')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+            </div>
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/DTOs.fs#L27-27" class="fsdocs-source-link" title="Source on GitHub">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+            </a>
+            <p class="fsdocs-summary">
+              
+            </p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="fsdocs-entity-name">
+          <p>
+            <a name="PluginServerBase">
+              <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-plugin-pluginserverbase.html">
+                PluginServerBase
+              </a>
+            </a>
+          </p>
+        </td>
+        <td class="fsdocs-entity-xmldoc">
+          <div>
+            <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:DotNetLightning.ClnRpc.Plugin.PluginServerBase`')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+            </div>
+            <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:DotNetLightning.ClnRpc.Plugin.PluginServerBase\'/>')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+            </div>
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/PluginServerBase.fs#L152-152" class="fsdocs-source-link" title="Source on GitHub">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+            </a>
+            <p class="fsdocs-summary">
+              <p>abstract base class for your c-lightning plugin.
+It talks to c-lightning through stdin/stdout.
+It will automatically create methods necessary for working as a plugin for
+you.</p>
+
+
+            </p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="fsdocs-entity-name">
+          <p>
+            <a name="ProxyDTO">
+              <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-plugin-proxydto.html">
+                ProxyDTO
+              </a>
+            </a>
+          </p>
+        </td>
+        <td class="fsdocs-entity-xmldoc">
+          <div>
+            <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:DotNetLightning.ClnRpc.Plugin.ProxyDTO`')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+            </div>
+            <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:DotNetLightning.ClnRpc.Plugin.ProxyDTO\'/>')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+            </div>
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/DTOs.fs#L124-124" class="fsdocs-source-link" title="Source on GitHub">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+            </a>
+            <p class="fsdocs-summary">
+              
+            </p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="fsdocs-entity-name">
+          <p>
+            <a name="RPCMethod">
+              <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-plugin-rpcmethod.html">
+                RPCMethod
+              </a>
+            </a>
+          </p>
+        </td>
+        <td class="fsdocs-entity-xmldoc">
+          <div>
+            <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:DotNetLightning.ClnRpc.Plugin.RPCMethod`')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+            </div>
+            <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:DotNetLightning.ClnRpc.Plugin.RPCMethod\'/>')">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+            </div>
+            <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/DTOs.fs#L34-34" class="fsdocs-source-link" title="Source on GitHub">
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+              <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+            </a>
+            <p class="fsdocs-summary">
+              
+            </p>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+            
+        </div>
+
+        <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+        <script type="text/javascript">var fsdocs_search_baseurl = 'https://joemphilips.github.io/DotNetLightning/';</script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.8/lunr.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.min.js"></script>
+        <script type="text/javascript" src="https://joemphilips.github.io/DotNetLightning/content/fsdocs-search.js"></script>
+        <!-- END SEARCH BOX: this adds support for the search box -->
+    </div>
+</body>
+
+</html>

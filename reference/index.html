@@ -66,6 +66,22 @@
   <a class="nav-link" href="https://joemphilips.github.io/DotNetLightning/features/other_namespaces.html">
     Other namespaces
   </a>
+</li>             
+<li class="nav-header">
+  c-lightning
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://joemphilips.github.io/DotNetLightning/c-lightning/overview.html">
+    Overview
+  </a>
+</li>             
+<li class="nav-header">
+  examples
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://joemphilips.github.io/DotNetLightning/examples/cln_rpc_example.html">
+    calling c-lightning rpc
+  </a>
 </li>
                 <li class="nav-header">
   API Reference
@@ -115,6 +131,55 @@
          management. It is still WIP.
      
         </td>
+      </tr>
+      <tr>
+        <td>
+          <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc.html">
+            DotNetLightning.ClnRpc
+          </a>
+        </td>
+        <td>
+          
+        "DotNetLightning.ClnRpc" contains a type-safe client for calling
+        c-lightning rpc.
+     
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-newtonsoftjsonconverters.html">
+            DotNetLightning.ClnRpc.NewtonsoftJsonConverters
+          </a>
+        </td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>
+          <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-plugin.html">
+            DotNetLightning.ClnRpc.Plugin
+          </a>
+        </td>
+        <td>
+          
+         "DotNetLightning.ClnRpc.Plugin" contains a utility to build your own
+         c-lightning plugins.
+         All you have to do is
+         1. write a class which inherits from <code>PluginServerBase</code>.
+         2. instantiate and run <code>StartAsync</code> method.
+         3. Compile as a single binary and put it into c-lightning's plugin directory.
+
+         there is also "PluginLogger" type which can be used for logging
+         in plugin.
+     
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-systemtextjsonconverters.html">
+            DotNetLightning.ClnRpc.SystemTextJsonConverters
+          </a>
+        </td>
+        <td></td>
       </tr>
       <tr>
         <td>
