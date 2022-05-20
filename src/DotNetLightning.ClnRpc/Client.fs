@@ -134,6 +134,15 @@ type JsonLibraryType =
 
 /// c-lightning rpc client.
 type ClnClient
+    /// <param name="network">bitcoin network name</param>
+    /// <param name="address">
+    ///     Uri to connect for RPC call. it can be either tcp or unix socket.
+    /// </param>
+    /// <param name="jsonLibrary">Which json serializer you want to use.</param>
+    /// <param name="getTransport">Stream getter.
+    ///     If you specify <c>address</c>, than it will automatically use NetworkStream.
+    ///     Otherwise, you can set other stream. This is useful for testing or STDIN/STDOUT for plugin.
+    /// </param>
     (
         network: Network,
         [<Optional; DefaultParameterValue(null: Uri)>] address: Uri,

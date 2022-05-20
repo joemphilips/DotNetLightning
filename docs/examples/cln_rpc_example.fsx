@@ -3,7 +3,7 @@
 title: calling c-lightning rpc
 category: examples
 index: 1
-categoryindex: 1
+categoryindex: 3
 ---
 *)
 (*** condition: prepare ***)
@@ -12,7 +12,6 @@ categoryindex: 1
 #r "DotNetLightning.Core.dll"
 #r "DotNetLightning.ClnRpc.dll"
 #r "nuget: NBitcoin"
-#r "/Users/joemiyamoto/.nuget/packages/nbitcoin/6.0.19/lib/netstandard2.0/NBitcoin.dll"
 
 open System
 open NBitcoin
@@ -25,7 +24,7 @@ open DotNetLightning.ClnRpc
 let uri = Uri("tcp://127.0.0.1:9835")
 // or Uri("unix:///path/to/your/lightning-rpc")
 
-let client = ClnClient(uri, Network.RegTest)
+let client = ClnClient(Network.RegTest, uri)
 
 let getPeerTask = client.GetinfoAsync()
 

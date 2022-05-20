@@ -7,17 +7,19 @@ open DotNetLightning.Utils
 open NBitcoin.JsonConverters
 open Newtonsoft.Json.Converters
 
-/// <summary>
-///     "DotNetLightning.ClnRpc.Plugin" contains a utility to build your own
-///     c-lightning plugins.
-///     All you have to do is
-///     1. write a class which inherits from <c>PluginServerBase</c>.
-///     2. instantiate and run <c>StartAsync</c> method.
-///     3. Compile as a single binary and put it into c-lightning's plugin directory.
+/// <namespacedoc>
+///     <summary>
+///         "DotNetLightning.ClnRpc.Plugin" contains a utility to build your own
+///         c-lightning plugins.
+///         All you have to do is
+///         1. write a class which inherits from <c>PluginServerBase</c>.
+///         2. instantiate and run <c>StartAsync</c> method.
+///         3. Compile as a single binary and put it into c-lightning's plugin directory.
 ///
-///     there is also "PluginLogger" type which can be used for logging
-///     in plugin.
-/// </summary>
+///         there is also "PluginLogger" type which can be used for logging
+///         in plugin.
+///     </summary>
+/// </namespacedoc>
 /// <exclude />
 module NamespaceDocDummy =
     ()

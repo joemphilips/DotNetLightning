@@ -1,8 +1,8 @@
 ---
-title: calling c-lightning rpc and building plugins.
-category: c-lightning support
+title: Overview
+category: c-lightning
 index: 1
-categoryindex: 1
+categoryindex: 2
 ---
 
 Package `DotNetLightning.ClnRpc` contains a utility to work with [c-lightning](https://github.com/ElementsProject/lightning)
@@ -23,5 +23,7 @@ to know what is the plugin (and how it works in general).
 `DotNetLightning.ClnRpc.Plugin` namespace contains a utility for building your own plugin.
 The most important type is `PluginServerBase`.
 By overriding this type, you can easily create your own plugin.
+
+Please read the API document for how to use the type.
 
 see its API reference and an [example C# project](https://github.com/joemphilips/DotNetLightning/tree/master/examples/HelloWorldPlugin) for how to use.

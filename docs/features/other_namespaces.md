@@ -2,7 +2,7 @@
 title: Other namespaces
 category: Overview
 index: 2
-categoryindex: 2
+categoryindex: 1
 ---
 
 # Features which are not in the "DotNetLightning.*" namespace
