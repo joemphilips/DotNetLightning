@@ -161,11 +161,11 @@ type PluginServerBase
 
     let mutable jsonRpc = null
     new(dynamic) = PluginServerBase(Seq.empty, dynamic, null)
-    new() = PluginServerBase(Seq.empty, false, null)
-    new(topics) = PluginServerBase(topics, false, null)
+    new() = PluginServerBase(Seq.empty, true, null)
+    new(topics) = PluginServerBase(topics, true, null)
     new(topics, dynamic) = PluginServerBase(topics, dynamic, null)
-    new(topics, logger) = PluginServerBase(topics, false, logger)
-    new(logger) = PluginServerBase(Seq.empty, false, logger)
+    new(topics, logger) = PluginServerBase(topics, true, logger)
+    new(logger) = PluginServerBase(Seq.empty, true, logger)
 
     /// <summary>
     /// When the c-lightning gets ready, it will send you `init` rpc call.
