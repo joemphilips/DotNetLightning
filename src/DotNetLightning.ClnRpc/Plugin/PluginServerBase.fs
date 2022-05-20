@@ -88,6 +88,7 @@ type PluginJsonRpc(handler: IJsonRpcMessageHandler) =
 
 type GetClientOutputStream = Func<CancellationToken, Task<Stream>>
 
+/// <summary>
 /// abstract base class for your c-lightning plugin.
 /// It talks to c-lightning through stdin/stdout.
 /// It will automatically create methods necessary for working as a plugin for
@@ -146,8 +147,12 @@ type GetClientOutputStream = Func<CancellationToken, Task<Stream>>
 ///
 /// Hooks are currently unsupported since it is a quite advanced feature.
 /// Please send a PR if you really want it.
+/// </summary>
 [<AbstractClass>]
 type PluginServerBase
+    /// <param name="notificationTopics">The list of topic names that might be notified to c-lightning by <see cref="PluginServerBase.SendNotification" /></param>
+    /// <param name="dynamic">Is it ok for this plugin to terminate when the c-lightning sends "stop" call. set <c>false</c> if the plugin is critical for an user and it should never stop.</param>
+    /// <param name="logger">Logger, <see cref="PluginLogger" /></param>
     (
         notificationTopics: seq<string>,
         dynamic,

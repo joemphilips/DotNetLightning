@@ -8,7 +8,7 @@ open NBitcoin.JsonConverters
 open Newtonsoft.Json.Converters
 
 /// <namespacedoc>
-/// <summary>
+///     <summary>
 ///         "DotNetLightning.ClnRpc.Plugin" contains a utility to build your own
 ///         c-lightning plugins.
 ///         All you have to do is
