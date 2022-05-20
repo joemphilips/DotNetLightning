@@ -7,6 +7,9 @@
     <VersionPrefix>1.1.2</VersionPrefix>
     <Description>Core Lightning json rpc client for .NET</Description>
     <PackageProjectUrl>https://github.com/joemphilips/DotNetLightning</PackageProjectUrl>
+    <TargetsForTfmSpecificBuildOutput>
+      $(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage
+    </TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Primitives.fs" />
@@ -23,8 +26,17 @@
   <ItemGroup>
     <ProjectReference Include="..\DotNetLightning.Core\DotNetLightning.Core.fsproj" />
     <ProjectReference Include="..\ResultUtils\ResultUtils.fsproj" />
-    <ProjectReference Include="..\PluginLogger\PluginLogger.csproj" />
+    <ProjectReference Include="..\PluginLogger\PluginLogger.csproj" >
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+      <IncludeAssets>PluginLogger.dll</IncludeAssets>
+    </ProjectReference>
   </ItemGroup>
+
+  <Target DependsOnTargets="ResolveReferences" Name="CopyProjectReferencesToPackage">
+    <ItemGroup>
+      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))"/>
+    </ItemGroup>
+  </Target>
 
   <ItemGroup>
     <PackageReference Include="StreamJsonRpc" Version="2.10.44" />
