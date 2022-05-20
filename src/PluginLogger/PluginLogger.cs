@@ -13,7 +13,7 @@ namespace DotNetLightning.ClnRpc.Plugin
 
   public class PluginLoggerOptions
   {
-    public JsonSerializerSettings JsonSettings;
+    public JsonSerializerSettings? JsonSettings;
   }
 
   public class PluginLoggerProvider : ILoggerProvider
@@ -97,10 +97,10 @@ namespace DotNetLightning.ClnRpc.Plugin
           NamedArguments = new Dictionary<string, object?>
           {
             {
-              "error", new Dictionary<string, object> {
+              "error", new Dictionary<string, object?> {
                 { "code", code },
                 { "message", message },
-                { "traceback", exception.StackTrace }
+                { "traceback", exception?.StackTrace }
               }
             }
           }
