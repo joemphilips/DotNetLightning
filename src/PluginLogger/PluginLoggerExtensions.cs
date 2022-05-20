@@ -7,13 +7,13 @@ namespace DotNetLightning.ClnRpc.Plugin
 {
   public static class PluginLoggerExtensions
   {
-    public static ILoggingBuilder AddPluginLogger(this ILoggingBuilder builder, Action<JsonRpcNotificationLoggerOptions> configure)
+    public static ILoggingBuilder AddPluginLogger(this ILoggingBuilder builder, Action<PluginLoggerOptions> configure)
     {
-      builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, JsonRpcNotificationLoggerProvider>(_ => new JsonRpcNotificationLoggerProvider(configure)));
+      builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, PluginLoggerProvider>(_ => new PluginLoggerProvider(configure)));
       return builder;
     }
 
-    public static ILoggingBuilder  AddPluginLogger(this ILoggingBuilder builder) =>
+    public static ILoggingBuilder AddPluginLogger(this ILoggingBuilder builder) =>
       AddPluginLogger(builder, _ => {});
   }
 }

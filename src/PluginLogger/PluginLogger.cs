@@ -11,19 +11,19 @@ using StreamJsonRpc.Protocol;
 namespace DotNetLightning.ClnRpc.Plugin
 {
 
-  public class JsonRpcNotificationLoggerOptions
+  public class PluginLoggerOptions
   {
     public JsonSerializerSettings JsonSettings;
   }
 
-  public class JsonRpcNotificationLoggerProvider : ILoggerProvider
+  public class PluginLoggerProvider : ILoggerProvider
   {
-    private readonly JsonRpcNotificationLoggerOptions _opts;
+    private readonly PluginLoggerOptions _opts;
 
-    public JsonRpcNotificationLoggerProvider(Action<JsonRpcNotificationLoggerOptions> configure)
+    public PluginLoggerProvider(Action<PluginLoggerOptions> configure)
     {
       if (configure == null) throw new ArgumentNullException(nameof(configure));
-      var set = new JsonRpcNotificationLoggerOptions();
+      var set = new PluginLoggerOptions();
       configure(set);
       _opts = set;
     }
@@ -33,7 +33,7 @@ namespace DotNetLightning.ClnRpc.Plugin
     }
 
     public ILogger CreateLogger(string categoryName) =>
-      new JsonRpcNotificationLogger(categoryName, (_, _) => true, null, _opts);
+      new PluginLogger(categoryName, (_, _) => true, null, _opts);
   }
 
   /// Similar to ConsoleLogger, JsonRpcNotificationLoggerProvider outputs log messages to stdout.
@@ -43,20 +43,20 @@ namespace DotNetLightning.ClnRpc.Plugin
   /// 2. It outputs as a JSON-RPC notification
   /// As a result, it is ideal for sending log message back to host clightning. Which will
   /// in turn logs message to stdout.
-  public class JsonRpcNotificationLogger: ILogger
+  public class PluginLogger: ILogger
   {
-    private readonly JsonRpcNotificationLoggerOptions _opts;
+    private readonly PluginLoggerOptions _opts;
 
 
-    static JsonRpcNotificationLogger()
+    static PluginLogger()
     {
     }
-    public JsonRpcNotificationLogger(string name, Func<string, LogLevel, bool>? filter, bool includeScopes, JsonRpcNotificationLoggerOptions opts)
+    public PluginLogger(string name, Func<string, LogLevel, bool>? filter, bool includeScopes, PluginLoggerOptions opts)
       : this(name, filter, includeScopes ? new LoggerExternalScopeProvider() : null, opts)
     {
     }
 
-    internal JsonRpcNotificationLogger(string name, Func<string, LogLevel, bool>? filter, IExternalScopeProvider? scopeProvider, JsonRpcNotificationLoggerOptions opts)
+    internal PluginLogger(string name, Func<string, LogLevel, bool>? filter, IExternalScopeProvider? scopeProvider, PluginLoggerOptions opts)
     {
       _opts = opts;
       Name = name ?? throw new ArgumentNullException(nameof(name));
