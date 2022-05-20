@@ -12,7 +12,7 @@ under `DotNetLightning.ClnRpc` namespace.
 
 The most important type is `ClnClient` which you can use it for calling its Json RPC in a typesafe way.
 
-See [the example](../examples/cln_rpc_example.fsx) for how to use it.
+See [the example](../examples/cln_rpc_example.html) for how to use it.
 
 ### building your own plugin
 
@@ -24,6 +24,6 @@ to know what is the plugin (and how it works in general).
 The most important type is `PluginServerBase`.
 By overriding this type, you can easily create your own plugin.
 
-Please read the API document for how to use the type.
+Please read [the API reference](../reference/dotnetlightning-clnrpc-plugin-pluginserverbase.html) for how to use the type.
 
 see its API reference and an [example C# project](https://github.com/joemphilips/DotNetLightning/tree/master/examples/HelloWorldPlugin) for how to use.
