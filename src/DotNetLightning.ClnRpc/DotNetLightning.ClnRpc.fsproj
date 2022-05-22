@@ -24,16 +24,26 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DotNetLightning.Core\DotNetLightning.Core.fsproj" PrivateAssets="All"/>
-    <ProjectReference Include="..\ResultUtils\ResultUtils.fsproj" PrivateAssets="All"/>
-    <ProjectReference Include="..\PluginLogger\PluginLogger.csproj" PrivateAssets="All"/>
+    <ProjectReference Condition="'$(Portability)'!='true'" Include="..\NSec\Experimental\NSec.Experimental.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\ResultUtils\ResultUtils.fsproj" PrivateAssets="all" />
+    <ProjectReference Include="..\InternalBech32Encoder\InternalBech32Encoder.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\AEZ\AEZ.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\Macaroons\Macaroons.csproj" ExcludeAssets="all" />
+
+    <ProjectReference Include="..\DotNetLightning.Core\DotNetLightning.Core.fsproj" PrivateAssets="all"/>
+    <ProjectReference Include="..\PluginLogger\PluginLogger.csproj" PrivateAssets="all"/>
   </ItemGroup>
 
-  <Target DependsOnTargets="ResolveReferences" Name="CopyProjectReferencesToPackage">
+  <!-- this is a workaround only needed for nuget push (so, not Mono, but just "dotnet nuget"), for more info see
+       https://github.com/joemphilips/DotNetLightning/issues/14 and https://github.com/joemphilips/DotNetLightning/commit/c98307465f647257df1438beadb4cabc7db757f2
+       and https://github.com/NuGet/Home/issues/3891 and https://github.com/NuGet/Home/issues/3891#issuecomment-377319939 -->
+  <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences"
+          Condition="'$(MSBuildRuntimeType)'!='Mono'">
     <ItemGroup>
-      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))"/>
+      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
     </ItemGroup>
   </Target>
+
 
   <ItemGroup>
     <PackageReference Include="StreamJsonRpc" Version="2.10.44" />
