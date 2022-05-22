@@ -24,14 +24,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Condition="'$(Portability)'!='true'" Include="..\NSec\Experimental\NSec.Experimental.csproj" />
-    <ProjectReference Include="..\ResultUtils\ResultUtils.fsproj" />
-    <ProjectReference Include="..\InternalBech32Encoder\InternalBech32Encoder.csproj" />
-    <ProjectReference Include="..\AEZ\AEZ.csproj" />
+    <ProjectReference Condition="'$(Portability)'!='true'" Include="..\NSec\Experimental\NSec.Experimental.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\ResultUtils\ResultUtils.fsproj" PrivateAssets="all" />
+    <ProjectReference Include="..\InternalBech32Encoder\InternalBech32Encoder.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\AEZ\AEZ.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\Macaroons\Macaroons.csproj" ExcludeAssets="all" />
 
-    <ProjectReference Include="..\DotNetLightning.Core\DotNetLightning.Core.fsproj" />
-    <ProjectReference Include="..\PluginLogger\PluginLogger.csproj" />
+    <ProjectReference Include="..\DotNetLightning.Core\DotNetLightning.Core.fsproj" PrivateAssets="all"/>
+    <ProjectReference Include="..\PluginLogger\PluginLogger.csproj" PrivateAssets="all"/>
   </ItemGroup>
 
   <!-- this is a workaround only needed for nuget push (so, not Mono, but just "dotnet nuget"), for more info see
