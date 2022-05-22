@@ -24,12 +24,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DotNetLightning.Core\DotNetLightning.Core.fsproj" />
-    <ProjectReference Include="..\ResultUtils\ResultUtils.fsproj" />
-    <ProjectReference Include="..\PluginLogger\PluginLogger.csproj" >
-      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-      <IncludeAssets>PluginLogger.dll</IncludeAssets>
-    </ProjectReference>
+    <ProjectReference Include="..\DotNetLightning.Core\DotNetLightning.Core.fsproj" PrivateAssets="All"/>
+    <ProjectReference Include="..\ResultUtils\ResultUtils.fsproj" PrivateAssets="All"/>
+    <ProjectReference Include="..\PluginLogger\PluginLogger.csproj" PrivateAssets="All"/>
   </ItemGroup>
 
   <Target DependsOnTargets="ResolveReferences" Name="CopyProjectReferencesToPackage">
