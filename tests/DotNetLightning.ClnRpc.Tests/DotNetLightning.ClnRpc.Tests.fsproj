@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\DotNetLightning.ClnRpc\DotNetLightning.ClnRpc.fsproj" />
+    <ProjectReference Include="..\..\src\PluginLogger\PluginLogger.csproj" />
   </ItemGroup>
 
 </Project>
