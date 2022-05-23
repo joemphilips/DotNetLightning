@@ -8,15 +8,13 @@
 /// This file was generated from
 namespace DotNetLightning.ClnRpc
 
-open System
+
 open System.Text.Json
 open System.Text.Json.Serialization
 
-open DotNetLightning.Utils
 open NBitcoin
 open NBitcoin.Scripting
 open DotNetLightning.Utils
-open DotNetLightning.ClnRpc.SystemTextJsonConverters
 
 [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
 module Requests =
@@ -25,34 +23,40 @@ module Requests =
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type ListpeersRequest = {
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("id")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Id: PubKey option
-        [<JsonPropertyName("level")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("level")>]
         Level: string option
     }
 
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type ListfundsRequest = {
-        [<JsonPropertyName("spent")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("spent")>]
         Spent: bool option
     }
 
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type SendpayRoute = {
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("msatoshi")>]
         Msatoshi: int64<msat>
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.PubKeyJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.PubKeyJsonConverter>)>]
         [<JsonPropertyName("id")>]
         Id: PubKey
         [<JsonPropertyName("delay")>]
         Delay: uint16
-        [<JsonConverter(typeof<ShortChannelIdJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.ShortChannelIdJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.ShortChannelIdJsonConverter>)>]
         [<JsonPropertyName("channel")>]
         Channel: ShortChannelId
     }
@@ -62,44 +66,52 @@ module Requests =
     type SendpayRequest = {
         [<JsonPropertyName("route")>]
         Route: SendpayRoute []
-        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("label")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Label: string option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("msatoshi")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Msatoshi: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt11")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt11: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("payment_secret")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaymentSecret: Key option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("partid")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Partid: uint16 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("localofferid")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Localofferid: string option
-        [<JsonPropertyName("groupid")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("groupid")>]
         Groupid: uint64 option
     }
 
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type ListchannelsRequest = {
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("short_channel_id")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         ShortChannelId: ShortChannelId option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("source")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Source: PubKey option
-        [<JsonPropertyName("destination")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("destination")>]
         Destination: PubKey option
     }
 
@@ -113,11 +125,13 @@ module Requests =
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type AutocleaninvoiceRequest = {
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("expired_by")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         ExpiredBy: uint64 option
-        [<JsonPropertyName("cycle_seconds")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("cycle_seconds")>]
         CycleSeconds: uint64 option
     }
 
@@ -128,8 +142,9 @@ module Requests =
         Message: string
         [<JsonPropertyName("zbase")>]
         Zbase: string
-        [<JsonPropertyName("pubkey")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("pubkey")>]
         Pubkey: PubKey option
     }
 
@@ -138,23 +153,27 @@ module Requests =
     type CloseRequest = {
         [<JsonPropertyName("id")>]
         Id: string
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("unilateraltimeout")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Unilateraltimeout: uint32 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("destination")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Destination: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("fee_negotiation_step")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         FeeNegotiationStep: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("wrong_funding")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         WrongFunding: string option
-        [<JsonPropertyName("force_lease_closed")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("force_lease_closed")>]
         ForceLeaseClosed: bool option
         [<JsonPropertyName("feerange")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Feerange: Feerate [] option
     }
 
@@ -163,11 +182,13 @@ module Requests =
     type ConnectRequest = {
         [<JsonPropertyName("id")>]
         Id: string
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("host")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Host: string option
-        [<JsonPropertyName("port")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("port")>]
         Port: uint16 option
     }
 
@@ -196,24 +217,28 @@ module Requests =
     type DatastoreRequest = {
         [<JsonPropertyName("key")>]
         Key: string []
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("string")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         String: string option
-        [<JsonPropertyName("hex")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("hex")>]
         Hex: string option
         [<JsonPropertyName("mode")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Mode: DatastoreMode option
-        [<JsonPropertyName("generation")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("generation")>]
         Generation: uint64 option
     }
 
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type CreateonionHops = {
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.PubKeyJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.PubKeyJsonConverter>)>]
         [<JsonPropertyName("pubkey")>]
         Pubkey: PubKey
         [<JsonPropertyName("payload")>]
@@ -227,11 +252,13 @@ module Requests =
         Hops: CreateonionHops []
         [<JsonPropertyName("assocdata")>]
         Assocdata: string
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("session_key")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         SessionKey: Key option
-        [<JsonPropertyName("onion_size")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("onion_size")>]
         OnionSize: uint16 option
     }
 
@@ -240,16 +267,18 @@ module Requests =
     type DeldatastoreRequest = {
         [<JsonPropertyName("key")>]
         Key: string []
-        [<JsonPropertyName("generation")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("generation")>]
         Generation: uint64 option
     }
 
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type DelexpiredinvoiceRequest = {
-        [<JsonPropertyName("maxexpirytime")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("maxexpirytime")>]
         Maxexpirytime: uint64 option
     }
 
@@ -269,38 +298,44 @@ module Requests =
         [<JsonPropertyName("status")>]
         [<JsonConverter(typeof<JsonStringEnumConverter>)>]
         Status: DelinvoiceStatus
-        [<JsonPropertyName("desconly")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("desconly")>]
         Desconly: bool option
     }
 
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type InvoiceRequest = {
-        [<JsonConverter(typeof<AmountOrAnyJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.AmountOrAnyJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.AmountOrAnyJsonConverter>)>]
         [<JsonPropertyName("msatoshi")>]
         Msatoshi: AmountOrAny
         [<JsonPropertyName("description")>]
         Description: string
         [<JsonPropertyName("label")>]
         Label: string
-        [<JsonPropertyName("expiry")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("expiry")>]
         Expiry: uint64 option
         [<JsonPropertyName("fallbacks")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Fallbacks: string [] option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("preimage")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Preimage: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("exposeprivatechannels")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Exposeprivatechannels: bool option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("cltv")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Cltv: uint32 option
-        [<JsonPropertyName("deschashonly")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("deschashonly")>]
         Deschashonly: bool option
     }
 
@@ -308,34 +343,39 @@ module Requests =
     [<CLIMutable>]
     type ListdatastoreRequest = {
         [<JsonPropertyName("key")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Key: string [] option
     }
 
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type ListinvoicesRequest = {
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("label")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Label: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("invstring")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Invstring: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("payment_hash")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaymentHash: string option
-        [<JsonPropertyName("offer_id")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("offer_id")>]
         OfferId: string option
     }
 
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type SendonionFirst_hop = {
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.PubKeyJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.PubKeyJsonConverter>)>]
         [<JsonPropertyName("id")>]
         Id: PubKey
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_msat")>]
         AmountMsat: int64<msat>
         [<JsonPropertyName("delay")>]
@@ -347,32 +387,37 @@ module Requests =
     type SendonionRequest = {
         [<JsonPropertyName("onion")>]
         Onion: string
-        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
-        [<JsonPropertyName("label")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("label")>]
         Label: string option
         [<JsonPropertyName("shared_secrets")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         SharedSecrets: Key [] option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("partid")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Partid: uint16 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt11")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt11: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("msatoshi")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Msatoshi: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("destination")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Destination: PubKey option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("localofferid")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Localofferid: uint256 option
-        [<JsonPropertyName("groupid")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("groupid")>]
         Groupid: uint64 option
     }
 
@@ -386,11 +431,13 @@ module Requests =
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type ListsendpaysRequest = {
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt11")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt11: string option
-        [<JsonPropertyName("payment_hash")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256 option
         [<JsonPropertyName("status")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
@@ -404,57 +451,69 @@ module Requests =
     type PayRequest = {
         [<JsonPropertyName("bolt11")>]
         Bolt11: string
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("msatoshi")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Msatoshi: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("label")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Label: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("riskfactor")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Riskfactor: int64 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("maxfeepercent")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Maxfeepercent: int64 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("retry_for")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         RetryFor: uint16 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("maxdelay")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Maxdelay: uint16 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("exemptfee")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Exemptfee: int64<msat> option
-        [<JsonPropertyName("localofferid")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("localofferid")>]
         Localofferid: string option
         [<JsonPropertyName("exclude")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Exclude: string [] option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("maxfee")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Maxfee: int64<msat> option
-        [<JsonPropertyName("description")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("description")>]
         Description: string option
     }
 
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type ListnodesRequest = {
-        [<JsonPropertyName("id")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("id")>]
         Id: PubKey option
     }
 
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type WaitanyinvoiceRequest = {
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("lastpay_index")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         LastpayIndex: uint64 option
-        [<JsonPropertyName("timeout")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("timeout")>]
         Timeout: uint64 option
     }
 
@@ -468,17 +527,19 @@ module Requests =
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type WaitsendpayRequest = {
-        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("timeout")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Timeout: uint32 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("partid")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Partid: uint64 option
-        [<JsonPropertyName("groupid")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("groupid")>]
         Groupid: uint64 option
     }
 
@@ -502,17 +563,19 @@ module Requests =
     type WithdrawRequest = {
         [<JsonPropertyName("destination")>]
         Destination: string
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("satoshi")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Satoshi: AmountOrAll option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("feerate")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Feerate: Feerate option
-        [<JsonPropertyName("minconf")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("minconf")>]
         Minconf: uint16 option
         [<JsonPropertyName("utxos")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Utxos: OutPoint [] option
     }
 
@@ -521,57 +584,72 @@ module Requests =
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type KeysendRequest = {
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.PubKeyJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.PubKeyJsonConverter>)>]
         [<JsonPropertyName("destination")>]
         Destination: PubKey
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("msatoshi")>]
         Msatoshi: int64<msat>
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("label")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Label: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("maxfeepercent")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Maxfeepercent: int64 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("retry_for")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         RetryFor: uint32 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("maxdelay")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Maxdelay: uint32 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("exemptfee")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Exemptfee: int64<msat> option
-        [<JsonPropertyName("routehints")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("routehints")>]
         Routehints: RoutehintList option
     }
 
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type FundpsbtRequest = {
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("satoshi")>]
         Satoshi: int64<msat>
-        [<JsonConverter(typeof<FeerateJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.FeerateJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.FeerateJsonConverter>)>]
         [<JsonPropertyName("feerate")>]
         Feerate: Feerate
         [<JsonPropertyName("startweight")>]
         Startweight: uint32
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("minconf")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Minconf: uint32 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("reserve")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Reserve: uint32 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("locktime")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Locktime: uint32 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("min_witness_weight")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         MinWitnessWeight: uint32 option
-        [<JsonPropertyName("excess_as_change")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("excess_as_change")>]
         ExcessAsChange: bool option
     }
 
@@ -580,8 +658,9 @@ module Requests =
     type SendpsbtRequest = {
         [<JsonPropertyName("psbt")>]
         Psbt: string
-        [<JsonPropertyName("reserve")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("reserve")>]
         Reserve: bool option
     }
 
@@ -591,37 +670,43 @@ module Requests =
         [<JsonPropertyName("psbt")>]
         Psbt: string
         [<JsonPropertyName("signonly")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Signonly: uint32 [] option
     }
 
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type UtxopsbtRequest = {
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("satoshi")>]
         Satoshi: int64<msat>
-        [<JsonConverter(typeof<FeerateJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.FeerateJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.FeerateJsonConverter>)>]
         [<JsonPropertyName("feerate")>]
         Feerate: Feerate
         [<JsonPropertyName("startweight")>]
         Startweight: uint32
         [<JsonPropertyName("utxos")>]
         Utxos: OutPoint []
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("reserve")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Reserve: uint32 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("reservedok")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Reservedok: bool option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("locktime")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Locktime: uint32 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("min_witness_weight")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         MinWitnessWeight: uint32 option
-        [<JsonPropertyName("excess_as_change")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("excess_as_change")>]
         ExcessAsChange: bool option
     }
 
@@ -637,14 +722,15 @@ module Requests =
     type TxprepareRequest = {
         [<JsonPropertyName("outputs")>]
         Outputs: OutputDescriptor []
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("feerate")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Feerate: Feerate option
-        [<JsonPropertyName("minconf")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("minconf")>]
         Minconf: uint32 option
         [<JsonPropertyName("utxos")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Utxos: OutPoint [] option
     }
 
@@ -658,11 +744,13 @@ module Requests =
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type DisconnectRequest = {
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.PubKeyJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.PubKeyJsonConverter>)>]
         [<JsonPropertyName("id")>]
         Id: PubKey
-        [<JsonPropertyName("force")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("force")>]
         Force: bool option
     }
 
@@ -684,28 +772,33 @@ module Requests =
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type GetrouteRequest = {
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.PubKeyJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.PubKeyJsonConverter>)>]
         [<JsonPropertyName("id")>]
         Id: PubKey
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("msatoshi")>]
         Msatoshi: int64<msat>
         [<JsonPropertyName("riskfactor")>]
         Riskfactor: uint64
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("cltv")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Cltv: int64 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("fromid")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Fromid: PubKey option
-        [<JsonPropertyName("fuzzpercent")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("fuzzpercent")>]
         Fuzzpercent: uint32 option
         [<JsonPropertyName("exclude")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Exclude: string [] option
-        [<JsonPropertyName("maxhops")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("maxhops")>]
         Maxhops: uint32 option
     }
 
@@ -723,11 +816,13 @@ module Requests =
         [<JsonPropertyName("status")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Status: ListforwardsStatus option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("in_channel")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         InChannel: ShortChannelId option
-        [<JsonPropertyName("out_channel")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("out_channel")>]
         OutChannel: ShortChannelId option
     }
 
@@ -741,11 +836,13 @@ module Requests =
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type ListpaysRequest = {
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt11")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt11: string option
-        [<JsonPropertyName("payment_hash")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256 option
         [<JsonPropertyName("status")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
@@ -755,14 +852,17 @@ module Requests =
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type PingRequest = {
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.PubKeyJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.PubKeyJsonConverter>)>]
         [<JsonPropertyName("id")>]
         Id: PubKey
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("len")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Len: int64 option
-        [<JsonPropertyName("pongbytes")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("pongbytes")>]
         Pongbytes: int64 option
     }
 
@@ -776,7 +876,7 @@ module Requests =
 
 
 [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
-module Responses =
+module Responses = 
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type GetinfoOur_features = {
@@ -810,8 +910,9 @@ module Responses =
         ItemType: GetinfoAddressType
         [<JsonPropertyName("port")>]
         Port: uint16
-        [<JsonPropertyName("address")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("address")>]
         Address: string option
     }
 
@@ -832,21 +933,25 @@ module Responses =
         [<JsonPropertyName("type")>]
         [<JsonConverter(typeof<JsonStringEnumConverter>)>]
         ItemType: GetinfoBindingType
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("address")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Address: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("port")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Port: uint16 option
-        [<JsonPropertyName("socket")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("socket")>]
         Socket: string option
     }
 
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type GetinfoResponse = {
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.PubKeyJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.PubKeyJsonConverter>)>]
         [<JsonPropertyName("id")>]
         Id: PubKey
         [<JsonPropertyName("alias")>]
@@ -869,20 +974,21 @@ module Responses =
         Blockheight: uint32
         [<JsonPropertyName("network")>]
         Network: string
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("fees_collected_msat")>]
         FeesCollectedMsat: int64<msat>
         [<JsonPropertyName("address")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Address: GetinfoAddress [] option
         [<JsonPropertyName("binding")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Binding: GetinfoBinding [] option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("warning_bitcoind_sync")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         WarningBitcoindSync: string option
-        [<JsonPropertyName("warning_lightningd_sync")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("warning_lightningd_sync")>]
         WarningLightningdSync: string option
     }
 
@@ -904,23 +1010,29 @@ module Responses =
         [<JsonPropertyName("type")>]
         [<JsonConverter(typeof<JsonStringEnumConverter>)>]
         ItemType: ListpeersPeersLogType
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("num_skipped")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         NumSkipped: uint32 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("time")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Time: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("source")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Source: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("log")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Log: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("node_id")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         NodeId: PubKey option
-        [<JsonPropertyName("data")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("data")>]
         Data: string option
     }
 
@@ -958,10 +1070,12 @@ module Responses =
         FundingOutnum: uint32
         [<JsonPropertyName("feerate")>]
         Feerate: string
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("total_funding_msat")>]
         TotalFundingMsat: int64<msat>
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("our_funding_msat")>]
         OurFundingMsat: int64<msat>
         [<JsonPropertyName("scratch_txid")>]
@@ -971,13 +1085,16 @@ module Responses =
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type ListpeersPeersChannelsFunding = {
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("local_msat")>]
         LocalMsat: int64<msat>
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("remote_msat")>]
         RemoteMsat: int64<msat>
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("pushed_msat")>]
         PushedMsat: int64<msat>
     }
@@ -1019,19 +1136,21 @@ module Responses =
         Direction: ListpeersPeersChannelsHtlcsDirection
         [<JsonPropertyName("id")>]
         Id: uint64
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_msat")>]
         AmountMsat: int64<msat>
         [<JsonPropertyName("expiry")>]
         Expiry: uint32
-        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("local_trimmed")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         LocalTrimmed: bool option
-        [<JsonPropertyName("status")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("status")>]
         Status: string option
     }
 
@@ -1042,161 +1161,199 @@ module Responses =
         [<JsonPropertyName("state")>]
         [<JsonConverter(typeof<JsonStringEnumConverter>)>]
         State: ListpeersPeersChannelsState
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("scratch_txid")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         ScratchTxid: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("owner")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Owner: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("short_channel_id")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         ShortChannelId: ShortChannelId option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("channel_id")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         ChannelId: uint256 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("funding_txid")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         FundingTxid: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("funding_outnum")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         FundingOutnum: uint32 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("initial_feerate")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         InitialFeerate: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("last_feerate")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         LastFeerate: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("next_feerate")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         NextFeerate: string option
-        [<JsonPropertyName("next_fee_step")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("next_fee_step")>]
         NextFeeStep: uint32 option
         [<JsonPropertyName("inflight")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Inflight: ListpeersPeersChannelsInflight [] option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("close_to")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         CloseTo: string option
-        [<JsonPropertyName("private")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("private")>]
         Private: bool option
         // Path `ListPeers.peers[].channels[].opener`
         [<JsonPropertyName("opener")>]
         [<JsonConverter(typeof<JsonStringEnumConverter>)>]
         Opener: ChannelSide
+        [<JsonPropertyName("closer")>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        Closer: ChannelSide option
         [<JsonPropertyName("features")>]
         Features: string []
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("to_us_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         ToUsMsat: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("min_to_us_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         MinToUsMsat: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("max_to_us_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         MaxToUsMsat: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("total_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         TotalMsat: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("fee_base_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         FeeBaseMsat: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("fee_proportional_millionths")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         FeeProportionalMillionths: uint32 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("dust_limit_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         DustLimitMsat: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("max_total_htlc_in_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         MaxTotalHtlcInMsat: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("their_reserve_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         TheirReserveMsat: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("our_reserve_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         OurReserveMsat: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("spendable_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         SpendableMsat: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("receivable_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         ReceivableMsat: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("minimum_htlc_in_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         MinimumHtlcInMsat: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("minimum_htlc_out_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         MinimumHtlcOutMsat: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("maximum_htlc_out_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         MaximumHtlcOutMsat: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("their_to_self_delay")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         TheirToSelfDelay: uint32 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("our_to_self_delay")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         OurToSelfDelay: uint32 option
-        [<JsonPropertyName("max_accepted_htlcs")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("max_accepted_htlcs")>]
         MaxAcceptedHtlcs: uint32 option
         [<JsonPropertyName("state_changes")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         StateChanges: ListpeersPeersChannelsState_changes [] option
         [<JsonPropertyName("status")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Status: string [] option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("in_payments_offered")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         InPaymentsOffered: uint64 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("in_offered_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         InOfferedMsat: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("in_payments_fulfilled")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         InPaymentsFulfilled: uint64 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("in_fulfilled_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         InFulfilledMsat: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("out_payments_offered")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         OutPaymentsOffered: uint64 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("out_offered_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         OutOfferedMsat: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("out_payments_fulfilled")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         OutPaymentsFulfilled: uint64 option
-        [<JsonPropertyName("out_fulfilled_msat")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("out_fulfilled_msat")>]
         OutFulfilledMsat: int64<msat> option
         [<JsonPropertyName("htlcs")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Htlcs: ListpeersPeersChannelsHtlcs [] option
-        [<JsonPropertyName("close_to_addr")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("close_to_addr")>]
         CloseToAddr: string option
     }
 
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type ListpeersPeers = {
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.PubKeyJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.PubKeyJsonConverter>)>]
         [<JsonPropertyName("id")>]
         Id: PubKey
         [<JsonPropertyName("connected")>]
         Connected: bool
         [<JsonPropertyName("log")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Log: ListpeersPeersLog [] option
         [<JsonPropertyName("channels")>]
         Channels: ListpeersPeersChannels []
         [<JsonPropertyName("netaddr")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Netaddr: string [] option
-        [<JsonPropertyName("features")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("features")>]
         Features: string option
     }
 
@@ -1221,36 +1378,45 @@ module Responses =
         Txid: string
         [<JsonPropertyName("output")>]
         Output: uint32
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_msat")>]
         AmountMsat: int64<msat>
         [<JsonPropertyName("scriptpubkey")>]
         Scriptpubkey: string
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("address")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Address: string option
-        [<JsonPropertyName("redeemscript")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("redeemscript")>]
         Redeemscript: string option
         // Path `ListFunds.outputs[].status`
         [<JsonPropertyName("status")>]
         [<JsonConverter(typeof<JsonStringEnumConverter>)>]
         Status: ListfundsOutputsStatus
-        [<JsonPropertyName("blockheight")>]
+        [<JsonPropertyName("reserved")>]
+        Reserved: bool
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("blockheight")>]
         Blockheight: uint32 option
     }
 
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type ListfundsChannels = {
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.PubKeyJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.PubKeyJsonConverter>)>]
         [<JsonPropertyName("peer_id")>]
         PeerId: PubKey
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("our_amount_msat")>]
         OurAmountMsat: int64<msat>
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_msat")>]
         AmountMsat: int64<msat>
         [<JsonPropertyName("funding_txid")>]
@@ -1263,8 +1429,9 @@ module Responses =
         [<JsonPropertyName("state")>]
         [<JsonConverter(typeof<JsonStringEnumConverter>)>]
         State: ChannelState
-        [<JsonPropertyName("short_channel_id")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("short_channel_id")>]
         ShortChannelId: ShortChannelId option
     }
 
@@ -1289,62 +1456,75 @@ module Responses =
     type SendpayResponse = {
         [<JsonPropertyName("id")>]
         Id: uint64
-        [<JsonPropertyName("groupid")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("groupid")>]
         Groupid: uint64 option
-        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         // Path `SendPay.status`
         [<JsonPropertyName("status")>]
         [<JsonConverter(typeof<JsonStringEnumConverter>)>]
         Status: SendpayStatus
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountMsat: int64<msat> option
-        [<JsonPropertyName("destination")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("destination")>]
         Destination: PubKey option
         [<JsonPropertyName("created_at")>]
         CreatedAt: uint64
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_sent_msat")>]
         AmountSentMsat: int64<msat>
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("label")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Label: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("partid")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Partid: uint64 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt11")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt11: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt12")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt12: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("payment_preimage")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaymentPreimage: Key option
-        [<JsonPropertyName("message")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("message")>]
         Message: string option
     }
 
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type ListchannelsChannels = {
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.PubKeyJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.PubKeyJsonConverter>)>]
         [<JsonPropertyName("source")>]
         Source: PubKey
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.PubKeyJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.PubKeyJsonConverter>)>]
         [<JsonPropertyName("destination")>]
         Destination: PubKey
-        [<JsonConverter(typeof<ShortChannelIdJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.ShortChannelIdJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.ShortChannelIdJsonConverter>)>]
         [<JsonPropertyName("short_channel_id")>]
         ShortChannelId: ShortChannelId
         [<JsonPropertyName("public")>]
         Public: bool
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_msat")>]
         AmountMsat: int64<msat>
         [<JsonPropertyName("message_flags")>]
@@ -1361,11 +1541,13 @@ module Responses =
         FeePerMillionth: uint32
         [<JsonPropertyName("delay")>]
         Delay: uint32
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("htlc_minimum_msat")>]
         HtlcMinimumMsat: int64<msat>
-        [<JsonPropertyName("htlc_maximum_msat")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("htlc_maximum_msat")>]
         HtlcMaximumMsat: int64<msat> option
         [<JsonPropertyName("features")>]
         Features: string
@@ -1385,11 +1567,13 @@ module Responses =
     type AutocleaninvoiceResponse = {
         [<JsonPropertyName("enabled")>]
         Enabled: bool
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("expired_by")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         ExpiredBy: uint64 option
-        [<JsonPropertyName("cycle_seconds")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("cycle_seconds")>]
         CycleSeconds: uint64 option
     }
 
@@ -1398,8 +1582,9 @@ module Responses =
     type CheckmessageResponse = {
         [<JsonPropertyName("verified")>]
         Verified: bool
-        [<JsonPropertyName("pubkey")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("pubkey")>]
         Pubkey: PubKey option
     }
 
@@ -1418,11 +1603,13 @@ module Responses =
         [<JsonPropertyName("type")>]
         [<JsonConverter(typeof<JsonStringEnumConverter>)>]
         ItemType: CloseType
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("tx")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Tx: string option
-        [<JsonPropertyName("txid")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("txid")>]
         Txid: string option
     }
 
@@ -1450,21 +1637,25 @@ module Responses =
         [<JsonPropertyName("type")>]
         [<JsonConverter(typeof<JsonStringEnumConverter>)>]
         ItemType: ConnectAddressType
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("socket")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Socket: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("address")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Address: string option
-        [<JsonPropertyName("port")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("port")>]
         Port: uint16 option
     }
 
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type ConnectResponse = {
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.PubKeyJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.PubKeyJsonConverter>)>]
         [<JsonPropertyName("id")>]
         Id: PubKey
         [<JsonPropertyName("features")>]
@@ -1488,18 +1679,19 @@ module Responses =
     type CreateinvoiceResponse = {
         [<JsonPropertyName("label")>]
         Label: string
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt11")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt11: string option
-        [<JsonPropertyName("bolt12")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("bolt12")>]
         Bolt12: string option
-        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
-        [<JsonPropertyName("amount_msat")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("amount_msat")>]
         AmountMsat: int64<msat> option
         // Path `CreateInvoice.status`
         [<JsonPropertyName("status")>]
@@ -1509,23 +1701,29 @@ module Responses =
         Description: string
         [<JsonPropertyName("expires_at")>]
         ExpiresAt: uint64
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("pay_index")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PayIndex: uint64 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_received_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountReceivedMsat: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("paid_at")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaidAt: uint64 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("payment_preimage")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaymentPreimage: Key option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("local_offer_id")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         LocalOfferId: string option
-        [<JsonPropertyName("payer_note")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("payer_note")>]
         PayerNote: string option
     }
 
@@ -1534,14 +1732,17 @@ module Responses =
     type DatastoreResponse = {
         [<JsonPropertyName("key")>]
         Key: string []
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("generation")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Generation: uint64 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("hex")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Hex: string option
-        [<JsonPropertyName("string")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("string")>]
         String: string option
     }
 
@@ -1559,14 +1760,17 @@ module Responses =
     type DeldatastoreResponse = {
         [<JsonPropertyName("key")>]
         Key: string []
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("generation")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Generation: uint64 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("hex")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Hex: string option
-        [<JsonPropertyName("string")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("string")>]
         String: string option
     }
 
@@ -1585,19 +1789,22 @@ module Responses =
     type DelinvoiceResponse = {
         [<JsonPropertyName("label")>]
         Label: string
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt11")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt11: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt12")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt12: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountMsat: int64<msat> option
-        [<JsonPropertyName("description")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("description")>]
         Description: string option
-        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         // Path `DelInvoice.status`
@@ -1606,11 +1813,13 @@ module Responses =
         Status: DelinvoiceStatus
         [<JsonPropertyName("expires_at")>]
         ExpiresAt: uint64
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("local_offer_id")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         LocalOfferId: string option
-        [<JsonPropertyName("payer_note")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("payer_note")>]
         PayerNote: string option
     }
 
@@ -1619,28 +1828,31 @@ module Responses =
     type InvoiceResponse = {
         [<JsonPropertyName("bolt11")>]
         Bolt11: string
-        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
-        [<JsonConverter(typeof<KeyJsonConverter>)>]
         [<JsonPropertyName("payment_secret")>]
         PaymentSecret: Key
         [<JsonPropertyName("expires_at")>]
         ExpiresAt: uint64
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("warning_capacity")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         WarningCapacity: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("warning_offline")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         WarningOffline: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("warning_deadends")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         WarningDeadends: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("warning_private_unused")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         WarningPrivateUnused: string option
-        [<JsonPropertyName("warning_mpp")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("warning_mpp")>]
         WarningMpp: string option
     }
 
@@ -1649,14 +1861,17 @@ module Responses =
     type ListdatastoreDatastore = {
         [<JsonPropertyName("key")>]
         Key: string []
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("generation")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Generation: uint64 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("hex")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Hex: string option
-        [<JsonPropertyName("string")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("string")>]
         String: string option
     }
 
@@ -1680,10 +1895,10 @@ module Responses =
     type ListinvoicesInvoices = {
         [<JsonPropertyName("label")>]
         Label: string
-        [<JsonPropertyName("description")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("description")>]
         Description: string option
-        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         // Path `ListInvoices.invoices[].status`
@@ -1692,32 +1907,41 @@ module Responses =
         Status: ListinvoicesInvoicesStatus
         [<JsonPropertyName("expires_at")>]
         ExpiresAt: uint64
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountMsat: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt11")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt11: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt12")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt12: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("local_offer_id")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         LocalOfferId: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("payer_note")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PayerNote: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("pay_index")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PayIndex: uint64 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_received_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountReceivedMsat: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("paid_at")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaidAt: uint64 option
-        [<JsonPropertyName("payment_preimage")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("payment_preimage")>]
         PaymentPreimage: Key option
     }
 
@@ -1740,41 +1964,49 @@ module Responses =
     type SendonionResponse = {
         [<JsonPropertyName("id")>]
         Id: uint64
-        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         // Path `SendOnion.status`
         [<JsonPropertyName("status")>]
         [<JsonConverter(typeof<JsonStringEnumConverter>)>]
         Status: SendonionStatus
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountMsat: int64<msat> option
-        [<JsonPropertyName("destination")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("destination")>]
         Destination: PubKey option
         [<JsonPropertyName("created_at")>]
         CreatedAt: uint64
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_sent_msat")>]
         AmountSentMsat: int64<msat>
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("label")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Label: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt11")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt11: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt12")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt12: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("partid")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Partid: uint64 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("payment_preimage")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaymentPreimage: Key option
-        [<JsonPropertyName("message")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("message")>]
         Message: string option
     }
 
@@ -1791,45 +2023,53 @@ module Responses =
     type ListsendpaysPayments = {
         [<JsonPropertyName("id")>]
         Id: uint64
-        [<JsonPropertyName("groupid")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("groupid")>]
         Groupid: uint64 option
-        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         // Path `ListSendPays.payments[].status`
         [<JsonPropertyName("status")>]
         [<JsonConverter(typeof<JsonStringEnumConverter>)>]
         Status: ListsendpaysPaymentsStatus
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountMsat: int64<msat> option
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
-        [<JsonPropertyName("destination")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("destination")>]
         Destination: PubKey option
         [<JsonPropertyName("created_at")>]
         CreatedAt: uint64
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_sent_msat")>]
         AmountSentMsat: int64<msat>
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("label")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Label: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt11")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt11: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("description")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Description: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt12")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt12: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("payment_preimage")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaymentPreimage: Key option
-        [<JsonPropertyName("erroronion")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("erroronion")>]
         Erroronion: string option
     }
 
@@ -1868,8 +2108,9 @@ module Responses =
         [<JsonPropertyName("type")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         ItemType: ListtransactionsTransactionsInputsType option
-        [<JsonPropertyName("channel")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("channel")>]
         Channel: ShortChannelId option
     }
 
@@ -1894,7 +2135,8 @@ module Responses =
     type ListtransactionsTransactionsOutputs = {
         [<JsonPropertyName("index")>]
         Index: uint32
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("msat")>]
         Msat: int64<msat>
         [<JsonPropertyName("scriptPubKey")>]
@@ -1902,8 +2144,9 @@ module Responses =
         [<JsonPropertyName("type")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         ItemType: ListtransactionsTransactionsOutputsType option
-        [<JsonPropertyName("channel")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("channel")>]
         Channel: ShortChannelId option
     }
 
@@ -1918,8 +2161,9 @@ module Responses =
         Blockheight: uint32
         [<JsonPropertyName("txindex")>]
         Txindex: uint32
-        [<JsonPropertyName("channel")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("channel")>]
         Channel: ShortChannelId option
         [<JsonPropertyName("locktime")>]
         Locktime: uint32
@@ -1949,27 +2193,29 @@ module Responses =
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type PayResponse = {
-        [<JsonConverter(typeof<KeyJsonConverter>)>]
         [<JsonPropertyName("payment_preimage")>]
         PaymentPreimage: Key
-        [<JsonPropertyName("destination")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("destination")>]
         Destination: PubKey option
-        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         [<JsonPropertyName("created_at")>]
         CreatedAt: int64
         [<JsonPropertyName("parts")>]
         Parts: uint32
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_msat")>]
         AmountMsat: int64<msat>
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_sent_msat")>]
         AmountSentMsat: int64<msat>
-        [<JsonPropertyName("warning_partial_completion")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("warning_partial_completion")>]
         WarningPartialCompletion: string option
         // Path `Pay.status`
         [<JsonPropertyName("status")>]
@@ -1997,31 +2243,36 @@ module Responses =
         ItemType: ListnodesNodesAddressesType
         [<JsonPropertyName("port")>]
         Port: uint16
-        [<JsonPropertyName("address")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("address")>]
         Address: string option
     }
 
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type ListnodesNodes = {
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.PubKeyJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.PubKeyJsonConverter>)>]
         [<JsonPropertyName("nodeid")>]
         Nodeid: PubKey
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("last_timestamp")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         LastTimestamp: uint32 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("alias")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Alias: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("color")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Color: string option
-        [<JsonPropertyName("features")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("features")>]
         Features: string option
         [<JsonPropertyName("addresses")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Addresses: ListnodesNodesAddresses [] option
     }
 
@@ -2046,7 +2297,6 @@ module Responses =
         Label: string
         [<JsonPropertyName("description")>]
         Description: string
-        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         // Path `WaitAnyInvoice.status`
@@ -2055,26 +2305,33 @@ module Responses =
         Status: WaitanyinvoiceStatus
         [<JsonPropertyName("expires_at")>]
         ExpiresAt: uint64
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountMsat: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt11")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt11: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt12")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt12: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("pay_index")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PayIndex: uint64 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_received_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountReceivedMsat: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("paid_at")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaidAt: uint64 option
-        [<JsonPropertyName("payment_preimage")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("payment_preimage")>]
         PaymentPreimage: Key option
     }
 
@@ -2092,7 +2349,6 @@ module Responses =
         Label: string
         [<JsonPropertyName("description")>]
         Description: string
-        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         // Path `WaitInvoice.status`
@@ -2101,26 +2357,33 @@ module Responses =
         Status: WaitinvoiceStatus
         [<JsonPropertyName("expires_at")>]
         ExpiresAt: uint64
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountMsat: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt11")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt11: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt12")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt12: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("pay_index")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PayIndex: uint64 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_received_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountReceivedMsat: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("paid_at")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaidAt: uint64 option
-        [<JsonPropertyName("payment_preimage")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("payment_preimage")>]
         PaymentPreimage: Key option
     }
 
@@ -2135,52 +2398,62 @@ module Responses =
     type WaitsendpayResponse = {
         [<JsonPropertyName("id")>]
         Id: uint64
-        [<JsonPropertyName("groupid")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("groupid")>]
         Groupid: uint64 option
-        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         // Path `WaitSendPay.status`
         [<JsonPropertyName("status")>]
         [<JsonConverter(typeof<JsonStringEnumConverter>)>]
         Status: WaitsendpayStatus
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountMsat: int64<msat> option
-        [<JsonPropertyName("destination")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("destination")>]
         Destination: PubKey option
         [<JsonPropertyName("created_at")>]
         CreatedAt: uint64
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_sent_msat")>]
         AmountSentMsat: int64<msat>
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("label")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Label: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("partid")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Partid: uint64 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt11")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt11: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt12")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt12: string option
-        [<JsonPropertyName("payment_preimage")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("payment_preimage")>]
         PaymentPreimage: Key option
     }
 
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type NewaddrResponse = {
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bech32")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bech32: string option
-        [<JsonPropertyName("p2sh-segwit")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("p2sh-segwit")>]
         P2ShSegwit: string option
     }
 
@@ -2204,27 +2477,29 @@ module Responses =
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type KeysendResponse = {
-        [<JsonConverter(typeof<KeyJsonConverter>)>]
         [<JsonPropertyName("payment_preimage")>]
         PaymentPreimage: Key
-        [<JsonPropertyName("destination")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("destination")>]
         Destination: PubKey option
-        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         PaymentHash: uint256
         [<JsonPropertyName("created_at")>]
         CreatedAt: int64
         [<JsonPropertyName("parts")>]
         Parts: uint32
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_msat")>]
         AmountMsat: int64<msat>
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_sent_msat")>]
         AmountSentMsat: int64<msat>
-        [<JsonPropertyName("warning_partial_completion")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("warning_partial_completion")>]
         WarningPartialCompletion: string option
         // Path `KeySend.status`
         [<JsonPropertyName("status")>]
@@ -2256,14 +2531,15 @@ module Responses =
         FeeratePerKw: uint32
         [<JsonPropertyName("estimated_final_weight")>]
         EstimatedFinalWeight: uint32
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("excess_msat")>]
         ExcessMsat: int64<msat>
-        [<JsonPropertyName("change_outnum")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("change_outnum")>]
         ChangeOutnum: uint32 option
         [<JsonPropertyName("reservations")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Reservations: FundpsbtReservations [] option
     }
 
@@ -2307,14 +2583,15 @@ module Responses =
         FeeratePerKw: uint32
         [<JsonPropertyName("estimated_final_weight")>]
         EstimatedFinalWeight: uint32
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("excess_msat")>]
         ExcessMsat: int64<msat>
-        [<JsonPropertyName("change_outnum")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("change_outnum")>]
         ChangeOutnum: uint32 option
         [<JsonPropertyName("reservations")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Reservations: UtxopsbtReservations [] option
     }
 
@@ -2358,23 +2635,29 @@ module Responses =
         MinAcceptable: uint32
         [<JsonPropertyName("max_acceptable")>]
         MaxAcceptable: uint32
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("opening")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Opening: uint32 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("mutual_close")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         MutualClose: uint32 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("unilateral_close")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         UnilateralClose: uint32 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("delayed_to_us")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         DelayedToUs: uint32 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("htlc_resolution")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         HtlcResolution: uint32 option
-        [<JsonPropertyName("penalty")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("penalty")>]
         Penalty: uint32 option
     }
 
@@ -2385,23 +2668,29 @@ module Responses =
         MinAcceptable: uint32
         [<JsonPropertyName("max_acceptable")>]
         MaxAcceptable: uint32
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("opening")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Opening: uint32 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("mutual_close")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         MutualClose: uint32 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("unilateral_close")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         UnilateralClose: uint32 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("delayed_to_us")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         DelayedToUs: uint32 option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("htlc_resolution")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         HtlcResolution: uint32 option
-        [<JsonPropertyName("penalty")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("penalty")>]
         Penalty: uint32 option
     }
 
@@ -2423,8 +2712,9 @@ module Responses =
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type FeeratesResponse = {
-        [<JsonPropertyName("warning_missing_feerates")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("warning_missing_feerates")>]
         WarningMissingFeerates: string option
     }
 
@@ -2437,15 +2727,18 @@ module Responses =
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type GetrouteRoute = {
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.PubKeyJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.PubKeyJsonConverter>)>]
         [<JsonPropertyName("id")>]
         Id: PubKey
-        [<JsonConverter(typeof<ShortChannelIdJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.ShortChannelIdJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.ShortChannelIdJsonConverter>)>]
         [<JsonPropertyName("channel")>]
         Channel: ShortChannelId
         [<JsonPropertyName("direction")>]
         Direction: uint32
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_msat")>]
         AmountMsat: int64<msat>
         [<JsonPropertyName("delay")>]
@@ -2482,10 +2775,12 @@ module Responses =
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type ListforwardsForwards = {
-        [<JsonConverter(typeof<ShortChannelIdJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.ShortChannelIdJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.ShortChannelIdJsonConverter>)>]
         [<JsonPropertyName("in_channel")>]
         InChannel: ShortChannelId
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
+        [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("in_msat")>]
         InMsat: int64<msat>
         // Path `ListForwards.forwards[].status`
@@ -2494,20 +2789,24 @@ module Responses =
         Status: ListforwardsForwardsStatus
         [<JsonPropertyName("received_time")>]
         ReceivedTime: int64
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("out_channel")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         OutChannel: ShortChannelId option
-        [<JsonPropertyName("payment_hash")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("payment_hash")>]
         PaymentHash: string option
         [<JsonPropertyName("style")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Style: ListforwardsForwardsStyle option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("fee_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         FeeMsat: int64<msat> option
-        [<JsonPropertyName("out_msat")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("out_msat")>]
         OutMsat: int64<msat> option
     }
 
@@ -2535,32 +2834,39 @@ module Responses =
         [<JsonPropertyName("status")>]
         [<JsonConverter(typeof<JsonStringEnumConverter>)>]
         Status: ListpaysPaysStatus
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
-        [<JsonPropertyName("destination")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("destination")>]
         Destination: PubKey option
         [<JsonPropertyName("created_at")>]
         CreatedAt: uint64
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("label")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Label: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt11")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt11: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("description")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Description: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt12")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt12: string option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountMsat: int64<msat> option
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_sent_msat")>]
-        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountSentMsat: int64<msat> option
-        [<JsonPropertyName("erroronion")>]
+        [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
+        [<JsonPropertyName("erroronion")>]
         Erroronion: string option
     }
 
@@ -2593,7 +2899,7 @@ module Responses =
 
 
 [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
-type Request =
+type internal Request =
     | Getinfo of Requests.GetinfoRequest
     | ListPeers of Requests.ListpeersRequest
     | ListFunds of Requests.ListfundsRequest
@@ -2734,7 +3040,7 @@ type Request =
 
 
 [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
-type Response =
+type private Response =
     | Getinfo of Responses.GetinfoResponse
     | ListPeers of Responses.ListpeersResponse
     | ListFunds of Responses.ListfundsResponse

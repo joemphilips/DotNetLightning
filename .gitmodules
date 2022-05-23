@@ -1,0 +1,4 @@
+[submodule "lightning"]
+	path = lightning
+	url = https://github.com/joemphilips/lightning
+	branch = add_new_request_schemas

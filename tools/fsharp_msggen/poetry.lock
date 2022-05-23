@@ -1,0 +1,21 @@
+[[package]]
+name = "msggen"
+version = "0.1.0"
+description = "A utility to transform wire messages and JSON-RPC messages to arbitrary target languages."
+category = "main"
+optional = false
+python-versions = ">=3.6,<4.0"
+
+[package.source]
+type = "file"
+url = "../../lightning/contrib/msggen/dist/msggen-0.1.0-py3-none-any.whl"
+
+[metadata]
+lock-version = "1.1"
+python-versions = "^3.9"
+content-hash = "da68085b370e8fac0788e2415c154fe74c5a906ec638b5e6e705f01f04f3ae57"
+
+[metadata.files]
+msggen = [
+    {file = "msggen-0.1.0-py3-none-any.whl", hash = "sha256:449f936fa06acae026a11ddbbd0b337e33aa3e708d1ccbf364788b717f0eb4f1"},
+]

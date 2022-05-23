@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "fsharp_msggen"
+version = "0.1.0"
+description = "The python project to generate .NET types from c-lightning msggen."
+authors = ["joemphilips <joe.miyamoto@bitcoinbank.co.jp>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.6"
+msggen = {path = "../../lightning/contrib/msggen"}
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+msggen = 'fsharp_msggen.__main__:run'
+
