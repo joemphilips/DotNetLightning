@@ -510,14 +510,11 @@ type PluginServerBase
                 return rpc
             }
 
-    member this.StartAsync(pipeWriter: PipeWriter, pipeReader: PipeReader) =
-        this.StartAsync(pipeWriter, pipeReader, CancellationToken.None)
-
     member this.StartAsync
         (
             outStream: Stream,
             inStream: Stream,
-            [<O; D(CancellationToken())>] ct
+            ct: CancellationToken
         ) =
         let outStream =
             if outStream |> isNull then
@@ -547,10 +544,13 @@ type PluginServerBase
 
         this.StartAsync(writer, reader, ct)
 
+    member this.StartAsync(pipeWriter: PipeWriter, pipeReader: PipeReader) =
+        this.StartAsync(pipeWriter, pipeReader, CancellationToken.None)
+
     member this.StartAsync() =
         let o: Stream = null
         let i: Stream = null
-        this.StartAsync(o, i)
+        this.StartAsync(o, i, CancellationToken.None)
 
     member this.StartAsync(cancellationToken) =
         let o: Stream = null
