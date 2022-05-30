@@ -1820,26 +1820,18 @@ registered in constructor parameter of <a href="https://joemphilips.github.io/Do
                   <ul>
                     <span>
                       <b>
-                        outStream
+                        pipeWriter
                       </b>
                       :
-                      <code><a href="https://docs.microsoft.com/dotnet/api/system.io.stream">Stream</a></code>
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.io.pipelines.pipewriter">PipeWriter</a></code>
                     </span>
                     <br/>
                     <span>
                       <b>
-                        inStream
+                        pipeReader
                       </b>
                       :
-                      <code><a href="https://docs.microsoft.com/dotnet/api/system.io.stream">Stream</a></code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        ?ct
-                      </b>
-                      :
-                      <code><a href="https://docs.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></code>
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.io.pipelines.pipereader">PipeReader</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1863,7 +1855,7 @@ registered in constructor parameter of <a href="https://joemphilips.github.io/Do
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/PluginServerBase.fs#L516-516" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/PluginServerBase.fs#L547-547" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -1874,26 +1866,18 @@ registered in constructor parameter of <a href="https://joemphilips.github.io/Do
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
-                  outStream
+                  pipeWriter
                 </span>
                 :
-                <code><a href="https://docs.microsoft.com/dotnet/api/system.io.stream">Stream</a></code>
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.io.pipelines.pipewriter">PipeWriter</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
-                  inStream
+                  pipeReader
                 </span>
                 :
-                <code><a href="https://docs.microsoft.com/dotnet/api/system.io.stream">Stream</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  ?ct
-                </span>
-                :
-                <code><a href="https://docs.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></code>
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.io.pipelines.pipereader">PipeReader</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -1930,18 +1914,26 @@ registered in constructor parameter of <a href="https://joemphilips.github.io/Do
                   <ul>
                     <span>
                       <b>
-                        pipeWriter
+                        outStream
                       </b>
                       :
-                      <code><a href="https://docs.microsoft.com/dotnet/api/system.io.pipelines.pipewriter">PipeWriter</a></code>
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.io.stream">Stream</a></code>
                     </span>
                     <br/>
                     <span>
                       <b>
-                        pipeReader
+                        inStream
                       </b>
                       :
-                      <code><a href="https://docs.microsoft.com/dotnet/api/system.io.pipelines.pipereader">PipeReader</a></code>
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.io.stream">Stream</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        ct
+                      </b>
+                      :
+                      <code><a href="https://docs.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -1976,18 +1968,26 @@ registered in constructor parameter of <a href="https://joemphilips.github.io/Do
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
-                  pipeWriter
+                  outStream
                 </span>
                 :
-                <code><a href="https://docs.microsoft.com/dotnet/api/system.io.pipelines.pipewriter">PipeWriter</a></code>
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.io.stream">Stream</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
-                  pipeReader
+                  inStream
                 </span>
                 :
-                <code><a href="https://docs.microsoft.com/dotnet/api/system.io.pipelines.pipereader">PipeReader</a></code>
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.io.stream">Stream</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  ct
+                </span>
+                :
+                <code><a href="https://docs.microsoft.com/dotnet/api/system.threading.cancellationtoken">CancellationToken</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
