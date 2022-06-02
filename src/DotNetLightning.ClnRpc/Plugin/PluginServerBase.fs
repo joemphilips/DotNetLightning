@@ -534,7 +534,7 @@ type PluginServerBase
         ) =
         let outStream =
             if outStream |> isNull then
-                Console.OpenStandardOutput()
+                Console.OpenStandardOutput() |> Stream.Synchronized
             else
                 outStream
 
