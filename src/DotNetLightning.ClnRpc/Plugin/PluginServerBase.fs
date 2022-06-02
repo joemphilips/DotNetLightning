@@ -311,128 +311,144 @@ type PluginServerBase
         task {
             use! _releaser = this.AsyncSemaphore.EnterAsync()
 
-            let rpcMethodInfo, subscriptionMethodInfo =
-                let equalStr a b =
-                    String.Equals(a, b, StringComparison.OrdinalIgnoreCase)
+            try
+                let rpcMethodInfo, subscriptionMethodInfo =
+                    let equalStr a b =
+                        String.Equals(a, b, StringComparison.OrdinalIgnoreCase)
 
-                this
-                    .GetType()
-                    .GetMethods(
-                        BindingFlags.Public
-                        ||| BindingFlags.Instance
-                        ||| BindingFlags.DeclaredOnly
+                    this
+                        .GetType()
+                        .GetMethods(
+                            BindingFlags.Public
+                            ||| BindingFlags.Instance
+                            ||| BindingFlags.DeclaredOnly
+                        )
+                    |> Seq.filter(fun m ->
+                        not <| m.IsSpecialName
+                        && not <| (equalStr "init" m.Name)
+                        && not <| (equalStr "getmanifest" m.Name)
                     )
-                |> Seq.filter(fun m ->
-                    not <| m.IsSpecialName
-                    && not <| (equalStr "init" m.Name)
-                    && not <| (equalStr "getmanifest" m.Name)
-                )
-                |> Seq.choose(fun methodInfo ->
-                    let subscA =
-                        methodInfo.GetCustomAttribute<PluginJsonRpcSubscriptionAttribute>
-                            ()
+                    |> Seq.choose(fun methodInfo ->
+                        let subscA =
+                            methodInfo.GetCustomAttribute<PluginJsonRpcSubscriptionAttribute>
+                                ()
 
-                    let methodA =
-                        methodInfo.GetCustomAttribute<PluginJsonRpcMethodAttribute>
-                            ()
+                        let methodA =
+                            methodInfo.GetCustomAttribute<PluginJsonRpcMethodAttribute>
+                                ()
 
-                    if subscA |> box |> isNull |> not
-                       || methodA |> box |> isNull |> not then
-                        Some(subscA, methodA, methodInfo)
-                    else
-                        None
-                )
-                |> Seq.toList
-                |> List.partition(fun (subscA, _, _) -> subscA |> box |> isNull)
-
-            return
-                {
-                    Options =
-                        if ``allow-deprecated-apis`` then
-                            this.Options
+                        if subscA |> box |> isNull |> not
+                           || methodA |> box |> isNull |> not then
+                            Some(subscA, methodA, methodInfo)
                         else
-                            this.Options
-                            |> Seq.filter(fun opts -> not <| opts.Deprecated)
-                    RPCMethods =
-                        rpcMethodInfo
-                        |> List.map(fun (_, attr, methodInfo) ->
-                            assert (attr |> box |> isNull |> not)
+                            None
+                    )
+                    |> Seq.toList
+                    |> List.partition(fun (subscA, _, _) ->
+                        subscA |> box |> isNull
+                    )
 
-                            let obsoleteAttr =
-                                methodInfo.GetCustomAttribute<ObsoleteAttribute>
-                                    ()
+                return
+                    {
+                        Options =
+                            if ``allow-deprecated-apis`` then
+                                this.Options
+                            else
+                                this.Options
+                                |> Seq.filter(fun opts -> not <| opts.Deprecated
+                                )
+                        RPCMethods =
+                            rpcMethodInfo
+                            |> List.map(fun (_, attr, methodInfo) ->
+                                assert (attr |> box |> isNull |> not)
 
-                            let isDeprecated = obsoleteAttr |> isNull |> not
+                                let obsoleteAttr =
+                                    methodInfo.GetCustomAttribute<ObsoleteAttribute>
+                                        ()
 
-                            {
-                                Name = attr.Name
-                                Deprecated = isDeprecated
-                                Description =
-                                    attr.Description
-                                    + if isDeprecated then
-                                          $" (this rpc is deprecated: {obsoleteAttr.Message})"
-                                      else
-                                          String.Empty
-                                LongDescription =
-                                    attr.LongDescription
-                                    + if isDeprecated then
-                                          $" (this rpc is deprecated: {obsoleteAttr.Message})"
-                                      else
-                                          String.Empty
-                                Usage =
-                                    let argSpec = methodInfo.GetParameters()
+                                let isDeprecated = obsoleteAttr |> isNull |> not
 
-                                    let numDefaults =
-                                        argSpec
-                                        |> Seq.filter(fun s -> s.HasDefaultValue
-                                        )
-                                        |> Seq.length
+                                {
+                                    Name = attr.Name
+                                    Deprecated = isDeprecated
+                                    Description =
+                                        attr.Description
+                                        + if isDeprecated then
+                                              $" (this rpc is deprecated: {obsoleteAttr.Message})"
+                                          else
+                                              String.Empty
+                                    LongDescription =
+                                        attr.LongDescription
+                                        + if isDeprecated then
+                                              $" (this rpc is deprecated: {obsoleteAttr.Message})"
+                                          else
+                                              String.Empty
+                                    Usage =
+                                        let argSpec = methodInfo.GetParameters()
 
-                                    let keywordArgsStartIndex =
-                                        argSpec.Length - numDefaults
+                                        let numDefaults =
+                                            argSpec
+                                            |> Seq.filter(fun s ->
+                                                s.HasDefaultValue
+                                            )
+                                            |> Seq.length
 
-                                    let args =
-                                        argSpec
-                                        |> Seq.filter(fun s ->
-                                            let comp v =
-                                                not
-                                                <| String.Equals(
-                                                    s.Name,
-                                                    v,
-                                                    StringComparison.OrdinalIgnoreCase
-                                                )
+                                        let keywordArgsStartIndex =
+                                            argSpec.Length - numDefaults
 
-                                            comp "plugin" && comp "request"
-                                        )
-                                        |> Seq.mapi(fun i s ->
-                                            if i < keywordArgsStartIndex then
-                                                // positional arguments
-                                                s.Name
-                                            else
-                                                // keyword arguments
-                                                $"[{s.Name}]"
-                                        )
+                                        let args =
+                                            argSpec
+                                            |> Seq.filter(fun s ->
+                                                let comp v =
+                                                    not
+                                                    <| String.Equals(
+                                                        s.Name,
+                                                        v,
+                                                        StringComparison.OrdinalIgnoreCase
+                                                    )
 
-                                    String.Join(' ', args)
-                            }
-                        )
-                    Notifications =
-                        notificationTopics
-                        |> Seq.toList
-                        |> List.map(fun topic ->
-                            {
-                                NotificationsDTO.Method = topic
-                            }
-                        )
-                    Subscriptions =
-                        subscriptionMethodInfo
-                        |> Seq.choose(fun (attr, _, _methodInfo) ->
-                            Some <| attr.Topic
-                        )
-                    Hooks = []
-                    Dynamic = dynamic
-                    FeatureBits = this.FeatureBits
-                }
+                                                comp "plugin" && comp "request"
+                                            )
+                                            |> Seq.mapi(fun i s ->
+                                                if i < keywordArgsStartIndex then
+                                                    // positional arguments
+                                                    s.Name
+                                                else
+                                                    // keyword arguments
+                                                    $"[{s.Name}]"
+                                            )
+
+                                        String.Join(' ', args)
+                                }
+                            )
+                        Notifications =
+                            notificationTopics
+                            |> Seq.toList
+                            |> List.map(fun topic ->
+                                {
+                                    NotificationsDTO.Method = topic
+                                }
+                            )
+                        Subscriptions =
+                            subscriptionMethodInfo
+                            |> Seq.choose(fun (attr, _, _methodInfo) ->
+                                Some <| attr.Topic
+                            )
+                        Hooks = []
+                        Dynamic = dynamic
+                        FeatureBits = this.FeatureBits
+                    }
+            with
+            | ex ->
+                logger
+                |> Option.iter(fun l ->
+                    l.LogError(
+                        ex,
+                        $"error while running getmanifest. This should never happen"
+                    )
+                )
+
+                return raise ex
         }
 
     interface IPluginServer with
