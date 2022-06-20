@@ -14,8 +14,6 @@ open DotNetLightning.ClnRpc.Plugin
 open DotNetLightning.ClnRpc.NewtonsoftJsonConverters
 open DotNetLightning.ClnRpc.Plugin
 open DotNetLightning.Serialization
-open Microsoft.Extensions.DependencyInjection
-open Microsoft.Extensions.Logging
 open Microsoft.VisualStudio.Threading
 open NBitcoin
 open Newtonsoft.Json.Linq

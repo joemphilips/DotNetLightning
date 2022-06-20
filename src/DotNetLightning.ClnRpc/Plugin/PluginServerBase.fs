@@ -152,23 +152,18 @@ type GetClientOutputStream = Func<CancellationToken, Task<Stream>>
 type PluginServerBase
     /// <param name="notificationTopics">The list of topic names that might be notified to c-lightning by <see cref="PluginServerBase.SendNotification" /></param>
     /// <param name="dynamic">Is it ok for this plugin to terminate when the c-lightning sends "stop" call. set <c>false</c> if the plugin is critical for an user and it should never stop.</param>
-    /// <param name="logger">Logger, <see cref="PluginLogger" /></param>
-    (
-        notificationTopics: seq<string>,
-        dynamic,
-        logger: ILogger<PluginServerBase>
-    ) =
-
-    let logger = logger |> Option.ofObj
+    /// <param name="logDebug"> custom logging function for debug message on startup. </param>
+    (notificationTopics: seq<string>, dynamic, logDebug: string -> unit) =
 
     let mutable getClientStream: GetClientOutputStream =
         Func<_, _>(fun ct -> Console.OpenStandardOutput() |> Task.FromResult)
 
     let mutable jsonRpc = null
-    new(dynamic) = PluginServerBase(Seq.empty, dynamic, null)
-    new() = PluginServerBase(Seq.empty, true, null)
-    new(topics) = PluginServerBase(topics, true, null)
-    new(topics, dynamic) = PluginServerBase(topics, dynamic, null)
+    do logDebug $"PluginServerBase initialized"
+    new(dynamic) = PluginServerBase(Seq.empty, dynamic, ignore<string>)
+    new() = PluginServerBase(Seq.empty, true, ignore<string>)
+    new(topics) = PluginServerBase(topics, true, ignore<string>)
+    new(topics, dynamic) = PluginServerBase(topics, dynamic, ignore<string>)
     new(topics, logger) = PluginServerBase(topics, true, logger)
     new(logger) = PluginServerBase(Seq.empty, true, logger)
 
@@ -293,10 +288,7 @@ type PluginServerBase
                 return () |> box
             with
             | x ->
-                logger
-                |> Option.iter(fun l ->
-                    l.LogCritical(x, $"Failed to start plugin.")
-                )
+                logDebug $"Failed to start plugin. {x}"
 
                 this.InitializationStatus <- PluginInitializationStatus.Failed
                 return raise(x |> PluginInitializationException)
@@ -440,13 +432,8 @@ type PluginServerBase
                     }
             with
             | ex ->
-                logger
-                |> Option.iter(fun l ->
-                    l.LogError(
-                        ex,
-                        $"error while running getmanifest. This should never happen"
-                    )
-                )
+                logDebug
+                    $"error while running getmanifest. This should never happen {ex}"
 
                 return raise ex
         }
@@ -499,7 +486,7 @@ type PluginServerBase
             this.JsonRpc <- rpc
 
             // usually this never completes until the transport is disconnected.
-            // But when the plugin throws error while initialization,
+            // But when the plugin throws an error while initialization,
             // this is the only task which completes.
             let completionTask = this.JsonRpc.Completion
 
