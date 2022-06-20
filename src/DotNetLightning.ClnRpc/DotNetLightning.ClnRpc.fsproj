@@ -31,7 +31,6 @@
     <ProjectReference Include="..\Macaroons\Macaroons.csproj" ExcludeAssets="all" />
 
     <ProjectReference Include="..\DotNetLightning.Core\DotNetLightning.Core.fsproj" PrivateAssets="all"/>
-    <ProjectReference Include="..\PluginLogger\PluginLogger.csproj" PrivateAssets="all"/>
   </ItemGroup>
 
   <!-- this is a workaround only needed for nuget push (so, not Mono, but just "dotnet nuget"), for more info see
