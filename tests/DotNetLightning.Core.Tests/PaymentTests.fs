@@ -8,6 +8,7 @@ open DotNetLightning.Utils
 open DotNetLightning.Serialization
 open Expecto
 open NBitcoin
+open NBitcoin.Altcoins
 open NBitcoin.Crypto
 
 open ResultUtils
@@ -63,6 +64,41 @@ let tests =
                     (Amount.decode("1000000000p"))
                     (Ok(LNMoney.MilliSatoshis(100000000L)))
                     ""
+
+            testCase "Decode a litecoin mainnet invoice"
+            <| fun _ ->
+                let data =
+                    "lnltc241pvjluezpp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypqhp58yjmdan79s6qqdhdzgynm4zwqd5d7xmw5fk98klysy043l2ahrqsnp4q0n326hr8v9zprg8gsvezcch06gfaqqhde2aj730yg0durunfhv66859t2d55efrxdlgqg9hdqskfstdmyssdw4fjc8qdl522ct885pqk7acn2aczh0jeht0xhuhnkmm3h0qsrxedlwm9x86787zzn4qwwwcpjkl3t2"
+
+                let paymentRequest = PaymentRequest.Parse data |> Result.deref
+                Expect.equal paymentRequest.PrefixValue "lnltc" String.Empty
+                Expect.isTrue paymentRequest.AmountValue.IsSome String.Empty
+
+                Expect.equal
+                    paymentRequest.AmountValue.Value
+                    (LNMoney.MilliSatoshis 2400000000000L)
+                    String.Empty
+
+                Expect.equal
+                    paymentRequest.PaymentHash
+                    (PaymentHash(
+                        uint256.Parse
+                            "0001020304050607080900010203040506070809000102030405060708090102"
+                    ))
+                    String.Empty
+
+                Expect.equal
+                    (paymentRequest.TimestampValue.ToUnixTimeSeconds())
+                    1496314658L
+                    String.Empty
+
+                Expect.equal
+                    paymentRequest.Description
+                    ("One piece of chocolate cake, one icecream cone, one pickle, one slice of swiss cheese, one slice of salami, one lollypop, one piece of cherry pie, one sausage, one cupcake, and one slice of watermelon"
+                     |> ascii.GetBytes
+                     |> Hashes.SHA256
+                     |> fun hash -> uint256(hash, false) |> Choice2Of2)
+                    String.Empty
 
             testCase
                 "Please make a donation of any amount using payment_hash 0001020304050607080900010203040506070809000102030405060708090102 to me @03e7156ae33b0a208d0744199163177e909e80176e55d97a2f221ede0f934dd9ad"
@@ -614,6 +650,92 @@ let unitTest =
                 Expect.isError
                     (Result.ToFSharpCoreResult r3)
                     "Field contains both description and description hash! this must be invalid"
+
+            testCase "Can create LTC PaymentRequest correctly"
+            <| fun _ ->
+                let paymentHashTag =
+                    "af919878bd5d09dc58e86689a8cd3a6a03dabc37a1d9445eb413ea7837c50ac3"
+                    |> uint256.Parse
+                    |> PaymentHash
+                    |> TaggedField.PaymentHashTaggedField
+
+                let nodeSecret =
+                    "897469da69a4aae063b98454bdb5dce9efb71a6001b09ff9aaf32d730a127bfc"
+                    |> hex.DecodeData
+                    |> fun secret -> new Key(secret)
+
+                let nodeId =
+                    "02b8042a54520cb3228d7b0aa3de81ffcb424e1dcd958821285696ce088d4486e4"
+                    |> PubKey
+                    |> NodeId
+
+                let nodeIdt = nodeId |> TaggedField.NodeIdTaggedField
+                let description = "this is description"
+
+                let descriptionHashTag =
+                    description
+                    |> utf8.GetBytes
+                    |> Hashes.SHA256
+                    |> uint256
+                    |> TaggedField.DescriptionHashTaggedField
+
+                let descriptionTag =
+                    description |> TaggedField.DescriptionTaggedField
+
+                let taggedFields =
+                    {
+                        TaggedFields.Fields =
+                            [
+                                paymentHashTag
+                                nodeIdt
+                                descriptionHashTag
+                            ]
+                    }
+
+                let paymentRequest =
+                    PaymentRequest.TryCreate(
+                        Litecoin.Instance.Mainnet,
+                        None,
+                        DateTimeOffset.UnixEpoch,
+                        taggedFields,
+                        nodeSecret
+                    )
+
+                Expect.isOk
+                    (Result.ToFSharpCoreResult paymentRequest)
+                    String.Empty
+
+                let paymentRequest2 =
+                    PaymentRequest.Parse(
+                        paymentRequest
+                        |> Result.deref
+                        |> (fun paymentRequest -> paymentRequest.ToString())
+                    )
+
+                Expect.isOk
+                    (Result.ToFSharpCoreResult paymentRequest2)
+                    String.Empty
+
+                Expect.equal
+                    paymentRequest
+                    paymentRequest2
+                    "Should not change by de/serializing it"
+
+                let paymentRequest3 =
+                    PaymentRequest.TryCreate(
+                        Litecoin.Instance.Mainnet,
+                        None,
+                        DateTimeOffset.UnixEpoch,
+                        {
+                            Fields = [ descriptionHashTag; descriptionTag ]
+                        },
+                        nodeSecret
+                    )
+
+                Expect.isError
+                    (Result.ToFSharpCoreResult paymentRequest3)
+                    "Field contains both description and description hash! this must be invalid"
+
             testCase
                 "PaymentSecret can get correct PaymentHash by its .Hash field"
             <| fun _ ->

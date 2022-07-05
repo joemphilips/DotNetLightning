@@ -29,7 +29,7 @@
   </Choose>
 
   <ItemGroup>
-    <PackageReference Include="NBitcoin" Version="6.0.19" />
+    <PackageReference Include="NBitcoin.Altcoins" Version="3.0.8" />
     <PackageReference Condition="'$(Portability)'=='true'" Include="Portable.BouncyCastle" Version="1.8.6.7" />
   </ItemGroup>
 

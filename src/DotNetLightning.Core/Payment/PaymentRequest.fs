@@ -11,6 +11,7 @@ open DotNetLightning.Core.Utils.Extensions
 open DotNetLightning.Serialization
 
 open NBitcoin
+open NBitcoin.Altcoins
 open NBitcoin.Crypto
 open NBitcoin.DataEncoders
 
@@ -86,6 +87,9 @@ module private Helpers =
         |> Map.add (Network.RegTest.GenesisHash) ("lnbcrt")
         |> Map.add (Network.TestNet.GenesisHash) ("lntb")
         |> Map.add (Network.Main.GenesisHash) ("lnbc")
+        |> Map.add Altcoins.Litecoin.Instance.Mainnet.GenesisHash "lnltc"
+        |> Map.add Altcoins.Litecoin.Instance.Testnet.GenesisHash "lntltc"
+        |> Map.add Altcoins.Litecoin.Instance.Regtest.GenesisHash "lnrltc"
 
     /// The values for prefix are sorted by its length, in this way we assure that we try to match the longest
     /// value first, so that e.g. when we have "lnbcrt" it will not match "lnbc"
