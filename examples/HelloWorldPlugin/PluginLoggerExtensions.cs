@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DotNetLightning.ClnRpc.Plugin
 {
-  public static class PluginLoggerExtensions
+  public static class  PluginLoggerExtensions
   {
     public static ILoggingBuilder AddPluginLogger(this ILoggingBuilder builder, Action<PluginLoggerOptions> configure)
     {
