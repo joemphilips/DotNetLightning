@@ -43,6 +43,63 @@ module Primitives =
 
             output
 
+    /// **Description**
+    ///
+    /// 16bit relative block height used for `OP_CSV` locks,
+    /// Since OP_CSV allow only block number of 0 ~ 65535, it is safe
+    /// to restrict into the range smaller than BlockHeight
+#if !NoDUsAsStructs
+    [<Struct>]
+#endif
+    type BlockHeightOffset16 =
+        | BlockHeightOffset16 of uint16
+
+        member this.Value = let (BlockHeightOffset16 v) = this in v
+
+        static member op_Implicit(v: uint16) =
+            BlockHeightOffset16 v
+
+        static member One = BlockHeightOffset16(1us)
+        static member Zero = BlockHeightOffset16(0us)
+        static member MaxValue = UInt16.MaxValue |> BlockHeightOffset16
+
+        static member (+)(a: BlockHeightOffset16, b: BlockHeightOffset16) =
+            a.Value + b.Value |> BlockHeightOffset16
+
+        static member (-)(a: BlockHeightOffset16, b: BlockHeightOffset16) =
+            a.Value - b.Value |> BlockHeightOffset16
+
+    /// **Description**
+    ///
+    /// 32bit relative block height. For `OP_CSV` locks, BlockHeightOffset16
+    /// should be used instead.
+#if !NoDUsAsStructs
+    [<Struct>]
+#endif
+    type BlockHeightOffset32 =
+        | BlockHeightOffset32 of uint32
+
+        member this.Value = let (BlockHeightOffset32 v) = this in v
+
+        static member toBlockHeightOffset16(bho32: BlockHeightOffset32) =
+            BlockHeightOffset16(uint16 bho32.Value)
+
+        static member ofBlockHeightOffset16(bho16: BlockHeightOffset16) =
+            BlockHeightOffset32(uint32 bho16.Value)
+
+        static member op_Implicit(v: uint32) =
+            BlockHeightOffset32 v
+
+        static member One = BlockHeightOffset32(1u)
+        static member Zero = BlockHeightOffset32(0u)
+        static member MaxValue = UInt32.MaxValue |> BlockHeightOffset32
+
+        static member (+)(a: BlockHeightOffset32, b: BlockHeightOffset32) =
+            a.Value + b.Value |> BlockHeightOffset32
+
+        static member (-)(a: BlockHeightOffset32, b: BlockHeightOffset32) =
+            a.Value - b.Value |> BlockHeightOffset32
+
     /// Absolute block height
 #if !NoDUsAsStructs
     [<Struct>]
@@ -71,57 +128,6 @@ module Primitives =
 
         static member (-)(a: BlockHeight, b: BlockHeight) =
             a.Value - (b.Value) |> BlockHeightOffset32
-
-    /// **Description**
-    ///
-    /// 16bit relative block height used for `OP_CSV` locks,
-    /// Since OP_CSV allow only block number of 0 ~ 65535, it is safe
-    /// to restrict into the range smaller than BlockHeight
-    and [<Struct>] BlockHeightOffset16 =
-        | BlockHeightOffset16 of uint16
-
-        member this.Value = let (BlockHeightOffset16 v) = this in v
-
-        static member ofBlockHeightOffset32(bho32: BlockHeightOffset32) =
-            BlockHeightOffset16(uint16 bho32.Value)
-
-        static member op_Implicit(v: uint16) =
-            BlockHeightOffset16 v
-
-        static member One = BlockHeightOffset16(1us)
-        static member Zero = BlockHeightOffset16(0us)
-        static member MaxValue = UInt16.MaxValue |> BlockHeightOffset16
-
-        static member (+)(a: BlockHeightOffset16, b: BlockHeightOffset16) =
-            a.Value + b.Value |> BlockHeightOffset16
-
-        static member (-)(a: BlockHeightOffset16, b: BlockHeightOffset16) =
-            a.Value - b.Value |> BlockHeightOffset16
-
-    /// **Description**
-    ///
-    /// 32bit relative block height. For `OP_CSV` locks, BlockHeightOffset16
-    /// should be used instead.
-    and [<Struct>] BlockHeightOffset32 =
-        | BlockHeightOffset32 of uint32
-
-        member this.Value = let (BlockHeightOffset32 v) = this in v
-
-        static member ofBlockHeightOffset16(bho16: BlockHeightOffset16) =
-            BlockHeightOffset32(uint32 bho16.Value)
-
-        static member op_Implicit(v: uint32) =
-            BlockHeightOffset32 v
-
-        static member One = BlockHeightOffset32(1u)
-        static member Zero = BlockHeightOffset32(0u)
-        static member MaxValue = UInt32.MaxValue |> BlockHeightOffset32
-
-        static member (+)(a: BlockHeightOffset32, b: BlockHeightOffset32) =
-            a.Value + b.Value |> BlockHeightOffset32
-
-        static member (-)(a: BlockHeightOffset32, b: BlockHeightOffset32) =
-            a.Value - b.Value |> BlockHeightOffset32
 
     /// Wrapper around NBitcoin's ECDSASignature type for convenience. It has following difference
     /// 1. It is equatable
