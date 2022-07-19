@@ -1575,6 +1575,54 @@ and Channel =
         (not this.SavedChannelState.LocalChanges.ACKed.IsEmpty)
         || (not this.Commitments.ProposedRemoteChanges.IsEmpty)
 
+    static member SpendableBalanceFromParts
+        (savedChannelState: SavedChannelState)
+        (remoteNextCommitInfo: Option<RemoteNextCommitInfo>)
+        (commitments: Commitments)
+        : LNMoney =
+        let remoteParams = savedChannelState.StaticChannelConfig.RemoteParams
+
+        let remoteCommit =
+            match remoteNextCommitInfo with
+            | Some(RemoteNextCommitInfo.Waiting nextRemoteCommit) ->
+                nextRemoteCommit
+            | _ -> savedChannelState.RemoteCommit
+
+        let reducedRes =
+            remoteCommit.Spec.Reduce(
+                savedChannelState.RemoteChanges.ACKed,
+                commitments.ProposedLocalChanges
+            )
+
+        let reduced =
+            match reducedRes with
+            | Error err ->
+                failwithf
+                    "reducing commit failed even though we have not proposed any changes\
+                    error: %A"
+                    err
+            | Ok reduced -> reduced
+
+        let fees =
+            if savedChannelState.StaticChannelConfig.IsFunder then
+                Transactions.commitTxFee remoteParams.DustLimitSatoshis reduced
+                |> LNMoney.FromMoney
+            else
+                LNMoney.Zero
+
+        let channelReserve =
+            remoteParams.ChannelReserveSatoshis |> LNMoney.FromMoney
+
+        let totalBalance = reduced.ToRemote
+
+        totalBalance - channelReserve - fees
+
+    member this.SpendableBalance() : LNMoney =
+        Channel.SpendableBalanceFromParts
+            this.SavedChannelState
+            this.RemoteNextCommitInfo
+            this.Commitments
+
     member private this.sendCommit
         (remoteNextCommitInfo: RemoteNextCommitInfo)
         : Result<CommitmentSignedMsg * Channel, ChannelError> =
