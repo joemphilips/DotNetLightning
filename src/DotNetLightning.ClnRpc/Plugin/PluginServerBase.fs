@@ -494,8 +494,11 @@ type PluginServerBase
 
             let initializationTask =
                 backgroundTask {
+                    do! Task.Yield() // necessary for prevent hanging
+
                     while this.InitializationStatus
-                          <> PluginInitializationStatus.InitializedSuccessfully do
+                          <> PluginInitializationStatus.InitializedSuccessfully
+                          && (cancellationToken.IsCancellationRequested |> not) do
                         ()
                 }
                 :> Task
