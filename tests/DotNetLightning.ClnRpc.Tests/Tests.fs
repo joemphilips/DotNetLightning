@@ -127,12 +127,7 @@ module TestHelpers =
     [<Literal>]
     let PipeName = "SamplePipe1"
 
-    let struct (serverPipe, clientPipe) =
-        Nerdbank.Streams.FullDuplexStream.CreatePair()
-
-    let inline getClientProxy<'T when 'T: not struct>() =
-        let pipe = clientPipe
-
+    let inline getClientProxy<'T when 'T: not struct>(pipe: Stream) =
         let handler =
             let formatter = new JsonMessageFormatter()
 
@@ -144,10 +139,14 @@ module TestHelpers =
 
         task { return JsonRpc.Attach<'T>(handler) }
 
-    let inline createRpcServer<'T when 'T: not struct>(server: 'T) =
+
+    let inline createRpcServer<'T when 'T: not struct>
+        (
+            server: 'T,
+            pipe: Stream
+        ) =
         task {
             while true do
-                let pipe = serverPipe
 
                 let handler =
                     let formatter = new JsonMessageFormatter()
@@ -164,14 +163,18 @@ module TestHelpers =
                 do! rpc.Completion
         }
 
-type PluginTests() =
+type PluginTests(output: Xunit.Abstractions.ITestOutputHelper) =
 
     [<Fact>]
     member this.Test_GetManifestWithTypedStream() =
         task {
             let server = PluginServer1()
-            let getClientTask = getClientProxy<IPluginServer1>()
-            let _server = createRpcServer<IPluginServer1>(server)
+
+            let struct (serverPipe, clientPipe) =
+                Nerdbank.Streams.FullDuplexStream.CreatePair()
+
+            let getClientTask = getClientProxy<IPluginServer1>(clientPipe)
+            let _server = createRpcServer<IPluginServer1>(server, serverPipe)
             let! client = getClientTask
             let! manifest = client.GetManifest(false, obj())
 
@@ -272,6 +275,64 @@ type PluginTests() =
             Assert.True(p.Initialized)
             do! p.Test1Task.Task
             Assert.Equal("World", p.Name)
+        }
+
+    [<Fact>]
+    member this.Test_StreamIsClosedWhenClnCloseIt() =
+        task {
+            let p = PluginServer1()
+
+            let req =
+                """{ "id": 1, "jsonrpc": "2.0", "method": "test1", "params": { "name": "World" } }"""
+                |> utf8.GetBytes
+
+            let msgs = [ req ]
+            use cts = new CancellationTokenSource()
+            cts.CancelAfter(2000)
+
+            let outStream = new MemoryStream(Array.zeroCreate 65535, true)
+            // fsharplint:enable
+
+            let buf =
+                Array.concat
+                    [|
+                        for m in msgs do
+                            yield! [ m; newlineB ]
+
+                        for _ in 0..2222222 do
+                            yield [| 0uy |]
+                    |]
+
+            let inStream =
+                new MemoryStream(buf)
+                |> fun m -> new Nerdbank.Streams.MonitoringStream(m)
+
+            inStream.EndOfStream.Add(fun a ->
+                output.WriteLine(
+                    $"inStream closed {a} at: {DateTimeOffset.Now.ToUnixTimeMilliseconds()}"
+                )
+            )
+
+            // fsharplint:enable
+
+            // never completes successfully because the plugin doesn't get
+            // `init` message
+            let startTask = p.StartAsync(outStream, inStream, cts.Token)
+            inStream.Flush()
+            do! p.Test1Task.Task
+            Assert.False(p.Initialized)
+            Assert.True(outStream.CanWrite)
+            Assert.True(inStream.CanRead)
+
+            // when cln closes the stream, startTask will finish without an error
+            outStream.Close()
+            inStream.Close()
+            let! _ = startTask
+
+            Assert.Equal(
+                p.InitializationStatus,
+                PluginInitializationStatus.NotYet
+            )
         }
 
     [<Fact>]

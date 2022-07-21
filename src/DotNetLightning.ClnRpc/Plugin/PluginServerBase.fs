@@ -509,7 +509,7 @@ type PluginServerBase
                         ]
                     )
 
-                do! t
+                do! t.WithCancellation(cancellationToken)
                 return rpc
             }
 

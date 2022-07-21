@@ -96,7 +96,7 @@ let setupRawStream<'T when 'T :> PluginServerBase>
 
             // fsharplint:disable
             PipeWriter
-                .Create(outS, StreamPipeWriterOptions(leaveOpen = true))
+                .Create(outS, StreamPipeWriterOptions(leaveOpen = false))
                 .AsStream()
         // fsharplint:enable
 
@@ -112,7 +112,7 @@ let setupRawStream<'T when 'T :> PluginServerBase>
 
             // fsharplint:disable
             PipeReader
-                .Create(inMemStream, StreamPipeReaderOptions(leaveOpen = true))
+                .Create(inMemStream, StreamPipeReaderOptions(leaveOpen = false))
                 .AsStream()
         // fsharplint:enable
 
