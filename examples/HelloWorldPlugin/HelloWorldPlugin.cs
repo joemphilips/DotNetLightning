@@ -17,13 +17,15 @@ namespace HelloWorldPlugin
   public class HelloWorldPlugin : PluginServerBase
   {
     private readonly ILogger<HelloWorldPlugin> _logger;
+    private readonly IHostApplicationLifetime _applicationLifetime;
 
     private string greeting = "Hello";
 
-    public HelloWorldPlugin(ILogger<HelloWorldPlugin> logger):
+    public HelloWorldPlugin(ILogger<HelloWorldPlugin> logger, IHostApplicationLifetime applicationLifetime):
       base(new []{ "parted_from_world" }, false)
     {
       _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+      _applicationLifetime = applicationLifetime;
       this.Network = Network.RegTest;
       this.Options = new [] {
         new PluginOptions {
@@ -47,6 +49,8 @@ namespace HelloWorldPlugin
         greeting = (string)greetingValue;
     }
 
+    public override FeatureSetDTO FeatureBits { get; set; }
+
     sealed public override IEnumerable<PluginOptions> Options { get; set; }
 
     const string HelloLongDesc =
@@ -63,6 +67,13 @@ namespace HelloWorldPlugin
         return s;
       }
     }
+
+    [PluginJsonRpcSubscription("shutdown")]
+    public void Shutdown()
+    {
+        _applicationLifetime.StopApplication();
+    }
+    
 
     [PluginJsonRpcSubscription("connect")]
     public async Task OnConnectAsync(string id, string address)

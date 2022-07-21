@@ -18,6 +18,7 @@ if (Environment.GetEnvironmentVariable("LIGHTNINGD_PLUGIN") != "1")
   throw new Exception("helloworld can only be used as a c-lightning plugin.");
 
 var plugin = app.Services.GetService<HelloWorldPlugin.HelloWorldPlugin>();
-var _ = plugin!.StartAsync();
+var _ = await plugin!.StartAsync();
 
-await app.RunAsync();
+if (plugin.InitializationStatus == PluginInitializationStatus.InitializedSuccessfully)
+    await app.RunAsync();

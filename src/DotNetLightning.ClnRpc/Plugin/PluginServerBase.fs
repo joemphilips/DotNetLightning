@@ -10,6 +10,7 @@ open System.Threading
 open System.Threading.Tasks
 open DotNetLightning.ClnRpc
 open DotNetLightning.ClnRpc.NewtonsoftJsonConverters
+open DotNetLightning.ClnRpc.Plugin
 open DotNetLightning.Serialization
 open DotNetLightning.Utils
 open Microsoft.Extensions.Logging
@@ -74,7 +75,6 @@ type IPluginServer =
     abstract member GetManifest:
         ``allow-deprecated-apis``: bool * _otherparams: obj -> Task<Manifest>
 
-/// If the plugin throws this, we will disconnect the plugin.
 exception PluginInitializationException of Exception
 
 [<AllowNullLiteral>]
@@ -491,6 +491,7 @@ type PluginServerBase
             let completionTask = this.JsonRpc.Completion
 
             // completes when the initialization process goes successfully.
+
             let initializationTask =
                 backgroundTask {
                     while this.InitializationStatus
@@ -500,16 +501,23 @@ type PluginServerBase
                 :> Task
 
             task {
-                let! t =
-                    Task.WhenAny(
-                        [
-                            completionTask
-                            initializationTask
-                            Task.Delay(-1, cancellationToken)
-                        ]
-                    )
+                try
+                    let! t =
+                        Task.WhenAny(
+                            [
+                                completionTask
+                                initializationTask
+                                Task.Delay(-1, cancellationToken)
+                            ]
+                        )
 
-                do! t
+                    do! t.WithCancellation(cancellationToken)
+                with
+                | :? EndOfStreamException ->
+                    // Stream closed, it probably means that c-lightning
+                    // has shutdown
+                    ()
+
                 return rpc
             }
 
