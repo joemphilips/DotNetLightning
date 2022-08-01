@@ -116,13 +116,11 @@
     </dt>
     <dt>
       Base Type: 
-      <code>exn</code>
+      <code><a href="https://docs.microsoft.com/dotnet/api/system.exception">Exception</a></code>
     </dt>
     <dt>
       All Interfaces: 
       <code><a href="https://docs.microsoft.com/dotnet/api/system.runtime.serialization.iserializable">ISerializable</a></code>
-      , 
-      <code><a href="https://docs.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
@@ -136,15 +134,17 @@
   <div></div>
   <div></div>
   <div></div>
+  <div></div>
+  <div></div>
   <div>
     <h3>
-      Record fields
+      Constructors
     </h3>
     <table class="table outer-list fsdocs-member-list">
       <thead>
         <tr>
           <td class="fsdocs-member-list-header">
-            Record Field
+            Constructor
           </td>
           <td class="fsdocs-member-list-header">
             Description
@@ -157,9 +157,9 @@
             <div>
               <code onmouseout="hideTip(event, '1400', 1400)" onmouseover="showTip(event, '1400', 1400)">
                 <p>
-                  <a id="Data0">
-                    <a href="#Data0">
-                      <code>Data0</code>
+                  <a id="``.ctor``">
+                    <a href="#``.ctor``">
+                      <code><span>CLightningRPCException<span><span>(<span>e</span>)</span></span></span></code>
                     </a>
                   </a>
                 </p>
@@ -167,12 +167,24 @@
               <div class="fsdocs-tip" id="1400">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>Data0</code>
+                  <code><span>CLightningRPCException<span><span>(<span>e</span>)</span></span></span></code>
                   <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        e
+                      </b>
+                      :
+                      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-clightningrpcerror.html">CLightningRPCError</a></code>
+                    </span>
+                    <br/>
+                  </ul>
                   <br/>
                   <span>
-                    Field type: 
-                    <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-clightningrpcerror.html">CLightningRPCError</a></code>
+                    Returns: 
+                    <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-clightningrpcexception.html">CLightningRPCException</a></code>
                   </span>
                   <br/>
                 </div>
@@ -181,7 +193,100 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.ClnRpc.CLightningRPCException.#ctor`')">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.ClnRpc.CLightningRPCException.#ctor\'/>')">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
               <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Client.fs#L129-129" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  e
+                </span>
+                :
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-clightningrpcerror.html">CLightningRPCError</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-clightningrpcexception.html">CLightningRPCException</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <h3>
+      Instance members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Instance member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '1401', 1401)" onmouseover="showTip(event, '1401', 1401)">
+                <p>
+                  <a id="Code">
+                    <a href="#Code">
+                      <code><span>this.Code</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="1401">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Code</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-clightningclienterrorcode.html">CLightningClientErrorCode</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:DotNetLightning.ClnRpc.CLightningRPCException.Code`')">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:DotNetLightning.ClnRpc.CLightningRPCException.Code\'/>')">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Client.fs#L131-131" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -192,9 +297,9 @@
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
-                  Field type: 
+                  Returns: 
                 </span>
-                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-clightningrpcerror.html">CLightningRPCError</a></code>
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-clightningclienterrorcode.html">CLightningClientErrorCode</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -203,9 +308,6 @@
       </tbody>
     </table>
   </div>
-  <div></div>
-  <div></div>
-  <div></div>
   <div></div>
 </div>
             
