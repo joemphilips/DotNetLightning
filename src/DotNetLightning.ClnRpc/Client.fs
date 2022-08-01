@@ -126,7 +126,9 @@ type CLightningRPCError =
         Msg: string
     }
 
-exception CLightningRPCException of CLightningRPCError
+type CLightningRPCException(e: CLightningRPCError) =
+    inherit Exception($"code: {e.Code}. Msg: {e.Msg}")
+    member val Code = e.Code
 
 type JsonLibraryType =
     | SystemTextJson = 0
