@@ -299,8 +299,7 @@ type PluginTests(output: Xunit.Abstractions.ITestOutputHelper) =
                         for m in msgs do
                             yield! [ m; newlineB ]
 
-                        for _ in 0..2222222 do
-                            yield [| 0uy |]
+                        yield [| 0uy |]
                     |]
 
             let inStream =

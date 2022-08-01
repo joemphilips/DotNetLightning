@@ -25,7 +25,6 @@ module Requests =
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type ListpeersRequest = {
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
         [<JsonPropertyName("id")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Id: PubKey option
@@ -76,7 +75,6 @@ module Requests =
         [<JsonPropertyName("bolt11")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt11: string option
-        [<JsonConverter(typeof<KeyJsonConverter>)>]
         [<JsonPropertyName("payment_secret")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaymentSecret: Key option
@@ -94,15 +92,12 @@ module Requests =
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type ListchannelsRequest = {
-        [<JsonConverter(typeof<ShortChannelIdJsonConverter>)>]
         [<JsonPropertyName("short_channel_id")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         ShortChannelId: ShortChannelId option
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
         [<JsonPropertyName("source")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Source: PubKey option
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
         [<JsonPropertyName("destination")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Destination: PubKey option
@@ -133,7 +128,6 @@ module Requests =
         Message: string
         [<JsonPropertyName("zbase")>]
         Zbase: string
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
         [<JsonPropertyName("pubkey")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Pubkey: PubKey option
@@ -233,7 +227,6 @@ module Requests =
         Hops: CreateonionHops []
         [<JsonPropertyName("assocdata")>]
         Assocdata: string
-        [<JsonConverter(typeof<KeyJsonConverter>)>]
         [<JsonPropertyName("session_key")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         SessionKey: Key option
@@ -369,15 +362,12 @@ module Requests =
         [<JsonPropertyName("bolt11")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt11: string option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("msatoshi")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Msatoshi: int64<msat> option
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
         [<JsonPropertyName("destination")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Destination: PubKey option
-        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("localofferid")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Localofferid: uint256 option
@@ -399,7 +389,6 @@ module Requests =
         [<JsonPropertyName("bolt11")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt11: string option
-        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaymentHash: uint256 option
@@ -415,7 +404,6 @@ module Requests =
     type PayRequest = {
         [<JsonPropertyName("bolt11")>]
         Bolt11: string
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("msatoshi")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Msatoshi: int64<msat> option
@@ -434,7 +422,6 @@ module Requests =
         [<JsonPropertyName("maxdelay")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Maxdelay: uint16 option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("exemptfee")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Exemptfee: int64<msat> option
@@ -444,7 +431,6 @@ module Requests =
         [<JsonPropertyName("exclude")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Exclude: string [] option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("maxfee")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Maxfee: int64<msat> option
@@ -456,7 +442,6 @@ module Requests =
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type ListnodesRequest = {
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
         [<JsonPropertyName("id")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Id: PubKey option
@@ -517,11 +502,9 @@ module Requests =
     type WithdrawRequest = {
         [<JsonPropertyName("destination")>]
         Destination: string
-        [<JsonConverter(typeof<AmountOrAllJsonConverter>)>]
         [<JsonPropertyName("satoshi")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Satoshi: AmountOrAll option
-        [<JsonConverter(typeof<FeerateJsonConverter>)>]
         [<JsonPropertyName("feerate")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Feerate: Feerate option
@@ -556,7 +539,6 @@ module Requests =
         [<JsonPropertyName("maxdelay")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Maxdelay: uint32 option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("exemptfee")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Exemptfee: int64<msat> option
@@ -655,7 +637,6 @@ module Requests =
     type TxprepareRequest = {
         [<JsonPropertyName("outputs")>]
         Outputs: OutputDescriptor []
-        [<JsonConverter(typeof<FeerateJsonConverter>)>]
         [<JsonPropertyName("feerate")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Feerate: Feerate option
@@ -714,7 +695,6 @@ module Requests =
         [<JsonPropertyName("cltv")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Cltv: int64 option
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
         [<JsonPropertyName("fromid")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Fromid: PubKey option
@@ -743,11 +723,9 @@ module Requests =
         [<JsonPropertyName("status")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Status: ListforwardsStatus option
-        [<JsonConverter(typeof<ShortChannelIdJsonConverter>)>]
         [<JsonPropertyName("in_channel")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         InChannel: ShortChannelId option
-        [<JsonConverter(typeof<ShortChannelIdJsonConverter>)>]
         [<JsonPropertyName("out_channel")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         OutChannel: ShortChannelId option
@@ -766,7 +744,6 @@ module Requests =
         [<JsonPropertyName("bolt11")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt11: string option
-        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("payment_hash")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaymentHash: uint256 option
@@ -939,7 +916,6 @@ module Responses =
         [<JsonPropertyName("log")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Log: string option
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
         [<JsonPropertyName("node_id")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         NodeId: PubKey option
@@ -1072,11 +1048,9 @@ module Responses =
         [<JsonPropertyName("owner")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Owner: string option
-        [<JsonConverter(typeof<ShortChannelIdJsonConverter>)>]
         [<JsonPropertyName("short_channel_id")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         ShortChannelId: ShortChannelId option
-        [<JsonConverter(typeof<UInt256JsonConverter>)>]
         [<JsonPropertyName("channel_id")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         ChannelId: uint256 option
@@ -1113,62 +1087,48 @@ module Responses =
         Opener: ChannelSide
         [<JsonPropertyName("features")>]
         Features: string []
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("to_us_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         ToUsMsat: int64<msat> option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("min_to_us_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         MinToUsMsat: int64<msat> option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("max_to_us_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         MaxToUsMsat: int64<msat> option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("total_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         TotalMsat: int64<msat> option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("fee_base_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         FeeBaseMsat: int64<msat> option
         [<JsonPropertyName("fee_proportional_millionths")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         FeeProportionalMillionths: uint32 option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("dust_limit_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         DustLimitMsat: int64<msat> option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("max_total_htlc_in_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         MaxTotalHtlcInMsat: int64<msat> option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("their_reserve_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         TheirReserveMsat: int64<msat> option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("our_reserve_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         OurReserveMsat: int64<msat> option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("spendable_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         SpendableMsat: int64<msat> option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("receivable_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         ReceivableMsat: int64<msat> option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("minimum_htlc_in_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         MinimumHtlcInMsat: int64<msat> option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("minimum_htlc_out_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         MinimumHtlcOutMsat: int64<msat> option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("maximum_htlc_out_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         MaximumHtlcOutMsat: int64<msat> option
@@ -1190,28 +1150,24 @@ module Responses =
         [<JsonPropertyName("in_payments_offered")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         InPaymentsOffered: uint64 option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("in_offered_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         InOfferedMsat: int64<msat> option
         [<JsonPropertyName("in_payments_fulfilled")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         InPaymentsFulfilled: uint64 option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("in_fulfilled_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         InFulfilledMsat: int64<msat> option
         [<JsonPropertyName("out_payments_offered")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         OutPaymentsOffered: uint64 option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("out_offered_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         OutOfferedMsat: int64<msat> option
         [<JsonPropertyName("out_payments_fulfilled")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         OutPaymentsFulfilled: uint64 option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("out_fulfilled_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         OutFulfilledMsat: int64<msat> option
@@ -1307,7 +1263,6 @@ module Responses =
         [<JsonPropertyName("state")>]
         [<JsonConverter(typeof<JsonStringEnumConverter>)>]
         State: ChannelState
-        [<JsonConverter(typeof<ShortChannelIdJsonConverter>)>]
         [<JsonPropertyName("short_channel_id")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         ShortChannelId: ShortChannelId option
@@ -1344,11 +1299,9 @@ module Responses =
         [<JsonPropertyName("status")>]
         [<JsonConverter(typeof<JsonStringEnumConverter>)>]
         Status: SendpayStatus
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("amount_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountMsat: int64<msat> option
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
         [<JsonPropertyName("destination")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Destination: PubKey option
@@ -1369,7 +1322,6 @@ module Responses =
         [<JsonPropertyName("bolt12")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt12: string option
-        [<JsonConverter(typeof<KeyJsonConverter>)>]
         [<JsonPropertyName("payment_preimage")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaymentPreimage: Key option
@@ -1412,7 +1364,6 @@ module Responses =
         [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("htlc_minimum_msat")>]
         HtlcMinimumMsat: int64<msat>
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("htlc_maximum_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         HtlcMaximumMsat: int64<msat> option
@@ -1447,7 +1398,6 @@ module Responses =
     type CheckmessageResponse = {
         [<JsonPropertyName("verified")>]
         Verified: bool
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
         [<JsonPropertyName("pubkey")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Pubkey: PubKey option
@@ -1562,14 +1512,12 @@ module Responses =
         [<JsonPropertyName("pay_index")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PayIndex: uint64 option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("amount_received_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountReceivedMsat: int64<msat> option
         [<JsonPropertyName("paid_at")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaidAt: uint64 option
-        [<JsonConverter(typeof<KeyJsonConverter>)>]
         [<JsonPropertyName("payment_preimage")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaymentPreimage: Key option
@@ -1643,7 +1591,6 @@ module Responses =
         [<JsonPropertyName("bolt12")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt12: string option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("amount_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountMsat: int64<msat> option
@@ -1745,7 +1692,6 @@ module Responses =
         Status: ListinvoicesInvoicesStatus
         [<JsonPropertyName("expires_at")>]
         ExpiresAt: uint64
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("amount_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountMsat: int64<msat> option
@@ -1764,14 +1710,12 @@ module Responses =
         [<JsonPropertyName("pay_index")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PayIndex: uint64 option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("amount_received_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountReceivedMsat: int64<msat> option
         [<JsonPropertyName("paid_at")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaidAt: uint64 option
-        [<JsonConverter(typeof<KeyJsonConverter>)>]
         [<JsonPropertyName("payment_preimage")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaymentPreimage: Key option
@@ -1803,11 +1747,9 @@ module Responses =
         [<JsonPropertyName("status")>]
         [<JsonConverter(typeof<JsonStringEnumConverter>)>]
         Status: SendonionStatus
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("amount_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountMsat: int64<msat> option
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
         [<JsonPropertyName("destination")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Destination: PubKey option
@@ -1828,7 +1770,6 @@ module Responses =
         [<JsonPropertyName("partid")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Partid: uint64 option
-        [<JsonConverter(typeof<KeyJsonConverter>)>]
         [<JsonPropertyName("payment_preimage")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaymentPreimage: Key option
@@ -1860,7 +1801,6 @@ module Responses =
         [<JsonPropertyName("status")>]
         [<JsonConverter(typeof<JsonStringEnumConverter>)>]
         Status: ListsendpaysPaymentsStatus
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("amount_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountMsat: int64<msat> option
@@ -1885,7 +1825,6 @@ module Responses =
         [<JsonPropertyName("bolt12")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt12: string option
-        [<JsonConverter(typeof<KeyJsonConverter>)>]
         [<JsonPropertyName("payment_preimage")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaymentPreimage: Key option
@@ -1929,7 +1868,6 @@ module Responses =
         [<JsonPropertyName("type")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         ItemType: ListtransactionsTransactionsInputsType option
-        [<JsonConverter(typeof<ShortChannelIdJsonConverter>)>]
         [<JsonPropertyName("channel")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Channel: ShortChannelId option
@@ -1964,7 +1902,6 @@ module Responses =
         [<JsonPropertyName("type")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         ItemType: ListtransactionsTransactionsOutputsType option
-        [<JsonConverter(typeof<ShortChannelIdJsonConverter>)>]
         [<JsonPropertyName("channel")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Channel: ShortChannelId option
@@ -1981,7 +1918,6 @@ module Responses =
         Blockheight: uint32
         [<JsonPropertyName("txindex")>]
         Txindex: uint32
-        [<JsonConverter(typeof<ShortChannelIdJsonConverter>)>]
         [<JsonPropertyName("channel")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Channel: ShortChannelId option
@@ -2016,7 +1952,6 @@ module Responses =
         [<JsonConverter(typeof<KeyJsonConverter>)>]
         [<JsonPropertyName("payment_preimage")>]
         PaymentPreimage: Key
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
         [<JsonPropertyName("destination")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Destination: PubKey option
@@ -2120,7 +2055,6 @@ module Responses =
         Status: WaitanyinvoiceStatus
         [<JsonPropertyName("expires_at")>]
         ExpiresAt: uint64
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("amount_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountMsat: int64<msat> option
@@ -2133,14 +2067,12 @@ module Responses =
         [<JsonPropertyName("pay_index")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PayIndex: uint64 option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("amount_received_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountReceivedMsat: int64<msat> option
         [<JsonPropertyName("paid_at")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaidAt: uint64 option
-        [<JsonConverter(typeof<KeyJsonConverter>)>]
         [<JsonPropertyName("payment_preimage")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaymentPreimage: Key option
@@ -2169,7 +2101,6 @@ module Responses =
         Status: WaitinvoiceStatus
         [<JsonPropertyName("expires_at")>]
         ExpiresAt: uint64
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("amount_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountMsat: int64<msat> option
@@ -2182,14 +2113,12 @@ module Responses =
         [<JsonPropertyName("pay_index")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PayIndex: uint64 option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("amount_received_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountReceivedMsat: int64<msat> option
         [<JsonPropertyName("paid_at")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaidAt: uint64 option
-        [<JsonConverter(typeof<KeyJsonConverter>)>]
         [<JsonPropertyName("payment_preimage")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaymentPreimage: Key option
@@ -2216,11 +2145,9 @@ module Responses =
         [<JsonPropertyName("status")>]
         [<JsonConverter(typeof<JsonStringEnumConverter>)>]
         Status: WaitsendpayStatus
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("amount_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountMsat: int64<msat> option
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
         [<JsonPropertyName("destination")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Destination: PubKey option
@@ -2241,7 +2168,6 @@ module Responses =
         [<JsonPropertyName("bolt12")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt12: string option
-        [<JsonConverter(typeof<KeyJsonConverter>)>]
         [<JsonPropertyName("payment_preimage")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         PaymentPreimage: Key option
@@ -2281,7 +2207,6 @@ module Responses =
         [<JsonConverter(typeof<KeyJsonConverter>)>]
         [<JsonPropertyName("payment_preimage")>]
         PaymentPreimage: Key
-        [<JsonConverter(typeof<PubKeyJsonConverter>)>]
         [<JsonPropertyName("destination")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Destination: PubKey option
@@ -2569,7 +2494,6 @@ module Responses =
         Status: ListforwardsForwardsStatus
         [<JsonPropertyName("received_time")>]
         ReceivedTime: int64
-        [<JsonConverter(typeof<ShortChannelIdJsonConverter>)>]
         [<JsonPropertyName("out_channel")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         OutChannel: ShortChannelId option
@@ -2579,11 +2503,9 @@ module Responses =
         [<JsonPropertyName("style")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Style: ListforwardsForwardsStyle option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("fee_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         FeeMsat: int64<msat> option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("out_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         OutMsat: int64<msat> option
@@ -2631,11 +2553,9 @@ module Responses =
         [<JsonPropertyName("bolt12")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         Bolt12: string option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("amount_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountMsat: int64<msat> option
-        [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<JsonPropertyName("amount_sent_msat")>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         AmountSentMsat: int64<msat> option

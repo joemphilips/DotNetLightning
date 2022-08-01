@@ -205,7 +205,7 @@ type PluginServerBase
         null with get, set
 
     member this.JsonRpc
-        with private get (): PluginJsonRpc = jsonRpc
+        with get (): PluginJsonRpc = jsonRpc
         and private set v = jsonRpc <- v
 
     /// <summary>
