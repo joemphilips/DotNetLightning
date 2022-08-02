@@ -71,11 +71,27 @@ module internal PrimitiveExtensions =
     let parseClnAmount(s: string) : int64<msat> =
         if s |> String.IsNullOrWhiteSpace then
             raise <| FormatException($"Invalid string for money. null")
-        else if s.EndsWith("msat") then
-            s.Substring(0, s.Length - 4) |> int64 |> unbox
-        else if s.EndsWith("sat") then
-            s.Substring(0, s.Length - 3) |> int64 |> unbox
-        else if s.EndsWith("btc") then
-            s.Substring(0, s.Length - 3) |> int64 |> unbox
+
+        let str =
+            if s.EndsWith("msat") then
+                s.Substring(0, s.Length - 4)
+            else if s.EndsWith("sat") then
+                s.Substring(0, s.Length - 3)
+            else if s.EndsWith("btc") then
+                s.Substring(0, s.Length - 3)
+            else
+                raise <| FormatException $"Invalid string for money {s}"
+
+        // some rpc endpoint returns UInt64.MaxValue to represent "arbitrary
+        // big number" (e.g. `htlc_max_value_in_flight_msat` in `listpeers`)
+        // we represent sats (and msats) as int64, thus it will throw
+        // overflow exception when parsing.
+        // so we use `Int64.MaxValue` for that case, this is fine because
+        // technically speaking largest possible number for msat is
+        // 2_100_000_000_000_000 * 1_000
+        // which is smaller than `Int64.MaxValue`
+        if (str |> uint64) > (Int64.MaxValue |> uint64) then
+            Int64.MaxValue
         else
-            raise <| FormatException $"Invalid string for money {s}"
+            str |> int64
+        |> unbox
