@@ -10,11 +10,13 @@
   <ItemGroup>
     <Compile Include="SerializerTests.fs" />
     <Compile Include="Helpers.fs" />
+    <Compile Include="SerializationTests.fs" />
     <Compile Include="Tests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="FsCheck.Xunit" Version="2.16.5" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.11.0" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
@@ -30,6 +32,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\DotNetLightning.ClnRpc\DotNetLightning.ClnRpc.fsproj" />
     <ProjectReference Include="..\..\src\DotNetLightning.Core\DotNetLightning.Core.fsproj" />
+    <ProjectReference Include="..\DNLTestBase\DNLTestBase.fsproj" />
   </ItemGroup>
 
 </Project>
