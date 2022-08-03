@@ -34,6 +34,13 @@ let shortChannelIdsGen =
 
 let keyGen = Gen.fresh(fun () -> new Key())
 
+let outPointGen =
+    gen {
+        let! txid = uint256Gen
+        let! n = Arb.generate<uint32>
+        return OutPoint(txid, n)
+    }
+
 let pubKeyGen =
     gen {
         let! key = keyGen

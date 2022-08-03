@@ -91,8 +91,7 @@ module internal PrimitiveExtensions =
         // 2_100_000_000_000_000 * 1_000
         // which is smaller than `Int64.MaxValue`
         match (UInt64.TryParse s) with
-        | false, _ ->
-            str |> int64
+        | false, _ -> str |> int64
         | true, v ->
             if v > (Int64.MaxValue |> uint64) then
                 Int64.MaxValue

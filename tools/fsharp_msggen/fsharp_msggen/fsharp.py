@@ -1,5 +1,3 @@
-import codecs
-import os
 import re
 import sys
 from typing import TextIO, Tuple
@@ -65,8 +63,7 @@ overrides = {
     'Invoice.exposeprivatechannels': None,
 }
 
-header = f"""
-/// This file was automatically generated using following command:
+header = f"""/// This file was automatically generated using following command:
 /// ```bash
 /// {' '.join(sys.argv)}
 /// ```
@@ -346,3 +343,4 @@ open System.Threading.Tasks
     def generate(self, service: Service):
         self.write_header()
         self.generate_methods(service)
+

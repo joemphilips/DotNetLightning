@@ -204,7 +204,7 @@ type UInt256JsonConverter() =
             reader.AssertJsonType(JsonToken.String)
 
             try
-                reader.Value |> string |> Convert.FromHexString |> uint256
+                reader.Value |> string |> uint256
             with
             | :? EndOfStreamException
             | :? FormatException ->
@@ -296,7 +296,7 @@ type OutPointJsonConverter() =
             value: OutPoint,
             _serializer: JsonSerializer
         ) : unit =
-        writer.WriteValue(value.ToString())
+        writer.WriteValue($"{value.Hash}:{value.N}")
 
     override this.ReadJson
         (
@@ -502,6 +502,7 @@ type OptionConverter() =
     override _.ReadJson(reader, t, _existingValue, serializer) =
         let innerType = t.GetGenericArguments().[0]
         let cases = FSharpType.GetUnionCases t
+
         if reader.TokenType = JsonToken.Null then
             FSharpValue.MakeUnion(cases.[0], [||])
         else
