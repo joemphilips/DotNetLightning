@@ -9,12 +9,8 @@
     <Compile Include="AssemblyInfo.fs" />
     <Content Include="Data\bolt3-tx.json" />
     <Content Include="Data\bolt1-bigsize.json" />
-    <Compile Include="Utils/Utils.fs" />
+    <Compile Include="Utils\Utils.fs" />
     <Compile Include="PrimitivesTests.fs" />
-    <Compile Include="Generators/Primitives.fs" />
-    <Compile Include="Generators/Msgs.fs" />
-    <Compile Include="Generators\Payments.fs" />
-    <Compile Include="Generators/Generators.fs" />
     <Compile Include="Serialization.fs" />
     <Compile Include="TLVSerialize.fs" />
     <Compile Include="SerializationPropertyTests.fs" />
@@ -50,5 +46,6 @@
     <ProjectReference Condition="'$(BouncyCastle)'!='true'" Include="..\..\src\NSec\Experimental\NSec.Experimental.csproj" />
     <ProjectReference Include="..\..\src\ResultUtils\ResultUtils.fsproj" />
     <ProjectReference Include="..\..\src\Macaroons\Macaroons.csproj" />
+    <ProjectReference Include="..\DNLTestBase\DNLTestBase.fsproj" />
   </ItemGroup>
 </Project>

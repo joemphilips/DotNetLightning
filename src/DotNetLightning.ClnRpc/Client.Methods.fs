@@ -1,4 +1,3 @@
-
 /// This file was automatically generated using following command:
 /// ```bash
 /// msggen

@@ -3,6 +3,7 @@ namespace DotNetLightning.ClnRpc.NewtonsoftJsonConverters
 open System
 open System.IO
 open System.Runtime.CompilerServices
+open System.Text.Json
 open System.Text.Json.Nodes
 open DotNetLightning.ClnRpc
 open DotNetLightning.Utils
@@ -203,7 +204,7 @@ type UInt256JsonConverter() =
             reader.AssertJsonType(JsonToken.String)
 
             try
-                reader.Value |> string |> Convert.FromHexString |> uint256
+                reader.Value |> string |> uint256
             with
             | :? EndOfStreamException
             | :? FormatException ->
@@ -295,7 +296,7 @@ type OutPointJsonConverter() =
             value: OutPoint,
             _serializer: JsonSerializer
         ) : unit =
-        writer.WriteValue(value.ToString())
+        writer.WriteValue($"{value.Hash}:{value.N}")
 
     override this.ReadJson
         (
@@ -462,6 +463,22 @@ type HexFeatureBitsJsonConverter() =
                 reader
             )
 
+[<AutoOpen>]
+module private NewtonsoftJsonHelpersCore =
+    type JsonConverterCollection with
+
+        member this._AddDNLJsonConverters() =
+            this.Add(MSatJsonConverter())
+            this.Add(PubKeyJsonConverter())
+            this.Add(ShortChannelIdJsonConverter())
+            this.Add(KeyJsonConverter())
+            this.Add(UInt256JsonConverter())
+            this.Add(AmountOrAnyJsonConverter())
+            this.Add(AmountOrAllJsonConverter())
+            this.Add(OutPointJsonConverter())
+            this.Add(FeerateJsonConverter())
+            this.Add(HexFeatureBitsJsonConverter())
+
 /// F# options-converter
 type OptionConverter() =
     inherit JsonConverter()
@@ -484,37 +501,22 @@ type OptionConverter() =
 
     override _.ReadJson(reader, t, _existingValue, serializer) =
         let innerType = t.GetGenericArguments().[0]
-
-        let innerType =
-            if innerType.IsValueType then
-                typedefof<Nullable<_>>.MakeGenericType ([| innerType |])
-            else
-                innerType
-
-        let value = serializer.Deserialize(reader, innerType)
         let cases = FSharpType.GetUnionCases t
 
-        if value |> isNull then
+        if reader.TokenType = JsonToken.Null then
             FSharpValue.MakeUnion(cases.[0], [||])
         else
+            serializer.Converters._AddDNLJsonConverters()
+            let value = serializer.Deserialize(reader, innerType)
             FSharpValue.MakeUnion(cases.[1], [| value |])
 
 [<AutoOpen>]
 module NewtonsoftJsonHelpers =
-    type Newtonsoft.Json.JsonConverterCollection with
+    type JsonConverterCollection with
 
         member this.AddDNLJsonConverters(n: Network) =
-            this.Add(MSatJsonConverter())
-            this.Add(PubKeyJsonConverter())
-            this.Add(ShortChannelIdJsonConverter())
-            this.Add(KeyJsonConverter())
-            this.Add(UInt256JsonConverter())
-            this.Add(AmountOrAnyJsonConverter())
-            this.Add(AmountOrAllJsonConverter())
-            this.Add(OutPointJsonConverter())
-            this.Add(FeerateJsonConverter())
+            this._AddDNLJsonConverters()
             this.Add(OutputDescriptorJsonConverter(n))
-            this.Add(HexFeatureBitsJsonConverter())
             this.Add(OptionConverter())
 
     type Newtonsoft.Json.JsonSerializerSettings with

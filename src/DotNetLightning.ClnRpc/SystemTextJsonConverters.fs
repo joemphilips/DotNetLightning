@@ -65,7 +65,7 @@ type UInt256JsonConverter() =
         value.ToString() |> writer.WriteStringValue
 
     override this.Read(reader, _typeToConvert, _options) =
-        reader.GetString() |> Convert.FromHexString |> uint256
+        reader.GetString() |> uint256
 
 type AmountOrAnyJsonConverter() =
     inherit JsonConverter<AmountOrAny>()
@@ -97,7 +97,7 @@ type OutPointJsonConverter() =
     inherit JsonConverter<OutPoint>()
 
     override this.Write(writer, value, _options) =
-        writer.WriteStringValue(value.ToString())
+        writer.WriteStringValue($"{value.Hash}:{value.N}")
 
     override this.Read(reader, _typeToConvert, _options) =
         let splits = reader.GetString().Split ":"
@@ -166,4 +166,5 @@ module ClnSharpClientHelpers =
             this.Converters.Add(AmountOrAnyJsonConverter())
             this.Converters.Add(OutPointJsonConverter())
             this.Converters.Add(FeerateJsonConverter())
+            this.Converters.Add(AmountOrAllJsonConverter())
             this.Converters.Add(OutputDescriptorJsonConverter(n))

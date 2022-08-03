@@ -1,7 +1,8 @@
 {
     "ignoreFiles": [
         "assemblyinfo.*",
-        "src/DotNetLightning.ClnRpc/Requests.fs"
+        "src/DotNetLightning.ClnRpc/Requests.fs",
+        "tests/DotNetLightning.ClnRpc.Tests/SerializationTests.fs"
     ],
     "global": {
         "numIndentationSpaces": 4

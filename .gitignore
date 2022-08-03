@@ -274,3 +274,5 @@ tests/DotNetLightning.Infrastructure.Tests/data/
 /tmp/
 /.fsdocs/
 /output/
+
+*.pyc

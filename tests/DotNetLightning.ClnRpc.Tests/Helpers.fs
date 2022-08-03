@@ -120,3 +120,31 @@ let setupRawStream<'T when 'T :> PluginServerBase>
         inStream.Flush()
         return p
     }
+
+open NBitcoin
+open DotNetLightning.ClnRpc.SystemTextJsonConverters
+open DotNetLightning.ClnRpc.NewtonsoftJsonConverters.NewtonsoftJsonHelpers
+open Xunit
+
+let internal serializationTestRoundtrip<'T> v =
+    // System.Text.Json
+    let opts = JsonSerializerOptions()
+    opts.AddDNLJsonConverters(Network.RegTest)
+
+    let v2 =
+        JsonSerializer.Serialize(v, opts)
+        |> fun o -> JsonSerializer.Deserialize<'T>(o, opts)
+
+    Assert.Equal(v, v2)
+
+    // Newtonsoft.Json
+    let opts = Newtonsoft.Json.JsonSerializerSettings()
+    opts.AddDNLJsonConverters(Network.RegTest)
+
+    let v3 =
+        Newtonsoft.Json.JsonConvert.SerializeObject(v, opts)
+        |> fun o -> Newtonsoft.Json.JsonConvert.DeserializeObject<'T>(o, opts)
+
+    Assert.Equal(v, v3)
+    Assert.Equal(v2, v3)
+    ()
