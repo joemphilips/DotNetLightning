@@ -385,7 +385,7 @@ type ClnClient
                 else
                     reqObject.set_Item(
                         "params",
-                        JsonSerializer.SerializeToNode(req)
+                        JsonSerializer.SerializeToNode(req, this.JsonOpts)
                     )
 
                 reqObject.WriteTo(jsonWriter)
