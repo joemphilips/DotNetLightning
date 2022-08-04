@@ -90,7 +90,7 @@ module internal PrimitiveExtensions =
         // technically speaking largest possible number for msat is
         // 2_100_000_000_000_000 * 1_000
         // which is smaller than `Int64.MaxValue`
-        match (UInt64.TryParse s) with
+        match (UInt64.TryParse str) with
         | false, _ -> str |> int64
         | true, v ->
             if v > (Int64.MaxValue |> uint64) then
