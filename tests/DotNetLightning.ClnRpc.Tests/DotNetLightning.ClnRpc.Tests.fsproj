@@ -8,6 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="Data\listpeers.response.json" />
+    <Content Include="Data\listchannels.response.json" />
     <Compile Include="SerializerTests.fs" />
     <Compile Include="Helpers.fs" />
     <Compile Include="SerializationTests.fs" />

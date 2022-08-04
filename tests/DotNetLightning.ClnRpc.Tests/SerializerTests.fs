@@ -1,5 +1,11 @@
 namespace DotNetLightning.ClnRpc.Tests
 
+open System
+open System.IO
+open System.Net
+open System.Text.Json
+open System.Threading.Tasks
+open DotNetLightning.ClnRpc
 open DotNetLightning.ClnRpc.Plugin
 open DotNetLightning.ClnRpc.NewtonsoftJsonConverters
 open DotNetLightning.ClnRpc.SystemTextJsonConverters
@@ -90,3 +96,76 @@ type SerializerTests() =
             System.Text.Json.JsonSerializer.Serialize(res, options)
 
         Assert.Equal(serializedExpected, serializedActual)
+
+    [<Fact>]
+    member this.DeserializeListpeersResponse() =
+        let data =
+            Path.Join(
+                AppDomain.CurrentDomain.BaseDirectory,
+                "../../..",
+                "Data/listpeers.response.json"
+            )
+            |> File.ReadAllText
+
+        let data1 =
+            let opts = JsonSerializerOptions()
+            opts.AddDNLJsonConverters(Network.RegTest)
+            JsonSerializer.Deserialize<Responses.ListpeersResponse>(data, opts)
+
+        Assert.NotNull(data1)
+        ()
+
+    [<Fact>]
+    member this.DeserializeListchannelsResponse() =
+        let data =
+            Path.Join(
+                AppDomain.CurrentDomain.BaseDirectory,
+                "../../..",
+                "Data/listchannels.response.json"
+            )
+            |> File.ReadAllText
+
+        let data1 =
+            let opts = JsonSerializerOptions()
+            opts.AddDNLJsonConverters(Network.RegTest)
+
+            JsonSerializer.Deserialize<Responses.ListchannelsResponse>(
+                data,
+                opts
+            )
+
+        Assert.NotNull(data1)
+
+    [<Fact>]
+    member this.SerializeListchannelsRequest() =
+        let req =
+            {
+                Requests.ListchannelsRequest.ShortChannelId = None
+                Requests.ListchannelsRequest.Source = None
+                Requests.ListchannelsRequest.Destination =
+                    // we cannot specify both channel id and destination id
+                    Some(
+                        PubKey
+                            "02bd27450207ab7abad315d5817dc0727ec90b14b5dc09f66fb9ec3f11bb1a71df"
+                    )
+            }
+
+        let data1 =
+            let opts = JsonSerializerOptions()
+            opts.AddDNLJsonConverters(Network.RegTest)
+            JsonSerializer.Serialize(req, opts)
+
+        let transport = new MemoryStream() :> Stream
+
+        let cli =
+            ClnClient(
+                Network.RegTest,
+                getTransport = Func<_, _>(fun _ -> transport |> Task.FromResult)
+            )
+
+        task {
+            let! resp = cli.ListChannelsAsync(req)
+            Assert.NotNull(data1)
+            Assert.NotNull(resp)
+            Assert.Null(resp.Channels)
+        }

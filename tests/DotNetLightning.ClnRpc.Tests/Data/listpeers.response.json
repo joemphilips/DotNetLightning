@@ -1,0 +1,96 @@
+{
+  "peers": [
+    {
+      "id": "02c1e1e97d7f1bb9aa7ec2c899e13c4dcbe3c08971620bd11cdf36e1addd812985",
+      "connected": true,
+      "netaddr": [
+        "172.23.0.7:9735"
+      ],
+      "features": "800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000808252a1",
+      "channels": [
+        {
+          "state": "CHANNELD_NORMAL",
+          "scratch_txid": "00026b85f4995035c6a34fa17ccafe74e148bf8505415dbfd796ae84a1ca231e",
+          "last_tx_fee_msat": "183000msat",
+          "feerate": {
+            "perkw": 253,
+            "perkb": 1012
+          },
+          "owner": "channeld",
+          "short_channel_id": "148x2x1",
+          "direction": 0,
+          "channel_id": "02ca5b083e6f8f43622f8c490ca2b2ae693a4f23b58d0a9694646f9782b36009",
+          "funding_txid": "0860b382976f6494960a8db5234f3a69aeb2a20c498c2f62438f6f3e085bca02",
+          "funding_outnum": 1,
+          "close_to_addr": "bcrt1qy0sr6fxv6wrksyump4su3uhk2lg5pmx56gn6vd",
+          "close_to": "001423e03d24ccd38768139b0d61c8f2f657d140ecd4",
+          "private": true,
+          "opener": "local",
+          "features": [
+            "option_static_remotekey"
+          ],
+          "funding": {
+            "local_msat": "500000000msat",
+            "remote_msat": "0msat",
+            "pushed_msat": "0msat"
+          },
+          "msatoshi_to_us": 500000000,
+          "to_us_msat": "500000000msat",
+          "msatoshi_to_us_min": 500000000,
+          "min_to_us_msat": "500000000msat",
+          "msatoshi_to_us_max": 500000000,
+          "max_to_us_msat": "500000000msat",
+          "msatoshi_total": 500000000,
+          "total_msat": "500000000msat",
+          "fee_base_msat": "1msat",
+          "fee_proportional_millionths": 10,
+          "dust_limit_satoshis": 546,
+          "dust_limit_msat": "546000msat",
+          "max_htlc_value_in_flight_msat": 18446744073709551615,
+          "max_total_htlc_in_msat": "18446744073709551615msat",
+          "their_channel_reserve_satoshis": 5000,
+          "their_reserve_msat": "5000000msat",
+          "our_channel_reserve_satoshis": 5000,
+          "our_reserve_msat": "5000000msat",
+          "spendable_msatoshi": 494460000,
+          "spendable_msat": "494460000msat",
+          "receivable_msatoshi": 0,
+          "receivable_msat": "0msat",
+          "htlc_minimum_msat": 0,
+          "minimum_htlc_in_msat": "0msat",
+          "minimum_htlc_out_msat": "1msat",
+          "maximum_htlc_out_msat": "495000000msat",
+          "their_to_self_delay": 6,
+          "our_to_self_delay": 144,
+          "max_accepted_htlcs": 483,
+          "state_changes": [
+            {
+              "timestamp": "2022-08-02T14:11:58.158Z",
+              "old_state": "CHANNELD_AWAITING_LOCKIN",
+              "new_state": "CHANNELD_NORMAL",
+              "cause": "user",
+              "message": "Lockin complete"
+            }
+          ],
+          "status": [
+            "CHANNELD_NORMAL:Reconnected, and reestablished.",
+            "CHANNELD_NORMAL:Funding transaction locked."
+          ],
+          "in_payments_offered": 0,
+          "in_msatoshi_offered": 0,
+          "in_offered_msat": "0msat",
+          "in_payments_fulfilled": 0,
+          "in_msatoshi_fulfilled": 0,
+          "in_fulfilled_msat": "0msat",
+          "out_payments_offered": 0,
+          "out_msatoshi_offered": 0,
+          "out_offered_msat": "0msat",
+          "out_payments_fulfilled": 0,
+          "out_msatoshi_fulfilled": 0,
+          "out_fulfilled_msat": "0msat",
+          "htlcs": []
+        }
+      ]
+    }
+  ]
+}
