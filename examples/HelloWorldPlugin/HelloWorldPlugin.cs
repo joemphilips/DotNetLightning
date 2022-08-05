@@ -60,12 +60,9 @@ namespace HelloWorldPlugin
     [PluginJsonRpcMethod("hello", "This is a documentation string for the hello-function", HelloLongDesc)]
     public async Task<string> HelloAsync(string name = "world")
     {
-      using (await this.AsyncSemaphore.EnterAsync())
-      {
-        var s = $"{greeting}, {name}";
-        _logger.LogInformation(s);
-        return s;
-      }
+      var s = $"{greeting}, {name}";
+      _logger.LogInformation(s);
+      return s;
     }
 
     [PluginJsonRpcSubscription("shutdown")]
@@ -78,23 +75,20 @@ namespace HelloWorldPlugin
     [PluginJsonRpcSubscription("connect")]
     public async Task OnConnectAsync(string id, string address)
     {
-      using (await this.AsyncSemaphore.EnterAsync())
-        _logger.LogInformation($"Received connect event for peer {id}");
+      _logger.LogInformation($"Received connect event for peer {id}");
     }
 
     [PluginJsonRpcSubscription("disconnect")]
     public async Task OnDisconnectAsync(string id)
     {
-      using (await this.AsyncSemaphore.EnterAsync())
-        _logger.LogInformation($"Received disconnect event for peer {id}");
+      _logger.LogInformation($"Received disconnect event for peer {id}");
     }
 
     [PluginJsonRpcSubscription("invoice_payment")]
     public async Task OnPaymentAsync(string label, string preimage, long msat)
     {
-      using (await this.AsyncSemaphore.EnterAsync())
-        _logger.LogInformation($"Received invoice_payment event for label {label}, preimage {preimage}, and" +
-                               $"amount amount of {msat}");
+      _logger.LogInformation($"Received invoice_payment event for label {label}, preimage {preimage}, and" +
+                             $"amount amount of {msat}");
     }
   }
 }
