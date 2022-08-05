@@ -192,7 +192,9 @@ type PluginServerBase
     member val AsyncSemaphore = new AsyncSemaphore(1)
 
     /// <summary>
-    /// Plugins can overwrite the lightning node feature bits.
+    /// Plugins can set its own feature bits,
+    /// this value will be passed to c-lightning through `getmanifest`
+    /// and it will be announced to other nodes in several ways.
     /// </summary>
     abstract member FeatureBits: FeatureSetDTO with get, set
 
