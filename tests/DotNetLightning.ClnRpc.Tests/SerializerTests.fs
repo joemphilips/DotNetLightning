@@ -1,6 +1,7 @@
 namespace DotNetLightning.ClnRpc.Tests
 
 open System
+open System.Collections.Generic
 open System.IO
 open System.Net
 open System.Text.Json
@@ -8,6 +9,7 @@ open System.Threading.Tasks
 open DotNetLightning.ClnRpc
 open DotNetLightning.ClnRpc.Plugin
 open DotNetLightning.ClnRpc.NewtonsoftJsonConverters
+open DotNetLightning.ClnRpc.Requests
 open DotNetLightning.ClnRpc.SystemTextJsonConverters
 open DotNetLightning.Serialization
 open NBitcoin
@@ -169,3 +171,45 @@ type SerializerTests() =
             Assert.NotNull(resp)
             Assert.Null(resp.Channels)
         }
+
+    [<Fact>]
+    member this.SerializeGetrouteRequest_MustIgnoreNoneValue() =
+        let req =
+            {
+                GetrouteRequest.Id =
+                    PubKey
+                        "02c1e1e97d7f1bb9aa7ec2c899e13c4dcbe3c08971620bd11cdf36e1addd812985"
+                Msatoshi = 10000L<msat>
+                Riskfactor = 10UL // no big reason for this value
+                Cltv = None // req.Invoice.MinFinalCLTVExpiryDelta.Value |> int64 |> Some
+                Fromid = None
+                Fuzzpercent = None
+                Exclude = None
+                Maxhops = None
+            }
+
+        let opts = JsonSerializerOptions()
+
+        let data1 =
+            opts.AddDNLJsonConverters(Network.RegTest)
+            JsonSerializer.SerializeToDocument(req, opts)
+
+        Assert.Throws<KeyNotFoundException>(
+            Func<obj>(fun _ -> data1.RootElement.GetProperty("exclude"))
+        )
+        |> ignore
+
+        Assert.Throws<KeyNotFoundException>(
+            Func<obj>(fun _ -> data1.RootElement.GetProperty("cltv"))
+        )
+        |> ignore
+
+        let jObj =
+            let opts = Newtonsoft.Json.JsonSerializerSettings()
+            opts.AddDNLJsonConverters(Network.RegTest)
+            let ser = Newtonsoft.Json.JsonSerializer.Create(opts)
+            Newtonsoft.Json.Linq.JToken.FromObject(req, ser)
+
+        Assert.Null(jObj.Root.["exclude"])
+        Assert.Null(jObj.Root.["cltv"])
+        ()

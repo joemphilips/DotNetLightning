@@ -1,6 +1,7 @@
 namespace DotNetLightning.ClnRpc.SystemTextJsonConverters
 
 open System
+open System.Runtime.CompilerServices
 open System.Text.Json
 open System.Text.Json.Serialization
 open DotNetLightning.ClnRpc
@@ -153,18 +154,21 @@ type OutputDescriptorJsonConverter(network: Network) =
         reader.GetString() |> fun s -> OutputDescriptor.Parse(s, network)
 
 
-[<AutoOpen>]
-module ClnSharpClientHelpers =
-    type JsonSerializerOptions with
-
-        member this.AddDNLJsonConverters(n: Network) =
-            this.Converters.Add(MSatJsonConverter())
-            this.Converters.Add(PubKeyJsonConverter())
-            this.Converters.Add(ShortChannelIdJsonConverter())
-            this.Converters.Add(KeyJsonConverter())
-            this.Converters.Add(UInt256JsonConverter())
-            this.Converters.Add(AmountOrAnyJsonConverter())
-            this.Converters.Add(OutPointJsonConverter())
-            this.Converters.Add(FeerateJsonConverter())
-            this.Converters.Add(AmountOrAllJsonConverter())
-            this.Converters.Add(OutputDescriptorJsonConverter(n))
+[<Extension; AbstractClass; Sealed>]
+type ClnSharpClientHelpers =
+    [<Extension>]
+    static member AddDNLJsonConverters
+        (
+            this: JsonSerializerOptions,
+            n: Network
+        ) =
+        this.Converters.Add(MSatJsonConverter())
+        this.Converters.Add(PubKeyJsonConverter())
+        this.Converters.Add(ShortChannelIdJsonConverter())
+        this.Converters.Add(KeyJsonConverter())
+        this.Converters.Add(UInt256JsonConverter())
+        this.Converters.Add(AmountOrAnyJsonConverter())
+        this.Converters.Add(OutPointJsonConverter())
+        this.Converters.Add(FeerateJsonConverter())
+        this.Converters.Add(AmountOrAllJsonConverter())
+        this.Converters.Add(OutputDescriptorJsonConverter(n))

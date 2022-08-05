@@ -16,6 +16,7 @@ open DotNetLightning.ClnRpc.Plugin
 open DotNetLightning.Serialization
 open Microsoft.VisualStudio.Threading
 open NBitcoin
+open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 open StreamJsonRpc
 open Xunit
@@ -135,6 +136,9 @@ module TestHelpers =
                 Network.RegTest
             )
 
+            formatter.JsonSerializer.NullValueHandling <-
+                NullValueHandling.Ignore
+
             new NewLineDelimitedMessageHandler(pipe, pipe, formatter)
 
         task { return JsonRpc.Attach<'T>(handler) }
@@ -154,6 +158,9 @@ module TestHelpers =
                     formatter.JsonSerializer.Converters.AddDNLJsonConverters(
                         Network.RegTest
                     )
+
+                    formatter.JsonSerializer.NullValueHandling <-
+                        NullValueHandling.Ignore
 
                     new NewLineDelimitedMessageHandler(pipe, pipe, formatter)
 

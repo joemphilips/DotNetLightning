@@ -162,7 +162,8 @@ def gen_array(a: ArrayField):
     if a.required:
         defi = f'    [<JsonPropertyName("{alias}")>]\n    {to_PascalCase(name)}: {itemtype}{" []" * a.dims}\n'
     else:
-        defi = f'    [<JsonPropertyName("{alias}")>]\n'
+        defi = f'    [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]\n'
+        defi += f'    [<JsonPropertyName("{alias}")>]\n'
         defi += f"    {to_PascalCase(name)}: {itemtype}{' []' * a.dims} option\n"
     return defi, decl
 
