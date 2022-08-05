@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using DotNetLightning.ClnRpc.Plugin;
-using Microsoft.Extensions.Logging;
-using Microsoft.FSharp.Core;
 using NBitcoin;
 
 namespace HelloWorldPlugin
@@ -19,7 +14,7 @@ namespace HelloWorldPlugin
     private readonly ILogger<HelloWorldPlugin> _logger;
     private readonly IHostApplicationLifetime _applicationLifetime;
 
-    private string greeting = "Hello";
+    private string _greeting = "Hello";
 
     public HelloWorldPlugin(ILogger<HelloWorldPlugin> logger, IHostApplicationLifetime applicationLifetime):
       base(new []{ "parted_from_world" }, false)
@@ -30,7 +25,7 @@ namespace HelloWorldPlugin
       this.Options = new [] {
         new PluginOptions {
           Name = "greeting",
-          Default = greeting,
+          Default = _greeting,
           Description = "The greeting I should use",
           OptionType = PluginOptType.String,
           Multi = false,
@@ -44,12 +39,12 @@ namespace HelloWorldPlugin
       LightningInitConfigurationDTO configuration,
       Dictionary<string, object> cliOptions)
     {
-      greeting = "Hello";
+      _greeting = "Hello";
       if (cliOptions.TryGetValue("greeting", out var greetingValue))
-        greeting = (string)greetingValue;
+        _greeting = (string)greetingValue;
     }
 
-    public override FeatureSetDTO FeatureBits { get; set; }
+    public override FeatureSetDTO? FeatureBits { get; set; } = null;
 
     sealed public override IEnumerable<PluginOptions> Options { get; set; }
 
@@ -58,11 +53,11 @@ namespace HelloWorldPlugin
       "function as a method with `lightningd`";
 
     [PluginJsonRpcMethod("hello", "This is a documentation string for the hello-function", HelloLongDesc)]
-    public async Task<string> HelloAsync(string name = "world")
+    public Task<string> HelloAsync(string name = "world")
     {
-      var s = $"{greeting}, {name}";
+      var s = $"{_greeting}, {name}";
       _logger.LogInformation(s);
-      return s;
+      return Task.FromResult(s);
     }
 
     [PluginJsonRpcSubscription("shutdown")]
@@ -73,22 +68,25 @@ namespace HelloWorldPlugin
     
 
     [PluginJsonRpcSubscription("connect")]
-    public async Task OnConnectAsync(string id, string address)
+    public Task OnConnectAsync(string id, string address)
     {
       _logger.LogInformation($"Received connect event for peer {id}");
+      return Task.CompletedTask;
     }
 
     [PluginJsonRpcSubscription("disconnect")]
-    public async Task OnDisconnectAsync(string id)
+    public Task OnDisconnectAsync(string id)
     {
       _logger.LogInformation($"Received disconnect event for peer {id}");
+      return Task.CompletedTask;
     }
 
     [PluginJsonRpcSubscription("invoice_payment")]
-    public async Task OnPaymentAsync(string label, string preimage, long msat)
+    public Task OnPaymentAsync(string label, string preimage, long msat)
     {
       _logger.LogInformation($"Received invoice_payment event for label {label}, preimage {preimage}, and" +
                              $"amount amount of {msat}");
+      return Task.CompletedTask;
     }
   }
 }
