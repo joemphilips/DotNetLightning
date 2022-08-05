@@ -144,23 +144,22 @@ additional rpc method for c-lightning. The behavior of argument binding etc
 can be found at
 <a href="https://github.com/microsoft/vs-streamjsonrpc/tree/main/doc"><code>StreamJsonRpc</code>'s document</a></p>
 <p>IMPORTANT: plugin will use stdin/stdout for communicating with c-lightning,
-so you must <strong>never write naively to stdout in your application's code</strong>
-otherwise json rpc messages will be corrupted.</p>
-<p>If you really want to do it, say for logging, use the same
-synchronized stream for both plugin and your code. i.e.</p>
+so you must <strong>never write to stdout in your application's code</strong> and to
+not corrupt the json rpc messages, you must not return
+the value from rpc handlers (i.e. those with <code>JsonRpcMethod</code> attribute)
+concurrently. The easiest way to achieve this is to get the async semaphore
+in your method. In F#, that is...</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
-<span class="l">2: </span>
-<span class="l">3: </span>
-<span class="l">4: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs1', 1)" onmouseover="showTip(event, 'fs1', 1)" class="id">outputStream</span> <span class="o">=</span> <span class="id">Console</span><span class="pn">.</span><span class="id">OpenStandardOutput</span><span class="pn">(</span><span class="pn">)</span> <span class="o">|&gt;</span> <span class="id">Stream</span><span class="pn">.</span><span class="id">Synchronized</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs2', 2)" onmouseover="showTip(event, 'fs2', 2)" class="id">logger</span> <span class="o">=</span> <span class="id">MyCustomLogger</span><span class="pn">(</span><span onmouseout="hideTip(event, 'fs1', 3)" onmouseover="showTip(event, 'fs1', 3)" class="id">outputStream</span><span class="pn">)</span> <span class="c">// log to output stream</span>
-<span class="k">let</span> <span onmouseout="hideTip(event, 'fs3', 4)" onmouseover="showTip(event, 'fs3', 4)" class="id">plugin</span> <span class="o">=</span>
-    <span class="id">MyPlugin</span><span class="pn">(</span><span class="pn">)</span><span class="pn">.</span><span class="id">StartAsync</span><span class="pn">(</span><span onmouseout="hideTip(event, 'fs1', 5)" onmouseover="showTip(event, 'fs1', 5)" class="id">outputStream</span><span class="pn">,</span> <span class="id">Console</span><span class="pn">.</span><span class="id">OpenStandardInput</span><span class="pn">(</span><span class="pn">)</span><span class="pn">)</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">use</span> <span class="id">_</span> <span class="o">=</span> <span class="id">this</span><span class="pn">.</span><span class="id">AsyncSemaphore</span><span class="pn">.</span><span class="id">EnterAsync</span><span class="pn">(</span><span class="pn">)</span>
 </code></pre></td>
 </tr>
 </table>
-<p>Or just use stderr (e.g. from <code>Console.Error</code>)</p>
+<p>or in C#,</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="csharp"><span class="k">using</span> <span class="k">var</span> _ <span class="o">=</span> <span class="k">this</span>.AsyncSemaphore.EnterAsync()
+</code></pre></td></tr></table>
 <h2>2. Subscribing to the topic.</h2>
 <p>If you want to subscribe to a notification from c-lightning
 (or other plugins), You must implement it with
@@ -181,9 +180,6 @@ message, etc, see corresponding abstract properties or methods.</p>
 unless they specify "allow-deprecated-apis" to true.</p>
 <p>Hooks are currently unsupported since it is a quite advanced feature.
 Please send a PR if you really want it.</p>
-<div class="fsdocs-tip" id="fs1">val outputStream: obj</div>
-<div class="fsdocs-tip" id="fs2">val logger: obj</div>
-<div class="fsdocs-tip" id="fs3">val plugin: obj</div>
 
 
     </p>
@@ -1101,7 +1097,7 @@ Default is STDOUT. you can replace your own in test.</p>
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/PluginServerBase.fs#L295-295" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/PluginServerBase.fs#L298-298" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -1251,7 +1247,7 @@ Default is STDOUT. you can replace your own in test.</p>
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/PluginServerBase.fs#L272-272" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/PluginServerBase.fs#L274-274" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -1759,7 +1755,7 @@ registered in constructor parameter of <a href="https://joemphilips.github.io/Do
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/PluginServerBase.fs#L571-571" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/PluginServerBase.fs#L569-569" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -1825,7 +1821,7 @@ registered in constructor parameter of <a href="https://joemphilips.github.io/Do
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/PluginServerBase.fs#L566-566" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/PluginServerBase.fs#L564-564" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -1901,7 +1897,7 @@ registered in constructor parameter of <a href="https://joemphilips.github.io/Do
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/PluginServerBase.fs#L563-563" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/PluginServerBase.fs#L561-561" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -1974,100 +1970,6 @@ registered in constructor parameter of <a href="https://joemphilips.github.io/Do
                       <code><a href="https://docs.microsoft.com/dotnet/api/system.io.stream">Stream</a></code>
                     </span>
                     <br/>
-                  </ul>
-                  <br/>
-                  <span>
-                    Returns: 
-                    <code><span><a href="https://docs.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-plugin-pluginjsonrpc.html">PluginJsonRpc</a>&gt;</span></code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.ClnRpc.Plugin.PluginServerBase.StartAsync`')">
-                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md.png" class="normal"/>
-                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
-              </div>
-              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.ClnRpc.Plugin.PluginServerBase.StartAsync\'/>')">
-                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
-                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
-              </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/PluginServerBase.fs#L560-560" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
-                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
-            <dl class="fsdocs-params">
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  outStream
-                </span>
-                :
-                <code><a href="https://docs.microsoft.com/dotnet/api/system.io.stream">Stream</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  inStream
-                </span>
-                :
-                <code><a href="https://docs.microsoft.com/dotnet/api/system.io.stream">Stream</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-            </dl>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code><span><a href="https://docs.microsoft.com/dotnet/api/system.threading.tasks.task-1">Task</a>&lt;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-plugin-pluginjsonrpc.html">PluginJsonRpc</a>&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '1575', 1575)" onmouseover="showTip(event, '1575', 1575)">
-                <p>
-                  <a id="StartAsync">
-                    <a href="#StartAsync">
-                      <code><span>this.StartAsync</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="1575">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>this.StartAsync</span></code>
-                  <br/>
-                  <br/>
-                  Parameters: 
-                  <ul>
-                    <span>
-                      <b>
-                        outStream
-                      </b>
-                      :
-                      <code><a href="https://docs.microsoft.com/dotnet/api/system.io.stream">Stream</a></code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        inStream
-                      </b>
-                      :
-                      <code><a href="https://docs.microsoft.com/dotnet/api/system.io.stream">Stream</a></code>
-                    </span>
-                    <br/>
                     <span>
                       <b>
                         ct
@@ -2097,7 +1999,7 @@ registered in constructor parameter of <a href="https://joemphilips.github.io/Do
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/PluginServerBase.fs#L523-523" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/PluginServerBase.fs#L527-527" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
@@ -2145,7 +2047,7 @@ registered in constructor parameter of <a href="https://joemphilips.github.io/Do
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1576', 1576)" onmouseover="showTip(event, '1576', 1576)">
+              <code onmouseout="hideTip(event, '1575', 1575)" onmouseover="showTip(event, '1575', 1575)">
                 <p>
                   <a id="StartAsync">
                     <a href="#StartAsync">
@@ -2154,7 +2056,7 @@ registered in constructor parameter of <a href="https://joemphilips.github.io/Do
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1576">
+              <div class="fsdocs-tip" id="1575">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.StartAsync</span></code>
@@ -2207,7 +2109,7 @@ registered in constructor parameter of <a href="https://joemphilips.github.io/Do
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/PluginServerBase.fs#L452-452" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/Plugin/PluginServerBase.fs#L456-456" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
