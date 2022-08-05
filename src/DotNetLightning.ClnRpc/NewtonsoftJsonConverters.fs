@@ -514,7 +514,7 @@ type OptionConverter() =
 type NewtonsoftJsonHelpersExtensions =
 
     [<Extension>]
-    static member AddDNLJsonConverters
+    static member internal AddDNLJsonConverters
         (
             this: JsonConverterCollection,
             n: Network

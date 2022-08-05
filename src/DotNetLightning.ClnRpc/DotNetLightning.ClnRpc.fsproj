@@ -48,4 +48,10 @@
     <PackageReference Include="StreamJsonRpc" Version="2.10.44" />
   </ItemGroup>
 
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>DotNetLightning.ClnRpc.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
 </Project>
