@@ -14,7 +14,6 @@ namespace DotNetLightning.ClnRpc.Plugin
   public class PluginLoggerOptions
   {
     public JsonSerializerSettings? JsonSettings;
-    public Stream OutputStream;
   }
 
   public class PluginLoggerProvider : ILoggerProvider
@@ -74,8 +73,6 @@ namespace DotNetLightning.ClnRpc.Plugin
     private void WriteMsg(LogLevel logLevel, string logName, string msg, Exception? exception)
     {
       var json = Newtonsoft.Json.JsonSerializer.Create( _opts.JsonSettings );
-      var textWriter = new StreamWriter(_opts.OutputStream);
-      var jsonWriter = new JsonTextWriter(textWriter);
       foreach (var line in msg.Split("\n"))
       {
         var message = $"{logName}: {line}";
@@ -84,7 +81,8 @@ namespace DotNetLightning.ClnRpc.Plugin
           Method = "log",
           NamedArguments = new Dictionary<string, object?> {{"level", GetLogLevelString(logLevel)}, { "message", message }}
         };
-        json.Serialize(jsonWriter, req);
+        json.Serialize(Console.Out, req);
+        Console.Out.WriteLine();
       }
 
       if(exception != null)
@@ -107,22 +105,10 @@ namespace DotNetLightning.ClnRpc.Plugin
             }
           }
         };
-        json.Serialize(jsonWriter, req);
+        json.Serialize(Console.Out, req);
+        Console.Out.WriteLine();
       }
-      
-      // optionally write to stderr
-      switch (logLevel)
-      {
-        case LogLevel.Critical:
-          Console.Error.WriteLine($"{logName}: {msg}");
-            break;
-        case LogLevel.Error:
-          Console.Error.WriteLine($"{logName}: {msg}");
-            break;
-      }
-      jsonWriter.Flush();
-      textWriter.Flush();
-      _opts.OutputStream.Flush();
+      Console.Out.Flush();
     }
 
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)

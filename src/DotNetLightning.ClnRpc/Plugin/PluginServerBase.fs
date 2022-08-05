@@ -105,20 +105,20 @@ type GetClientOutputStream = Func<CancellationToken, Task<Stream>>
 /// [`StreamJsonRpc`'s document](https://github.com/microsoft/vs-streamjsonrpc/tree/main/doc)
 ///
 /// IMPORTANT: plugin will use stdin/stdout for communicating with c-lightning,
-/// so you must **never write naively to stdout in your application's code**
-/// otherwise json rpc messages will be corrupted.
-///
-/// If you really want to do it, say for logging, use the same
-/// synchronized stream for both plugin and your code. i.e.
+/// so you must **never write to stdout in your application's code** and to
+/// not corrupt the json rpc messages, you must not return
+/// the value from rpc handlers (i.e. those with `JsonRpcMethod` attribute)
+/// concurrently. The easiest way to achieve this is to get the async semaphore
+/// in your method. In F#, that is...
 ///
 /// ```fsharp
-/// let outputStream = Console.OpenStandardOutput() |> Stream.Synchronized
-/// let logger = MyCustomLogger(outputStream) // log to output stream
-/// let plugin =
-///     MyPlugin().StartAsync(outputStream, Console.OpenStandardInput())
+/// use _ = this.AsyncSemaphore.EnterAsync()
 /// ```
+/// or in C#,
 ///
-/// Or just use stderr (e.g. from `Console.Error`)
+/// ```csharp
+/// using var _ = this.AsyncSemaphore.EnterAsync()
+/// ```
 ///
 /// ## 2. Subscribing to the topic.
 ///
@@ -262,6 +262,8 @@ type PluginServerBase
                     $"topic {topic} is not part of {nameof(notificationTopics)}"
                 )
             else
+                use _ = this.AsyncSemaphore.EnterAsync(cancellationToken)
+
                 do!
                     this
                         .GetStdoutClient()
@@ -275,6 +277,7 @@ type PluginServerBase
             options: Dictionary<string, obj>
         ) : Task<obj> =
         task {
+            use! _releaser = this.AsyncSemaphore.EnterAsync()
 
             try
                 this.InitCore(configuration, options)
@@ -298,6 +301,7 @@ type PluginServerBase
             [<O; D(null)>] _otherparams: obj // for future compatibility
         ) : Task<Manifest> =
         task {
+            use! _releaser = this.AsyncSemaphore.EnterAsync()
 
             try
                 let rpcMethodInfo, subscriptionMethodInfo =
@@ -532,9 +536,6 @@ type PluginServerBase
             else
                 outStream
 
-        this.GetClientOutputStream <-
-            Func<_, _>(fun _ -> outStream |> Task.FromResult)
-
         let inStream =
             if inStream |> isNull then
                 Console.OpenStandardInput()
@@ -556,9 +557,6 @@ type PluginServerBase
         // fsharplint:enable
 
         this.StartAsync(writer, reader, ct)
-
-    member this.StartAsync(outStream: Stream, inStream: Stream) =
-        this.StartAsync(outStream, inStream, CancellationToken.None)
 
     member this.StartAsync(pipeWriter: PipeWriter, pipeReader: PipeReader) =
         this.StartAsync(pipeWriter, pipeReader, CancellationToken.None)
