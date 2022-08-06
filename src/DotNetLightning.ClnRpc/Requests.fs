@@ -172,6 +172,7 @@ module Requests =
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("force_lease_closed")>]
         ForceLeaseClosed: bool option
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("feerange")>]
         Feerange: Feerate [] option
     }
@@ -318,6 +319,7 @@ module Requests =
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("expiry")>]
         Expiry: uint64 option
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("fallbacks")>]
         Fallbacks: string [] option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
@@ -341,6 +343,7 @@ module Requests =
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
     [<CLIMutable>]
     type ListdatastoreRequest = {
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("key")>]
         Key: string [] option
     }
@@ -392,6 +395,7 @@ module Requests =
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("label")>]
         Label: string option
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("shared_secrets")>]
         SharedSecrets: Key [] option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
@@ -482,6 +486,7 @@ module Requests =
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("localofferid")>]
         Localofferid: string option
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("exclude")>]
         Exclude: string [] option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
@@ -574,6 +579,7 @@ module Requests =
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("minconf")>]
         Minconf: uint16 option
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("utxos")>]
         Utxos: OutPoint [] option
     }
@@ -668,6 +674,7 @@ module Requests =
     type SignpsbtRequest = {
         [<JsonPropertyName("psbt")>]
         Psbt: string
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("signonly")>]
         Signonly: uint32 [] option
     }
@@ -729,6 +736,7 @@ module Requests =
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("minconf")>]
         Minconf: uint32 option
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("utxos")>]
         Utxos: OutPoint [] option
     }
@@ -793,6 +801,7 @@ module Requests =
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("fuzzpercent")>]
         Fuzzpercent: uint32 option
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("exclude")>]
         Exclude: string [] option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
@@ -977,8 +986,10 @@ module Responses =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("fees_collected_msat")>]
         FeesCollectedMsat: int64<msat>
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("address")>]
         Address: GetinfoAddress [] option
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("binding")>]
         Binding: GetinfoBinding [] option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
@@ -1200,6 +1211,7 @@ module Responses =
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("next_fee_step")>]
         NextFeeStep: uint32 option
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("inflight")>]
         Inflight: ListpeersPeersChannelsInflight [] option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
@@ -1291,8 +1303,10 @@ module Responses =
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("max_accepted_htlcs")>]
         MaxAcceptedHtlcs: uint32 option
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("state_changes")>]
         StateChanges: ListpeersPeersChannelsState_changes [] option
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("status")>]
         Status: string [] option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
@@ -1327,6 +1341,7 @@ module Responses =
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("out_fulfilled_msat")>]
         OutFulfilledMsat: int64<msat> option
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("htlcs")>]
         Htlcs: ListpeersPeersChannelsHtlcs [] option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
@@ -1344,10 +1359,12 @@ module Responses =
         Id: PubKey
         [<JsonPropertyName("connected")>]
         Connected: bool
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("log")>]
         Log: ListpeersPeersLog [] option
         [<JsonPropertyName("channels")>]
         Channels: ListpeersPeersChannels []
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("netaddr")>]
         Netaddr: string [] option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
@@ -2271,6 +2288,7 @@ module Responses =
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("features")>]
         Features: string option
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("addresses")>]
         Addresses: ListnodesNodesAddresses [] option
     }
@@ -2538,6 +2556,7 @@ module Responses =
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("change_outnum")>]
         ChangeOutnum: uint32 option
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("reservations")>]
         Reservations: FundpsbtReservations [] option
     }
@@ -2590,6 +2609,7 @@ module Responses =
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("change_outnum")>]
         ChangeOutnum: uint32 option
+        [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("reservations")>]
         Reservations: UtxopsbtReservations [] option
     }

@@ -13,8 +13,8 @@ open System.Threading.Tasks
 open Newtonsoft.Json.Linq
 open NBitcoin
 
-open DotNetLightning.ClnRpc.SystemTextJsonConverters.ClnSharpClientHelpers
-open DotNetLightning.ClnRpc.NewtonsoftJsonConverters.NewtonsoftJsonHelpers
+open DotNetLightning.ClnRpc.SystemTextJsonConverters
+open DotNetLightning.ClnRpc.NewtonsoftJsonConverters
 
 // fsharplint:disable enumCasesNames
 type CLightningClientErrorCodeEnum =
@@ -185,7 +185,10 @@ type ClnClient
 
     let jsonOpts = JsonSerializerOptions()
 
-    let newtonSoftJsonOpts = Newtonsoft.Json.JsonSerializerSettings()
+    let newtonSoftJsonOpts =
+        Newtonsoft.Json.JsonSerializerSettings(
+            NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore
+        )
 
     do
         if address |> isNull && getTransport |> isNull then
@@ -207,7 +210,7 @@ type ClnClient
             | _ -> invalidArg (nameof(jsonLibrary)) "Unknown json library type"
 
     member val JsonOpts = jsonOpts
-    member val NewtonSoftJsonOpts = Newtonsoft.Json.JsonSerializerSettings()
+    member val NewtonSoftJsonOpts = newtonSoftJsonOpts
 
     member this.NextId
         with private get () =

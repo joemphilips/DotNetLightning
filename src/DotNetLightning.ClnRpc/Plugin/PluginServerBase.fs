@@ -11,16 +11,10 @@ open System.Threading.Tasks
 open DotNetLightning.ClnRpc
 open DotNetLightning.ClnRpc.NewtonsoftJsonConverters
 open DotNetLightning.ClnRpc.Plugin
-open DotNetLightning.Serialization
 open DotNetLightning.Utils
-open Microsoft.Extensions.Logging
 open Microsoft.VisualStudio.Threading
 open NBitcoin
-open NBitcoin.JsonConverters
 open StreamJsonRpc
-
-open DotNetLightning.ClnRpc.SystemTextJsonConverters.ClnSharpClientHelpers
-open DotNetLightning.ClnRpc.NewtonsoftJsonConverters.NewtonsoftJsonHelpers
 
 type internal O = OptionalArgumentAttribute
 type internal D = DefaultParameterValueAttribute
@@ -468,6 +462,9 @@ type PluginServerBase
             formatter.JsonSerializer.Converters.AddDNLJsonConverters(
                 this.Network
             )
+
+            formatter.JsonSerializer.NullValueHandling <-
+                Newtonsoft.Json.NullValueHandling.Ignore
 
             if this.JsonConverters |> isNull |> not then
                 for c in this.JsonConverters do

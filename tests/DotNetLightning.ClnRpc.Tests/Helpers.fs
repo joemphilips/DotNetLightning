@@ -123,7 +123,7 @@ let setupRawStream<'T when 'T :> PluginServerBase>
 
 open NBitcoin
 open DotNetLightning.ClnRpc.SystemTextJsonConverters
-open DotNetLightning.ClnRpc.NewtonsoftJsonConverters.NewtonsoftJsonHelpers
+open DotNetLightning.ClnRpc.NewtonsoftJsonConverters
 open Xunit
 
 let internal serializationTestRoundtrip<'T> v =

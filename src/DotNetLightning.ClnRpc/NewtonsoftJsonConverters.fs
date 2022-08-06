@@ -510,27 +510,31 @@ type OptionConverter() =
             let value = serializer.Deserialize(reader, innerType)
             FSharpValue.MakeUnion(cases.[1], [| value |])
 
-[<AutoOpen>]
-module NewtonsoftJsonHelpers =
-    type JsonConverterCollection with
+[<Extension; AbstractClass; Sealed>]
+type NewtonsoftJsonHelpersExtensions =
 
-        member this.AddDNLJsonConverters(n: Network) =
-            this._AddDNLJsonConverters()
-            this.Add(OutputDescriptorJsonConverter(n))
-            this.Add(OptionConverter())
+    [<Extension>]
+    static member internal AddDNLJsonConverters
+        (
+            this: JsonConverterCollection,
+            n: Network
+        ) =
+        this._AddDNLJsonConverters()
+        this.Add(OutputDescriptorJsonConverter(n))
+        this.Add(OptionConverter())
 
-    type Newtonsoft.Json.JsonSerializerSettings with
-
-        member this.AddDNLJsonConverters(n) =
-            this.Converters.Add(MSatJsonConverter())
-            this.Converters.Add(PubKeyJsonConverter())
-            this.Converters.Add(ShortChannelIdJsonConverter())
-            this.Converters.Add(KeyJsonConverter())
-            this.Converters.Add(UInt256JsonConverter())
-            this.Converters.Add(AmountOrAnyJsonConverter())
-            this.Converters.Add(AmountOrAllJsonConverter())
-            this.Converters.Add(OutPointJsonConverter())
-            this.Converters.Add(FeerateJsonConverter())
-            this.Converters.Add(OutputDescriptorJsonConverter(n))
-            this.Converters.Add(HexFeatureBitsJsonConverter())
-            this.Converters.Add(OptionConverter())
+    [<Extension>]
+    static member AddDNLJsonConverters(this: JsonSerializerSettings, n) =
+        this.NullValueHandling <- NullValueHandling.Ignore
+        this.Converters.Add(MSatJsonConverter())
+        this.Converters.Add(PubKeyJsonConverter())
+        this.Converters.Add(ShortChannelIdJsonConverter())
+        this.Converters.Add(KeyJsonConverter())
+        this.Converters.Add(UInt256JsonConverter())
+        this.Converters.Add(AmountOrAnyJsonConverter())
+        this.Converters.Add(AmountOrAllJsonConverter())
+        this.Converters.Add(OutPointJsonConverter())
+        this.Converters.Add(FeerateJsonConverter())
+        this.Converters.Add(OutputDescriptorJsonConverter(n))
+        this.Converters.Add(HexFeatureBitsJsonConverter())
+        this.Converters.Add(OptionConverter())
