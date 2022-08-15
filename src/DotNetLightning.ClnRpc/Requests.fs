@@ -3105,3 +3105,25 @@ type private Response =
     | Ping of Responses.PingResponse
     | SignMessage of Responses.SignmessageResponse
 
+
+open DotNetLightning.ClnRpc.SystemTextJsonConverters
+module internal AddJsonConverters =
+    let addEnumConverters(opts: JsonSerializerOptions) =
+        opts.Converters.Add(JsonStringEnumConverterEx<Responses.SendpayStatus>())
+        opts.Converters.Add(JsonStringEnumConverterEx<Responses.CloseType>())
+        opts.Converters.Add(JsonStringEnumConverterEx<Responses.ConnectDirection>())
+        opts.Converters.Add(JsonStringEnumConverterEx<Responses.CreateinvoiceStatus>())
+        opts.Converters.Add(JsonStringEnumConverterEx<Requests.DatastoreMode>())
+        opts.Converters.Add(JsonStringEnumConverterEx<Requests.DelinvoiceStatus>())
+        opts.Converters.Add(JsonStringEnumConverterEx<Responses.DelinvoiceStatus>())
+        opts.Converters.Add(JsonStringEnumConverterEx<Responses.SendonionStatus>())
+        opts.Converters.Add(JsonStringEnumConverterEx<Requests.ListsendpaysStatus>())
+        opts.Converters.Add(JsonStringEnumConverterEx<Responses.PayStatus>())
+        opts.Converters.Add(JsonStringEnumConverterEx<Responses.WaitanyinvoiceStatus>())
+        opts.Converters.Add(JsonStringEnumConverterEx<Responses.WaitinvoiceStatus>())
+        opts.Converters.Add(JsonStringEnumConverterEx<Responses.WaitsendpayStatus>())
+        opts.Converters.Add(JsonStringEnumConverterEx<Requests.NewaddrAddresstype>())
+        opts.Converters.Add(JsonStringEnumConverterEx<Responses.KeysendStatus>())
+        opts.Converters.Add(JsonStringEnumConverterEx<Requests.FeeratesStyle>())
+        opts.Converters.Add(JsonStringEnumConverterEx<Requests.ListforwardsStatus>())
+        opts.Converters.Add(JsonStringEnumConverterEx<Requests.ListpaysStatus>())

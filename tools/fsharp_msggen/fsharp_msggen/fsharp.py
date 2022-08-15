@@ -276,12 +276,30 @@ open DotNetLightning.Utils
 """
         self.write(opens)
 
+    def _gen_stj_converter(self, prefix: str, field: EnumField):
+        self.write(f"opts.Converters.Add(JsonStringEnumConverterEx<{prefix}.{field.typename}>())\n", numindent=2)
+
+    def generate_stj_method(self, service: Service):
+        template = """
+open DotNetLightning.ClnRpc.SystemTextJsonConverters
+module internal AddJsonConverters =
+    let addEnumConverters(opts: JsonSerializerOptions) =
+"""
+        self.write(template)
+        for method in service.methods:
+            for field in method.request.fields:
+                if isinstance(field, EnumField):
+                    self._gen_stj_converter("Requests", field)
+            for field in method.response.fields:
+                if isinstance(field, EnumField):
+                    self._gen_stj_converter("Responses", field)
+
     def generate(self, service: Service):
         self.write_header()
         self.generate_requests(service)
         self.generate_responses(service)
         self.generate_enums(service)
-
+        self.generate_stj_method(service)
 
 class FSharpClientExtensionGenerator:
     def __init__(self, dest: TextIO):
@@ -340,8 +358,6 @@ open System.Threading.Tasks
 
 """
         self.write(opens)
-
     def generate(self, service: Service):
         self.write_header()
         self.generate_methods(service)
-

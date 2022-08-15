@@ -10,6 +10,7 @@ open DotNetLightning.ClnRpc
 open DotNetLightning.ClnRpc.Plugin
 open DotNetLightning.ClnRpc.NewtonsoftJsonConverters
 open DotNetLightning.ClnRpc.Requests
+open DotNetLightning.ClnRpc.Responses
 open DotNetLightning.ClnRpc.SystemTextJsonConverters
 open DotNetLightning.Serialization
 open NBitcoin
@@ -213,3 +214,28 @@ type SerializerTests() =
         Assert.Null(jObj.Root.["exclude"])
         Assert.Null(jObj.Root.["cltv"])
         ()
+
+    [<Fact>]
+    member this.SerializeListPays() =
+        let req =
+            {
+                ListpaysRequest.Bolt11 =
+                    "lnbcrt500u1p305fnmpp5vzsjps8uptzedfmrw8jsuw37m4mdlyjjua0qfzceph3a0nz7rtfqdql2djkuepqw3hjqsj5gvsxzerywfjhxuccqzptxqrrsssp5fak5cm2c3r5wtezcflfg6cs3psrp4kczvp4wly66h85y4m4hsrds9qyyssqqxemaw5w9r6hteaxmmhvqe4nkv654nyk88gahjt5mxfjjzkj945xe6frwuavv8u0fzwcst0mvrxj8nxlj3qad9dxgzv8rg9dup3r5kcqnwpqjk"
+                    |> Some
+                PaymentHash = None
+                Status = ListpaysStatus.PENDING |> Some
+            }
+
+        let opts = JsonSerializerOptions()
+
+        let data1 =
+            opts.AddDNLJsonConverters(Network.RegTest)
+            JsonSerializer.SerializeToDocument(req, opts)
+
+        Assert.Equal(
+            "pending",
+            data1
+                .RootElement
+                .GetProperty("status")
+                .GetString()
+        )
