@@ -15,7 +15,7 @@ jobs:
       - name: Setup .NET 6
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: 6.0.x
+          dotnet-version: 6.0.303
 
       - name: build project assemblies so that fsdocs can read assemblies and .xml files from bin/ .
         run:
