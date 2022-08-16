@@ -107,8 +107,8 @@ type OutPointJsonConverter() =
             raise <| JsonException("not a valid txid:output tuple")
         else
             let o = OutPoint()
-            o.Hash <- splits.[0] |> uint256.Parse
-            o.N <- splits.[1] |> uint32
+            o.Hash <- splits[0] |> uint256.Parse
+            o.N <- splits[1] |> uint32
             o
 
 type FeerateJsonConverter() =
@@ -154,10 +154,54 @@ type OutputDescriptorJsonConverter(network: Network) =
         reader.GetString() |> fun s -> OutputDescriptor.Parse(s, network)
 
 
+open System.Collections.Generic
+open System.Runtime.Serialization
+open System.Linq
+
+/// Taken from https://github.com/dotnet/runtime/issues/31081#issuecomment-848697673
+type JsonStringEnumConverterEx<'TEnum when 'TEnum: enum<int32> and 'TEnum: equality and 'TEnum: (new:
+    unit -> 'TEnum) and 'TEnum: struct and 'TEnum :> Enum>() =
+    inherit JsonConverter<'TEnum>()
+
+    let _enumToString = Dictionary<'TEnum, string>()
+    let _stringToEnum = Dictionary<string, 'TEnum>()
+
+    do
+        let ty = typeof<'TEnum>
+
+        for v in Enum.GetValues<'TEnum>() do
+            let enumMember = ty.GetMember(v.ToString())[0]
+
+            let maybeAttr =
+                enumMember
+                    .GetCustomAttributes(typeof<EnumMemberAttribute>, false)
+                    .Cast<EnumMemberAttribute>()
+                    .FirstOrDefault()
+                |> Option.ofObj
+
+            _stringToEnum.Add(v.ToString(), v)
+
+            match maybeAttr with
+            | Some attr ->
+                _enumToString.Add(v, attr.Value)
+                _stringToEnum.Add(attr.Value, v)
+            | None -> _enumToString.Add(v, v.ToString())
+
+    override this.Read(reader, _typeToConvert, _options) =
+        let stringV = reader.GetString()
+
+        match _stringToEnum.TryGetValue stringV with
+        | true, v -> v
+        | _ -> Unchecked.defaultof<'TEnum>
+
+    override this.Write(writer, value, _options) =
+        writer.WriteStringValue(_enumToString[value])
+
+
 [<Extension; AbstractClass; Sealed>]
-type ClnSharpClientHelpers =
+type internal ClnSharpClientHelpersCore =
     [<Extension>]
-    static member AddDNLJsonConverters
+    static member internal _AddDNLJsonConverters
         (
             this: JsonSerializerOptions,
             n: Network
