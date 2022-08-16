@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>DynamicOutputP2WPKH (DotNetLightning)</title>
+    <title>JsonStringEnumConverterEx<'TEnum> (DotNetLightning)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="author" content="joemphilips">
 
@@ -34,7 +34,7 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse navbar-nav-scroll" id="navbarsExampleDefault">
-            <a href="https://joemphilips.github.io/DotNetLightning/"><img id="fsdocs-logo" src="https://joemphilips.github.io/DotNetLightning/img/logo.png" /></a>
+            <a href="https://github.com/joemphilips/DotNetLightning/"><img id="fsdocs-logo" src="https://joemphilips.github.io/DotNetLightning/img/logo.png" /></a>
             <!-- BEGIN SEARCH BOX: this adds support for the search box -->
             <div id="header">
                 <div class="searchbox" id="fsdocs-searchbox">
@@ -96,39 +96,35 @@
     </nav>
     <div class="container">
         <div class="masthead">
-            <h3 class="muted"><a href="https://joemphilips.github.io/DotNetLightning/">DotNetLightning</a></h3>
+            <h3 class="muted"><a href="https://github.com/joemphilips/DotNetLightning/">DotNetLightning</a></h3>
         </div>
         <hr />
         <div class="container" id="fsdocs-content">
             <div>
   <h2>
-    DynamicOutputP2WPKH Type
+    JsonStringEnumConverterEx<'TEnum> Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-chain.html">
-        DotNetLightning.Chain
+      <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-systemtextjsonconverters.html">
+        DotNetLightning.ClnRpc.SystemTextJsonConverters
       </a>
     </dt>
     <dt>
-      Assembly: DotNetLightning.Core.dll
+      Assembly: DotNetLightning.ClnRpc.dll
     </dt>
     <dt>
       Base Type: 
-      <code>obj</code>
-    </dt>
-    <dt>
-      All Interfaces: 
-      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-chain-dynamicoutputp2wpkh.html">DynamicOutputP2WPKH</a>&gt;</span></code>
-      , 
-      <code><a href="https://docs.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
+      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.text.json.serialization.jsonconverter-1">JsonConverter</a>&lt;'TEnum&gt;</span></code>
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-        
+        <p>Taken from <a href="https://github.com/dotnet/runtime/issues/31081#issuecomment-848697673">https://github.com/dotnet/runtime/issues/31081#issuecomment-848697673</a></p>
+
+
       </p>
     </div>
   </div>
@@ -136,15 +132,17 @@
   <div></div>
   <div></div>
   <div></div>
+  <div></div>
+  <div></div>
   <div>
     <h3>
-      Record fields
+      Constructors
     </h3>
     <table class="table outer-list fsdocs-member-list">
       <thead>
         <tr>
           <td class="fsdocs-member-list-header">
-            Record Field
+            Constructor
           </td>
           <td class="fsdocs-member-list-header">
             Description
@@ -155,24 +153,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '280', 280)" onmouseover="showTip(event, '280', 280)">
+              <code onmouseout="hideTip(event, '1586', 1586)" onmouseover="showTip(event, '1586', 1586)">
                 <p>
-                  <a id="Key">
-                    <a href="#Key">
-                      <code>Key</code>
+                  <a id="``.ctor``">
+                    <a href="#``.ctor``">
+                      <code><span>JsonStringEnumConverterEx<span>()</span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="280">
+              <div class="fsdocs-tip" id="1586">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>Key</code>
+                  <code><span>JsonStringEnumConverterEx<span>()</span></span></code>
                   <br/>
                   <br/>
                   <span>
-                    Field type: 
-                    <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.key">Key</a></code>
+                    Returns: 
+                    <code><span><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-systemtextjsonconverters-jsonstringenumconverterex-1.html">JsonStringEnumConverterEx</a>&lt;'TEnum&gt;</span></code>
                   </span>
                   <br/>
                 </div>
@@ -181,122 +179,28 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Chain/KeysInterface.fs#L31-31" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
-                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                <p>localkey = payment_basepoint_secret + SHA256(per_commitment_point || payment_basepoint)</p>
-
-
-              </p>
-            </div>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.key">Key</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '281', 281)" onmouseover="showTip(event, '281', 281)">
-                <p>
-                  <a id="Outpoint">
-                    <a href="#Outpoint">
-                      <code>Outpoint</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="281">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>Outpoint</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.outpoint">OutPoint</a></code>
-                  </span>
-                  <br/>
-                </div>
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('``cref:M:DotNetLightning.ClnRpc.SystemTextJsonConverters.JsonStringEnumConverterEx`1.#ctor``')">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
               </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Chain/KeysInterface.fs#L29-29" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
-                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                <p>Output spendable by user wallet</p>
-
-
-              </p>
-            </div>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.outpoint">OutPoint</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '282', 282)" onmouseover="showTip(event, '282', 282)">
-                <p>
-                  <a id="Output">
-                    <a href="#Output">
-                      <code>Output</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="282">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>Output</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.txout">TxOut</a></code>
-                  </span>
-                  <br/>
-                </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.ClnRpc.SystemTextJsonConverters.JsonStringEnumConverterEx`1.#ctor\'/>')">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
               </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.Core/Chain/KeysInterface.fs#L33-33" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/joemphilips/DotNetLightning/src/DotNetLightning.ClnRpc/SystemTextJsonConverters.fs#L162-162" class="fsdocs-source-link" title="Source on GitHub">
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
                 <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
               </a>
               <p class="fsdocs-summary">
-                <p>The output which is reference by the given outpoint</p>
-
-
+                
               </p>
             </div>
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
-                  Field type: 
+                  Returns: 
                 </span>
-                <code><a href="https://docs.microsoft.com/dotnet/api/nbitcoin.txout">TxOut</a></code>
+                <code><span><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-clnrpc-systemtextjsonconverters-jsonstringenumconverterex-1.html">JsonStringEnumConverterEx</a>&lt;'TEnum&gt;</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -305,8 +209,6 @@
       </tbody>
     </table>
   </div>
-  <div></div>
-  <div></div>
   <div></div>
   <div></div>
 </div>
