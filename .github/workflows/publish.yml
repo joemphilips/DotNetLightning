@@ -94,7 +94,7 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu-20')
         run: |
           echo "releasing BouncyCastle version to nuget..."
-          dotnet pack -p:Configuration=Release src/DotNetLightning.Core -p:BouncyCastle=True
+          dotnet pack -p:Configuration=Release src/DotNetLightning.Core -p:Portability=True
           if [ ${{ secrets.NUGET_API_KEY }} ]; then
             dotnet nuget push ./src/DotNetLightning.Core/bin/Release/DotNetLightning.${{ steps.get_version.outputs.VERSION }}.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
           fi
