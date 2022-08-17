@@ -125,6 +125,15 @@ jobs:
           asset_name: DotNetLightning-${{ matrix.RID }}.${{ steps.get_version.outputs.VERSION }}.nupkg
           asset_content_type: application/zip
 
+    - name: Upload nuget packages (DotNetLightning.ClnRpc)
+      if: startsWith(matrix.os, 'ubuntu')
+      run: |
+        dotnet pack -p:Configuration=Release src/DotNetLightning.ClnRpc -p:Portability=True
+        if [ ${{ secrets.NUGET_API_KEY }} ]; then
+          dotnet nuget push ./src/DotNetLightning.ClnRpc/bin/Release/DotNetLightning.ClnRpc.${{ steps.get_version.outputs.VERSION }}.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
+        fi
+
+
   pack_and_push_prerelease:
     needs: [check_nuget_secret]
     if: |
