@@ -96,7 +96,7 @@ jobs:
           echo "releasing BouncyCastle version to nuget..."
           dotnet pack -p:Configuration=Release src/DotNetLightning.Core -p:Portability=True
           if [ ${{ secrets.NUGET_API_KEY }} ]; then
-            dotnet nuget push ./src/DotNetLightning.Core/bin/Release/DotNetLightning.${{ steps.get_version.outputs.VERSION }}.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
+            dotnet nuget push ./src/DotNetLightning.Core/bin/Release/DotNetLightning.${{ steps.get_version.outputs.VERSION }}.snupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
           fi
 
       - name: upload release asset (BouncyCastle version)
@@ -107,8 +107,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.upload-url.outputs.url }}
-          asset_path: ./src/DotNetLightning.Core/bin/Release/DotNetLightning.${{ steps.get_version.outputs.VERSION }}.nupkg
-          asset_name: DotNetLightning-multiplatform.${{ steps.get_version.outputs.VERSION }}.nupkg
+          asset_path: ./src/DotNetLightning.Core/bin/Release/DotNetLightning.${{ steps.get_version.outputs.VERSION }}.snupkg
+          asset_name: DotNetLightning-multiplatform.${{ steps.get_version.outputs.VERSION }}.snupkg
           asset_content_type: application/zip
 
       - name: pack non-BouncyCastle version
@@ -121,8 +121,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.upload-url.outputs.url }}
-          asset_path: ./src/DotNetLightning.Core/bin/Release/DotNetLightning.Core.${{ steps.get_version.outputs.VERSION }}.nupkg
-          asset_name: DotNetLightning-${{ matrix.RID }}.${{ steps.get_version.outputs.VERSION }}.nupkg
+          asset_path: ./src/DotNetLightning.Core/bin/Release/DotNetLightning.Core.${{ steps.get_version.outputs.VERSION }}.snupkg
+          asset_name: DotNetLightning-${{ matrix.RID }}.${{ steps.get_version.outputs.VERSION }}.snupkg
           asset_content_type: application/zip
 
       - name: Upload nuget packages (DotNetLightning.ClnRpc)
@@ -130,7 +130,7 @@ jobs:
         run: |
           dotnet pack -p:Configuration=Release src/DotNetLightning.ClnRpc -p:Portability=True
           if [ ${{ secrets.NUGET_API_KEY }} ]; then
-            dotnet nuget push ./src/DotNetLightning.ClnRpc/bin/Release/DotNetLightning.ClnRpc.${{ steps.get_version.outputs.VERSION }}.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
+            dotnet nuget push ./src/DotNetLightning.ClnRpc/bin/Release/DotNetLightning.ClnRpc.${{ steps.get_version.outputs.VERSION }}.snupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
           fi
       - name: upload release asset (DotNetLightning.ClnRpc)
         if: startsWith(matrix.os, 'ubuntu')
@@ -139,8 +139,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.upload-url.outputs.url }}
-          asset_path: ./src/DotNetLightning.ClnRpc/bin/Release/DotNetLightning.ClnRpc.${{ steps.get_version.outputs.VERSION }}.nupkg
-          asset_name: DotNetLightning.ClnRpc-multiplatform.${{ steps.get_version.outputs.VERSION }}.nupkg
+          asset_path: ./src/DotNetLightning.ClnRpc/bin/Release/DotNetLightning.ClnRpc.${{ steps.get_version.outputs.VERSION }}.snupkg
+          asset_name: DotNetLightning.ClnRpc-multiplatform.${{ steps.get_version.outputs.VERSION }}.snupkg
           asset_content_type: application/zip
 
 
@@ -175,16 +175,16 @@ jobs:
       if: startsWith(matrix.os, 'ubuntu')
       run: |
         dotnet pack ./src/DotNetLightning.Core -p:Configuration=Release --version-suffix date`date +%Y%m%d-%H%M`-git-`git rev-parse --short=7 HEAD` -p:Portability=True
-        dotnet nuget push ./src/DotNetLightning.Core/bin/Release/DotNetLightning.1*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
+        dotnet nuget push ./src/DotNetLightning.Core/bin/Release/DotNetLightning.1*.snupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
 
     - name: Upload nuget packages (native)
       run: |
         bash -c "dotnet pack ./src/DotNetLightning.Core -p:Configuration=Release --version-suffix date$(date +%Y%m%d-%H%M).git-$(git rev-parse --short=7 HEAD)-${{ matrix.RID }}"
-        bash -c "dotnet nuget push ./src/DotNetLightning.Core/bin/Release/DotNetLightning.Core.1*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json"
+        bash -c "dotnet nuget push ./src/DotNetLightning.Core/bin/Release/DotNetLightning.Core.1*.snupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json"
 
     - name: Upload nuget packages (DotNetLightning.ClnRpc)
       if: startsWith(matrix.os, 'ubuntu')
       run: |
         dotnet pack src/DotNetLightning.ClnRpc -p:Configuration=Release --version-suffix date`date +%Y%m%d-%H%M`-git-`git rev-parse --short=7 HEAD` -p:Portability=True
-        dotnet nuget push ./src/DotNetLightning.ClnRpc/bin/Release/DotNetLightning.ClnRpc.*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
+        dotnet nuget push ./src/DotNetLightning.ClnRpc/bin/Release/DotNetLightning.ClnRpc.*.snupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
 
