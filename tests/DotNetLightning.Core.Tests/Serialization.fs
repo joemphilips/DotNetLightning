@@ -2099,6 +2099,54 @@ module SerializationTest =
                             expected
                             (sprintf "%s" (ba.PrintBits()))
 
+                testCase "set/has feature test"
+                <| fun _ ->
+                    let featureBits =
+                        (((FeatureBits.Zero.SetFeature
+                            Feature.OptionDataLossProtect
+                            FeaturesSupport.Optional
+                            true)
+                            .SetFeature
+                              Feature.VariableLengthOnion
+                              FeaturesSupport.Mandatory
+                              true)
+                            .SetFeature
+                             Feature.OptionStaticRemoteKey
+                             FeaturesSupport.Mandatory
+                             true)
+                            .SetFeature
+                            Feature.ChannelRangeQueries
+                            FeaturesSupport.Mandatory
+                            true
+
+                    Expect.isTrue
+                        (featureBits.HasFeature(
+                            Feature.OptionDataLossProtect,
+                            FeaturesSupport.Optional
+                        ))
+                        "OptionDataLossProtect is false even though we set it"
+
+                    Expect.isTrue
+                        (featureBits.HasFeature(
+                            Feature.VariableLengthOnion,
+                            FeaturesSupport.Mandatory
+                        ))
+                        "VariableLengthOnion is false even though we set it"
+
+                    Expect.isTrue
+                        (featureBits.HasFeature(
+                            Feature.OptionStaticRemoteKey,
+                            FeaturesSupport.Mandatory
+                        ))
+                        "OptionStaticRemoteKey is false even though we set it"
+
+                    Expect.isTrue
+                        (featureBits.HasFeature(
+                            Feature.ChannelRangeQueries,
+                            FeaturesSupport.Mandatory
+                        ))
+                        "ChannelRangeQueries is false even though we set it"
+
                 testCase "features compatibility (in parsed string)"
                 <| fun _ ->
                     let testCases =
