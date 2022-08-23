@@ -297,10 +297,7 @@ type FeatureBits private (bitArray: BitArray) =
         : FeatureBits =
         let index = feature.BitPosition support
         let length = bitArray.Length
-        let bits = Array.zeroCreate<byte> length
-        //FIXME: will clone() work here?
-        this.BitArray.CopyTo(bits, 0)
-        let newBitArray = BitArray bits
+        let newBitArray = BitArray bitArray
 
         if length <= index then
             newBitArray.Length <- index + 1
