@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>RGB (DotNetLightning)</title>
+    <title>WarningMsg (DotNetLightning)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="author" content="joemphilips">
 
@@ -102,52 +102,45 @@
         <div class="container" id="fsdocs-content">
             <div>
   <h2>
-    RGB Type
+    WarningMsg Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-utils.html">
-        DotNetLightning.Utils
+      <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-serialization-msgs.html">
+        DotNetLightning.Serialization.Msgs
       </a>
     </dt>
     <dt>
       Assembly: DotNetLightning.Core.dll
     </dt>
     <dt>
-      Parent Module: 
-      <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-utils-primitives.html">
-        Primitives
-      </a>
-    </dt>
-    <dt>
       Base Type: 
-      <code><a href="https://docs.microsoft.com/dotnet/api/system.valuetype">ValueType</a></code>
+      <code>obj</code>
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-utils-primitives-rgb.html">RGB</a>&gt;</span></code>
+      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-serialization-msgs-warningmsg.html">WarningMsg</a>&gt;</span></code>
       , 
       <code><a href="https://docs.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
       , 
-      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-utils-primitives-rgb.html">RGB</a>&gt;</span></code>
+      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-serialization-msgs-warningmsg.html">WarningMsg</a>&gt;</span></code>
       , 
       <code><a href="https://docs.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
       , 
       <code><a href="https://docs.microsoft.com/dotnet/api/system.collections.istructuralcomparable">IStructuralComparable</a></code>
-    </dt>
-    <dt>
-      Kind: Struct
+      , 
+      <code><span><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-serialization-msgs-ilightningserializable-1.html">ILightningSerializable</a>&lt;<a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-serialization-msgs-warningmsg.html">WarningMsg</a>&gt;</span></code>
+      , 
+      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-serialization-msgs-isetupmsg.html">ISetupMsg</a></code>
+      , 
+      <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-serialization-msgs-ilightningmsg.html">ILightningMsg</a></code>
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-        <p>Each lightning node can specify its own RGB color in node_announcement.
-Used for e.g. lightning node explorer.
-<seealso cref="DotNetLightning.Serialization.Msgs.UnsignedNodeAnnouncementMsg" /></p>
-
-
+        
       </p>
     </div>
   </div>
@@ -174,25 +167,28 @@ Used for e.g. lightning node explorer.
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2581', 2581)" onmouseover="showTip(event, '2581', 2581)">
+              <code onmouseout="hideTip(event, '2438', 2438)" onmouseover="showTip(event, '2438', 2438)">
                 <p>
-                  <a id="Blue">
-                    <a href="#Blue">
-                      <code>Blue</code>
+                  <a id="ChannelId">
+                    <a href="#ChannelId">
+                      <code>ChannelId</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2581">
+              <div class="fsdocs-tip" id="2438">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>Blue</code>
+                  <code>ChannelId</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code>uint8</code>
+                    <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-serialization-msgs-whichchannel.html">WhichChannel</a></code>
                   </span>
+                  <br/>
+                  Modifiers: 
+                  mutable
                   <br/>
                 </div>
               </div>
@@ -213,7 +209,7 @@ Used for e.g. lightning node explorer.
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code>uint8</code>
+                <code><a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-serialization-msgs-whichchannel.html">WhichChannel</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -222,25 +218,28 @@ Used for e.g. lightning node explorer.
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '2582', 2582)" onmouseover="showTip(event, '2582', 2582)">
+              <code onmouseout="hideTip(event, '2439', 2439)" onmouseover="showTip(event, '2439', 2439)">
                 <p>
-                  <a id="Green">
-                    <a href="#Green">
-                      <code>Green</code>
+                  <a id="Data">
+                    <a href="#Data">
+                      <code>Data</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="2582">
+              <div class="fsdocs-tip" id="2439">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>Green</code>
+                  <code>Data</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code>uint8</code>
+                    <code><span>byte&#32;array</span></code>
                   </span>
+                  <br/>
+                  Modifiers: 
+                  mutable
                   <br/>
                 </div>
               </div>
@@ -261,55 +260,7 @@ Used for e.g. lightning node explorer.
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code>uint8</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '2583', 2583)" onmouseover="showTip(event, '2583', 2583)">
-                <p>
-                  <a id="Red">
-                    <a href="#Red">
-                      <code>Red</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="2583">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>Red</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>uint8</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <a href="" class="fsdocs-source-link" title="Source on GitHub">
-                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
-                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>uint8</code>
+                <code><span>byte&#32;array</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -320,7 +271,81 @@ Used for e.g. lightning node explorer.
   </div>
   <div></div>
   <div></div>
-  <div></div>
+  <div>
+    <h3>
+      Instance members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Instance member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '2440', 2440)" onmouseover="showTip(event, '2440', 2440)">
+                <p>
+                  <a id="GetFailureMsgData">
+                    <a href="#GetFailureMsgData">
+                      <code><span>this.GetFailureMsgData</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="2440">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.GetFailureMsgData</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>string</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:DotNetLightning.Serialization.Msgs.WarningMsg.GetFailureMsgData`')">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-md-hover.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:DotNetLightning.Serialization.Msgs.WarningMsg.GetFailureMsgData\'/>')">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/copy-xml-hover.png" class="hover"/>
+              </div>
+              <a href="" class="fsdocs-source-link" title="Source on GitHub">
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github.png" class="normal"/>
+                <img src="https://joemphilips.github.io/DotNetLightning/content/img/github-hover.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
   <div></div>
 </div>
             

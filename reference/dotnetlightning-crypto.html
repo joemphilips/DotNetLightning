@@ -410,10 +410,10 @@ Since it is clear protocol violation.</p>
             <p class="fsdocs-summary">
               <p>An interface responsible for set of low-level cryptographic operation.
 We need this because there are several types of secp256k1 implementation
-<em> 1. <code>NBitcoinSecp256k1</code>
-</em> The one we usually want to use. Which depends on <a href="https://github.com/MetacoSA/NBitcoin/tree/master/NBitcoin.Secp256k1">NBitcoin's implementation</a>
-<em> 2. <code>BouncySecp256k1</code>
-</em> Fallback when we are compiling with <code>netstandard2.0</code>, since <code>NBitcoin.Secp256k1</code> does not support older netstandard version.
+* 1. <code>NBitcoinSecp256k1</code>
+* The one we usually want to use. Which depends on <a href="https://github.com/MetacoSA/NBitcoin/tree/master/NBitcoin.Secp256k1">NBitcoin's implementation</a>
+* 2. <a href="https://joemphilips.github.io/DotNetLightning/reference/dotnetlightning-crypto-bouncysecp256k1.html" title="BouncySecp256k1"><code>BouncySecp256k1</code></a>
+* Fallback when we are compiling with <code>netstandard2.0</code>, since <code>NBitcoin.Secp256k1</code> does not support older netstandard version.
 * This will be obsolete when we drop the support for <code>netstandard2.1</code></p>
 
 
