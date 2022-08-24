@@ -57,6 +57,9 @@ let testList2 =
             testPropertyWithConfig config "pong"
             <| fun (msg: PongMsg) -> Expect.equal (msg.Clone()) (msg) ""
 
+            testPropertyWithConfig config "warning"
+            <| fun (msg: WarningMsg) -> Expect.equal (msg.Clone()) (msg) ""
+
             testPropertyWithConfig config "open_channel"
             <| fun (msg: OpenChannelMsg) -> Expect.equal (msg.Clone()) (msg) ""
 
