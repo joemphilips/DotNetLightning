@@ -1,5 +1,7 @@
 # Example c-lightning plugin in C#.
 
+built with an approach explained in [the blogpost](https://dev.to/joemphilips/building-c-lightning-plugin-with-net-3162)
+
 ## How to test.
 
 Assume you are running your c-lightning in `linux-x64`,
