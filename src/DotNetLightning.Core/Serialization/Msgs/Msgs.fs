@@ -63,6 +63,9 @@ module internal TypeFlag =
     let Error = 17us
 
     [<Literal>]
+    let Warning = 1us
+
+    [<Literal>]
     let Ping = 18us
 
     [<Literal>]
@@ -210,6 +213,7 @@ module ILightningSerializable =
         match t with
         | TypeFlag.Init -> deserialize<InitMsg>(ls) :> ILightningMsg
         | TypeFlag.Error -> deserialize<ErrorMsg>(ls) :> ILightningMsg
+        | TypeFlag.Warning -> deserialize<WarningMsg>(ls) :> ILightningMsg
         | TypeFlag.Ping -> deserialize<PingMsg>(ls) :> ILightningMsg
         | TypeFlag.Pong -> deserialize<PongMsg>(ls) :> ILightningMsg
         | TypeFlag.OpenChannel ->
@@ -272,6 +276,11 @@ module ILightningSerializable =
 
             (d :> ILightningSerializable<ErrorMsg>)
                 .Serialize(ls)
+        | :? WarningMsg as warningMsg ->
+            ls.Write(TypeFlag.Warning, false)
+
+            (warningMsg :> ILightningSerializable<WarningMsg>)
+                .Serialize ls
         | :? PingMsg as d ->
             ls.Write(TypeFlag.Ping, false)
 
@@ -1808,6 +1817,50 @@ type ErrorMsg =
 and WhichChannel =
     | SpecificChannel of ChannelId
     | All
+
+
+[<RequireQualifiedAccess>]
+[<CLIMutable>]
+type WarningMsg =
+    {
+        mutable ChannelId: WhichChannel
+        mutable Data: array<byte>
+    }
+
+    interface ISetupMsg
+
+    interface ILightningSerializable<WarningMsg> with
+        member this.Deserialize readStream =
+            match readStream.ReadUInt256 true with
+            | id when id = uint256.Zero -> this.ChannelId <- All
+            | id -> this.ChannelId <- SpecificChannel(ChannelId id)
+
+            this.Data <- readStream.ReadWithLen()
+
+        member this.Serialize writeStream =
+            match this.ChannelId with
+            | SpecificChannel(ChannelId id) -> writeStream.Write(id.ToBytes())
+            | All -> writeStream.Write(Array.zeroCreate 32)
+
+            writeStream.WriteWithLen this.Data
+
+    member this.GetFailureMsgData() =
+        let minPrintableAsciiChar = 32uy
+
+        let isPrintableAsciiChar(asciiChar: byte) =
+            asciiChar >= minPrintableAsciiChar
+
+        let isPrintableAsciiString =
+            this.Data |> Array.forall isPrintableAsciiChar
+
+        if isPrintableAsciiString then
+            System.Text.ASCIIEncoding.ASCII.GetString this.Data
+        else
+            Seq.fold
+                (fun msg (asciiChar: byte) -> sprintf "%s %02x" msg asciiChar)
+                "<warning contains non-printable binary data>:"
+                this.Data
+
 
 #nowarn "0044" // "This construct is deprecated" warning
 // sadly we don't have a way to restore warnings yet.
