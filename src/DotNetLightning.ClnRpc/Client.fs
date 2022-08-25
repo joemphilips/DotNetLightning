@@ -279,9 +279,20 @@ type ClnClient
             [<Optional; DefaultParameterValue(CancellationToken())>] ct: CancellationToken
         ) : Task<'T> =
         backgroundTask {
+            use! networkStream = getTransportStream.Invoke(ct)
+            // without this hack, `ReadAsync` is blocking even if
+            // cancellation is requested.
+            use _ =
+                ct.Register(fun () ->
+                    match networkStream with
+                    | :? NetworkStream as s -> s.Socket.Dispose()
+                    | _ -> ()
+
+                    networkStream.Dispose()
+                )
+
             match jsonLibrary with
             | JsonLibraryType.Newtonsoft ->
-                use! networkStream = getTransportStream.Invoke(ct)
 
                 use textWriter =
                     new StreamWriter(networkStream, utf8, 1024 * 10, true)
@@ -371,7 +382,7 @@ type ClnClient
                         return failwith "unreachable"
 
             | JsonLibraryType.SystemTextJson ->
-                use! networkStream = getTransportStream.Invoke(ct)
+
                 use jsonWriter = new Utf8JsonWriter(networkStream)
 
                 // -- write --
