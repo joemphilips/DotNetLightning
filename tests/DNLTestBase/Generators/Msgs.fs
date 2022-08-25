@@ -542,22 +542,15 @@ let private dnsHostnameGen =
     }
 
 let private netAddressesGen =
-    gen {
-        let! ipv4 = Gen.optionOf(ipV4AddressGen)
-        let! ipv6 = Gen.optionOf(ipV6AddressGen)
-        let! onionv2 = Gen.optionOf(onionV2AddressGen)
-        let! onionv3 = Gen.optionOf(onionV3AddressGen)
-        let! dnsHostname = Gen.optionOf(dnsHostnameGen)
-
-        return
-            [|
-                ipv4
-                ipv6
-                onionv2
-                onionv3
-                dnsHostname
-            |]
-    }
+    Gen.sequence
+        [
+            ipV4AddressGen
+            ipV6AddressGen
+            onionV2AddressGen
+            onionV3AddressGen
+            dnsHostnameGen
+        ]
+    |> Gen.map(Array.ofList)
 
 let unsignedNodeAnnouncementGen =
     gen {
@@ -578,17 +571,17 @@ let unsignedNodeAnnouncementGen =
             <*> Arb.generate<uint8>
 
         let! a = uint256Gen
-        let! addrs = netAddressesGen |> Gen.map(Array.choose id)
+        let! addrs = netAddressesGen
 
         let! eAddrs =
             bytesGen
             |> Gen.filter(fun b ->
                 b.Length = 0
-                || (b.[0] <> 1uy
-                    && b.[0] <> 2uy
-                    && b.[0] <> 3uy
-                    && b.[0] <> 4uy
-                    && b.[0] <> 5uy)
+                || (b[0] <> 1uy
+                    && b[0] <> 2uy
+                    && b[0] <> 3uy
+                    && b[0] <> 4uy
+                    && b[0] <> 5uy)
             )
 
         let! ed = bytesGen
