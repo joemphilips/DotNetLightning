@@ -1212,6 +1212,7 @@ type NetAddress =
     | IPv6 of IPv4Or6Data
     | OnionV2 of OnionV2EndPoint
     | OnionV3 of OnionV3EndPoint
+    | DnsHostName of DnsHostName
 
     member this.GetId() =
         match this with
@@ -1219,6 +1220,7 @@ type NetAddress =
         | IPv6 _ -> 2uy
         | OnionV2 _ -> 3uy
         | OnionV3 _ -> 4uy
+        | DnsHostName _ -> 5uy
 
     member this.Length =
         match this with
@@ -1226,6 +1228,9 @@ type NetAddress =
         | IPv6 _ -> 18us
         | OnionV2 _ -> 12us
         | OnionV3 _ -> 37us
+        | DnsHostName {
+                          HostName = name
+                      } -> name.Length |> uint16
 
     member this.WriteTo(ls: LightningWriterStream) =
         ls.Write(this.GetId())
@@ -1245,10 +1250,14 @@ type NetAddress =
             ls.Write(d.CheckSum, false)
             ls.Write(d.Version)
             ls.Write(d.Port, false)
+        | DnsHostName d ->
+            ls.WriteByte(d.HostName.Length |> uint8)
+            ls.Write(d.HostName)
+            ls.Write(d.Port, false)
 
     static member ReadFrom
         (ls: LightningReaderStream)
-        : NetAdddrSerilizationResult =
+        : NetAddrSerializationResult =
         let id = ls.ReadUInt8()
 
         match id with
@@ -1296,6 +1305,17 @@ type NetAddress =
                     Port = port
                 }
             |> Ok
+        | 5uy ->
+            let hostnameLength = ls.ReadByte()
+            let hostname = ls.ReadBytes(int hostnameLength)
+            let port = ls.ReadUInt16(false)
+
+            DnsHostName
+                {
+                    HostName = hostname
+                    Port = port
+                }
+            |> Ok
         | unknown -> Result.Error(unknown)
 
 /// Pair of Address and port.
@@ -1324,8 +1344,15 @@ and OnionV3EndPoint =
         Port: uint16
     }
 
-and NetAdddrSerilizationResult = Result<NetAddress, UnknownNetAddr>
+and DnsHostName =
+    {
+        HostName: byte []
+        Port: uint16
+    }
+
+and NetAddrSerializationResult = Result<NetAddress, UnknownNetAddr>
 and UnknownNetAddr = byte
+
 
 
 /// `node_announcement` in [bolt07](https://github.com/lightning/bolts/blob/master/07-routing-gossip.md)
@@ -1360,49 +1387,14 @@ type UnsignedNodeAnnouncementMsg =
                 while addrReadPos < addrLen && (not foundUnknown) do
                     let addr = NetAddress.ReadFrom ls
 
-                    ignore
-                    <| match addr with
-                       | Ok(IPv4 _) ->
-                           if addresses.Length > 0 then
-                               raise
-                               <| FormatException(
-                                   sprintf "Extra Address per type %A" addresses
-                               )
-                       | Ok(IPv6 _) ->
-                           if addresses.Length > 1
-                              || (addresses.Length = 1
-                                  && addresses.[0].GetId() <> 1uy) then
-                               raise
-                               <| FormatException(
-                                   sprintf "Extra Address per type %A" addresses
-                               )
-                       | Ok(OnionV2 _) ->
-                           if addresses.Length > 2
-                              || (addresses.Length > 0
-                                  && addresses.[0].GetId() > 2uy) then
-                               raise
-                               <| FormatException(
-                                   sprintf "Extra Address per type %A" addresses
-                               )
-                       | Ok(OnionV3 _) ->
-                           if addresses.Length > 3
-                              || (addresses.Length > 0
-                                  && addresses.[0].GetId() > 3uy) then
-                               raise
-                               <| FormatException(
-                                   sprintf "Extra Address per type %A" addresses
-                               )
-                       | Result.Error v ->
-                           excessAddressDataByte <- v
-                           foundUnknown <- true
-                           addrReadPos <- addrReadPos + 1us
-
-                    if (not foundUnknown) then
-                        match addr with
-                        | Ok addr ->
-                            addrReadPos <- addrReadPos + (1us + addr.Length)
-                            addresses <- addr :: addresses
-                        | Result.Error _ -> failwith "Unreachable"
+                    match addr with
+                    | Error v ->
+                        excessAddressDataByte <- v
+                        foundUnknown <- true
+                        addrReadPos <- addrReadPos + 1us
+                    | Ok addr ->
+                        addrReadPos <- addrReadPos + (1us + addr.Length)
+                        addresses <- addr :: addresses
 
                 addresses |> List.rev |> Array.ofList
 
