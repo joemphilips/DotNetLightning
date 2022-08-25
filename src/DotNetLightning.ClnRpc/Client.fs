@@ -310,7 +310,7 @@ type ClnClient
                             )
                         )
 
-                    reqO.WriteToAsync(jsonWriter)
+                    reqO.WriteToAsync(jsonWriter, ct)
 
                 do! jsonWriter.FlushAsync(ct)
                 do! textWriter.FlushAsync()
@@ -401,7 +401,7 @@ type ClnClient
                     return Activator.CreateInstance returnType |> unbox
                 else
                     let buf = Array.zeroCreate(65535)
-                    let length = networkStream.Read(buf.AsSpan())
+                    let! length = networkStream.ReadAsync(buf.AsMemory(), ct)
 
                     if length = 0 then
                         return Activator.CreateInstance()
