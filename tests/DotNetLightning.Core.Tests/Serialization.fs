@@ -1814,6 +1814,25 @@ module SerializationTest =
 
                     Expect.equal (errorMsg.ToBytes()) (expected) ""
 
+                testCase "warning"
+                <| fun _ ->
+                    let warningMsg =
+                        {
+                            WarningMsg.ChannelId =
+                                WhichChannel.SpecificChannel(
+                                    ChannelId(
+                                        uint256 [| for _ in 0..31 -> 2uy |]
+                                    )
+                                )
+                            WarningMsg.Data = ascii.GetBytes "rust-lightning"
+                        }
+
+                    let expected =
+                        hex.DecodeData
+                            "0202020202020202020202020202020202020202020202020202020202020202000e727573742d6c696768746e696e67"
+
+                    Expect.equal (warningMsg.ToBytes()) expected ""
+
                 testCase "ping"
                 <| fun _ ->
                     let pingMsg =
