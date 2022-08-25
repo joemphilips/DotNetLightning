@@ -1387,57 +1387,14 @@ type UnsignedNodeAnnouncementMsg =
                 while addrReadPos < addrLen && (not foundUnknown) do
                     let addr = NetAddress.ReadFrom ls
 
-                    ignore
-                    <| match addr with
-                       | Ok(IPv4 _) ->
-                           if addresses.Length > 0 then
-                               raise
-                               <| FormatException(
-                                   sprintf "Extra Address per type %A" addresses
-                               )
-                       | Ok(IPv6 _) ->
-                           if addresses.Length > 1
-                              || (addresses.Length = 1
-                                  && addresses.[0].GetId() <> 1uy) then
-                               raise
-                               <| FormatException(
-                                   sprintf "Extra Address per type %A" addresses
-                               )
-                       | Ok(OnionV2 _) ->
-                           if addresses.Length > 2
-                              || (addresses.Length > 0
-                                  && addresses.[0].GetId() > 2uy) then
-                               raise
-                               <| FormatException(
-                                   sprintf "Extra Address per type %A" addresses
-                               )
-                       | Ok(OnionV3 _) ->
-                           if addresses.Length > 3
-                              || (addresses.Length > 0
-                                  && addresses.[0].GetId() > 3uy) then
-                               raise
-                               <| FormatException(
-                                   sprintf "Extra Address per type %A" addresses
-                               )
-                       | Ok(DnsHostName _) ->
-                           if addresses.Length > 4
-                              || (addresses.Length > 0
-                                  && addresses.[0].GetId() > 4uy) then
-                               raise
-                               <| FormatException(
-                                   sprintf "Extra Address per type %A" addresses
-                               )
-                       | Result.Error v ->
-                           excessAddressDataByte <- v
-                           foundUnknown <- true
-                           addrReadPos <- addrReadPos + 1us
-
-                    if (not foundUnknown) then
-                        match addr with
-                        | Ok addr ->
-                            addrReadPos <- addrReadPos + (1us + addr.Length)
-                            addresses <- addr :: addresses
-                        | Result.Error _ -> failwith "Unreachable"
+                    match addr with
+                    | Error v ->
+                        excessAddressDataByte <- v
+                        foundUnknown <- true
+                        addrReadPos <- addrReadPos + 1us
+                    | Ok addr ->
+                        addrReadPos <- addrReadPos + (1us + addr.Length)
+                        addresses <- addr :: addresses
 
                 addresses |> List.rev |> Array.ofList
 
