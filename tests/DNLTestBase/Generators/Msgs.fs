@@ -525,6 +525,21 @@ let private onionV3AddressGen =
                 }
     }
 
+let private dnsHostnameGen =
+    gen {
+        let! name =
+            Arb.generate<NonEmptyArray<byte>>
+            |> Gen.filter(fun b -> b.Get.Length < 255)
+
+        let! port = Arb.generate<uint16>
+
+        return
+            NetAddress.DnsHostName
+                {
+                    HostName = name.Get
+                    Port = port
+                }
+    }
 
 let private netAddressesGen =
     gen {
@@ -532,7 +547,16 @@ let private netAddressesGen =
         let! ipv6 = Gen.optionOf(ipV6AddressGen)
         let! onionv2 = Gen.optionOf(onionV2AddressGen)
         let! onionv3 = Gen.optionOf(onionV3AddressGen)
-        return [| ipv4; ipv6; onionv2; onionv3 |]
+        let! dnsHostname = Gen.optionOf(dnsHostnameGen)
+
+        return
+            [|
+                ipv4
+                ipv6
+                onionv2
+                onionv3
+                dnsHostname
+            |]
     }
 
 let unsignedNodeAnnouncementGen =
@@ -560,7 +584,11 @@ let unsignedNodeAnnouncementGen =
             bytesGen
             |> Gen.filter(fun b ->
                 b.Length = 0
-                || (b.[0] <> 1uy && b.[0] <> 2uy && b.[0] <> 3uy && b.[0] <> 4uy)
+                || (b.[0] <> 1uy
+                    && b.[0] <> 2uy
+                    && b.[0] <> 3uy
+                    && b.[0] <> 4uy
+                    && b.[0] <> 5uy)
             )
 
         let! ed = bytesGen

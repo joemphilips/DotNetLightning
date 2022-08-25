@@ -134,7 +134,7 @@ module SerializationTest =
                                             )
                                         |]
                                     ExcessAddressData =
-                                        [| 5uy; 121uy; 62uy; 96uy; 44uy; 34uy |]
+                                        [| 6uy; 121uy; 62uy; 96uy; 44uy; 34uy |]
                                     ExcessData = [||]
                                 }
                         }
