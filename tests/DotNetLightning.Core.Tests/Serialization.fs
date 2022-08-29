@@ -109,7 +109,7 @@ module SerializationTest =
                                             )
                                         )
                                     Features =
-                                        FeatureBits.CreateUnsafe [| 0uy |]
+                                        Ok(FeatureBits.CreateUnsafe [| 0uy |])
                                     Timestamp = 1u
                                     RGB =
                                         {
@@ -808,7 +808,7 @@ module SerializationTest =
 
                         let unsignedNodeAnnouncementMsg =
                             {
-                                Features = features
+                                Features = Ok features
                                 Timestamp = 20190119u
                                 NodeId = NodeId(pubkey1)
                                 RGB =

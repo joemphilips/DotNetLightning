@@ -8,6 +8,8 @@ open FsCheck
 open DotNetLightning.Utils.Primitives
 open DotNetLightning.Utils
 
+open ResultUtils.Portability
+
 let (<*>) = Gen.apply
 
 
@@ -588,7 +590,7 @@ let unsignedNodeAnnouncementGen =
 
         return
             {
-                Features = f
+                Features = Ok f
                 Timestamp = t
                 NodeId = nodeId
                 RGB = rgb
