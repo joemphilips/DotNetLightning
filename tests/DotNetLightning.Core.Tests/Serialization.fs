@@ -108,8 +108,7 @@ module SerializationTest =
                                                 "03f3c15dbc4d425a4f4c36162a9159bb83511fa920dba1cc2785c434ecaf094015"
                                             )
                                         )
-                                    Features =
-                                        Ok(FeatureBits.CreateUnsafe [| 0uy |])
+                                    FeatureBitsArray = [| 4uy |] // unsupported mandatory flag (position 2)
                                     Timestamp = 1u
                                     RGB =
                                         {
@@ -808,7 +807,7 @@ module SerializationTest =
 
                         let unsignedNodeAnnouncementMsg =
                             {
-                                Features = Ok features
+                                FeatureBitsArray = features.ByteArray
                                 Timestamp = 20190119u
                                 NodeId = NodeId(pubkey1)
                                 RGB =

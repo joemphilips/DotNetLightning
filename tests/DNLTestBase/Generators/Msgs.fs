@@ -556,7 +556,7 @@ let private netAddressesGen =
 
 let unsignedNodeAnnouncementGen =
     gen {
-        let! f = featuresGen
+        let! f = Arb.generate<NonNull<byte []>>
         let! t = Arb.generate<uint32>
         let! nodeId = NodeId <!> pubKeyGen
 
@@ -590,7 +590,7 @@ let unsignedNodeAnnouncementGen =
 
         return
             {
-                Features = Ok f
+                FeatureBitsArray = f.Get
                 Timestamp = t
                 NodeId = nodeId
                 RGB = rgb

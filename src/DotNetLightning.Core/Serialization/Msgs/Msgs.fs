@@ -1357,12 +1357,12 @@ and UnknownNetAddr = byte
 
 /// `node_announcement` in [bolt07](https://github.com/lightning/bolts/blob/master/07-routing-gossip.md)
 /// without signatures.
-/// Features is Result<FeatureBits, FeatureError> because node_announcement with invalid or unknown features
-/// should not raise exception on deserialization.
+/// Features are stored as byte array because node_announcement with invalid or unknown features
+/// should not raise exception on deserialization. They can be accessed using Features property
 [<CLIMutable>]
 type UnsignedNodeAnnouncementMsg =
     {
-        mutable Features: Result<FeatureBits, FeatureError>
+        mutable FeatureBitsArray: array<byte>
         mutable Timestamp: uint32
         mutable NodeId: NodeId
         mutable RGB: RGB
@@ -1372,9 +1372,12 @@ type UnsignedNodeAnnouncementMsg =
         mutable ExcessData: array<byte>
     }
 
+    member this.Features: Result<FeatureBits, FeatureError> =
+        this.FeatureBitsArray |> FeatureBits.TryCreate
+
     interface ILightningSerializable<UnsignedNodeAnnouncementMsg> with
         member this.Deserialize ls =
-            this.Features <- ls.ReadWithLen() |> FeatureBits.TryCreate
+            this.FeatureBitsArray <- ls.ReadWithLen()
             this.Timestamp <- ls.ReadUInt32(false)
             this.NodeId <- ls.ReadPubKey() |> NodeId
             this.RGB <- ls.ReadRGB()
@@ -1419,8 +1422,7 @@ type UnsignedNodeAnnouncementMsg =
                 | None -> [||]
 
         member this.Serialize ls =
-            let features = this.Features |> Result.deref
-            ls.WriteWithLen(features.ToByteArray())
+            ls.WriteWithLen(this.FeatureBitsArray)
             ls.Write(this.Timestamp, false)
             ls.Write(this.NodeId.Value)
             ls.Write(this.RGB)
