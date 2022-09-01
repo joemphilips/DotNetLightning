@@ -1875,7 +1875,9 @@ without signatures</p>
             </a>
             <p class="fsdocs-summary">
               <p><code>node_announcement</code> in <a href="https://github.com/lightning/bolts/blob/master/07-routing-gossip.md">bolt07</a>
-without signatures.</p>
+without signatures.
+Features are stored as byte array because node_announcement with invalid or unknown features
+should not raise exception on deserialization. They can be accessed using Features property</p>
 
 
             </p>
