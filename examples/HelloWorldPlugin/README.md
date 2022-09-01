@@ -1,6 +1,7 @@
 # Example c-lightning plugin in C#.
 
 built with an approach explained in [the blogpost](https://dev.to/joemphilips/building-c-lightning-plugin-with-net-3162)
+Another real-world working example is [nloop](https://github.com/bitbankinc/NLoop)
 
 ## How to test.
 
