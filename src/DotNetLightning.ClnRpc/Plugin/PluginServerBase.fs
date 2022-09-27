@@ -237,7 +237,7 @@ type PluginServerBase
 
         if this.JsonConverters |> isNull |> not then
             for c in this.JsonConverters do
-                cli.NewtonSoftJsonOpts.Converters.Add(c)
+                cli.NewtonSoftJsonConverters.Add(c)
 
         cli
 

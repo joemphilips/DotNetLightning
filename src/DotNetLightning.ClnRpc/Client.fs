@@ -183,13 +183,6 @@ type ClnClient
 
     let mutable _nextId = 0
 
-    let jsonOpts = JsonSerializerOptions()
-
-    let newtonSoftJsonOpts =
-        Newtonsoft.Json.JsonSerializerSettings(
-            NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore
-        )
-
     do
         if address |> isNull && getTransport |> isNull then
             raise
@@ -204,8 +197,8 @@ type ClnClient
         else
             ()
 
-    member val JsonOpts = jsonOpts
-    member val NewtonSoftJsonOpts = newtonSoftJsonOpts
+    member val STJConverters = ResizeArray()
+    member val NewtonSoftJsonConverters = ResizeArray()
 
     member this.NextId
         with private get () =
@@ -274,12 +267,7 @@ type ClnClient
             [<Optional; DefaultParameterValue(CancellationToken())>] ct: CancellationToken
         ) : Task<'T> =
         backgroundTask {
-            match jsonLibrary with
-            | JsonLibraryType.SystemTextJson ->
-                this.JsonOpts.AddDNLJsonConverters(network)
-            | JsonLibraryType.Newtonsoft ->
-                this.NewtonSoftJsonOpts.AddDNLJsonConverters(network)
-            | _ -> invalidArg (nameof(jsonLibrary)) "Unknown json library type"
+
 
             use! networkStream = getTransportStream.Invoke(ct)
             // without this hack, `ReadAsync` is blocking even if
@@ -295,6 +283,17 @@ type ClnClient
 
             match jsonLibrary with
             | JsonLibraryType.Newtonsoft ->
+                let newtonSoftJsonOpts =
+                    Newtonsoft.Json.JsonSerializerSettings(
+                        NullValueHandling =
+                            Newtonsoft.Json.NullValueHandling.Ignore
+                    )
+
+                newtonSoftJsonOpts.AddDNLJsonConverters(network)
+
+                if this.NewtonSoftJsonConverters |> isNull |> not then
+                    for c in this.NewtonSoftJsonConverters do
+                        newtonSoftJsonOpts.Converters.Add(c)
 
                 use textWriter =
                     new StreamWriter(networkStream, utf8, 1024 * 10, true)
@@ -318,7 +317,7 @@ type ClnClient
                             JToken.FromObject(
                                 req,
                                 Newtonsoft.Json.JsonSerializer.Create(
-                                    this.NewtonSoftJsonOpts
+                                    newtonSoftJsonOpts
                                 )
                             )
                         )
@@ -371,7 +370,7 @@ type ClnClient
                             else
                                 let jsonSer =
                                     Newtonsoft.Json.JsonSerializer.Create(
-                                        this.NewtonSoftJsonOpts
+                                        newtonSoftJsonOpts
                                     )
 
                                 return
@@ -384,6 +383,12 @@ type ClnClient
                         return failwith "unreachable"
 
             | JsonLibraryType.SystemTextJson ->
+                let jsonOpts = JsonSerializerOptions()
+                jsonOpts.AddDNLJsonConverters(network)
+
+                if this.STJConverters |> isNull |> not then
+                    for c in this.STJConverters do
+                        jsonOpts.Converters.Add(c)
 
                 use jsonWriter = new Utf8JsonWriter(networkStream)
 
@@ -401,7 +406,7 @@ type ClnClient
                 else
                     reqObject.set_Item(
                         "params",
-                        JsonSerializer.SerializeToNode(req, this.JsonOpts)
+                        JsonSerializer.SerializeToNode(req, jsonOpts)
                     )
 
                 reqObject.WriteTo(jsonWriter)
@@ -424,7 +429,7 @@ type ClnClient
 
                             JsonSerializer.Deserialize<JsonElement>(
                                 bufSpan.Slice(0, length),
-                                this.JsonOpts
+                                jsonOpts
                             )
 
                         try
@@ -450,7 +455,7 @@ type ClnClient
                                         |> unbox
                                 else
                                     let jObj = result.GetProperty("result")
-                                    return jObj.Deserialize(this.JsonOpts)
+                                    return jObj.Deserialize(jsonOpts)
                         with
                         | _ when ct.IsCancellationRequested ->
                             ct.ThrowIfCancellationRequested()
