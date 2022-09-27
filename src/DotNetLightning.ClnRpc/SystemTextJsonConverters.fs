@@ -10,10 +10,10 @@ open NBitcoin
 open NBitcoin.Scripting
 
 type MSatJsonConverter() =
-    inherit JsonConverter<int64<msat>>()
+    inherit JsonConverter<LNMoney>()
 
     override this.Write(writer, value, _options) =
-        writer.WriteStringValue(value.ToString() + "msat")
+        writer.WriteStringValue(value.MilliSatoshi.ToString() + "msat")
 
     override this.Read(reader, _typeToConvert, _options) =
         reader.GetString() |> parseClnAmount
@@ -74,7 +74,8 @@ type AmountOrAnyJsonConverter() =
     override this.Write(writer, value, _options) =
         match value with
         | AmountOrAny.Any -> writer.WriteStringValue "any"
-        | AmountOrAny.Amount a -> writer.WriteStringValue(a.ToString() + "msat")
+        | AmountOrAny.Amount a ->
+            writer.WriteStringValue(a.MilliSatoshi.ToString() + "msat")
 
     override this.Read(reader, _typeToConvert, _options) =
         match reader.GetString() with
@@ -87,7 +88,8 @@ type AmountOrAllJsonConverter() =
     override this.Write(writer, value, _options) =
         match value with
         | AmountOrAll.All -> writer.WriteStringValue "all"
-        | AmountOrAll.Amount a -> writer.WriteStringValue(a.ToString() + "msat")
+        | AmountOrAll.Amount a ->
+            writer.WriteStringValue(a.MilliSatoshi.ToString() + "msat")
 
     override this.Read(reader, _typeToConvert, _options) =
         match reader.GetString() with

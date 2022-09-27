@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 typemap = {
     'boolean': 'bool',
     'hex': 'string',
-    'msat': 'int64<msat>',
+    'msat': 'LNMoney',
     'msat_or_all': 'AmountOrAll',
     'msat_or_any': 'AmountOrAny',
     'number': 'int64',
@@ -37,7 +37,7 @@ typemap = {
 }
 
 converter_map = {
-    'int64<msat>': 'MSatJsonConverter',
+    'LNMoney': 'MSatJsonConverter',
     'PubKey': 'PubKeyJsonConverter',
     'ShortChannelId': 'ShortChannelIdJsonConverter',
     'PrivKey': 'PrivKeyJsonConverter',

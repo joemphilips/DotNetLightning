@@ -1,6 +1,7 @@
 namespace DotNetLightning.ClnRpc
 
 open System
+open DotNetLightning.Utils
 
 /// <namespacedoc>
 ///     <summary>
@@ -36,15 +37,12 @@ type ChannelStateChangeCause =
     | [<System.Runtime.Serialization.EnumMember(Value = "protocol")>] PROTOCOL = 4
     | [<System.Runtime.Serialization.EnumMember(Value = "onchain")>] ONCHAIN = 5
 
-[<Measure>]
-type msat
-
 type AmountOrAny =
-    | Amount of int64<msat>
+    | Amount of LNMoney
     | Any
 
 type AmountOrAll =
-    | Amount of int64<msat>
+    | Amount of LNMoney
     | All
 
 type Feerate =
@@ -68,17 +66,19 @@ type ChannelSide =
 
 [<AutoOpen>]
 module internal PrimitiveExtensions =
-    let parseClnAmount(s: string) : int64<msat> =
+    let parseClnAmount(s: string) : LNMoney =
         if s |> String.IsNullOrWhiteSpace then
             raise <| FormatException($"Invalid string for money. null")
 
-        let str =
+        let v =
             if s.EndsWith("msat") then
-                s.Substring(0, s.Length - 4)
+                s.Substring(0, s.Length - 4) |> uint64
             else if s.EndsWith("sat") then
-                s.Substring(0, s.Length - 3)
+                s.Substring(0, s.Length - 3) |> uint64 |> (*) 1000UL
             else if s.EndsWith("btc") then
                 s.Substring(0, s.Length - 3)
+                |> int64
+                |> fun i -> LNMoney.Coins(i).MilliSatoshi |> uint64
             else
                 raise <| FormatException $"Invalid string for money {s}"
 
@@ -90,11 +90,7 @@ module internal PrimitiveExtensions =
         // technically speaking largest possible number for msat is
         // 2_100_000_000_000_000 * 1_000
         // which is smaller than `Int64.MaxValue`
-        match (UInt64.TryParse str) with
-        | false, _ -> str |> int64
-        | true, v ->
-            if v > (Int64.MaxValue |> uint64) then
-                Int64.MaxValue
-            else
-                str |> int64
-        |> unbox
+        if v > (Int64.MaxValue |> uint64) then
+            Int64.MaxValue |> LNMoney.MilliSatoshis
+        else
+            v |> int64 |> LNMoney.MilliSatoshis
