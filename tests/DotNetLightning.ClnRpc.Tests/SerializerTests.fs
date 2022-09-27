@@ -13,6 +13,7 @@ open DotNetLightning.ClnRpc.Requests
 open DotNetLightning.ClnRpc.Responses
 open DotNetLightning.ClnRpc.SystemTextJsonConverters
 open DotNetLightning.Serialization
+open DotNetLightning.Utils
 open NBitcoin
 open Xunit
 
@@ -180,7 +181,7 @@ type SerializerTests() =
                 GetrouteRequest.Id =
                     PubKey
                         "02c1e1e97d7f1bb9aa7ec2c899e13c4dcbe3c08971620bd11cdf36e1addd812985"
-                Msatoshi = 10000L<msat>
+                Msatoshi = 10000L |> LNMoney.MilliSatoshis
                 Riskfactor = 10UL // no big reason for this value
                 Cltv = None // req.Invoice.MinFinalCLTVExpiryDelta.Value |> int64 |> Some
                 Fromid = None

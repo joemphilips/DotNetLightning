@@ -8,16 +8,26 @@
 namespace DotNetLightning.ClnRpc.Tests
 
 
+open DotNetLightning.Utils
 open Xunit
 open FsCheck
 open FsCheck.Xunit
 open DotNetLightning.ClnRpc
 open Generators
 
+type LNMoneyGenerator =
+    static member LNMoney() : Arbitrary<LNMoney> =
+        let lnMoneyGen =
+            Gen.choose(0, 2_100_000_000)
+            |> Gen.map(int64 >> (*) 1000L >> LNMoney.Satoshis)
+
+        Arb.fromGen(lnMoneyGen)
+
 type SerializationTests() =
     do
         Arb.register<PrimitiveGenerators>() |> ignore
         Arb.register<NonNullOptionGenerator>() |> ignore
+        Arb.register<LNMoneyGenerator>() |> ignore
 
     [<Property>]
     [<Trait("PropTest", "PropTest")>]

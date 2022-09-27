@@ -47,7 +47,7 @@ module Requests =
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("msatoshi")>]
-        Msatoshi: int64<msat>
+        Msatoshi: LNMoney
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.PubKeyJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.PubKeyJsonConverter>)>]
         [<JsonPropertyName("id")>]
@@ -74,7 +74,7 @@ module Requests =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("msatoshi")>]
-        Msatoshi: int64<msat> option
+        Msatoshi: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt11")>]
@@ -379,7 +379,7 @@ module Requests =
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_msat")>]
-        AmountMsat: int64<msat>
+        AmountMsat: LNMoney
         [<JsonPropertyName("delay")>]
         Delay: uint16
     }
@@ -409,7 +409,7 @@ module Requests =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("msatoshi")>]
-        Msatoshi: int64<msat> option
+        Msatoshi: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("destination")>]
@@ -457,7 +457,7 @@ module Requests =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("msatoshi")>]
-        Msatoshi: int64<msat> option
+        Msatoshi: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("label")>]
@@ -481,7 +481,7 @@ module Requests =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("exemptfee")>]
-        Exemptfee: int64<msat> option
+        Exemptfee: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("localofferid")>]
@@ -492,7 +492,7 @@ module Requests =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("maxfee")>]
-        Maxfee: int64<msat> option
+        Maxfee: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("description")>]
@@ -596,7 +596,7 @@ module Requests =
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("msatoshi")>]
-        Msatoshi: int64<msat>
+        Msatoshi: LNMoney
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("label")>]
@@ -616,7 +616,7 @@ module Requests =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("exemptfee")>]
-        Exemptfee: int64<msat> option
+        Exemptfee: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("routehints")>]
@@ -629,7 +629,7 @@ module Requests =
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("satoshi")>]
-        Satoshi: int64<msat>
+        Satoshi: LNMoney
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.FeerateJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.FeerateJsonConverter>)>]
         [<JsonPropertyName("feerate")>]
@@ -685,7 +685,7 @@ module Requests =
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("satoshi")>]
-        Satoshi: int64<msat>
+        Satoshi: LNMoney
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.FeerateJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.FeerateJsonConverter>)>]
         [<JsonPropertyName("feerate")>]
@@ -786,7 +786,7 @@ module Requests =
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("msatoshi")>]
-        Msatoshi: int64<msat>
+        Msatoshi: LNMoney
         [<JsonPropertyName("riskfactor")>]
         Riskfactor: uint64
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
@@ -985,7 +985,7 @@ module Responses =
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("fees_collected_msat")>]
-        FeesCollectedMsat: int64<msat>
+        FeesCollectedMsat: LNMoney
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("address")>]
         Address: GetinfoAddress [] option
@@ -1083,11 +1083,11 @@ module Responses =
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("total_funding_msat")>]
-        TotalFundingMsat: int64<msat>
+        TotalFundingMsat: LNMoney
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("our_funding_msat")>]
-        OurFundingMsat: int64<msat>
+        OurFundingMsat: LNMoney
         [<JsonPropertyName("scratch_txid")>]
         ScratchTxid: string
     }
@@ -1098,15 +1098,15 @@ module Responses =
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("local_msat")>]
-        LocalMsat: int64<msat>
+        LocalMsat: LNMoney
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("remote_msat")>]
-        RemoteMsat: int64<msat>
+        RemoteMsat: LNMoney
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("pushed_msat")>]
-        PushedMsat: int64<msat>
+        PushedMsat: LNMoney
     }
 
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
@@ -1149,7 +1149,7 @@ module Responses =
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_msat")>]
-        AmountMsat: int64<msat>
+        AmountMsat: LNMoney
         [<JsonPropertyName("expiry")>]
         Expiry: uint32
         [<JsonPropertyName("payment_hash")>]
@@ -1234,23 +1234,23 @@ module Responses =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("to_us_msat")>]
-        ToUsMsat: int64<msat> option
+        ToUsMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("min_to_us_msat")>]
-        MinToUsMsat: int64<msat> option
+        MinToUsMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("max_to_us_msat")>]
-        MaxToUsMsat: int64<msat> option
+        MaxToUsMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("total_msat")>]
-        TotalMsat: int64<msat> option
+        TotalMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("fee_base_msat")>]
-        FeeBaseMsat: int64<msat> option
+        FeeBaseMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("fee_proportional_millionths")>]
@@ -1258,39 +1258,39 @@ module Responses =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("dust_limit_msat")>]
-        DustLimitMsat: int64<msat> option
+        DustLimitMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("max_total_htlc_in_msat")>]
-        MaxTotalHtlcInMsat: int64<msat> option
+        MaxTotalHtlcInMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("their_reserve_msat")>]
-        TheirReserveMsat: int64<msat> option
+        TheirReserveMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("our_reserve_msat")>]
-        OurReserveMsat: int64<msat> option
+        OurReserveMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("spendable_msat")>]
-        SpendableMsat: int64<msat> option
+        SpendableMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("receivable_msat")>]
-        ReceivableMsat: int64<msat> option
+        ReceivableMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("minimum_htlc_in_msat")>]
-        MinimumHtlcInMsat: int64<msat> option
+        MinimumHtlcInMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("minimum_htlc_out_msat")>]
-        MinimumHtlcOutMsat: int64<msat> option
+        MinimumHtlcOutMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("maximum_htlc_out_msat")>]
-        MaximumHtlcOutMsat: int64<msat> option
+        MaximumHtlcOutMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("their_to_self_delay")>]
@@ -1316,7 +1316,7 @@ module Responses =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("in_offered_msat")>]
-        InOfferedMsat: int64<msat> option
+        InOfferedMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("in_payments_fulfilled")>]
@@ -1324,7 +1324,7 @@ module Responses =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("in_fulfilled_msat")>]
-        InFulfilledMsat: int64<msat> option
+        InFulfilledMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("out_payments_offered")>]
@@ -1332,7 +1332,7 @@ module Responses =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("out_offered_msat")>]
-        OutOfferedMsat: int64<msat> option
+        OutOfferedMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("out_payments_fulfilled")>]
@@ -1340,7 +1340,7 @@ module Responses =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("out_fulfilled_msat")>]
-        OutFulfilledMsat: int64<msat> option
+        OutFulfilledMsat: LNMoney option
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("htlcs")>]
         Htlcs: ListpeersPeersChannelsHtlcs [] option
@@ -1397,7 +1397,7 @@ module Responses =
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_msat")>]
-        AmountMsat: int64<msat>
+        AmountMsat: LNMoney
         [<JsonPropertyName("scriptpubkey")>]
         Scriptpubkey: string
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
@@ -1430,11 +1430,11 @@ module Responses =
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("our_amount_msat")>]
-        OurAmountMsat: int64<msat>
+        OurAmountMsat: LNMoney
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_msat")>]
-        AmountMsat: int64<msat>
+        AmountMsat: LNMoney
         [<JsonPropertyName("funding_txid")>]
         FundingTxid: string
         [<JsonPropertyName("funding_output")>]
@@ -1485,7 +1485,7 @@ module Responses =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_msat")>]
-        AmountMsat: int64<msat> option
+        AmountMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("destination")>]
@@ -1495,7 +1495,7 @@ module Responses =
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_sent_msat")>]
-        AmountSentMsat: int64<msat>
+        AmountSentMsat: LNMoney
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("label")>]
@@ -1542,7 +1542,7 @@ module Responses =
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_msat")>]
-        AmountMsat: int64<msat>
+        AmountMsat: LNMoney
         [<JsonPropertyName("message_flags")>]
         MessageFlags: byte
         [<JsonPropertyName("channel_flags")>]
@@ -1560,11 +1560,11 @@ module Responses =
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("htlc_minimum_msat")>]
-        HtlcMinimumMsat: int64<msat>
+        HtlcMinimumMsat: LNMoney
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("htlc_maximum_msat")>]
-        HtlcMaximumMsat: int64<msat> option
+        HtlcMaximumMsat: LNMoney option
         [<JsonPropertyName("features")>]
         Features: string
     }
@@ -1708,7 +1708,7 @@ module Responses =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_msat")>]
-        AmountMsat: int64<msat> option
+        AmountMsat: LNMoney option
         // Path `CreateInvoice.status`
         [<JsonPropertyName("status")>]
         [<JsonConverter(typeof<JsonStringEnumConverter>)>]
@@ -1724,7 +1724,7 @@ module Responses =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_received_msat")>]
-        AmountReceivedMsat: int64<msat> option
+        AmountReceivedMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("paid_at")>]
@@ -1816,7 +1816,7 @@ module Responses =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_msat")>]
-        AmountMsat: int64<msat> option
+        AmountMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("description")>]
@@ -1926,7 +1926,7 @@ module Responses =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_msat")>]
-        AmountMsat: int64<msat> option
+        AmountMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt11")>]
@@ -1950,7 +1950,7 @@ module Responses =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_received_msat")>]
-        AmountReceivedMsat: int64<msat> option
+        AmountReceivedMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("paid_at")>]
@@ -1989,7 +1989,7 @@ module Responses =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_msat")>]
-        AmountMsat: int64<msat> option
+        AmountMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("destination")>]
@@ -1999,7 +1999,7 @@ module Responses =
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_sent_msat")>]
-        AmountSentMsat: int64<msat>
+        AmountSentMsat: LNMoney
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("label")>]
@@ -2052,7 +2052,7 @@ module Responses =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_msat")>]
-        AmountMsat: int64<msat> option
+        AmountMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("destination")>]
@@ -2062,7 +2062,7 @@ module Responses =
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_sent_msat")>]
-        AmountSentMsat: int64<msat>
+        AmountSentMsat: LNMoney
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("label")>]
@@ -2154,7 +2154,7 @@ module Responses =
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("msat")>]
-        Msat: int64<msat>
+        Msat: LNMoney
         [<JsonPropertyName("scriptPubKey")>]
         ScriptPubKey: string
         [<JsonPropertyName("type")>]
@@ -2224,11 +2224,11 @@ module Responses =
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_msat")>]
-        AmountMsat: int64<msat>
+        AmountMsat: LNMoney
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_sent_msat")>]
-        AmountSentMsat: int64<msat>
+        AmountSentMsat: LNMoney
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("warning_partial_completion")>]
@@ -2325,7 +2325,7 @@ module Responses =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_msat")>]
-        AmountMsat: int64<msat> option
+        AmountMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt11")>]
@@ -2341,7 +2341,7 @@ module Responses =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_received_msat")>]
-        AmountReceivedMsat: int64<msat> option
+        AmountReceivedMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("paid_at")>]
@@ -2377,7 +2377,7 @@ module Responses =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_msat")>]
-        AmountMsat: int64<msat> option
+        AmountMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("bolt11")>]
@@ -2393,7 +2393,7 @@ module Responses =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_received_msat")>]
-        AmountReceivedMsat: int64<msat> option
+        AmountReceivedMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("paid_at")>]
@@ -2428,7 +2428,7 @@ module Responses =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_msat")>]
-        AmountMsat: int64<msat> option
+        AmountMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("destination")>]
@@ -2438,7 +2438,7 @@ module Responses =
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_sent_msat")>]
-        AmountSentMsat: int64<msat>
+        AmountSentMsat: LNMoney
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("label")>]
@@ -2509,11 +2509,11 @@ module Responses =
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_msat")>]
-        AmountMsat: int64<msat>
+        AmountMsat: LNMoney
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_sent_msat")>]
-        AmountSentMsat: int64<msat>
+        AmountSentMsat: LNMoney
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("warning_partial_completion")>]
@@ -2551,7 +2551,7 @@ module Responses =
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("excess_msat")>]
-        ExcessMsat: int64<msat>
+        ExcessMsat: LNMoney
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("change_outnum")>]
@@ -2604,7 +2604,7 @@ module Responses =
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("excess_msat")>]
-        ExcessMsat: int64<msat>
+        ExcessMsat: LNMoney
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("change_outnum")>]
@@ -2759,7 +2759,7 @@ module Responses =
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("amount_msat")>]
-        AmountMsat: int64<msat>
+        AmountMsat: LNMoney
         [<JsonPropertyName("delay")>]
         Delay: uint32
         // Path `GetRoute.route[].style`
@@ -2801,7 +2801,7 @@ module Responses =
         [<System.Text.Json.Serialization.JsonConverter(typeof<SystemTextJsonConverters.MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
         [<JsonPropertyName("in_msat")>]
-        InMsat: int64<msat>
+        InMsat: LNMoney
         // Path `ListForwards.forwards[].status`
         [<JsonPropertyName("status")>]
         [<JsonConverter(typeof<JsonStringEnumConverter>)>]
@@ -2822,11 +2822,11 @@ module Responses =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("fee_msat")>]
-        FeeMsat: int64<msat> option
+        FeeMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("out_msat")>]
-        OutMsat: int64<msat> option
+        OutMsat: LNMoney option
     }
 
     [<System.CodeDom.Compiler.GeneratedCode("msggen", "")>]
@@ -2878,11 +2878,11 @@ module Responses =
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_msat")>]
-        AmountMsat: int64<msat> option
+        AmountMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("amount_sent_msat")>]
-        AmountSentMsat: int64<msat> option
+        AmountSentMsat: LNMoney option
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.OptionConverter>)>]
         [<JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)>]
         [<JsonPropertyName("erroronion")>]

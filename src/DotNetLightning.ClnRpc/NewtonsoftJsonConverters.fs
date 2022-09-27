@@ -40,15 +40,15 @@ type JsonConverterUtils() =
             )
 
 type MSatJsonConverter() =
-    inherit JsonConverter<int64<msat>>()
+    inherit JsonConverter<LNMoney>()
 
     override this.WriteJson
         (
             writer: JsonWriter,
-            value: int64<msat>,
+            value: LNMoney,
             _serializer: JsonSerializer
         ) : unit =
-        writer.WriteValue(value.ToString() + "msat")
+        writer.WriteValue(value.MilliSatoshi.ToString() + "msat")
 
     override this.ReadJson
         (
@@ -225,7 +225,8 @@ type AmountOrAnyJsonConverter() =
         ) : unit =
         match value with
         | AmountOrAny.Any -> writer.WriteValue "any"
-        | AmountOrAny.Amount a -> writer.WriteValue(a.ToString() + "msat")
+        | AmountOrAny.Amount a ->
+            writer.WriteValue(a.MilliSatoshi.ToString() + "msat")
 
     override this.ReadJson
         (
@@ -262,7 +263,8 @@ type AmountOrAllJsonConverter() =
         ) : unit =
         match value with
         | AmountOrAll.All -> writer.WriteValue "all"
-        | AmountOrAll.Amount a -> writer.WriteValue(a.ToString() + "msat")
+        | AmountOrAll.Amount a ->
+            writer.WriteValue(a.MilliSatoshi.ToString() + "msat")
 
     override this.ReadJson
         (

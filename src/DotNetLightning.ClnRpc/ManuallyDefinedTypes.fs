@@ -20,7 +20,7 @@ type RouteHop =
         [<JsonPropertyName "feebase">]
         [<JsonConverter(typeof<MSatJsonConverter>)>]
         [<Newtonsoft.Json.JsonConverter(typeof<NewtonsoftJsonConverters.MSatJsonConverter>)>]
-        Feebase: int64<msat>
+        Feebase: LNMoney
 
         [<JsonPropertyName "feeprop">]
         Feeprop: uint32
