@@ -136,8 +136,8 @@ Warning: Output, it-value and value references require --eval
   new: network: Network * address: Uri * jsonLibrary: JsonLibraryType * getTransport: Func&lt;CancellationToken,Task&lt;Stream&gt;&gt; -&gt; ClnClient
   member SendCommandAsync: methodName: string * req: obj * noReturn: bool * ct: CancellationToken -&gt; Task&lt;&#39;T&gt;
   member SendNotification: methodName: string * req: obj * ct: CancellationToken -&gt; Task
-  member JsonOpts: JsonSerializerOptions
-  member NewtonSoftJsonOpts: JsonSerializerSettings<br /><em>&lt;summary&gt;
+  member NewtonSoftJsonConverters: ResizeArray&lt;JsonConverter&gt;
+  member STJConverters: ResizeArray&lt;JsonConverter&gt;<br /><em>&lt;summary&gt;
  c-lightning rpc client.
 &lt;/summary&gt;</em><br /><br />--------------------<br />new: network: Network * address: Uri * jsonLibrary: JsonLibraryType * getTransport: Func&lt;Threading.CancellationToken,Threading.Tasks.Task&lt;IO.Stream&gt;&gt; -&gt; ClnClient</div>
 <div class="fsdocs-tip" id="fs9">type Network =
