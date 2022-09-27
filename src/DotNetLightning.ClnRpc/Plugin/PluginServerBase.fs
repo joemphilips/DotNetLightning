@@ -459,16 +459,18 @@ type PluginServerBase
 #endif
             let formatter = new JsonMessageFormatter()
 
-            formatter.JsonSerializer.Converters.AddDNLJsonConverters(
-                this.Network
-            )
-
             formatter.JsonSerializer.NullValueHandling <-
                 Newtonsoft.Json.NullValueHandling.Ignore
 
+            // add user-defined converters first so that user can
+            // override the converter
             if this.JsonConverters |> isNull |> not then
                 for c in this.JsonConverters do
                     formatter.JsonSerializer.Converters.Add(c)
+
+            formatter.JsonSerializer.Converters.AddDNLJsonConverters(
+                this.Network
+            )
 
             let handler =
                 new NewLineDelimitedMessageHandler(writer, reader, formatter)

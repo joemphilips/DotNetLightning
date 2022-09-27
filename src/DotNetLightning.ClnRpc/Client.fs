@@ -202,12 +202,7 @@ type ClnClient
                 $"you must specify either {nameof(address)} or {nameof getTransport} as {nameof(ClnClient)} constructor option. not both"
             )
         else
-            match jsonLibrary with
-            | JsonLibraryType.SystemTextJson ->
-                jsonOpts.AddDNLJsonConverters(network)
-            | JsonLibraryType.Newtonsoft ->
-                newtonSoftJsonOpts.AddDNLJsonConverters(network)
-            | _ -> invalidArg (nameof(jsonLibrary)) "Unknown json library type"
+            ()
 
     member val JsonOpts = jsonOpts
     member val NewtonSoftJsonOpts = newtonSoftJsonOpts
@@ -279,6 +274,13 @@ type ClnClient
             [<Optional; DefaultParameterValue(CancellationToken())>] ct: CancellationToken
         ) : Task<'T> =
         backgroundTask {
+            match jsonLibrary with
+            | JsonLibraryType.SystemTextJson ->
+                this.JsonOpts.AddDNLJsonConverters(network)
+            | JsonLibraryType.Newtonsoft ->
+                this.NewtonSoftJsonOpts.AddDNLJsonConverters(network)
+            | _ -> invalidArg (nameof(jsonLibrary)) "Unknown json library type"
+
             use! networkStream = getTransportStream.Invoke(ct)
             // without this hack, `ReadAsync` is blocking even if
             // cancellation is requested.
