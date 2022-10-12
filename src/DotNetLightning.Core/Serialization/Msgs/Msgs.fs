@@ -18,7 +18,6 @@ open ResultUtils
 open ResultUtils.Portability
 
 // todo: generate dtos automatically from the spec when the tooling is ready (e.g. https://github.com/ElementsProject/lightning/blob/master/tools/generate-wire.py)
-// todo: stop using mutable state and go for more F# idiomatic way.
 
 /// <namespacedoc>
 ///     <summary>
@@ -481,12 +480,12 @@ type OptionalField<'T> = option<'T>
 [<CLIMutable; StructuralComparison; StructuralEquality>]
 type OnionPacket =
     {
-        mutable Version: uint8
+        Version: uint8
         /// This might be 33 bytes of 0uy in case of last packet
         /// So we are not using `PubKey` to represent pubkey
-        mutable PublicKey: array<byte>
-        mutable HopData: array<byte>
-        mutable HMAC: uint256
+        PublicKey: array<byte>
+        HopData: array<byte>
+        HMAC: uint256
     }
 
     static member LastPacket =
@@ -533,8 +532,8 @@ type OnionErrorPacket =
 [<CLIMutable>]
 type InitMsg =
     {
-        mutable Features: FeatureBits
-        mutable TLVStream: array<InitTLV>
+        Features: FeatureBits
+        TLVStream: array<InitTLV>
     }
 
     interface ISetupMsg
@@ -628,8 +627,8 @@ type InitMsg =
 [<CLIMutable>]
 type PingMsg =
     {
-        mutable PongLen: uint16
-        mutable BytesLen: uint16
+        PongLen: uint16
+        BytesLen: uint16
     }
 
     interface ISetupMsg
@@ -654,7 +653,7 @@ type PingMsg =
 [<CLIMutable>]
 type PongMsg =
     {
-        mutable BytesLen: uint16
+        BytesLen: uint16
     }
 
     interface ISetupMsg
@@ -677,25 +676,25 @@ type PongMsg =
 [<CLIMutable>]
 type OpenChannelMsg =
     {
-        mutable Chainhash: uint256
-        mutable TemporaryChannelId: ChannelId
-        mutable FundingSatoshis: Money
-        mutable PushMSat: LNMoney
-        mutable DustLimitSatoshis: Money
-        mutable MaxHTLCValueInFlightMsat: LNMoney
-        mutable ChannelReserveSatoshis: Money
-        mutable HTLCMinimumMsat: LNMoney
-        mutable FeeRatePerKw: FeeRatePerKw
-        mutable ToSelfDelay: BlockHeightOffset16
-        mutable MaxAcceptedHTLCs: uint16
-        mutable FundingPubKey: FundingPubKey
-        mutable RevocationBasepoint: RevocationBasepoint
-        mutable PaymentBasepoint: PaymentBasepoint
-        mutable DelayedPaymentBasepoint: DelayedPaymentBasepoint
-        mutable HTLCBasepoint: HtlcBasepoint
-        mutable FirstPerCommitmentPoint: PerCommitmentPoint
-        mutable ChannelFlags: ChannelFlags
-        mutable TLVs: array<OpenChannelTLV>
+        Chainhash: uint256
+        TemporaryChannelId: ChannelId
+        FundingSatoshis: Money
+        PushMSat: LNMoney
+        DustLimitSatoshis: Money
+        MaxHTLCValueInFlightMsat: LNMoney
+        ChannelReserveSatoshis: Money
+        HTLCMinimumMsat: LNMoney
+        FeeRatePerKw: FeeRatePerKw
+        ToSelfDelay: BlockHeightOffset16
+        MaxAcceptedHTLCs: uint16
+        FundingPubKey: FundingPubKey
+        RevocationBasepoint: RevocationBasepoint
+        PaymentBasepoint: PaymentBasepoint
+        DelayedPaymentBasepoint: DelayedPaymentBasepoint
+        HTLCBasepoint: HtlcBasepoint
+        FirstPerCommitmentPoint: PerCommitmentPoint
+        ChannelFlags: ChannelFlags
+        TLVs: array<OpenChannelTLV>
     }
 
     interface IChannelMsg
@@ -767,21 +766,21 @@ type OpenChannelMsg =
 [<CLIMutable>]
 type AcceptChannelMsg =
     {
-        mutable TemporaryChannelId: ChannelId
-        mutable DustLimitSatoshis: Money
-        mutable MaxHTLCValueInFlightMsat: LNMoney
-        mutable ChannelReserveSatoshis: Money
-        mutable HTLCMinimumMSat: LNMoney
-        mutable MinimumDepth: BlockHeightOffset32
-        mutable ToSelfDelay: BlockHeightOffset16
-        mutable MaxAcceptedHTLCs: uint16
-        mutable FundingPubKey: FundingPubKey
-        mutable RevocationBasepoint: RevocationBasepoint
-        mutable PaymentBasepoint: PaymentBasepoint
-        mutable DelayedPaymentBasepoint: DelayedPaymentBasepoint
-        mutable HTLCBasepoint: HtlcBasepoint
-        mutable FirstPerCommitmentPoint: PerCommitmentPoint
-        mutable TLVs: array<AcceptChannelTLV>
+        TemporaryChannelId: ChannelId
+        DustLimitSatoshis: Money
+        MaxHTLCValueInFlightMsat: LNMoney
+        ChannelReserveSatoshis: Money
+        HTLCMinimumMSat: LNMoney
+        MinimumDepth: BlockHeightOffset32
+        ToSelfDelay: BlockHeightOffset16
+        MaxAcceptedHTLCs: uint16
+        FundingPubKey: FundingPubKey
+        RevocationBasepoint: RevocationBasepoint
+        PaymentBasepoint: PaymentBasepoint
+        DelayedPaymentBasepoint: DelayedPaymentBasepoint
+        HTLCBasepoint: HtlcBasepoint
+        FirstPerCommitmentPoint: PerCommitmentPoint
+        TLVs: array<AcceptChannelTLV>
     }
 
     interface IChannelMsg
@@ -847,10 +846,10 @@ type AcceptChannelMsg =
 [<CLIMutable>]
 type FundingCreatedMsg =
     {
-        mutable TemporaryChannelId: ChannelId
-        mutable FundingTxId: TxId
-        mutable FundingOutputIndex: TxOutIndex
-        mutable Signature: LNECDSASignature
+        TemporaryChannelId: ChannelId
+        FundingTxId: TxId
+        FundingOutputIndex: TxOutIndex
+        Signature: LNECDSASignature
     }
 
     interface IChannelMsg
@@ -874,8 +873,8 @@ type FundingCreatedMsg =
 [<CLIMutable>]
 type FundingSignedMsg =
     {
-        mutable ChannelId: ChannelId
-        mutable Signature: LNECDSASignature
+        ChannelId: ChannelId
+        Signature: LNECDSASignature
     }
 
     interface IChannelMsg
@@ -895,8 +894,8 @@ type FundingSignedMsg =
 [<CLIMutable>]
 type FundingLockedMsg =
     {
-        mutable ChannelId: ChannelId
-        mutable NextPerCommitmentPoint: PerCommitmentPoint
+        ChannelId: ChannelId
+        NextPerCommitmentPoint: PerCommitmentPoint
     }
 
     interface IChannelMsg
@@ -916,8 +915,8 @@ type FundingLockedMsg =
 [<CLIMutable>]
 type ShutdownMsg =
     {
-        mutable ChannelId: ChannelId
-        mutable ScriptPubKey: ShutdownScriptPubKey
+        ChannelId: ChannelId
+        ScriptPubKey: ShutdownScriptPubKey
     }
 
     interface IChannelMsg
@@ -937,9 +936,9 @@ type ShutdownMsg =
 [<CLIMutable>]
 type ClosingSignedMsg =
     {
-        mutable ChannelId: ChannelId
-        mutable FeeSatoshis: Money
-        mutable Signature: LNECDSASignature
+        ChannelId: ChannelId
+        FeeSatoshis: Money
+        Signature: LNECDSASignature
     }
 
     interface IChannelMsg
@@ -961,12 +960,12 @@ type ClosingSignedMsg =
 [<CLIMutable; StructuralComparison; StructuralEquality>]
 type UpdateAddHTLCMsg =
     {
-        mutable ChannelId: ChannelId
-        mutable HTLCId: HTLCId
-        mutable Amount: LNMoney
-        mutable PaymentHash: PaymentHash
-        mutable CLTVExpiry: BlockHeight
-        mutable OnionRoutingPacket: OnionPacket
+        ChannelId: ChannelId
+        HTLCId: HTLCId
+        Amount: LNMoney
+        PaymentHash: PaymentHash
+        CLTVExpiry: BlockHeight
+        OnionRoutingPacket: OnionPacket
     }
 
     interface IHTLCMsg
@@ -999,9 +998,9 @@ type UpdateAddHTLCMsg =
 [<CLIMutable>]
 type UpdateFulfillHTLCMsg =
     {
-        mutable ChannelId: ChannelId
-        mutable HTLCId: HTLCId
-        mutable PaymentPreimage: PaymentPreimage
+        ChannelId: ChannelId
+        HTLCId: HTLCId
+        PaymentPreimage: PaymentPreimage
     }
 
     interface IHTLCMsg
@@ -1027,9 +1026,9 @@ type UpdateFulfillHTLCMsg =
 [<CLIMutable>]
 type UpdateFailHTLCMsg =
     {
-        mutable ChannelId: ChannelId
-        mutable HTLCId: HTLCId
-        mutable Reason: OnionErrorPacket
+        ChannelId: ChannelId
+        HTLCId: HTLCId
+        Reason: OnionErrorPacket
     }
 
     interface IHTLCMsg
@@ -1056,10 +1055,10 @@ type UpdateFailHTLCMsg =
 [<CLIMutable>]
 type UpdateFailMalformedHTLCMsg =
     {
-        mutable ChannelId: ChannelId
-        mutable HTLCId: HTLCId
-        mutable Sha256OfOnion: uint256
-        mutable FailureCode: FailureCode
+        ChannelId: ChannelId
+        HTLCId: HTLCId
+        Sha256OfOnion: uint256
+        FailureCode: FailureCode
     }
 
     interface IHTLCMsg
@@ -1084,9 +1083,9 @@ type UpdateFailMalformedHTLCMsg =
 [<CLIMutable>]
 type CommitmentSignedMsg =
     {
-        mutable ChannelId: ChannelId
-        mutable Signature: LNECDSASignature
-        mutable HTLCSignatures: list<LNECDSASignature>
+        ChannelId: ChannelId
+        Signature: LNECDSASignature
+        HTLCSignatures: list<LNECDSASignature>
     }
 
     interface IHTLCMsg
@@ -1112,9 +1111,9 @@ type CommitmentSignedMsg =
 [<CLIMutable>]
 type RevokeAndACKMsg =
     {
-        mutable ChannelId: ChannelId
-        mutable PerCommitmentSecret: PerCommitmentSecret
-        mutable NextPerCommitmentPoint: PerCommitmentPoint
+        ChannelId: ChannelId
+        PerCommitmentSecret: PerCommitmentSecret
+        NextPerCommitmentPoint: PerCommitmentPoint
     }
 
     interface IHTLCMsg
@@ -1136,8 +1135,8 @@ type RevokeAndACKMsg =
 [<CLIMutable>]
 type UpdateFeeMsg =
     {
-        mutable ChannelId: ChannelId
-        mutable FeeRatePerKw: FeeRatePerKw
+        ChannelId: ChannelId
+        FeeRatePerKw: FeeRatePerKw
     }
 
     interface IChannelMsg
@@ -1160,8 +1159,8 @@ type UpdateFeeMsg =
 [<CLIMutable>]
 type DataLossProtect =
     {
-        mutable YourLastPerCommitmentSecret: Option<PerCommitmentSecret>
-        mutable MyCurrentPerCommitmentPoint: PerCommitmentPoint
+        YourLastPerCommitmentSecret: Option<PerCommitmentSecret>
+        MyCurrentPerCommitmentPoint: PerCommitmentPoint
     }
 
     interface ILightningSerializable<DataLossProtect> with
@@ -1191,10 +1190,10 @@ type DataLossProtect =
 [<CLIMutable>]
 type ChannelReestablishMsg =
     {
-        mutable ChannelId: ChannelId
-        mutable NextCommitmentNumber: CommitmentNumber
-        mutable NextRevocationNumber: CommitmentNumber
-        mutable DataLossProtect: OptionalField<DataLossProtect>
+        ChannelId: ChannelId
+        NextCommitmentNumber: CommitmentNumber
+        NextRevocationNumber: CommitmentNumber
+        DataLossProtect: OptionalField<DataLossProtect>
     }
 
     interface IChannelMsg
@@ -1227,10 +1226,10 @@ type ChannelReestablishMsg =
 [<CLIMutable>]
 type AnnouncementSignaturesMsg =
     {
-        mutable ChannelId: ChannelId
-        mutable ShortChannelId: ShortChannelId
-        mutable NodeSignature: LNECDSASignature
-        mutable BitcoinSignature: LNECDSASignature
+        ChannelId: ChannelId
+        ShortChannelId: ShortChannelId
+        NodeSignature: LNECDSASignature
+        BitcoinSignature: LNECDSASignature
     }
 
     interface IRoutingMsg
@@ -1409,14 +1408,14 @@ and UnknownNetAddr = byte
 [<CLIMutable>]
 type UnsignedNodeAnnouncementMsg =
     {
-        mutable FeatureBitsArray: array<byte>
-        mutable Timestamp: uint32
-        mutable NodeId: NodeId
-        mutable RGB: RGB
-        mutable Alias: uint256
-        mutable Addresses: array<NetAddress>
-        mutable ExcessAddressData: array<byte>
-        mutable ExcessData: array<byte>
+        FeatureBitsArray: array<byte>
+        Timestamp: uint32
+        NodeId: NodeId
+        RGB: RGB
+        Alias: uint256
+        Addresses: array<NetAddress>
+        ExcessAddressData: array<byte>
+        ExcessData: array<byte>
     }
 
     member this.Features: Result<FeatureBits, FeatureError> =
@@ -1498,8 +1497,8 @@ type UnsignedNodeAnnouncementMsg =
 [<CLIMutable>]
 type NodeAnnouncementMsg =
     {
-        mutable Signature: LNECDSASignature
-        mutable Contents: UnsignedNodeAnnouncementMsg
+        Signature: LNECDSASignature
+        Contents: UnsignedNodeAnnouncementMsg
     }
 
     interface IRoutingMsg
@@ -1528,14 +1527,14 @@ type NodeAnnouncementMsg =
 [<StructuralComparison; StructuralEquality; CLIMutable>]
 type UnsignedChannelAnnouncementMsg =
     {
-        mutable Features: FeatureBits
-        mutable ChainHash: uint256
-        mutable ShortChannelId: ShortChannelId
-        mutable NodeId1: NodeId
-        mutable NodeId2: NodeId
-        mutable BitcoinKey1: ComparablePubKey
-        mutable BitcoinKey2: ComparablePubKey
-        mutable ExcessData: array<byte>
+        Features: FeatureBits
+        ChainHash: uint256
+        ShortChannelId: ShortChannelId
+        NodeId1: NodeId
+        NodeId2: NodeId
+        BitcoinKey1: ComparablePubKey
+        BitcoinKey2: ComparablePubKey
+        ExcessData: array<byte>
     }
 
     interface ILightningSerializable<UnsignedChannelAnnouncementMsg> with
@@ -1572,11 +1571,11 @@ type UnsignedChannelAnnouncementMsg =
 [<CLIMutable>]
 type ChannelAnnouncementMsg =
     {
-        mutable NodeSignature1: LNECDSASignature
-        mutable NodeSignature2: LNECDSASignature
-        mutable BitcoinSignature1: LNECDSASignature
-        mutable BitcoinSignature2: LNECDSASignature
-        mutable Contents: UnsignedChannelAnnouncementMsg
+        NodeSignature1: LNECDSASignature
+        NodeSignature2: LNECDSASignature
+        BitcoinSignature1: LNECDSASignature
+        BitcoinSignature2: LNECDSASignature
+        Contents: UnsignedChannelAnnouncementMsg
     }
 
     interface IRoutingMsg
@@ -1610,16 +1609,16 @@ type ChannelAnnouncementMsg =
 [<CLIMutable>]
 type UnsignedChannelUpdateMsg =
     {
-        mutable ChainHash: uint256
-        mutable ShortChannelId: ShortChannelId
-        mutable Timestamp: uint32
-        mutable MessageFlags: uint8
-        mutable ChannelFlags: uint8
-        mutable CLTVExpiryDelta: BlockHeightOffset16
-        mutable HTLCMinimumMSat: LNMoney
-        mutable FeeBaseMSat: LNMoney
-        mutable FeeProportionalMillionths: uint32
-        mutable HTLCMaximumMSat: OptionalField<LNMoney>
+        ChainHash: uint256
+        ShortChannelId: ShortChannelId
+        Timestamp: uint32
+        MessageFlags: uint8
+        ChannelFlags: uint8
+        CLTVExpiryDelta: BlockHeightOffset16
+        HTLCMinimumMSat: LNMoney
+        FeeBaseMSat: LNMoney
+        FeeProportionalMillionths: uint32
+        HTLCMaximumMSat: OptionalField<LNMoney>
     }
 
     interface IRoutingMsg
@@ -1684,8 +1683,8 @@ type UnsignedChannelUpdateMsg =
 [<CLIMutable>]
 type ChannelUpdateMsg =
     {
-        mutable Signature: LNECDSASignature
-        mutable Contents: UnsignedChannelUpdateMsg
+        Signature: LNECDSASignature
+        Contents: UnsignedChannelUpdateMsg
     }
 
     member this.IsNode1 = (this.Contents.ChannelFlags &&& 1uy) = 0uy
@@ -1737,8 +1736,8 @@ type FailureMsgData =
 [<CLIMutable>]
 type FailureMsg =
     {
-        mutable Data: FailureMsgData
-        mutable Code: FailureCode
+        Data: FailureMsgData
+        Code: FailureCode
     }
 
     interface ILightningSerializable<FailureMsg> with
@@ -1865,8 +1864,8 @@ type FailureMsg =
 [<CLIMutable>]
 type ErrorMsg =
     {
-        mutable ChannelId: WhichChannel
-        mutable Data: array<byte>
+        ChannelId: WhichChannel
+        Data: array<byte>
     }
 
     interface ISetupMsg
@@ -1918,8 +1917,8 @@ and WhichChannel =
 [<CLIMutable>]
 type WarningMsg =
     {
-        mutable ChannelId: WhichChannel
-        mutable Data: array<byte>
+        ChannelId: WhichChannel
+        Data: array<byte>
     }
 
     interface ISetupMsg
@@ -2024,10 +2023,10 @@ and NodeFailure =
 [<CLIMutable>]
 type QueryShortChannelIdsMsg =
     {
-        mutable ChainHash: uint256
-        mutable ShortIdsEncodingType: EncodingType
-        mutable ShortIds: array<ShortChannelId>
-        mutable TLVs: array<QueryShortChannelIdsTLV>
+        ChainHash: uint256
+        ShortIdsEncodingType: EncodingType
+        ShortIds: array<ShortChannelId>
+        TLVs: array<QueryShortChannelIdsTLV>
     }
 
     interface IQueryMsg
@@ -2101,8 +2100,8 @@ type QueryShortChannelIdsMsg =
 [<CLIMutable>]
 type ReplyShortChannelIdsEndMsg =
     {
-        mutable ChainHash: uint256
-        mutable Complete: bool
+        ChainHash: uint256
+        Complete: bool
     }
 
     interface IQueryMsg
@@ -2142,10 +2141,10 @@ type ReplyShortChannelIdsEndMsg =
 [<CLIMutable>]
 type QueryChannelRangeMsg =
     {
-        mutable ChainHash: uint256
-        mutable FirstBlockNum: BlockHeight
-        mutable NumberOfBlocks: uint32
-        mutable TLVs: array<QueryChannelRangeTLV>
+        ChainHash: uint256
+        FirstBlockNum: BlockHeight
+        NumberOfBlocks: uint32
+        TLVs: array<QueryChannelRangeTLV>
     }
 
     interface IQueryMsg
@@ -2175,13 +2174,13 @@ type QueryChannelRangeMsg =
 [<CLIMutable>]
 type ReplyChannelRangeMsg =
     {
-        mutable ChainHash: uint256
-        mutable FirstBlockNum: BlockHeight
-        mutable NumOfBlocks: uint32
-        mutable Complete: bool
-        mutable ShortIdsEncodingType: EncodingType
-        mutable ShortIds: array<ShortChannelId>
-        mutable TLVs: array<ReplyChannelRangeTLV>
+        ChainHash: uint256
+        FirstBlockNum: BlockHeight
+        NumOfBlocks: uint32
+        Complete: bool
+        ShortIdsEncodingType: EncodingType
+        ShortIds: array<ShortChannelId>
+        TLVs: array<ReplyChannelRangeTLV>
     }
 
     interface IQueryMsg
@@ -2264,9 +2263,9 @@ type ReplyChannelRangeMsg =
 [<CLIMutable>]
 type GossipTimestampFilterMsg =
     {
-        mutable ChainHash: uint256
-        mutable FirstTimestamp: uint32
-        mutable TimestampRange: uint32
+        ChainHash: uint256
+        FirstTimestamp: uint32
+        TimestampRange: uint32
     }
 
     interface IQueryMsg
