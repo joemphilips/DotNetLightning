@@ -183,24 +183,30 @@ type ILightningSerializable<'T when 'T :> ILightningSerializable<'T>> =
     abstract Serialize: LightningWriterStream -> unit
 
 module ILightningSerializable =
-    let internal getDummyInstance<'T when 'T: (new: unit -> 'T) and 'T :> ILightningSerializable<'T>>
-        ()
-        =
-        new 'T()
+    /// This class is needed because interfaces can only have instance methods,
+    /// so existing instance of 'T is needed to call ILightningSerializable<'T>.Deserialize method.
+    /// This is also why all records that implement ILightningSerializable<'T> interface
+    /// need to have [<CLIMutable>] attribute - it allows to create instances by calling default constructor.
+    /// All this will be unneeded in F# 7 with introduction of support for static abstract members in interfaces
+    /// (https://github.com/fsharp/fslang-suggestions/issues/1151)
+    type private DummyInstanceHolder<'T when 'T: (new: unit -> 'T) and 'T :> ILightningSerializable<'T>>
+        () =
+        static let instance = new 'T()
+        static member Instance = instance
 
     let internal fromBytes<'T when 'T: (new: unit -> 'T) and 'T :> ILightningSerializable<'T>>
         (data: array<byte>)
         =
         use ms = new MemoryStream(data)
         use ls = new LightningReaderStream(ms)
-        let instance: 'T = getDummyInstance()
-        instance.Deserialize ls
+        let dummyInstance: 'T = DummyInstanceHolder.Instance
+        dummyInstance.Deserialize ls
 
     let internal deserialize<'T when 'T: (new: unit -> 'T) and 'T :> ILightningSerializable<'T>>
         (ls: LightningReaderStream)
         =
-        let instance: 'T = getDummyInstance()
-        instance.Deserialize ls
+        let dummyInstance: 'T = DummyInstanceHolder.Instance
+        dummyInstance.Deserialize ls
 
     let internal deserializeWithFlag
         (ls: LightningReaderStream)
