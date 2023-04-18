@@ -103,6 +103,7 @@ let tests =
                         ToSelfDelay = 144us |> BlockHeightOffset16
                         MaxAcceptedHTLCs = 1000us
                         Features = FeatureBits.Zero
+                        MutualCloseMaxFeeMultiplier = 3
                     }
 
                 let remoteParams: RemoteParams =

@@ -80,6 +80,11 @@ type LocalParams =
         ToSelfDelay: BlockHeightOffset16
         MaxAcceptedHTLCs: uint16
         Features: FeatureBits
+        // MutualCloseMaxFeeMultiplier is a multiplier we'll apply to the ideal fee
+        // of the funder, to decide when the negotiated fee is too high. By
+        // default, we want to bail out if we attempt to negotiate a fee that's
+        // 3x higher than our ideal fee.
+        MutualCloseMaxFeeMultiplier: int
     }
 
 type RemoteParams =
