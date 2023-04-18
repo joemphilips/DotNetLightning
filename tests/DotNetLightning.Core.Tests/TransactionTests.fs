@@ -101,6 +101,7 @@ let testList =
                         ToSelfDelay = 144us |> BlockHeightOffset16
                         MaxAcceptedHTLCs = 1000us
                         Features = FeatureBits.Zero
+                        MutualCloseMaxFeeMultiplier = 3
                     }
 
                 let remoteLocalParam: LocalParams =
@@ -112,6 +113,7 @@ let testList =
                         ToSelfDelay = 144us |> BlockHeightOffset16
                         MaxAcceptedHTLCs = 1000us
                         Features = FeatureBits.Zero
+                        MutualCloseMaxFeeMultiplier = 3
                     }
 
                 let remoteParam: RemoteParams =
@@ -532,6 +534,7 @@ let testList =
                         ToSelfDelay = 144us |> BlockHeightOffset16
                         MaxAcceptedHTLCs = 1000us
                         Features = FeatureBits.Zero
+                        MutualCloseMaxFeeMultiplier = 3
                     }
 
                 let remoteLocalParam: LocalParams =
@@ -543,6 +546,7 @@ let testList =
                         ToSelfDelay = 144us |> BlockHeightOffset16
                         MaxAcceptedHTLCs = 1000us
                         Features = FeatureBits.Zero
+                        MutualCloseMaxFeeMultiplier = 3
                     }
 
                 let remoteParams: RemoteParams =
@@ -887,6 +891,7 @@ let testList =
                         ToSelfDelay = 144us |> BlockHeightOffset16
                         MaxAcceptedHTLCs = 1000us
                         Features = FeatureBits.Zero
+                        MutualCloseMaxFeeMultiplier = 3
                     }
 
                 let remoteLocalParam: LocalParams =
@@ -898,6 +903,7 @@ let testList =
                         ToSelfDelay = 144us |> BlockHeightOffset16
                         MaxAcceptedHTLCs = 1000us
                         Features = FeatureBits.Zero
+                        MutualCloseMaxFeeMultiplier = 3
                     }
 
                 let remoteParam: RemoteParams =

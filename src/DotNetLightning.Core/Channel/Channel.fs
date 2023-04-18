@@ -1471,14 +1471,15 @@ and Channel =
             let remoteChannelKeys =
                 this.SavedChannelState.StaticChannelConfig.RemoteChannelPubKeys
 
-            let lastCommitFeeSatoshi =
-                this.SavedChannelState.StaticChannelConfig.FundingScriptCoin.TxOut.Value
-                - (this.SavedChannelState.LocalCommit.PublishableTxs.CommitTx.Value.TotalOut)
+            let! idealFee =
+                this.FirstClosingFee
+                    localShutdownScriptPubKey
+                    remoteShutdownScriptPubKey
+                |> expectTransactionError
 
-            do!
-                checkRemoteProposedHigherFeeThanBaseFee
-                    lastCommitFeeSatoshi
-                    msg.FeeSatoshis
+            let maxFee =
+                this.SavedChannelState.StaticChannelConfig.LocalParams.MutualCloseMaxFeeMultiplier
+                * idealFee
 
             do!
                 checkRemoteProposedFeeWithinNegotiatedRange
@@ -1549,6 +1550,12 @@ and Channel =
                             remoteShutdownScriptPubKey
                             nextClosingFee
                         |> expectTransactionError
+
+                    if this.SavedChannelState.StaticChannelConfig.IsFunder
+                       && nextClosingFee > maxFee then
+                        return!
+                            Error
+                            <| ProposalExceedsMaxFee(nextClosingFee, maxFee)
 
                     let nextState =
                         { this.NegotiatingState with

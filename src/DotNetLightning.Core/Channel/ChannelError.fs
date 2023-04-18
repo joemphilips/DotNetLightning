@@ -62,11 +62,11 @@ type ChannelError =
         height: BlockHeight *
         depth: BlockHeightOffset32
     | CannotCloseChannel of msg: string
-    | RemoteProposedHigherFeeThanBaseFee of baseFee: Money * proposedFee: Money
     | RemoteProposedFeeOutOfNegotiatedRange of
         ourPreviousFee: Money *
         theirPreviousFee: Money *
         theirNextFee: Money
+    | ProposalExceedsMaxFee of proposalFee: Money * maxFee: Money
     | NoUpdatesToSign
     | CannotSignCommitmentBeforeRevocation
     | InsufficientConfirmations of
@@ -108,8 +108,8 @@ type ChannelError =
         | CannotSignCommitmentBeforeRevocation -> Ignore
         | InsufficientConfirmations(_, _) -> Ignore
         | InvalidOperationAddHTLC _ -> Ignore
-        | RemoteProposedHigherFeeThanBaseFee(_, _) -> Close
         | RemoteProposedFeeOutOfNegotiatedRange(_, _, _) -> Close
+        | ProposalExceedsMaxFee(_, _) -> Ignore
 
     member this.Message =
         match this with
@@ -161,12 +161,6 @@ type ChannelError =
             sprintf
                 "They sent shutdown msg (%A) while they have pending unsigned HTLCs, this is protocol violation"
                 msg
-        | RemoteProposedHigherFeeThanBaseFee(baseFee, proposedFee) ->
-            "remote proposed a closing fee higher than commitment fee of the final commitment transaction. "
-            + sprintf
-                "commitment fee=%A; fee remote proposed=%A;"
-                baseFee
-                proposedFee
         | RemoteProposedFeeOutOfNegotiatedRange
             (
                 ourPreviousFee, theirPreviousFee, theirNextFee
@@ -178,6 +172,11 @@ type ChannelError =
                 ourPreviousFee
                 theirPreviousFee
                 theirNextFee
+        | ProposalExceedsMaxFee(proposalFee, maxFee) ->
+            sprintf
+                "latest fee proposal (%i) exceeds max fee (%i)"
+                proposalFee.Satoshi
+                maxFee.Satoshi
         | CryptoError cryptoError ->
             sprintf "Crypto error: %s" cryptoError.Message
         | TransactionRelatedErrors transactionErrors ->
@@ -408,12 +407,6 @@ module internal ChannelError =
 
     let receivedShutdownWhenRemoteHasUnsignedOutgoingHTLCs msg =
         msg |> ReceivedShutdownWhenRemoteHasUnsignedOutgoingHTLCs |> Error
-
-    let checkRemoteProposedHigherFeeThanBaseFee baseFee proposedFee =
-        if (baseFee < proposedFee) then
-            RemoteProposedHigherFeeThanBaseFee(baseFee, proposedFee) |> Error
-        else
-            Ok()
 
     let checkRemoteProposedFeeWithinNegotiatedRange
         (ourPreviousFeeOpt: Option<Money>)
