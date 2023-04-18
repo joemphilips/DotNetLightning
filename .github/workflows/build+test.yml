@@ -70,7 +70,7 @@ jobs:
 
       - name: install fsdocs
         run:
-          dotnet tool install -g fsdocs-tool
+          dotnet tool install -g fsdocs-tool --version 16.1.1
 
       - name: build fsdocs
         run:
