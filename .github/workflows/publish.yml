@@ -76,10 +76,10 @@ jobs:
           dotnet-version: ${{ matrix.dotnet }}
           
       # get and set release url and version
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: create-release
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: get_version
       - id: upload-url
